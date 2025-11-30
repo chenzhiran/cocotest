@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第43-48关 多参数函数</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-color: #FFEBEE;       /* 浅粉背景 */
+            --board-bg: #FFFFFF;       /* 白板背景 */
+            --primary: #FF5252;        /* 番茄红 */
+            --secondary: #FFCA28;      /* 奶酪黄 */
+            --accent: #4CAF50;         /* 罗勒绿 */
+            --text-main: #37474F;      /* 深灰文字 */
+            --text-sub: #78909C;
+            
+            /* 代码高亮 */
+            --code-bg: #263238;
+            --code-fg: #ECEFF1;
+            --tok-def: #BA68C8;        /* def */
+            --tok-func: #42A5F5;       /* 函数名 */
+            --tok-param: #FFCA28;      /* 参数 */
+            --tok-val: #66BB6A;        /* 数值/字符串 */
+            --tok-cm: #90A4AE;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-color);
+            /* 披萨桌布背景 */
+            background-image: 
+                linear-gradient(90deg, rgba(255,0,0,0.05) 50%, transparent 50%),
+                linear-gradient(rgba(255,0,0,0.05) 50%, transparent 50%);
+            background-size: 40px 40px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 披萨切片按钮 (外部) --- */
+        .nav-btn {
+            width: 80px;
+            height: 80px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2));
+        }
+        
+        /* 绘制披萨切片形状 */
+        .pizza-slice {
+            width: 0;
+            height: 0;
+            border-left: 40px solid transparent;
+            border-right: 40px solid transparent;
+            border-top: 70px solid var(--secondary); /* 倒三角 */
+            position: relative;
+            border-radius: 50% 50% 0 0 / 15px 15px 0 0; /* 边缘圆润 */
+        }
+        .pizza-crust {
+            position: absolute;
+            top: -75px; left: -40px;
+            width: 80px; height: 15px;
+            background: #D84315;
+            border-radius: 10px 10px 0 0;
+        }
+        .pepperoni {
+            width: 12px; height: 12px; background: #BF360C; border-radius: 50%; position: absolute;
+        }
+        .arrow-text {
+            position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
+            font-size: 30px; color: white; font-weight: bold; text-shadow: 0 2px 0 rgba(0,0,0,0.3);
+        }
+
+        .nav-btn:hover { transform: scale(1.1); }
+        .nav-btn:active { transform: scale(0.95); }
+        
+        .btn-prev .pizza-slice { transform: rotate(90deg); }
+        .btn-next .pizza-slice { transform: rotate(-90deg); }
+        
+        .disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 菜单板屏幕容器 --- */
+        .board-container {
+            width: 960px;
+            height: 620px;
+            background: var(--board-bg);
+            border-radius: 20px;
+            box-shadow: 
+                0 0 0 12px #8D6E63, /* 木框 */
+                0 20px 50px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 地图徽章 */
+        .map-badge {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            background: #37474F;
+            color: #ECEFF1;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 20;
+            font-size: 14px;
+            border-left: 4px solid var(--secondary);
+        }
+
+        /* 关卡信息 */
+        .level-info {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            color: var(--text-sub);
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 60px 70px 40px 70px;
+            flex-direction: column;
+            animation: fadeIn 0.5s ease-out;
+            overflow-y: auto;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes fadeIn { 
+            0% { opacity: 0; transform: translateY(10px); } 
+            100% { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px dashed #FFCCBC;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; }
+        h1 { margin: 0; color: var(--primary); font-size: 36px; letter-spacing: 1px; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 20px; line-height: 1.7; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.9; 
+            background: #FFF8E1; /* 淡黄 */
+            border-radius: 15px; 
+            border: 2px solid #FFE0B2; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 18px;
+            margin-top: 15px;
+            border-left: 6px solid var(--secondary);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .k { color: var(--tok-def); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .p { color: var(--tok-param); font-weight: bold; } 
+        .v { color: var(--tok-val); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #E3F2FD;
+            border-left: 5px solid #2196F3;
+            color: #0D47A1;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 10px 10px 0;
+            font-size: 18px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 披萨生成器 */
+        .pizza-plate {
+            width: 250px; height: 250px;
+            background: #f5f5f5;
+            border-radius: 50%;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            display: flex; justify-content: center; align-items: center;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .pizza-base {
+            width: 90%; height: 90%;
+            background: #FBC02D; /* 面饼 */
+            border-radius: 50%;
+            border: 8px solid #E65100; /* 饼边 */
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .pizza-sauce {
+            width: 90%; height: 90%;
+            background: #D32F2F; /* 番茄酱 */
+            border-radius: 50%;
+            position: absolute; top: 5%; left: 5%;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .topping {
+            position: absolute; font-size: 24px; transition: all 0.3s; transform: scale(0);
+        }
+        
+        .controls {
+            position: absolute; bottom: 10px; left: 0; width: 100%;
+            display: flex; justify-content: center; gap: 10px;
+        }
+        .ctrl-btn {
+            padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+        }
+        .ctrl-btn:active { transform: translateY(2px); box-shadow: none; }
+
+        /* 坐标地图 */
+        .grid-map {
+            width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(#E0E0E0 1px, transparent 1px),
+                linear-gradient(90deg, #E0E0E0 1px, transparent 1px);
+            background-size: 40px 40px;
+            position: relative;
+        }
+        .hero-dot {
+            width: 20px; height: 20px; background: var(--primary);
+            border-radius: 50%; border: 3px solid white;
+            position: absolute; bottom: 30px; left: 10px;
+            transition: all 1s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 10;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+        }
+        .hero-dot::after { content: '🤠'; position: absolute; top: -25px; left: -10px; font-size: 24px; }
+        .coord-label {
+            position: absolute; font-family: monospace; font-weight: bold; color: var(--text-sub);
+        }
+        .path-line {
+            position: absolute; height: 2px; background: var(--secondary); transform-origin: 0 0; z-index: 5;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 6px;
+            background: #ECEFF1;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 动画 */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    </style>
+</head>
+<body>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">
+        <div class="pizza-slice">
+            <div class="pizza-crust"></div>
+            <div class="pepperoni" style="top: -50px; left: -5px;"></div>
+            <div class="pepperoni" style="top: -30px; left: -15px;"></div>
+            <div class="arrow-text">❮</div>
+        </div>
+    </button>
+
+    <!-- 屏幕容器 -->
+    <div class="board-container">
+        <div class="map-badge">🖥️ 计算机科学 2</div>
+        <div class="level-info">第 43-48 关</div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; animation: float 3s infinite;">🍕</div>
+            <h1 style="font-size: 56px; margin: 20px 0; color: var(--primary);">多参数函数</h1>
+            <h2 style="font-size: 30px; color: var(--secondary); font-weight: normal; margin-top: 0; text-shadow: 1px 1px 0 #E65100;">Multi-parameter Functions</h2>
+            <div style="margin-top: 50px; display: flex; gap: 30px;">
+                <div style="padding: 10px 25px; background: #FFF3E0; border: 2px solid var(--secondary); border-radius: 20px; color: #E65100; font-weight: bold;">🔢 坐标控制</div>
+                <div style="padding: 10px 25px; background: #E1F5FE; border: 2px solid #29B6F6; border-radius: 20px; color: #0277BD; font-weight: bold;">🛠️ 灵活定制</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 什么是多参数函数 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">👩‍🍳</div>
+                <h1>什么是多参数函数？</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>想象你是一个高级魔法厨师，现在要制作一个<b>定制披萨</b>。</p>
+                    <p>如果只有一个参数（比如大小），太单调了！<br>
+                    为了做出独一无二的美味，我们需要同时控制：<br>
+                    📏 <b>尺寸</b> + 🍄 <b>配料</b> + 🍅 <b>酱料</b></p>
+                    <div class="card">
+                        "多参数函数就像做披萨：同时调整多个配方，创造出千变万化的效果！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="pizza-plate" id="demoPizza">
+                        <div class="pizza-base" id="demoBase">
+                            <div class="pizza-sauce" id="demoSauce"></div>
+                            <!-- 配料 -->
+                            <div class="topping" style="top: 30%; left: 30%;">🍄</div>
+                            <div class="topping" style="top: 30%; right: 30%;">🍄</div>
+                            <div class="topping" style="bottom: 30%; left: 40%;">🍄</div>
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <button class="ctrl-btn" style="background: #E65100;" onclick="updatePizza('size')">变大/小</button>
+                        <button class="ctrl-btn" style="background: #D32F2F;" onclick="updatePizza('sauce')">加酱料</button>
+                        <button class="ctrl-btn" style="background: #795548;" onclick="updatePizza('topping')">加蘑菇</button>
+                    </div>
+                    <script>
+                        let pState = { size: 1, sauce: false, topping: false };
+                        function updatePizza(type) {
+                            if(type === 'size') {
+                                pState.size = pState.size === 1 ? 0.7 : 1;
+                                document.getElementById('demoBase').style.transform = `scale(${pState.size})`;
+                            } else if(type === 'sauce') {
+                                pState.sauce = !pState.sauce;
+                                document.getElementById('demoSauce').style.opacity = pState.sauce ? 1 : 0;
+                            } else if(type === 'topping') {
+                                pState.topping = !pState.topping;
+                                document.querySelectorAll('.topping').forEach(t => t.style.transform = pState.topping ? 'scale(1)' : 'scale(0)');
+                            }
+                            // Update code display
+                            const code = document.getElementById('pizzaCode');
+                            if(code) {
+                                code.innerHTML = `<span class="f">makePizza</span>(<span class="v">"${pState.size===1?'Large':'Small'}"</span>, <span class="v">${pState.sauce}</span>, <span class="v">${pState.topping}</span>)`;
+                            }
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 语法与顺序 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📏</div>
+                <h1>参数顺序很重要！</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>在多参数函数中，参数的<b>顺序</b>决定了它们的含义。</p>
+                    <div class="code-box">
+                        <span class="k">def</span> <span class="f">checkPoint</span>(<span class="p">x</span>, <span class="p">y</span>):<br>
+                        &nbsp;&nbsp;<span class="f">hero.moveXY</span>(<span class="p">x</span>, <span class="p">y</span>)<br>
+                        <br>
+                        <span class="f">checkPoint</span>(<span class="v">10</span>, <span class="v">30</span>)
+                    </div>
+                    <div class="card" style="background: #FFF8E1; border-left-color: #FFCA28; color: #F57F17; margin-top: 20px;">
+                        口诀：<br>"多参数像排队，先来后到要记牢！<br>定义时什么顺序，调用时同样顺序！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 24px; font-family: monospace; text-align: center;">
+                        <div style="margin-bottom: 20px;">
+                            <span style="color: var(--primary); font-weight: bold;">(x, y)</span>
+                        </div>
+                        <div style="font-size: 40px;">⬇️</div>
+                        <div style="margin-top: 20px;">
+                            <span style="color: var(--accent); font-weight: bold;">(10, 30)</span>
+                        </div>
+                        <div style="font-size: 14px; color: var(--text-sub); margin-top: 10px;">x=10, y=30</div>
+                        <div style="margin-top: 20px; opacity: 0.5; text-decoration: line-through;">(30, 10) ❌</div>
+                        <div style="font-size: 14px; color: var(--text-sub);">x=30, y=10 (位置错了!)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 关卡实战 I - 坐标检查 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🗺️</div>
+                <h1>实战 I：智能移动</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>我们需要定义一个函数，让英雄移动到指定坐标并检查敌人。</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        <span class="k">def</span> <span class="f">checkPoint</span>(<span class="p">x</span>, <span class="p">y</span>):<br>
+                        &nbsp;&nbsp;<span class="f">hero.moveXY</span>(<span class="p">x</span>, <span class="p">y</span>)<br>
+                        &nbsp;&nbsp;enemy = <span class="f">hero.findNearestEnemy</span>()<br>
+                        &nbsp;&nbsp;<span class="k">if</span> enemy:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">hero.attack</span>(enemy)<br>
+                        <br>
+                        <span class="kw">while</span> True:<br>
+                        &nbsp;&nbsp;<span class="f">checkPoint</span>(<span class="v">10</span>, <span class="v">30</span>)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="grid-map" id="map1">
+                        <div class="coord-label" style="bottom: 10px; left: 10px;">(0,0)</div>
+                        <div class="coord-label" style="bottom: 10px; right: 10px;">X</div>
+                        <div class="coord-label" style="top: 10px; left: 10px;">Y</div>
+                        <div class="hero-dot" id="hero1"></div>
+                        
+                        <!-- 目标点 -->
+                        <div style="position: absolute; left: 25%; bottom: 50%; width: 10px; height: 10px; background: #BDBDBD; border-radius: 50%;"></div> <!-- 10, 30 (approx) -->
+                        <div style="position: absolute; left: 75%; bottom: 50%; width: 10px; height: 10px; background: #BDBDBD; border-radius: 50%;"></div> <!-- 30, 30 -->
+                        
+                        <div class="controls" style="bottom: 20px;">
+                            <button class="ctrl-btn" style="background: var(--primary);" onclick="moveHero(25, 50)">去 (10, 30)</button>
+                            <button class="ctrl-btn" style="background: var(--accent);" onclick="moveHero(75, 50)">去 (30, 30)</button>
+                        </div>
+                    </div>
+                    <script>
+                        function moveHero(x, y) {
+                            const hero = document.getElementById('hero1');
+                            hero.style.left = x + '%';
+                            hero.style.bottom = y + '%';
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 关卡实战 II - 巡逻函数 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">👮‍♂️</div>
+                <h1>实战 II：四位置巡逻</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>使用多参数函数，我们可以轻松设定复杂的巡逻路线。</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        <span class="kw">while</span> True:<br>
+                        &nbsp;&nbsp;<span class="f">patrol</span>(<span class="v">18</span>, <span class="v">34</span>) <span class="c"># 左上</span><br>
+                        &nbsp;&nbsp;<span class="f">patrol</span>(<span class="v">40</span>, <span class="v">46</span>) <span class="c"># 上中</span><br>
+                        &nbsp;&nbsp;<span class="f">patrol</span>(<span class="v">62</span>, <span class="v">34</span>) <span class="c"># 右上</span><br>
+                        &nbsp;&nbsp;<span class="f">patrol</span>(<span class="v">40</span>, <span class="v">22</span>) <span class="c"># 下中</span>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 16px; color: var(--text-sub);">一个函数 <code>patrol(x,y)</code> 搞定所有位置！</p>
+                </div>
+                <div class="col-visual">
+                    <div class="grid-map" style="display: flex; justify-content: center; align-items: center;">
+                        <!-- 巡逻路径图 -->
+                        <svg width="200" height="200" viewBox="0 0 100 100">
+                            <path d="M 20 50 L 50 20 L 80 50 L 50 80 Z" fill="none" stroke="#FFCA28" stroke-width="2" stroke-dasharray="5 5">
+                                <animate attributeName="stroke-dashoffset" from="100" to="0" dur="3s" repeatCount="indefinite" />
+                            </path>
+                            <circle cx="20" cy="50" r="3" fill="#FF5252" />
+                            <circle cx="50" cy="20" r="3" fill="#FF5252" />
+                            <circle cx="80" cy="50" r="3" fill="#FF5252" />
+                            <circle cx="50" cy="80" r="3" fill="#FF5252" />
+                            
+                            <!-- 移动的英雄 -->
+                            <circle r="5" fill="#2196F3">
+                                <animateMotion path="M 20 50 L 50 20 L 80 50 L 50 80 Z" dur="4s" repeatCount="indefinite" />
+                            </circle>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 多参数的优势 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🏗️</div>
+                <h1>代码复用 (Code Reuse)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <div class="card" style="background: #FFEBEE; border-left-color: #D32F2F; color: #B71C1C;">
+                        ❌ <b>没有多参数：</b><br>
+                        你需要写 <code>moveLeft()</code>, <code>moveRight()</code>, <code>moveTop()</code>... 
+                        <br>每个位置都要写一个新函数，累死啦！
+                    </div>
+                    <div class="card" style="background: #E8F5E9; border-left-color: #4CAF50; color: #1B5E20;">
+                        ✅ <b>使用多参数：</b><br>
+                        只写一个 <code>moveTo(x, y)</code>。<br>
+                        就像用通用的砖块（函数）和不同的设计图（参数）建造各种建筑！
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px;">🧱 + 📐 = 🏰</div>
+                        <p>砖块 + 图纸 = 城堡</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 默认参数 & 关键字参数 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎩</div>
+                <h1>高级用法</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>1. 默认参数 (Default)：</b><br>
+                    设一个默认值，如果不传参，就用默认的。</p>
+                    <div class="code-box" style="font-size: 16px; margin-top: 5px;">
+                        <span class="k">def</span> <span class="f">move</span>(<span class="p">speed</span>=<span class="v">5</span>): ...<br>
+                        <span class="f">move</span>() <span class="c"># 速度5</span><br>
+                        <span class="f">move</span>(<span class="v">10</span>) <span class="c"># 速度10</span>
+                    </div>
+                    <p style="margin-top: 15px;"><b>2. 关键字参数 (Keyword)：</b><br>
+                    按名字传参，不怕顺序乱！</p>
+                    <div class="code-box" style="font-size: 16px; margin-top: 5px;">
+                        <span class="f">create</span>(<span class="p">name</span>=<span class="v">"Hero"</span>, <span class="p">job</span>=<span class="v">"Warrior"</span>)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 50px; display: flex; flex-direction: column; gap: 20px; align-items: center;">
+                        <div>🏷️</div>
+                        <div style="font-size: 16px; background: white; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">Tag: "Value"</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎓</div>
+                <h1>大魔法师结业</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="background: #FFF3E0; padding: 30px; border-radius: 20px; border: 4px dashed #FFB74D; transform: rotate(-2deg); margin-bottom: 20px;">
+                        <h2 style="color: #E65100; margin: 0;">"多参数像排队，<br>先来后到要记牢！"</h2>
+                    </div>
+                    <div style="background: #E1F5FE; padding: 30px; border-radius: 20px; border: 4px dashed #29B6F6; transform: rotate(2deg);">
+                        <h3 style="color: #0277BD; margin: 0;">"定义时什么顺序，<br>调用时同样顺序！"</h3>
+                    </div>
+                </div>
+                <div class="col-visual" style="border:none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; animation: pulse 2s infinite;">🏆</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">
+        <div class="pizza-slice">
+            <div class="pizza-crust"></div>
+            <div class="pepperoni" style="top: -50px; left: -5px;"></div>
+            <div class="pepperoni" style="top: -30px; left: -15px;"></div>
+            <div class="arrow-text">❯</div>
+        </div>
+    </button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

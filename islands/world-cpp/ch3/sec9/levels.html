@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 教学指南 - 宠物与事件</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans SC"', 'sans-serif'],
+                        mono: ['"Fira Code"', 'monospace'],
+                    },
+                    colors: {
+                        forest: {
+                            bg: '#0a1a0a',
+                            panel: '#142614',
+                            accent: '#f1c40f', /* Pet Gold */
+                            event: '#e67e22',  /* Event Orange */
+                            func: '#9b59b6',   /* Function Purple */
+                            hear: '#3498db',   /* Hear Blue */
+                            spawn: '#2ecc71',  /* Spawn Green */
+                        },
+                        py: {
+                            def: '#569cd6',
+                            func: '#dcdcaa',
+                            str: '#ce9178',
+                            key: '#c586c0',
+                            num: '#b5cea8',
+                            comment: '#6a9955',
+                            var: '#9cdcfe',
+                            text: '#d4d4d4'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0a1a0a;
+            color: #d4d4d4;
+            scroll-behavior: smooth;
+        }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #142614; }
+        ::-webkit-scrollbar-thumb { background: #2f4f2f; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #f1c40f; }
+
+        .slide-section {
+            min-height: 100vh;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 4px solid #000;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            background-color: #0a1a0a;
+        }
+
+        /* Code Row Layout */
+        .code-row {
+            display: flex;
+            width: 100%;
+            align-items: stretch;
+            border-bottom: 1px solid #1f331f;
+            transition: background-color 0.1s;
+            line-height: 1.6;
+        }
+        .code-row:hover { background-color: #1a331a !important; }
+        
+        .line-num {
+            width: 2.5rem;
+            text-align: right;
+            padding-right: 0.75rem;
+            padding-top: 0.5rem;
+            color: #4a664a;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            user-select: none;
+            border-right: 1px solid #1f331f;
+            flex-shrink: 0;
+        }
+        
+        .connector-col {
+            width: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+        
+        .code-content {
+            flex: 1; 
+            padding: 0.5rem 0.5rem 0.5rem 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            white-space: pre;
+            color: #d4d4d4;
+            overflow-x: auto;
+            display: flex;
+            align-items: center;
+        }
+        
+        .code-text-wrapper { display: inline-block; vertical-align: baseline; }
+
+        .explanation-content {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border-left: 1px solid #1f331f;
+            font-size: 0.9rem;
+            color: #f4d03f; /* Gold text for explanations */
+            display: flex;
+            align-items: center;
+        }
+
+        /* Blocks */
+        .event-block { border-left: 2px solid #f1c40f; background: rgba(241, 196, 15, 0.05); }
+        .func-block { border-left: 2px solid #9b59b6; background: rgba(155, 89, 182, 0.05); }
+        .loop-block { border-left: 2px solid #2ecc71; background: rgba(46, 204, 113, 0.05); }
+
+        /* Indent */
+        .indent-2 { margin-left: 1.5rem; padding-left: 1rem; border-left: 1px solid #444; }
+        .indent-3 { margin-left: 3rem; padding-left: 1rem; border-left: 1px solid #555; }
+
+        .nav-item {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+            padding: 4px 0;
+            width: 100%;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #888;
+        }
+        .nav-item:hover { color: #f1c40f; background: #142614; }
+    </style>
+</head>
+<body class="font-sans">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 h-full w-16 bg-[#0f1f0f] flex flex-col items-center py-6 z-50 border-r border-[#1f331f] hidden md:flex">
+        <div class="text-forest-accent font-bold text-lg mb-6"><i class="fas fa-paw"></i></div>
+        <div class="flex flex-col space-y-1 w-full overflow-y-auto h-full pb-4 scrollbar-hide">
+            <a href="#intro" class="nav-item">封面</a>
+            <a href="#level49" class="nav-item">第49关</a>
+            <a href="#level50" class="nav-item">第50关</a>
+            <a href="#level51" class="nav-item">第51关</a>
+            <a href="#level52" class="nav-item">第52关</a>
+            <a href="#level54" class="nav-item">第54关</a>
+            <a href="#level55" class="nav-item">第55关</a>
+            <a href="#level56" class="nav-item">第56关</a>
+            <a href="#level58" class="nav-item">第58关</a>
+            <a href="#level59" class="nav-item">第59关</a>
+            <a href="#level61" class="nav-item">第61关</a>
+        </div>
+    </nav>
+
+    <div class="md:pl-16">
+
+        <!-- INTRO -->
+        <section id="intro" class="slide-section items-center justify-center text-center bg-gradient-to-b from-[#0a1a0a] to-[#1a1505]">
+            <div class="max-w-4xl p-10 border border-yellow-900 rounded-xl bg-[#0f1f0f] shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500 to-orange-500"></div>
+                <div class="text-7xl text-forest-accent mb-6"><i class="fas fa-cat"></i></div>
+                <h1 class="text-5xl font-bold mb-4 text-white">CodeCombat 森林篇：宠物</h1>
+                <h2 class="text-2xl text-gray-400 mb-10 font-light">事件处理器：Event Handlers</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left max-w-2xl mx-auto">
+                    <div class="p-4 bg-[#142614] rounded border-l-4 border-blue-500">
+                        <div class="text-blue-400 font-bold mb-2"><i class="fas fa-ear-listen mr-2"></i>pet.on("hear", func)</div>
+                        <div class="text-xs text-gray-400 leading-relaxed">
+                            当宠物<strong>听到</strong>声音时，执行某个函数。<br>
+                            用于对话、问答。
+                        </div>
+                    </div>
+                    <div class="p-4 bg-[#142614] rounded border-l-4 border-green-500">
+                        <div class="text-green-400 font-bold mb-2"><i class="fas fa-play-circle mr-2"></i>pet.on("spawn", func)</div>
+                        <div class="text-xs text-gray-400 leading-relaxed">
+                            当宠物<strong>出生</strong>时，执行某个函数。<br>
+                            用于让宠物独立行动（如捡东西）。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 49 & 50 -->
+        <section id="level49" class="slide-section">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-accent text-black font-bold px-3 py-1 rounded mr-3 font-mono">No.49-50</span>
+                <h2 class="text-2xl font-bold text-white">边地好伙伴 & 好伙伴的名字</h2>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row gap-6 flex-1 h-full">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg flex-1">
+                        <h3 class="text-lg font-bold text-forest-accent mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-link mr-2"></i>绑定事件
+                        </h3>
+                        <p class="text-gray-400 text-sm leading-7 mb-4">
+                            我们要训练宠物对声音做出反应。
+                            <br>1. <strong>定义行为：</strong> 听到声音后该做什么？（写在函数里）
+                            <br>2. <strong>绑定事件：</strong> 告诉宠物，听到 "hear" 就执行那个函数。
+                        </p>
+                        <div class="bg-black p-3 rounded border border-yellow-900 text-xs text-gray-300 font-mono">
+                            <span class="text-py-key">def </span> <span class="text-py-func">speak</span>(event):<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-white">pet.say("喵")</span><br>
+                            <br>
+                            <span class="text-white">pet.</span><span class="text-py-func">on</span>(<span class="text-py-str">"hear"</span>, speak)
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            注意：<code>pet.on</code> 里的 <code>speak</code> 不要加括号！
+                        </p>
+                    </div>
+                </div>
+
+                <div class="lg:w-2/3 flex flex-col bg-[#111] border border-gray-700 rounded-lg overflow-hidden shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py (第49关)</div>
+                    <div class="flex-1 overflow-auto">
+                        <!-- Function Definition -->
+                        <div class="code-row func-block border-l-4 border-purple-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">def </span> <span class="text-py-func">speak</span>(<span class="text-py-param">event</span>):</div><div class="explanation-content text-purple-300">定义回应动作。</div></div>
+                        <div class="code-row func-block"><div class="line-num">2</div><div class="connector-col indent-2"><i class="fas fa-comment text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">pet</span>.<span class="text-py-func">say</span>(<span class="text-py-str">"喵~"</span>)</div></div><div class="explanation-content">宠物说话。</div></div>
+
+                        <div class="code-row bg-[#111] h-4"></div>
+
+                        <!-- Event Binding -->
+                        <div class="code-row event-block border-l-4 border-yellow-500"><div class="line-num">4</div><div class="connector-col"><i class="fas fa-link text-xs text-yellow-500"></i></div><div class="code-content"><div class="code-text-wrapper"><span class="text-white">pet</span>.<span class="text-py-func">on</span>(<span class="text-py-str">"hear"</span>, <span class="text-white">speak</span>)</div></div><div class="explanation-content text-yellow-300">绑定：听到 -> 回应。</div></div>
+
+                        <div class="code-row bg-[#111] h-4"></div>
+
+                        <!-- Hero Action -->
+                        <div class="code-row"><div class="line-num">6</div><div class="connector-col"><i class="fas fa-comment-dots text-xs text-blue-400"></i></div><div class="code-content"><div class="code-text-wrapper"><span class="text-white">hero</span>.<span class="text-py-func">say</span>(<span class="text-py-str">"你好小猫"</span>)</div></div><div class="explanation-content text-blue-300">英雄说话触发事件。</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 51 & 52 -->
+        <section id="level51" class="slide-section bg-[#0f1f0f]">
+             <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-accent text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.51-52</span>
+                <h2 class="text-2xl font-bold text-white">博士猫咪 & 宠物小测试</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-orange-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-graduation-cap mr-2"></i>会回答问题的猫
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            我们来做个小测试。
+                            <br>你需要自己编写整个流程：
+                            <br>1. 定义 <code>onHear</code> 函数。
+                            <br>2. 绑定事件。
+                            <br>3. 英雄提问。
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            注意：函数必须接受一个参数（通常叫 <code>event</code> 或 <code>e</code>），即使你暂时不用它。
+                        </p>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py (宠物小测试)</div>
+                    <div class="flex-1 overflow-auto">
+                        <!-- Handler -->
+                        <div class="code-row func-block border-l-4 border-purple-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">def </span> <span class="text-py-func">onHear</span>(<span class="text-py-param">e</span>):</div><div class="explanation-content text-purple-300">定义处理函数。</div></div>
+                        <div class="code-row func-block"><div class="line-num">2</div><div class="connector-col indent-2"><i class="fas fa-paw text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">pet</span>.<span class="text-py-func">say</span>(<span class="text-py-str">"Myau"</span>)</div></div><div class="explanation-content">猫咪回答。</div></div>
+
+                        <div class="code-row bg-[#111] h-4"></div>
+
+                        <!-- Bind -->
+                        <div class="code-row event-block border-l-4 border-yellow-500"><div class="line-num">4</div><div class="connector-col"><i class="fas fa-link text-xs text-yellow-500"></i></div><div class="code-content"><div class="code-text-wrapper"><span class="text-white">pet</span>.<span class="text-py-func">on</span>(<span class="text-py-str">"hear"</span>, <span class="text-white">onHear</span>)</div></div><div class="explanation-content text-yellow-300">绑定监听器。</div></div>
+
+                        <div class="code-row bg-[#111] h-4"></div>
+
+                        <!-- Trigger -->
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><div class="code-text-wrapper"><span class="text-white">hero</span>.<span class="text-py-func">say</span>(<span class="text-py-str">"能听懂我的话吗？"</span>)</div></div><div class="explanation-content">问题1。</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><div class="code-text-wrapper"><span class="text-white">hero</span>.<span class="text-py-func">say</span>(<span class="text-py-str">"你是美洲狮吗？"</span>)</div></div><div class="explanation-content">问题2。</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><div class="code-text-wrapper"><span class="text-white">hero</span>.<span class="text-py-func">say</span>(<span class="text-py-str">"你多大啦？"</span>)</div></div><div class="explanation-content">问题3。</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 54 -->
+        <section id="level54" class="slide-section">
+             <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-spawn text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.54</span>
+                <h2 class="text-2xl font-bold text-white">去拿过来</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-green-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-play-circle mr-2"></i>Spawn 事件
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            <strong>"spawn"</strong> (生成/出生) 事件在关卡开始时触发一次。
+                            <br>这通常用于让宠物开始执行**独立任务**。
+                        </p>
+                        <p class="text-gray-400 text-sm">
+                            如果你在 <code>onSpawn</code> 函数里放一个 <code>while True</code> 循环，宠物就会一直不停地工作（比如捡药水），而英雄可以去做别的事！
+                        </p>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py</div>
+                    <div class="flex-1 overflow-auto h-[400px]">
+                        <!-- Function -->
+                        <div class="code-row func-block border-l-4 border-purple-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">def </span> <span class="text-py-func">goFetch</span>():</div><div class="explanation-content text-purple-300">定义取物行为。</div></div>
+                        
+                        <div class="code-row loop-block"><div class="line-num">2</div><div class="connector-col indent-2"><i class="fas fa-infinity text-xs text-green-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">while </span> <span class="text-py-def">True</span>:</div></div><div class="explanation-content text-green-300">宠物自己的无限循环。</div></div>
+                        
+                        <div class="code-row loop-block"><div class="line-num">3</div><div class="connector-col indent-3"><i class="fas fa-search text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-var">potion</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestItem</span>()</div></div><div class="explanation-content">宠物找药水。</div></div>
+                        
+                        <div class="code-row loop-block"><div class="line-num">4</div><div class="connector-col indent-3"><i class="fas fa-question text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-key">if</span> <span class="text-py-var">potion</span>:</div></div><div class="explanation-content">找到了吗？</div></div>
+                        <div class="code-row loop-block"><div class="line-num">5</div><div class="connector-col indent-4"><i class="fas fa-running text-xs text-green-500"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-white">pet</span>.<span class="text-py-func">fetch</span>(<span class="text-py-var">potion</span>)</div></div><div class="explanation-content">去拿！</div></div>
+
+                        <div class="code-row bg-[#111] h-4"></div>
+
+                        <!-- Bind -->
+                        <div class="code-row event-block border-l-4 border-green-500"><div class="line-num">7</div><div class="connector-col"><i class="fas fa-link text-xs text-green-500"></i></div><div class="code-content"><div class="code-text-wrapper"><span class="text-white">pet</span>.<span class="text-py-func">on</span>(<span class="text-py-str">"spawn"</span>, <span class="text-white">goFetch</span>)</div></div><div class="explanation-content text-green-300">绑定出生事件。</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 55 & 56 -->
+        <section id="level55" class="slide-section">
+             <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-spawn text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.55-56</span>
+                <h2 class="text-2xl font-bold text-white">看门狗 & 漫漫长路</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-blue-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-dog mr-2"></i>得力助手
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            你的宠物不仅仅能捡东西，它还能：
+                            <br>1. <strong>侦察敌人</strong> (<code>pet.findNearestEnemy</code>)
+                            <br>2. <strong>警告</strong> (<code>pet.say</code>)
+                            <br>3. <strong>送快递</strong> (<code>pet.fetch</code>)
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            这就像在写两份代码：一份是英雄的，一份是宠物的。
+                        </p>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py (看门狗)</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row func-block border-l-4 border-purple-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">def </span> <span class="text-py-func">onSpawn</span>(<span class="text-py-param">event</span>):</div><div class="explanation-content text-purple-300">定义宠物行为。</div></div>
+                        
+                        <div class="code-row loop-block"><div class="line-num">2</div><div class="connector-col indent-2"><i class="fas fa-infinity text-xs text-green-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">while </span> <span class="text-py-def">True</span>:</div></div><div class="explanation-content">持续监控。</div></div>
+                        
+                        <div class="code-row loop-block"><div class="line-num">3</div><div class="connector-col indent-3"><i class="fas fa-eye text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-var">enemy</span> = <span class="text-white">pet</span>.<span class="text-py-func">findNearestEnemy</span>()</div></div><div class="explanation-content">宠物侦察。</div></div>
+                        
+                        <div class="code-row loop-block"><div class="line-num">4</div><div class="connector-col indent-3"><i class="fas fa-question text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-key">if</span> <span class="text-py-var">enemy</span>:</div></div><div class="explanation-content">有敌人？</div></div>
+                        <div class="code-row loop-block"><div class="line-num">5</div><div class="connector-col indent-4"><i class="fas fa-comment-dots text-xs text-blue-400"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-white">pet</span>.<span class="text-py-func">say</span>(<span class="text-py-str">"Woof!"</span>)</div></div><div class="explanation-content">叫！提醒工人。</div></div>
+
+                        <div class="code-row bg-[#111] h-4"></div>
+
+                        <div class="code-row event-block border-l-4 border-green-500"><div class="line-num">7</div><div class="connector-col"><i class="fas fa-link text-xs text-green-500"></i></div><div class="code-content"><div class="code-text-wrapper"><span class="text-white">pet</span>.<span class="text-py-func">on</span>(<span class="text-py-str">"spawn"</span>, <span class="text-white">onSpawn</span>)</div></div><div class="explanation-content text-green-300">激活宠物AI。</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 58, 59 & 61 -->
+        <section id="level58" class="slide-section bg-[#0f1f0f]">
+             <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-accent text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.58-61</span>
+                <h2 class="text-2xl font-bold text-white">独立行动</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-orange-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-running mr-2"></i>英雄与宠物协作
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            在最后的几个关卡中，英雄和宠物要分头行动。
+                        </p>
+                        <ul class="text-xs text-gray-400 space-y-2">
+                            <li><strong>森林慢跑:</strong> 宠物自己跑圈圈，英雄负责加油。</li>
+                            <li><strong>充满事件的争论:</strong> 组合挑战。
+                                <br>- <code>onSpawn</code>: 宠物捡东西。
+                                <br>- <code>onHear</code>: 宠物回应。
+                                <br>- <code>while True</code>: 英雄打怪。
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py (组合挑战)</div>
+                    <div class="flex-1 overflow-auto h-[400px]">
+                        <!-- Spawn Handler -->
+                        <div class="code-row func-block border-l-4 border-green-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">def </span> <span class="text-py-func">onSpawn</span>(<span class="text-py-param">event</span>):</div><div class="explanation-content text-green-300">任务1：捡东西。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">2</div><div class="connector-col indent-2"><i class="fas fa-infinity text-xs text-green-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">while </span> <span class="text-py-def">True</span>:</div></div><div class="explanation-content">无限循环。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">3</div><div class="connector-col indent-3"><i class="fas fa-search text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-var">item</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestItem</span>()</div></div><div class="explanation-content">找物品。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">4</div><div class="connector-col indent-3"><i class="fas fa-hand-holding text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-key">if</span> <span class="text-py-var">item</span>: <span class="text-white">pet</span>.<span class="text-py-func">fetch</span>(<span class="text-py-var">item</span>)</div></div><div class="explanation-content">去拿。</div></div>
+
+                        <!-- Hear Handler -->
+                        <div class="code-row func-block border-l-4 border-blue-500 mt-2"><div class="line-num">6</div><div class="code-content"><span class="text-py-key">def </span> <span class="text-py-func">onHear</span>(<span class="text-py-param">event</span>):</div><div class="explanation-content text-blue-300">任务2：对话。</div></div>
+                        <div class="code-row func-block"><div class="line-num">7</div><div class="connector-col indent-2"><i class="fas fa-comment text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">pet</span>.<span class="text-py-func">say</span>(<span class="text-py-str">"汪汪！"</span>)</div></div><div class="explanation-content">回应。</div></div>
+
+                        <div class="code-row bg-[#111] h-4"></div>
+
+                        <!-- Bindings -->
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><div class="code-text-wrapper"><span class="text-white">pet</span>.<span class="text-py-func">on</span>(<span class="text-py-str">"spawn"</span>, <span class="text-white">onSpawn</span>)</div></div><div class="explanation-content">激活生成。</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><div class="code-text-wrapper"><span class="text-white">pet</span>.<span class="text-py-func">on</span>(<span class="text-py-str">"hear"</span>, <span class="text-white">onHear</span>)</div></div><div class="explanation-content">激活听觉。</div></div>
+
+                        <!-- Hero Loop -->
+                        <div class="code-row loop-block border-l-4 border-red-500 mt-4"><div class="line-num">12</div><div class="code-content"><span class="text-py-key">while </span> <span class="text-py-def">True</span>:</div><div class="explanation-content text-red-300">英雄主线程。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">13</div><div class="connector-col indent-2"><i class="fas fa-search text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-var">enemy</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestEnemy</span>()</div></div><div class="explanation-content">找怪。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">14</div><div class="connector-col indent-2"><i class="fas fa-question text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">if</span> <span class="text-py-var">enemy</span>:</div></div><div class="explanation-content">有怪？</div></div>
+                        <div class="code-row loop-block"><div class="line-num">15</div><div class="connector-col indent-3"><i class="fas fa-khanda text-xs text-red-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-white">hero</span>.<span class="text-py-func">attack</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content">打！</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+</body>
+</html>
