@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第36-42关 函数参数</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-color: #1a1a2e;       /* 深夜蓝背景 */
+            --slate-bg: #16213e;       /* 石板色屏幕 */
+            --primary: #0f3460;        /* 深蓝 */
+            --accent: #e94560;         /* 霓虹红 */
+            --highlight: #4cc9f0;      /* 霓虹蓝 */
+            --text-main: #e0e1dd;      /* 灰白文字 */
+            --text-sub: #8d99ae;
+            
+            /* 代码高亮 */
+            --code-bg: #0d1b2a;
+            --code-fg: #e0e1dd;
+            --tok-def: #f72585;        /* def */
+            --tok-func: #4361ee;       /* 函数名 */
+            --tok-param: #4cc9f0;      /* 参数 */
+            --tok-val: #f72585;        /* 值 */
+            --tok-cm: #4895ef;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-color);
+            /* 魔法气泡背景 */
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(76, 201, 240, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 10% 10%, rgba(233, 69, 96, 0.1) 0%, transparent 30%);
+            background-size: 100% 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 漂浮气泡动画 */
+        @keyframes bubbleFloat {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { transform: translateY(-100px) scale(1); opacity: 0; }
+        }
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 魔法烧瓶按钮 (外部) --- */
+        .nav-btn {
+            width: 80px;
+            height: 100px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s;
+            filter: drop-shadow(0 0 10px rgba(76, 201, 240, 0.5));
+        }
+        
+        /* 烧瓶形状绘制 */
+        .flask-body {
+            width: 60px; height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid #fff;
+            border-radius: 50%;
+            position: absolute; bottom: 0; left: 10px;
+            overflow: hidden;
+        }
+        .flask-neck {
+            width: 20px; height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid #fff;
+            border-bottom: none;
+            position: absolute; top: 0; left: 30px;
+        }
+        .flask-liquid {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 60%;
+            background: var(--highlight);
+            transition: height 0.3s;
+        }
+        .arrow-icon {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -20%);
+            font-size: 30px; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10;
+        }
+
+        .nav-btn:hover { transform: scale(1.1) rotate(5deg); }
+        .nav-btn:hover .flask-liquid { height: 80%; filter: brightness(1.2); }
+        .nav-btn:active { transform: scale(0.95); }
+        
+        .btn-prev .flask-liquid { background: var(--accent); }
+        
+        .disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 炼金石板容器 --- */
+        .tablet-container {
+            width: 960px;
+            height: 600px;
+            background: var(--slate-bg);
+            border-radius: 30px;
+            box-shadow: 
+                0 0 0 10px #2c3e50,
+                0 0 30px rgba(0,0,0,0.5),
+                inset 0 0 100px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 4px solid #4cc9f0;
+        }
+
+        /* 地图徽章 */
+        .map-badge {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, #4cc9f0, #4361ee);
+            color: white;
+            padding: 10px 30px;
+            border-radius: 0 0 20px 20px;
+            font-weight: bold;
+            font-family: monospace;
+            box-shadow: 0 5px 15px rgba(76, 201, 240, 0.4);
+            z-index: 20;
+            font-size: 18px;
+            border: 2px solid #fff;
+            border-top: none;
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 60px 70px 40px 70px;
+            flex-direction: column;
+            animation: fadeIn 0.6s ease-out;
+            overflow-y: auto;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes fadeIn { 
+            0% { opacity: 0; transform: scale(0.95); } 
+            100% { opacity: 1; transform: scale(1); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+        }
+        .icon { font-size: 45px; margin-right: 20px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
+        h1 { margin: 0; color: var(--highlight); font-size: 34px; text-shadow: 0 0 10px rgba(76, 201, 240, 0.3); }
+        .page-num { margin-left: auto; font-family: monospace; color: var(--text-sub); font-weight: bold; font-size: 16px; background: rgba(0,0,0,0.3); padding: 5px 15px; border-radius: 15px; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 20px; line-height: 1.7; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.9; 
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.3);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 20px;
+            border-radius: 15px;
+            font-family: 'Consolas', monospace;
+            font-size: 19px;
+            margin-top: 15px;
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        .k { color: var(--tok-def); font-weight: bold; } /* def */
+        .f { color: var(--tok-func); } /* function */
+        .p { color: var(--tok-param); font-weight: bold; text-decoration: underline; text-decoration-color: rgba(76, 201, 240, 0.3); } /* param */
+        .v { color: var(--tok-val); } /* value */
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } /* comment */
+
+        /* 卡片 */
+        .card {
+            background: rgba(67, 97, 238, 0.2);
+            border: 1px solid rgba(67, 97, 238, 0.5);
+            color: #fff;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 参数传递动画 */
+        .param-flow-container {
+            position: relative;
+            width: 300px;
+            height: 250px;
+        }
+        .code-block-visual {
+            width: 100%;
+            padding: 10px;
+            background: #0d1b2a;
+            color: white;
+            border-radius: 5px;
+            font-family: monospace;
+            position: absolute;
+            border: 1px solid #333;
+        }
+        .block-def { top: 0; border-color: var(--highlight); }
+        .block-call { bottom: 0; border-color: var(--accent); }
+        
+        .data-ball {
+            width: 30px; height: 30px;
+            background: var(--accent);
+            border-radius: 50%;
+            position: absolute;
+            top: 200px; left: 130px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 12px; color: white; font-weight: bold;
+            box-shadow: 0 0 10px var(--accent);
+            z-index: 10;
+        }
+        
+        /* 动画类 */
+        .anim-pass { animation: passValue 2s infinite ease-in-out; }
+        
+        @keyframes passValue {
+            0% { top: 200px; background: var(--accent); transform: scale(1); }
+            40% { top: 100px; transform: scale(1.2); }
+            80% { top: 40px; background: var(--highlight); transform: scale(1); }
+            100% { top: 40px; background: var(--highlight); opacity: 0; }
+        }
+
+        /* 药水制作机 */
+        .potion-machine {
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+        .potion-bottle {
+            width: 80px; height: 100px;
+            background: rgba(255,255,255,0.1);
+            border: 3px solid white;
+            border-radius: 0 0 20px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .potion-liquid {
+            position: absolute; bottom: 0; width: 100%; height: 0%;
+            transition: all 0.5s;
+        }
+        .machine-controls button {
+            margin: 5px; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white;
+        }
+
+        /* 形式 vs 实际图示 */
+        .vs-container {
+            display: flex; justify-content: space-around; width: 100%; align-items: center;
+        }
+        .vs-item { text-align: center; }
+        .vs-icon { font-size: 60px; margin-bottom: 10px; }
+        .vs-label { font-size: 14px; color: var(--text-sub); }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--highlight));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+    </style>
+</head>
+<body>
+
+<!-- 气泡背景脚本 -->
+<script>
+    for(let i=0; i<15; i++) {
+        let b = document.createElement('div');
+        b.className = 'bubble';
+        let size = Math.random() * 50 + 20;
+        b.style.width = size + 'px';
+        b.style.height = size + 'px';
+        b.style.left = Math.random() * 100 + 'vw';
+        b.style.animation = `bubbleFloat ${Math.random()*5+5}s infinite linear`;
+        b.style.animationDelay = Math.random() * 5 + 's';
+        document.body.appendChild(b);
+    }
+</script>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">
+        <div class="flask-neck"></div>
+        <div class="flask-body"><div class="flask-liquid"></div></div>
+        <div class="arrow-icon">❮</div>
+    </button>
+
+    <!-- 屏幕容器 -->
+    <div class="tablet-container">
+        <div class="map-badge">CS2 计算机科学 2</div>
+        <div class="page-num">第 <span id="pageNum">1</span> 页</div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; animation: pulse 2s infinite; filter: drop-shadow(0 0 20px rgba(76, 201, 240, 0.5));">🧪</div>
+            <h1 style="font-size: 56px; margin: 20px 0; color: white;">函数参数</h1>
+            <h2 style="font-size: 30px; color: var(--highlight); font-weight: normal; margin-top: 0;">Function Parameters</h2>
+            <div style="margin-top: 50px; display: flex; gap: 40px;">
+                <div style="padding: 10px 25px; background: rgba(255,255,255,0.1); border: 1px solid var(--highlight); border-radius: 20px; color: var(--highlight);">形式参数</div>
+                <div style="padding: 10px 25px; background: rgba(255,255,255,0.1); border: 1px solid var(--accent); border-radius: 20px; color: var(--accent);">实际参数</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 什么是参数？ -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧙‍♂️</div>
+                <h1>什么是参数？</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>想象你是一个魔法师，你的火球术可以调整：<br>
+                    🔥 小火球 → 打小怪<br>
+                    ☄️ 大火球 → 打 Boss<br>
+                    ❄️ 冰火球 → 打火焰怪</p>
+                    <div class="card">
+                        "参数就是让同一个魔法咒语产生不同效果的<b>魔法配料</b>！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 80px; margin-bottom: 20px;">📜 + 🧂 = ✨</div>
+                        <div style="font-size: 16px; color: var(--text-sub);">咒语 + 配料 = 神奇效果</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 形式 vs 实际 (概念) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🥛</div>
+                <h1>形式参数 vs 实际参数</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>这是最容易混淆的概念，记住这个比喻：</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 15px;">
+                            <strong style="color: var(--highlight);">形式参数 (Formal)</strong><br>
+                            像是一个<b>空杯子</b>。定义函数时，我们不知道里面会装什么，先占个位。
+                        </li>
+                        <li>
+                            <strong style="color: var(--accent);">实际参数 (Actual)</strong><br>
+                            像是倒进去的<b>水</b>。调用函数时，我们把具体的东西放进去。
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-visual">
+                    <div class="vs-container">
+                        <div class="vs-item">
+                            <div class="vs-icon">🥛</div>
+                            <div class="vs-label" style="color: var(--highlight);">定义时：空杯子<br>(形式参数)</div>
+                        </div>
+                        <div style="font-size: 30px;">⬅️</div>
+                        <div class="vs-item">
+                            <div class="vs-icon">🫗</div>
+                            <div class="vs-label" style="color: var(--accent);">调用时：倒水<br>(实际参数)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 代码分析 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">💻</div>
+                <h1>代码中的样子</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <div class="code-box">
+                        <span class="c"># 1. 定义：形式参数 target 是空的</span><br>
+                        <span class="k">def</span> <span class="f">attack</span>(<span class="p">target</span>):<br>
+                        &nbsp;&nbsp;<span class="f">hero.attack</span>(<span class="p">target</span>)<br>
+                        <br>
+                        <span class="c"># 2. 调用：实际参数 enemy 是具体的</span><br>
+                        enemy = <span class="f">hero.findEnemy</span>()<br>
+                        <span class="f">attack</span>(<span class="v">enemy</span>)
+                    </div>
+                    <div class="card" style="margin-top: 20px;">
+                        "定义时用空标签，调用时传实物！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <!-- 传递动画 -->
+                    <div class="param-flow-container">
+                        <div class="code-block-visual block-def">
+                            def attack(<span style="color:var(--highlight)">target</span>):
+                        </div>
+                        
+                        <div class="data-ball anim-pass">enemy</div>
+                        
+                        <div class="code-block-visual block-call">
+                            attack(<span style="color:var(--accent)">enemy</span>)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 关卡实战 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">⚔️</div>
+                <h1>关卡实战：智能攻击</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>看看我们在游戏中怎么写：</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        <span class="k">def</span> <span class="f">cleaveWhenClose</span>(<span class="p">target</span>):<br>
+                        &nbsp;&nbsp;<span class="k">if</span> <span class="f">hero.distanceTo</span>(<span class="p">target</span>) < 5:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">hero.cleave</span>(<span class="p">target</span>)<br>
+                        &nbsp;&nbsp;<span class="k">else</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">hero.attack</span>(<span class="p">target</span>)<br>
+                        <br>
+                        <span class="kw">while</span> True:<br>
+                        &nbsp;&nbsp;enemy = <span class="f">hero.findEnemy</span>()<br>
+                        &nbsp;&nbsp;<span class="k">if</span> enemy:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">cleaveWhenClose</span>(<span class="v">enemy</span>)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center; color: var(--text-main);">
+                        <h3>参数传递流：</h3>
+                        <p><span style="color: var(--accent); font-weight: bold;">enemy</span> (实参)</p>
+                        <div style="font-size: 30px;">⬇️</div>
+                        <p><span style="color: var(--highlight); font-weight: bold;">target</span> (形参)</p>
+                        <div style="font-size: 30px;">⬇️</div>
+                        <p>hero.attack(<span style="color: var(--highlight); font-weight: bold;">target</span>)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 参数的优势 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🛠️</div>
+                <h1>为什么要有参数？</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>灵活性！</b><br>带参数的函数像<b>万能工具</b>，不带参数的像一次性餐具。</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        <span class="c"># ❌ 固定死板</span><br>
+                        <span class="k">def</span> <span class="f">打食人魔</span>(): <span class="f">hero.attack</span>("食人魔")<br>
+                        <br>
+                        <span class="c"># ✅ 灵活万能</span><br>
+                        <span class="k">def</span> <span class="f">打</span>(<span class="p">谁</span>): <span class="f">hero.attack</span>(<span class="p">谁</span>)<br>
+                        <br>
+                        <span class="f">打</span>("食人魔")<br>
+                        <span class="f">打</span>("骷髅兵")
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px;">🔧</div>
+                    <p style="position: absolute; bottom: 20px;">一个扳手，拧所有螺丝</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 多个参数 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🍹</div>
+                <h1>多个参数 & 默认值</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>函数可以有多个配料！</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        <span class="k">def</span> <span class="f">做饮料</span>(<span class="p">类型</span>, <span class="p">糖</span>, <span class="p">冰</span>):<br>
+                        &nbsp;&nbsp;...<br>
+                        <br>
+                        <span class="f">做饮料</span>("奶茶", "半糖", "少冰")
+                    </div>
+                    <p style="margin-top: 15px;"><b>默认参数：</b>如果不说，就按默认的来。</p>
+                    <div class="code-box" style="font-size: 16px; margin-top: 0;">
+                        <span class="k">def</span> <span class="f">攻击</span>(<span class="p">目标</span>, <span class="p">技能</span>=<span class="v">False</span>): ...
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="potion-machine">
+                        <div class="potion-bottle">
+                            <div class="potion-liquid" id="potionLiquid"></div>
+                        </div>
+                        <div class="machine-controls">
+                            <button style="background: #f72585;" onclick="makePotion('red')">红药水</button>
+                            <button style="background: #4cc9f0;" onclick="makePotion('blue')">蓝药水</button>
+                            <button style="background: #f79d00;" onclick="makePotion('yellow')">满杯</button>
+                        </div>
+                    </div>
+                    <script>
+                        function makePotion(color) {
+                            const liquid = document.getElementById('potionLiquid');
+                            if(color === 'yellow') {
+                                liquid.style.height = '100%';
+                            } else {
+                                liquid.style.height = '60%';
+                                liquid.style.background = color === 'red' ? '#f72585' : '#4cc9f0';
+                            }
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 作用域与命名 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🏷️</div>
+                <h1>作用域 & 命名</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <h3>作用域 (Scope)</h3>
+                    <p>形式参数只在函数<b>内部</b>有效！出了函数，没人认识它。</p>
+                    <h3>命名规范</h3>
+                    <div class="card" style="background: rgba(76, 201, 240, 0.1); border-color: var(--highlight);">
+                        ✅ <span style="color: var(--highlight);">target, enemy, distance</span> (清晰)<br>
+                        ❌ <span style="color: var(--accent);">a, b, x</span> (看不懂)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="border: 2px dashed var(--text-sub); padding: 20px; border-radius: 10px; position: relative;">
+                        <div style="position: absolute; top: -15px; left: 10px; background: var(--slate-bg); padding: 0 5px; color: var(--text-sub);">函数内部</div>
+                        <span style="color: var(--highlight); font-weight: bold;">target</span> ✔️
+                    </div>
+                    <div style="margin-top: 20px; color: var(--accent);">
+                        <span style="text-decoration: line-through;">target</span> ❌ (外部不可见)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎓</div>
+                <h1>炼金术士口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; border: 2px solid var(--highlight); transform: rotate(-1deg); margin-bottom: 20px;">
+                        <h2 style="color: var(--highlight); margin: 0;">"形式参数像空杯，<br>定义时候占个位！"</h2>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; border: 2px solid var(--accent); transform: rotate(1deg);">
+                        <h3 style="color: var(--accent); margin: 0;">"实际参数像倒水，<br>调用时候传数据！"</h3>
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; filter: drop-shadow(0 0 20px gold);">🏆</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn" id="btnNext" onclick="moveSlide(1)">
+        <div class="flask-neck"></div>
+        <div class="flask-body"><div class="flask-liquid"></div></div>
+        <div class="arrow-icon">❯</div>
+    </button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const pageNum = document.getElementById('pageNum');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+        pageNum.innerText = currentSlide + 1;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

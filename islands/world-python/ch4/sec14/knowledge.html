@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第23关 敌人</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-factory: #2d3436;     /* 工厂黑灰 */
+            --panel-bg: #353b48;       /* 面板深灰 */
+            --screen-bg: #1e272e;      /* 屏幕黑 */
+            --neon-green: #44bd32;     /* 毒液绿 */
+            --neon-red: #c23616;       /* 警示红 */
+            --neon-yellow: #fbc531;    /* 警告黄 */
+            --text-main: #dcdde1;
+            --text-highlight: #00a8ff;
+            
+            /* 代码高亮 */
+            --code-bg: #000000;
+            --code-fg: #00ff00;        /* 黑客风绿色 */
+            --tok-kw: #ff0055;         /* 关键字 */
+            --tok-func: #00a8ff;       /* 函数 */
+            --tok-var: #e1b12c;        /* 变量 */
+            --tok-prop: #9c88ff;       /* 属性 */
+            --tok-num: #4cd137;        /* 数字 */
+            --tok-str: #e84118;        /* 字符串 */
+            --tok-cm: #718093;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', monospace;
+            background-color: var(--bg-factory);
+            /* 警示条纹背景 */
+            background-image: repeating-linear-gradient(
+                45deg,
+                #2d3436,
+                #2d3436 20px,
+                #232829 20px,
+                #232829 40px
+            );
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            color: var(--text-main);
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 警报按钮 (外部) --- */
+        .nav-btn {
+            width: 90px;
+            height: 90px;
+            background: #333;
+            border: 5px solid #555;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+        
+        /* 玻璃罩效果 */
+        .nav-btn::after {
+            content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), transparent);
+            opacity: 0.3; pointer-events: none;
+        }
+
+        /* 左按钮：生化标志 */
+        .btn-prev { border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 15px var(--neon-green); }
+        .btn-prev:active { box-shadow: inset 0 0 10px var(--neon-green); transform: scale(0.95); }
+
+        /* 右按钮：骷髅标志 */
+        .btn-next { border-color: var(--neon-red); color: var(--neon-red); box-shadow: 0 0 15px var(--neon-red); }
+        .btn-next:active { box-shadow: inset 0 0 10px var(--neon-red); transform: scale(0.95); }
+
+        .disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 怪物控制台容器 --- */
+        .console-container {
+            width: 960px;
+            height: 620px;
+            background: var(--panel-bg);
+            border-radius: 10px;
+            /* 金属面板效果 */
+            box-shadow: 
+                inset 0 0 50px rgba(0,0,0,0.8),
+                0 0 0 10px #1e272e,
+                0 30px 60px rgba(0,0,0,0.8);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #57606f;
+        }
+
+        /* 顶部仪表盘 */
+        .dashboard-header {
+            height: 70px;
+            background: #191919;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            border-bottom: 4px solid var(--neon-yellow);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+            z-index: 20;
+        }
+        .map-info {
+            display: flex; flex-direction: column;
+        }
+        .map-name { font-size: 14px; color: #7f8fa6; letter-spacing: 2px; }
+        .level-name { font-size: 24px; font-weight: bold; color: var(--neon-yellow); text-shadow: 0 0 5px var(--neon-yellow); }
+        
+        .system-status {
+            font-family: monospace; color: var(--neon-green); border: 1px solid var(--neon-green); padding: 5px 10px; border-radius: 5px;
+            animation: blink 2s infinite;
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 50px 70px;
+            flex-direction: column;
+            animation: crtOn 0.3s ease-out;
+            overflow-y: auto;
+            background: var(--screen-bg);
+            position: relative;
+        }
+        .slide::before { /* CRT 扫描线 */
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 5;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes crtOn { 
+            0% { opacity: 0; transform: scaleY(0.1); filter: brightness(5); } 
+            100% { opacity: 1; transform: scaleY(1); filter: brightness(1); } 
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 2px dashed #57606f;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(0 0 10px var(--neon-red)); }
+        h1 { margin: 0; color: var(--text-main); font-size: 34px; letter-spacing: 1px; text-transform: uppercase; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.2; font-size: 19px; line-height: 1.7; color: #a4b0be; }
+        .col-visual { 
+            flex: 0.8; 
+            background: #000;
+            border: 2px solid #57606f; 
+            border-radius: 5px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 5px;
+            font-family: 'Consolas', monospace;
+            font-size: 17px;
+            margin-top: 15px;
+            border-left: 4px solid var(--neon-green);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        
+        .k { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .v { color: var(--tok-var); } 
+        .p { color: var(--tok-prop); } 
+        .n { color: var(--tok-num); }
+        .s { color: var(--tok-str); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #2f3542;
+            border-left: 5px solid var(--neon-red);
+            color: #ff6b81;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 5px 5px 0;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 生成器演示 */
+        .generator-box {
+            position: relative; width: 100%; height: 100%; background: #1e272e;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .generator {
+            width: 100px; height: 100px; background: #333; border: 4px solid var(--text-highlight);
+            border-radius: 10px; display: flex; justify-content: center; align-items: center;
+            font-size: 40px; box-shadow: 0 0 20px var(--text-highlight); z-index: 2;
+            cursor: pointer; transition: transform 0.1s;
+        }
+        .generator:active { transform: scale(0.9); }
+        .spawned-unit {
+            position: absolute; font-size: 30px; animation: spawnOut 2s forwards;
+        }
+        @keyframes spawnOut {
+            0% { transform: scale(0); opacity: 0; }
+            20% { transform: scale(1); opacity: 1; }
+            100% { transform: translate(150px, -50px) scale(1); opacity: 0; }
+        }
+
+        /* 属性面板 */
+        .stats-panel {
+            width: 80%; background: rgba(0,255,0,0.1); border: 1px solid var(--neon-green); padding: 20px;
+            font-family: monospace; color: var(--neon-green);
+        }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
+        .stat-bar { width: 100px; height: 10px; background: #333; border: 1px solid #555; overflow: hidden; }
+        .stat-fill { height: 100%; background: var(--neon-green); }
+        .stat-fill.danger { background: var(--neon-red); }
+
+        /* 一击必杀演示 */
+        .kill-demo {
+            width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
+        }
+        .hp-container { width: 200px; text-align: center; }
+        .hp-bar-frame { width: 100%; height: 30px; border: 2px solid #fff; background: #333; position: relative; }
+        .hp-val { width: 100%; height: 100%; background: var(--neon-green); transition: width 0.2s; }
+        .dmg-val { 
+            position: absolute; top:0; left:0; height: 100%; background: repeating-linear-gradient(45deg, var(--neon-red), var(--neon-red) 10px, #b33939 10px, #b33939 20px); 
+            width: 0%; opacity: 0.7; transition: width 0.5s;
+        }
+        .btn-attack {
+            padding: 10px 20px; background: var(--neon-red); border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 5px;
+            box-shadow: 0 0 10px var(--neon-red);
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 6px;
+            background: #2f3640;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-red));
+            width: 0%;
+            transition: width 0.3s;
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        /* 动画 */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .anim-pulse { animation: pulse 2s infinite; }
+
+    </style>
+</head>
+<body>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">☣️</button>
+
+    <!-- 控制台容器 -->
+    <div class="console-container">
+        <div class="dashboard-header">
+            <div class="map-info">
+                <span class="map-name">游戏开发 2 | 第 23 关</span>
+                <span class="level-name">ENEMY FACTORY</span>
+            </div>
+            <div class="system-status">SYS: ONLINE</div>
+        </div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; filter: drop-shadow(0 0 20px var(--neon-red));" class="anim-pulse">👹</div>
+            <h1 style="font-size: 60px; margin: 10px 0; color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red);">敌人 (Enemy)</h1>
+            <h2 style="font-size: 24px; color: var(--text-highlight); margin-top: 0;">反派角色的诞生与毁灭</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: rgba(68, 189, 50, 0.2); border: 2px solid var(--neon-green); color: var(--neon-green); font-weight: bold; font-size: 20px;">🏭 自动生产</div>
+                <div style="padding: 15px 30px; background: rgba(194, 54, 22, 0.2); border: 2px solid var(--neon-red); color: var(--neon-red); font-weight: bold; font-size: 20px;">💀 一击必杀</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 敌人对象 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧟</div>
+                <h1>敌人也是“对象”</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>在代码里，敌人 (Enemy) 和玩家 (Player) 本质是一样的，都是<b>单位对象 (Unit Object)</b>。</p>
+                    <p>它也有自己的属性：</p>
+                    <div class="code-box">
+                        <span class="c"># 跑得快吗?</span><br>
+                        <span class="v">unit</span>.<span class="p">maxSpeed</span> <span class="o">=</span> <span class="n">8</span><br>
+                        <br>
+                        <span class="c"># 打人疼吗?</span><br>
+                        <span class="v">unit</span>.<span class="p">attackDamage</span> <span class="o">=</span> <span class="n">100</span>
+                    </div>
+                    <div class="card">
+                        "敌人就是站在你对立面的、有速度和攻击力的小角色。"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="stats-panel">
+                        <div style="text-align: center; font-size: 40px; margin-bottom: 20px;">👾 <span style="font-size: 14px;">Enemy Unit</span></div>
+                        <div class="stat-row">
+                            <span>Speed:</span>
+                            <div class="stat-bar"><div class="stat-fill" style="width: 30%;"></div></div>
+                            <span>8</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Damage:</span>
+                            <div class="stat-bar"><div class="stat-fill danger" style="width: 90%;"></div></div>
+                            <span>100</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 生成器 Generator -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🏭</div>
+                <h1>生成器：刷怪机器</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>我们不需要一个个手动放敌人，用<b>生成器 (Generator)</b> 自动生产！</p>
+                    <div class="code-box">
+                        <span class="v">gen</span> <span class="o">=</span> <span class="v">game</span>.<span class="f">spawnXY</span>(<span class="s">"generator"</span>, <span class="n">40</span>, <span class="n">30</span>)<br>
+                        <span class="v">gen</span>.<span class="p">spawnType</span> <span class="o">=</span> <span class="s">"scout"</span> <span class="c"># 产什么?</span><br>
+                        <span class="v">gen</span>.<span class="p">spawnDelay</span> <span class="o">=</span> <span class="n">6</span> <span class="c"># 多久产一个?</span>
+                    </div>
+                    <p><b>spawnDelay = 6</b>：大约每 6 秒刷一只新怪。</p>
+                </div>
+                <div class="col-visual">
+                    <div class="generator-box">
+                        <div class="generator" onclick="spawnDemonstration()">⚙️</div>
+                        <div style="position: absolute; bottom: 10px; color: #7f8fa6; font-size: 12px;">点击机器刷怪</div>
+                    </div>
+                    <script>
+                        function spawnDemonstration() {
+                            const box = document.querySelector('.generator-box');
+                            const unit = document.createElement('div');
+                            unit.className = 'spawned-unit';
+                            unit.innerHTML = '👾';
+                            box.appendChild(unit);
+                            setTimeout(() => unit.remove(), 2000);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Spawn 事件配置 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧬</div>
+                <h1>出生配置：onSpawn</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>刚出生的怪物是一张白纸，我们要用 <b>onSpawn</b> 来“培训”它。</p>
+                    <div class="code-box">
+                        <span class="k">def</span> <span class="f">onSpawn</span>(event):<br>
+                        &nbsp;&nbsp;<span class="v">unit</span> <span class="o">=</span> event.target<br>
+                        &nbsp;&nbsp;<span class="c"># 设置为慢速但致命</span><br>
+                        &nbsp;&nbsp;<span class="v">unit</span>.<span class="p">maxSpeed</span> <span class="o">=</span> <span class="n">8</span><br>
+                        &nbsp;&nbsp;<span class="v">unit</span>.<span class="p">attackDamage</span> <span class="o">=</span> <span class="n">1000</span>
+                    </div>
+                    <div class="card" style="background: rgba(0, 168, 255, 0.1); border-color: var(--text-highlight); color: var(--text-highlight);">
+                        "每当机器吐出一只新怪，就把它交给 onSpawn，赋予它属性。"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px;">👶 ➡️ 🏋️‍♂️</div>
+                        <p style="color: #999;">出生 ➡️ 强化</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 一击必杀 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🩸</div>
+                <h1>一击必杀机制</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>如何让敌人“秒杀”玩家？</p>
+                    <p>让敌人的<b>攻击力</b>等于（或大于）玩家的<b>最大血量</b>。</p>
+                    <div class="code-box">
+                        <span class="v">unit</span>.<span class="p">attackDamage</span> <span class="o">=</span> <span class="v">player</span>.<span class="p">maxHealth</span>
+                    </div>
+                    <p style="font-size: 16px; margin-top: 10px;">
+                        数学不等式：<br>
+                        <span style="color: var(--neon-red); font-weight: bold;">Damage ≥ HP</span> (One-hit Kill)
+                    </p>
+                </div>
+                <div class="col-visual">
+                    <div class="kill-demo">
+                        <div class="hp-container">
+                            <div style="color: white; margin-bottom: 5px;">Player HP</div>
+                            <div class="hp-bar-frame">
+                                <div class="hp-val" id="hpBar"></div>
+                                <div class="dmg-val" id="dmgBar"></div>
+                            </div>
+                        </div>
+                        <button class="btn-attack" onclick="oneHitKill()">攻击!</button>
+                    </div>
+                    <script>
+                        function oneHitKill() {
+                            const dmg = document.getElementById('dmgBar');
+                            const hp = document.getElementById('hpBar');
+                            dmg.style.width = '100%';
+                            setTimeout(() => {
+                                hp.style.width = '0%';
+                                dmg.style.opacity = '0';
+                            }, 500);
+                            
+                            // Reset
+                            setTimeout(() => {
+                                hp.style.width = '100%';
+                                dmg.style.width = '0%';
+                                dmg.style.opacity = '0.7';
+                            }, 2000);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 生存目标 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🛡️</div>
+                <h1>生存目标 (Survive Goal)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>因为敌人会追杀你，所以这关的任务是<b>“活下去”</b>。</p>
+                    <div class="code-box">
+                        <span class="v">game</span>.<span class="f">addSurviveGoal</span>()
+                    </div>
+                    <p>以前只有收集目标（硬币），现在多了生存目标。</p>
+                    <div class="card" style="background: rgba(251, 197, 49, 0.1); border-color: var(--neon-yellow); color: var(--neon-yellow);">
+                        如果不设置这个，就算你被打死了，游戏可能也不会判输（只会继续运行）。
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 80px;">⏱️</div>
+                    <div style="position: absolute; bottom: 20px; color: var(--neon-yellow);">SURVIVE</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 复用计分系统 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">💯</div>
+                <h1>计分与平衡</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>我们继续使用上一关的分数系统：</p>
+                    <ul style="list-style: none; padding: 0; font-size: 18px;">
+                        <li style="margin-bottom: 10px;">💰 <b>金币/蘑菇</b>：影响分数目标。</li>
+                        <li style="margin-bottom: 10px;">👾 <b>敌人</b>：影响生存目标。</li>
+                        <li>⏳ <b>时间</b>：持续扣分 (Time Penalty)。</li>
+                    </ul>
+                    <p>敌人不直接扣分，但他能让你Game Over，拿到0分！</p>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px;">⚖️</div>
+                        <div style="margin-top: 20px;">
+                            <span style="color: var(--neon-green);">Risk</span> vs <span style="color: var(--neon-yellow);">Reward</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📜</div>
+                <h1>敌人系统口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: rgba(255, 255, 255, 0.1); border-color: var(--neon-green); color: var(--text-main);">
+                        "<b>Generator</b> 像母鸡，<br>定时下蛋生小怪。"
+                    </div>
+                    <div class="card" style="background: rgba(255, 255, 255, 0.1); border-color: var(--neon-red); color: var(--text-main); margin-top: 20px;">
+                        "<b>onSpawn</b> 来培训，<br>攻击等于你的血！"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 100px; filter: drop-shadow(0 0 30px var(--neon-yellow));">🏅</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">☠️</button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

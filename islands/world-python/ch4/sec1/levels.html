@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 战术指挥中心</title>
+    <!-- 引入 Tailwind CSS 进行快速布局 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 自定义样式配置 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-green: #4fd1c5;
+            --accent-yellow: #f6ad55;
+            --accent-blue: #63b3ed;
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            --code-keyword: #ff79c6; /* def, while, if */
+            --code-func: #8be9fd;    /* spawnXY, attack */
+            --code-string: #f1fa8c;  /* "soldier" */
+            --code-num: #bd93f9;     /* 42 */
+            --code-comment: #6272a4;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: radial-gradient(#333 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .font-code {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* 霓虹灯标题效果 */
+        .neon-text {
+            text-shadow: 0 0 10px rgba(79, 209, 197, 0.5);
+        }
+
+        /* 关卡卡片容器 */
+        .level-card {
+            background-color: var(--card-bg);
+            border-left: 4px solid var(--accent-green);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease;
+        }
+
+        .level-card:hover {
+            transform: translateY(-5px);
+            border-left-color: var(--accent-yellow);
+        }
+
+        /* 代码编辑器样式 */
+        .code-editor {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #444;
+        }
+
+        .code-header {
+            background-color: #15161e;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid #444;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .dot-red { background-color: #ff5f56; }
+        .dot-yellow { background-color: #ffbd2e; }
+        .dot-green { background-color: #27c93f; }
+
+        /* 代码行样式 */
+        .code-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .code-row {
+            display: flex;
+            transition: background 0.2s;
+        }
+
+        .code-row:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .line-num {
+            width: 40px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            user-select: none;
+            border-right: 1px solid #333;
+            background-color: #15161e;
+            padding-top: 4px;
+            font-size: 0.9em;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 4px;
+            padding-bottom: 4px;
+            white-space: pre;
+            overflow-x: auto;
+            color: #f8f8f2;
+        }
+
+        .code-annotation {
+            width: 35%;
+            padding-left: 15px;
+            padding-top: 4px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .code-row {
+                flex-direction: column;
+            }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 52px; /* Align with code start */
+                color: var(--accent-yellow);
+                padding-bottom: 8px;
+            }
+            .line-num {
+                height: 100%;
+                position: absolute;
+            }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .var { color: #f8f8f2; }
+
+        /* 故事板插图模拟 */
+        .story-board {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* 动画 */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .icon-pulse {
+            animation: pulse 2s infinite;
+        }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black bg-opacity-80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-dragon text-yellow-500 text-2xl"></i>
+                <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-teal-400">教研室</span></h1>
+            </div>
+            <div class="text-xs text-gray-500 font-code border border-gray-700 px-3 py-1 rounded-full">
+                PYTHON v3.0
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="max-w-5xl mx-auto px-4 mt-10 space-y-16">
+
+        <!-- 关卡 1 -->
+        <section id="level-1" class="level-card rounded-xl p-8">
+            <!-- 标题区 -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-gray-700 pb-4">
+                <div>
+                    <span class="bg-teal-900 text-teal-300 text-xs font-bold px-2 py-1 rounded uppercase mb-2 inline-block">Level 1</span>
+                    <h2 class="text-3xl font-bold text-white mb-1">守卫的职责 (Guard's Duty)</h2>
+                    <p class="text-gray-400 text-sm"><i class="fa-solid fa-bullseye mr-2"></i>任务目标：防止食人魔穿过通道</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex gap-2">
+                    <span class="text-yellow-500"><i class="fa-solid fa-star"></i></span>
+                    <span class="text-yellow-500"><i class="fa-solid fa-star"></i></span>
+                    <span class="text-yellow-500"><i class="fa-solid fa-star"></i></span>
+                </div>
+            </div>
+
+            <!-- 思路分析区 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div class="md:col-span-2">
+                    <h3 class="text-xl font-bold text-teal-400 mb-4"><i class="fa-solid fa-lightbulb mr-2"></i>战术思路分析</h3>
+                    <div class="story-board border border-gray-700">
+                        <p class="mb-4 leading-relaxed text-gray-300">
+                            指挥官！我们的城门没人看守，这样很危险。你需要做两件事：
+                        </p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-3">
+                                <div class="bg-blue-900 p-2 rounded text-blue-300 mt-1"><i class="fa-solid fa-user-plus"></i></div>
+                                <div>
+                                    <strong class="text-white">第一步：召唤守卫</strong>
+                                    <p class="text-sm text-gray-400">使用 <span class="font-code bg-gray-800 px-1 rounded text-pink-400">game.spawnXY</span> 在坐标 (42, 48) 变出一个士兵。</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <div class="bg-purple-900 p-2 rounded text-purple-300 mt-1"><i class="fa-solid fa-brain"></i></div>
+                                <div>
+                                    <strong class="text-white">第二步：植入“大脑”</strong>
+                                    <p class="text-sm text-gray-400">士兵虽然强壮，但是需要你教他怎么做。我们需要定义一个 <span class="font-code text-pink-400">函数</span>，告诉他："如果看到敌人就攻击，否则就乖乖站岗"。</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- 视觉图示 -->
+                <div class="flex flex-col justify-center items-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <div class="text-center space-y-4">
+                        <div class="text-6xl text-green-500 icon-pulse"><i class="fa-solid fa-robot"></i></div>
+                        <div class="text-2xl text-white font-bold">VS</div>
+                        <div class="text-4xl text-red-500"><i class="fa-solid fa-skull"></i></div>
+                        <p class="text-xs text-gray-400 mt-2">一旦看到(if enemy) -> 攻击(attack)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 代码解法区 -->
+            <h3 class="text-xl font-bold text-teal-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 参考程序</h3>
+            <div class="code-editor font-code text-sm">
+                <div class="code-header">
+                    <div class="dot dot-red"></div>
+                    <div class="dot dot-yellow"></div>
+                    <div class="dot dot-green"></div>
+                    <span class="ml-2 text-gray-400 text-xs">solution.py</span>
+                </div>
+                
+                <!-- 代码行内容 -->
+                <div class="code-body">
+                    <!-- Line 1 -->
+                    <div class="code-row">
+                        <div class="line-num">1</div>
+                        <div class="code-content"><span class="kwd">def </span><span class="func">soldierLogic</span>():</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>定义名为 soldierLogic 的函数（大脑）</div>
+                    </div>
+                    <!-- Line 2 -->
+                    <div class="code-row">
+                        <div class="line-num">2</div>
+                        <div class="code-content">    <span class="kwd">while </span><span class="kwd">True</span>:</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>进入无限循环，保持时刻警惕</div>
+                    </div>
+                    <!-- Line 3 -->
+                    <div class="code-row">
+                        <div class="line-num">3</div>
+                        <div class="code-content">        <span class="var">enemy</span> <span class="op">=</span> <span class="var">soldier</span>.<span class="func">findNearestEnemy</span>()</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>士兵侦查：寻找最近的敌人并赋值给变量</div>
+                    </div>
+                    <!-- Line 4 -->
+                    <div class="code-row">
+                        <div class="line-num">4</div>
+                        <div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>:</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>判断：如果发现了敌人(enemy存在)</div>
+                    </div>
+                    <!-- Line 5 -->
+                    <div class="code-row">
+                        <div class="line-num">5</div>
+                        <div class="code-content">            <span class="var">soldier</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>那就发起攻击！</div>
+                    </div>
+                    <!-- Line 6 -->
+                    <div class="code-row">
+                        <div class="line-num">6</div>
+                        <div class="code-content">        <span class="kwd">else</span>:</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>否则（如果没有敌人）</div>
+                    </div>
+                    <!-- Line 7 -->
+                    <div class="code-row">
+                        <div class="line-num">7</div>
+                        <div class="code-content">            <span class="var">soldier</span>.<span class="func">moveXY</span>(<span class="num">42</span>, <span class="num">48</span>)</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>回到坐标 (42, 48) 继续站岗</div>
+                    </div>
+                    <!-- Line 8 -->
+                    <div class="code-row">
+                        <div class="line-num">8</div>
+                        <div class="code-content"></div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <!-- Line 9 -->
+                    <div class="code-row">
+                        <div class="line-num">9</div>
+                        <div class="code-content"><span class="comment"># 生成士兵并绑定逻辑</span></div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <!-- Line 10 -->
+                    <div class="code-row">
+                        <div class="line-num">10</div>
+                        <div class="code-content"><span class="var">soldier</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"soldier"</span>, <span class="num">42</span>, <span class="num">48</span>)</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>在地图上创造一个士兵实体</div>
+                    </div>
+                    <!-- Line 11 -->
+                    <div class="code-row">
+                        <div class="line-num">11</div>
+                        <div class="code-content"><span class="var">soldier</span>.<span class="func">on</span>(<span class="str">"spawn"</span>, <span class="var">soldierLogic</span>)</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>当士兵出生(spawn)时，运行他的大脑代码</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 bg-blue-900/30 border border-blue-800 p-3 rounded text-sm text-blue-200 flex items-center">
+                <i class="fa-solid fa-circle-info mr-2 text-xl"></i>
+                <span><strong>教官提示：</strong> 这里使用了 <code>soldier.on("spawn", ...)</code>，这意味着这个士兵一出生，就会自动开始执行我们写的 <code>while True</code> 循环。</span>
+            </div>
+        </section>
+
+        <!-- 关卡 2 -->
+        <section id="level-2" class="level-card rounded-xl p-8">
+            <!-- 标题区 -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-gray-700 pb-4">
+                <div>
+                    <span class="bg-purple-900 text-purple-300 text-xs font-bold px-2 py-1 rounded uppercase mb-2 inline-block">Level 2</span>
+                    <h2 class="text-3xl font-bold text-white mb-1">军事训练 2 (Military Training 2)</h2>
+                    <p class="text-gray-400 text-sm"><i class="fa-solid fa-chess mr-2"></i>任务目标：指挥整支军队击败食人魔</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex gap-2">
+                    <span class="text-yellow-500"><i class="fa-solid fa-star"></i></span>
+                    <span class="text-yellow-500"><i class="fa-solid fa-star"></i></span>
+                    <span class="text-yellow-500"><i class="fa-solid fa-star"></i></span>
+                </div>
+            </div>
+
+            <!-- 思路分析区 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div class="md:col-span-2">
+                    <h3 class="text-xl font-bold text-teal-400 mb-4"><i class="fa-solid fa-lightbulb mr-2"></i>战术思路分析</h3>
+                    <div class="story-board border border-gray-700">
+                        <p class="mb-4 leading-relaxed text-gray-300">
+                            这一次我们要指挥一整个小队！如果你有100个士兵，一个一个告诉他们怎么打仗会累死人的。
+                            <br>
+                            我们需要使用<span class="text-yellow-400 font-bold">“广播指令”</span>技术：
+                        </p>
+                        <div class="space-y-4">
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white mb-1">神器：setActionFor</h4>
+                                <p class="text-sm text-gray-400">
+                                    <code>game.setActionFor("soldier", "spawn", fightEnemies)</code>
+                                    <br>
+                                    这句话的意思是：“听好了！所有的<strong>士兵</strong>！你们一<strong>出生</strong>，就都给我去执行<strong>打架逻辑</strong>！”
+                                </p>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-blue-500">
+                                <h4 class="font-bold text-white mb-1">event.target 是谁？</h4>
+                                <p class="text-sm text-gray-400">
+                                    因为这个函数是给所有人用的，代码不知道具体是哪个兵在执行。
+                                    <br>
+                                    <code>event.target</code> 就像是举手的那个人说：“就是<strong>我</strong>！”。谁在执行代码，谁就是 target。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 视觉图示 -->
+                <div class="flex flex-col justify-center items-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <i class="fa-solid fa-person-rifle text-4xl text-blue-400 mb-2"></i>
+                            <div class="text-xs">Soldier</div>
+                        </div>
+                        <div>
+                            <i class="fa-solid fa-person-rifle text-4xl text-blue-400 mb-2"></i>
+                            <div class="text-xs">Soldier</div>
+                        </div>
+                        <div>
+                            <i class="fa-solid fa-bullseye text-4xl text-purple-400 mb-2"></i>
+                            <div class="text-xs">Archer</div>
+                        </div>
+                        <div>
+                            <i class="fa-solid fa-bullseye text-4xl text-purple-400 mb-2"></i>
+                            <div class="text-xs">Archer</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center text-sm text-gray-300">
+                        <i class="fa-solid fa-tower-broadcast text-yellow-500 mr-2"></i>
+                        统一指挥
+                    </div>
+                </div>
+            </div>
+
+            <!-- 代码解法区 -->
+            <h3 class="text-xl font-bold text-teal-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 参考程序</h3>
+            <div class="code-editor font-code text-sm">
+                <div class="code-header">
+                    <div class="dot dot-red"></div>
+                    <div class="dot dot-yellow"></div>
+                    <div class="dot dot-green"></div>
+                    <span class="ml-2 text-gray-400 text-xs">solution_v2.py</span>
+                </div>
+                
+                <div class="code-body">
+                    <!-- Setup Lines -->
+                    <div class="code-row">
+                        <div class="line-num">1</div>
+                        <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"soldier"</span>, <span class="num">35</span>, <span class="num">20</span>)</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>生成第1个士兵</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">2</div>
+                        <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"soldier"</span>, <span class="num">45</span>, <span class="num">20</span>)</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>生成第2个士兵</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">3</div>
+                        <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"archer"</span>, <span class="num">35</span>, <span class="num">10</span>)</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>生成第1个弓箭手</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">4</div>
+                        <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"archer"</span>, <span class="num">45</span>, <span class="num">10</span>)</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>生成第2个弓箭手</div>
+                    </div>
+                    
+                    <div class="code-row"><div class="line-num">5</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                    <!-- Logic Function -->
+                    <div class="code-row">
+                        <div class="line-num">6</div>
+                        <div class="code-content"><span class="kwd">def </span><span class="func">fightEnemies</span>(<span class="var">event</span>):</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>定义通用的战斗逻辑，接收 event 参数</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">7</div>
+                        <div class="code-content">    <span class="kwd">while </span><span class="kwd">True</span>:</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>保持战斗状态</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">8</div>
+                        <div class="code-content">        <span class="var">friendUnit</span> <span class="op">=</span> <span class="var">event</span>.<span class="var">target</span></div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>关键点：获取当前是谁在执行这个任务</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">9</div>
+                        <div class="code-content">        <span class="var">enemy</span> <span class="op">=</span> <span class="var">friendUnit</span>.<span class="func">findNearestEnemy</span>()</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>让这个单位去找它附近的敌人</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">10</div>
+                        <div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>:</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>如果找到了敌人</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">11</div>
+                        <div class="code-content">            <span class="var">friendUnit</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>让这个单位发起攻击</div>
+                    </div>
+
+                    <div class="code-row"><div class="line-num">12</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                    <!-- Binding -->
+                    <div class="code-row">
+                        <div class="line-num">13</div>
+                        <div class="code-content"><span class="comment"># 批量指派任务</span></div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">14</div>
+                        <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"soldier"</span>, <span class="str">"spawn"</span>, <span class="var">fightEnemies</span>)</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>命令所有"soldier"出生时执行fightEnemies</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">15</div>
+                        <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"archer"</span>, <span class="str">"spawn"</span>, <span class="var">fightEnemies</span>)</div>
+                        <div class="code-annotation"><i class="fa-solid fa-arrow-left mr-2"></i>命令所有"archer"出生时执行fightEnemies</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 底部版权 -->
+    <footer class="text-center text-gray-600 text-sm mt-16 pb-8">
+        <p>© 2023 CodeCombat Teaching Department. Keep Coding, Keep Playing.</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 进阶战术手册 - 高级管理</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-gold: #d69e2e;
+            --accent-green: #38a169;
+            --accent-red: #e53e3e;
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else, elif */
+            --code-func: #8be9fd;    /* spawnXY, destroy, spawnValuable */
+            --code-string: #f1fa8c;  /* "munchkin" */
+            --code-num: #bd93f9;     /* 42 */
+            --code-comment: #6272a4;
+            --code-prop: #f8f8f2;    /* item.destroyTime */
+            --code-var: #ffb86c;     /* item, lifetime */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 1px solid #444;
+            transition: transform 0.3s ease;
+        }
+        
+        .level-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row {
+            display: flex;
+            min-height: 24px;
+        }
+        
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* 注释列 */
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-gold);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+
+        /* 动画图标 */
+        @keyframes vanish {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 0; transform: scale(0); }
+        }
+        .icon-vanish { animation: vanish 2s infinite; }
+
+        @keyframes sweep {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-20deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(20deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .icon-sweep:hover { animation: sweep 0.5s infinite; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-stopwatch text-yellow-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-yellow-500">时空管理</span></h1>
+                    <p class="text-xs text-gray-500">Lifecycle & Memory Management</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-hourglass-end text-red-500 mr-1"></i>item.destroyTime</span>
+                <span><i class="fa-solid fa-trash-can text-green-500 mr-1"></i>unit.destroy()</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 19 -->
+        <section id="level-19" class="level-card" style="border-top: 4px solid var(--accent-gold);">
+            <div class="level-header bg-gradient-to-r from-yellow-900/20 to-transparent">
+                <div>
+                    <span class="bg-yellow-900 text-yellow-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">LEVEL 19</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">奔向黄金 (Gold Rush)</h2>
+                </div>
+                <div class="text-yellow-500 text-sm"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-yellow-400 mb-3"><i class="fa-solid fa-hourglass-half mr-2"></i>限时寻宝</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这里的财宝有魔法，它们会在几秒钟后凭空消失！
+                                我们的任务是给每个生成的金币设定一个“死亡倒计时”。
+                            </p>
+                            <div class="space-y-4">
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                    <h4 class="font-bold text-white text-sm mb-1"><i class="fa-solid fa-tag mr-1"></i> 打标签 (Tagging)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        当金币生成时，我们在它身上贴个标签：
+                                        <br>
+                                        <code>item.destroyTime = game.time + 5秒</code>
+                                    </p>
+                                </div>
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-red-500">
+                                    <h4 class="font-bold text-white text-sm mb-1"><i class="fa-solid fa-bomb mr-1"></i> 自毁程序 (Self-Destruct)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        每个金币都有自己的 <code>onSpawn</code> 循环。
+                                        <br>
+                                        它们时刻盯着表：<strong>“现在时间 > 我的销毁时间了吗？”</strong>
+                                        <br>
+                                        如果是，就调用 <code>destroy()</code> 自我了断。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 视觉化图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="relative w-full h-32 flex flex-col items-center justify-center gap-2">
+                            <i class="fa-solid fa-coins text-yellow-400 text-4xl icon-vanish"></i>
+                            <div class="w-full bg-gray-700 rounded-full h-2 max-w-[100px] overflow-hidden">
+                                <div class="bg-red-500 h-2 rounded-full w-full animate-[ping_2s_linear_infinite]"></div>
+                            </div>
+                            <span class="text-xs text-red-400 font-code">Time Left: 0s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 代码部分 -->
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">vanishing_gold.py</div>
+                    </div>
+
+                    <div class="code-body">
+                        <!-- Setup Helper -->
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="comment"># 生成随机位置的宝物，晚些时候将其destroy。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">spawnValuable</span>(<span class="var">itemType</span>, <span class="var">lifetime</span>):</div>
+                            <div class="code-annotation">辅助函数：生成带寿命的物品</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="code-content">    <span class="var">x</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">randomInteger</span>(<span class="num">12</span>, <span class="num">68</span>)</div>
+                            <div class="code-annotation">随机X</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content">    <span class="var">y</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">randomInteger</span>(<span class="num">12</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation">随机Y</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="var">itemType</span>, <span class="var">x</span>, <span class="var">y</span>)</div>
+                            <div class="code-annotation">生成物品</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">6</div>
+                            <div class="code-content">    <span class="var">item</span>.<span class="prop">destroyTime</span> <span class="op">=</span> <span class="var">game</span>.<span class="prop">time</span> <span class="op">+</span> <span class="var">lifetime</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-clock mr-1"></i>设定死期：当前时间 + 寿命</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Treasure Groups -->
+                        <div class="code-row">
+                            <div class="line-num">8</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">spawnTreasures</span>():</div>
+                            <div class="code-annotation">生成一组不同寿命的宝物</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">9</div>
+                            <div class="code-content">    <span class="func">spawnValuable</span>(<span class="str">"bronze-coin"</span>, <span class="num">6</span>)</div>
+                            <div class="code-annotation">铜币活6秒</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">10</div>
+                            <div class="code-content">    <span class="func">spawnValuable</span>(<span class="str">"silver-coin"</span>, <span class="num">5</span>)</div>
+                            <div class="code-annotation">银币活5秒</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">11</div>
+                            <div class="code-content">    <span class="func">spawnValuable</span>(<span class="str">"gold-coin"</span>, <span class="num">4</span>)</div>
+                            <div class="code-annotation">金币活4秒</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">12</div>
+                            <div class="code-content">    <span class="func">spawnValuable</span>(<span class="str">"gem"</span>, <span class="num">2</span>)</div>
+                            <div class="code-annotation">宝石只活2秒！</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Item Self-Destruct Logic (Core) -->
+                        <div class="code-row">
+                            <div class="line-num">14</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onSpawn</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation">物品出生后的逻辑</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">15</div>
+                            <div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">16</div>
+                            <div class="code-content">    <span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation">无限循环检查</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">17</div>
+                            <div class="code-content">        <span class="comment"># 如果游戏时间大于物品的destroyTime：</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">18</div>
+                            <div class="code-content">        <span class="kwd">if </span><span class="var">item</span>.<span class="prop">destroyTime</span> <span class="op"><</span> <span class="var">game</span>.<span class="prop">time</span>:</div>
+                            <div class="code-annotation">如果寿命到了</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">19</div>
+                            <div class="code-content">            <span class="comment"># 调用物品的destroy() 方法：</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">20</div>
+                            <div class="code-content">            <span class="var">item</span>.<span class="func">destroy</span>()</div>
+                            <div class="code-annotation"><i class="fa-solid fa-poo-storm text-gray-500 mr-1"></i>消失！</div>
+                        </div>
+                        
+                        <div class="code-row"><div class="line-num">21</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">22</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"bronze-coin"</span>, <span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">23</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"silver-coin"</span>, <span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">24</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"gold-coin"</span>, <span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">25</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"gem"</span>, <span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">26</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        
+                        <!-- Game Logic (Spawn & Score) -->
+                        <div class="code-row">
+                            <div class="line-num">27</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">spawnTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">28</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">spawnInterval</span> <span class="op">=</span> <span class="num">3</span></div>
+                            <div class="code-annotation">每3秒生成一波</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">29</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">score</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">30</div>
+                            <div class="code-content"><span class="kwd">if </span><span class="kwd">not </span><span class="var">db</span>.<span class="func">get</span>(<span class="str">"topScore"</span>):</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">31</div>
+                            <div class="code-content">    <span class="var">db</span>.<span class="func">set</span>(<span class="str">"topScore"</span>, <span class="num">0</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">32</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"time"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">33</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"score"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">34</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">db</span>, <span class="str">"topScore"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">35</div>
+                            <div class="code-content"><span class="var">goal</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">addManualGoal</span>(<span class="str">"30秒内收集至少50金。"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">36</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">37</div>
+                            <div class="code-content"><span class="var">player</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">"captain"</span>, <span class="num">40</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">38</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="num">25</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">39</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">40</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onCollect</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation">收集事件</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">41</div>
+                            <div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">other</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">42</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">value</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">43</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">score</span> <span class="op">+=</span> <span class="var">item</span>.<span class="prop">value</span></div>
+                            <div class="code-annotation">加分</div>
+                        </div>
+                        
+                        <div class="code-row">
+                            <div class="line-num">44</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="func">on</span>(<span class="str">"collect"</span>, <span class="var">onCollect</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">45</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">46</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">checkSpawns</span>():</div>
+                            <div class="code-annotation">生成计时器</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">47</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="prop">time</span> <span class="op">></span> <span class="var">game</span>.<span class="var">spawnTime</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">48</div>
+                            <div class="code-content">        <span class="func">spawnTreasures</span>()</div>
+                            <div class="code-annotation">生成新物品</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">49</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">spawnTime</span> <span class="op">+=</span> <span class="var">game</span>.<span class="var">spawnInterval</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">50</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">51</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">checkGoal</span>():</div>
+                            <div class="code-annotation">目标检查</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">52</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="var">score</span> <span class="op">>=</span> <span class="num">50</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">53</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="func">setGoalState</span>(<span class="var">goal</span>, <span class="kwd">True</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">54</div>
+                            <div class="code-content">    <span class="kwd">else</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">55</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="func">setGoalState</span>(<span class="var">goal</span>, <span class="kwd">False</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">56</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">57</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">checkGameOver</span>():</div>
+                            <div class="code-annotation">游戏结束检查</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">58</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="prop">time</span> <span class="op">></span> <span class="num">30</span>:</div>
+                            <div class="code-annotation">超过30秒</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">59</div>
+                            <div class="code-content">        <span class="func">checkGoal</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">60</div>
+                            <div class="code-content">        <span class="var">db</span>.<span class="func">set</span>(<span class="str">"topScore"</span>, <span class="var">game</span>.<span class="var">score</span>)</div>
+                            <div class="code-annotation">保存分数</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">61</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">62</div>
+                            <div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">63</div>
+                            <div class="code-content">    <span class="func">checkSpawns</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">64</div>
+                            <div class="code-content">    <span class="func">checkGameOver</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- LEVEL 20 -->
+        <section id="level-20" class="level-card" style="border-top: 4px solid var(--accent-green);">
+            <div class="level-header bg-gradient-to-r from-green-900/20 to-transparent">
+                <div>
+                    <span class="bg-green-900 text-green-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">LEVEL 20</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">分裂箭 (Splitting Arrows)</h2>
+                </div>
+                <div class="text-yellow-500 text-sm"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-3"><i class="fa-solid fa-broom mr-2"></i>战场清道夫</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这是一场大规模战争！我们将击败 77 个食人魔。
+                                <br>
+                                如果我们把尸体都留在地上，电脑内存会“爆炸”（变卡）。
+                                <br>
+                                所以，我们使用 <code>defeat</code> 事件作为触发器，立即销毁尸体。
+                            </p>
+                            <div class="space-y-4">
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-red-500">
+                                    <h4 class="font-bold text-white text-sm mb-1">常规情况 (Normal)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        敌人死亡 -> 播放死亡动画 -> 留下尸体 -> 占用内存。
+                                    </p>
+                                </div>
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-green-500">
+                                    <h4 class="font-bold text-white text-sm mb-1">清道夫模式 (Cleanup)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        <code>onDefeat</code> 触发 -> 计数+1 -> <strong>立即调用 <code>unit.destroy()</code></strong>
+                                        <br>
+                                        结果：敌人瞬间消失，不留痕迹，游戏运行如丝般顺滑。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="text-center">
+                            <i class="fa-solid fa-skull-crossbones text-4xl text-gray-600 mb-2"></i>
+                            <div class="flex items-center gap-2 justify-center">
+                                <i class="fa-solid fa-broom text-green-400 text-2xl icon-sweep"></i>
+                                <i class="fa-solid fa-arrow-right text-gray-500"></i>
+                                <i class="fa-regular fa-circle text-gray-700 text-2xl border-2 border-dashed border-gray-600 rounded-full w-8 h-8 flex items-center justify-center"></i>
+                            </div>
+                            <p class="text-xs text-green-300 mt-2 font-code">Clean Memory</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">cleanup_crew.py</div>
+                    </div>
+
+                    <div class="code-body">
+                        <!-- Setup Helpers -->
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">spawnArcher</span>(<span class="var">x</span>, <span class="var">y</span>):</div>
+                            <div class="code-annotation">辅助函数：生成弓箭手</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content">    <span class="var">archer</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"archer"</span>, <span class="var">x</span>, <span class="var">y</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="code-content">    <span class="var">archer</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"Defends"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content">    <span class="var">archer</span>.<span class="prop">attackDamage</span> <span class="op">=</span> <span class="num">20</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">spawnMunchkin</span>(<span class="var">x</span>, <span class="var">y</span>):</div>
+                            <div class="code-annotation">辅助函数：生成食人魔</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">6</div>
+                            <div class="code-content">    <span class="var">ogre</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"munchkin"</span>, <span class="var">x</span>, <span class="var">y</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="code-content">    <span class="var">ogre</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"AttacksNearest"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">9</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">spawnArcherWall</span>():</div>
+                            <div class="code-annotation">生成弓箭手墙</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">10</div>
+                            <div class="code-content">    <span class="func">spawnArcher</span>(<span class="num">30</span>, <span class="num">12</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">11</div>
+                            <div class="code-content">    <span class="func">spawnArcher</span>(<span class="num">30</span>, <span class="num">23</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">12</div>
+                            <div class="code-content">    <span class="func">spawnArcher</span>(<span class="num">30</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">13</div>
+                            <div class="code-content">    <span class="func">spawnArcher</span>(<span class="num">30</span>, <span class="num">45</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">14</div>
+                            <div class="code-content">    <span class="func">spawnArcher</span>(<span class="num">30</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">16</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">spawnOgreWave</span>():</div>
+                            <div class="code-annotation">生成一波食人魔</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">17</div>
+                            <div class="code-content">    <span class="var">offset</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">randomInteger</span>(<span class="op">-</span><span class="num">6</span>, <span class="num">6</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">18</div>
+                            <div class="code-content">    <span class="func">spawnMunchkin</span>(<span class="num">80</span>, <span class="num">16</span> <span class="op">+</span> <span class="var">offset</span>)</div>
+                            <div class="code-annotation">批量生成</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">19</div>
+                            <div class="code-content">    <span class="func">spawnMunchkin</span>(<span class="num">80</span>, <span class="num">22</span> <span class="op">+</span> <span class="var">offset</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">20</div>
+                            <div class="code-content">    <span class="func">spawnMunchkin</span>(<span class="num">80</span>, <span class="num">28</span> <span class="op">+</span> <span class="var">offset</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">21</div>
+                            <div class="code-content">    <span class="func">spawnMunchkin</span>(<span class="num">80</span>, <span class="num">34</span> <span class="op">+</span> <span class="var">offset</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">22</div>
+                            <div class="code-content">    <span class="func">spawnMunchkin</span>(<span class="num">80</span>, <span class="num">40</span> <span class="op">+</span> <span class="var">offset</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">23</div>
+                            <div class="code-content">    <span class="func">spawnMunchkin</span>(<span class="num">80</span>, <span class="num">46</span> <span class="op">+</span> <span class="var">offset</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">24</div>
+                            <div class="code-content">    <span class="func">spawnMunchkin</span>(<span class="num">80</span>, <span class="num">52</span> <span class="op">+</span> <span class="var">offset</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">25</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Cleanup Logic (Core) -->
+                        <div class="code-row">
+                            <div class="line-num">26</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onDefeat</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"><i class="fa-solid fa-recycle mr-1"></i>清理逻辑</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">27</div>
+                            <div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">28</div>
+                            <div class="code-content">    <span class="comment"># 将游戏的被击败敌人数（ defeated ）属性增加一:</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">29</div>
+                            <div class="code-content">    <span class="var">game</span>.<span class="var">defeated</span> <span class="op">+=</span> <span class="num">1</span></div>
+                            <div class="code-annotation">记录战绩</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">30</div>
+                            <div class="code-content">    <span class="comment"># 基本单位调用摧毁（destroy）方法</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">31</div>
+                            <div class="code-content">    <span class="var">unit</span>.<span class="func">destroy</span>()</div>
+                            <div class="code-annotation"><i class="fa-solid fa-eraser text-green-400 mr-1"></i>立即销毁尸体</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">32</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">33</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"munchkin"</span>, <span class="str">"defeat"</span>, <span class="var">onDefeat</span>)</div>
+                            <div class="code-annotation">绑定事件</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">34</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Game Loop -->
+                        <div class="code-row">
+                            <div class="line-num">35</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">defeated</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">36</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">spawnTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">37</div>
+                            <div class="code-content"><span class="var">goal</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">addManualGoal</span>(<span class="str">"击败77个食人魔。"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">38</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"defeated"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">39</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">checkSpawnTimer</span>():</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">40</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="prop">time</span> <span class="op">></span> <span class="var">game</span>.<span class="var">spawnTime</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">41</div>
+                            <div class="code-content">        <span class="func">spawnOgreWave</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">42</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">spawnTime</span> <span class="op">+=</span> <span class="num">1</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">43</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">checkGoal</span>():</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">44</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="var">defeated</span> <span class="op">>=</span> <span class="num">77</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">45</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="func">setGoalState</span>(<span class="var">goal</span>, <span class="kwd">True</span>)</div>
+                            <div class="code-annotation">胜利！</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">46</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">47</div>
+                            <div class="code-content"><span class="func">spawnArcherWall</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">48</div>
+                            <div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">49</div>
+                            <div class="code-content">    <span class="func">checkSpawnTimer</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">50</div>
+                            <div class="code-content">    <span class="func">checkGoal</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Strategy Dept. | Performance Optimization</p>
+    </footer>
+
+</body>
+</html>

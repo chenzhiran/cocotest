@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 教学指南 - 多参数函数</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans SC"', 'sans-serif'],
+                        mono: ['"Fira Code"', 'monospace'],
+                    },
+                    colors: {
+                        forest: {
+                            bg: '#0a1a0a',
+                            panel: '#142614',
+                            accent: '#2ecc71',
+                            func: '#9b59b6',    /* Purple for Def */
+                            call: '#e056fd',    /* Pink for Call */
+                            param: '#00bcd4',   /* Cyan for Params */
+                            coord: '#f1c40f',   /* Yellow for X,Y */
+                        },
+                        py: {
+                            def: '#569cd6',   /* blue keyword */
+                            func: '#dcdcaa',  /* yellow function name */
+                            param: '#9cdcfe', /* light blue param */
+                            str: '#ce9178',   /* orange string */
+                            key: '#c586c0',   /* purple keyword */
+                            num: '#b5cea8',   /* green number */
+                            comment: '#6a9955', /* green comment */
+                            text: '#d4d4d4'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0a1a0a;
+            color: #d4d4d4;
+            scroll-behavior: smooth;
+        }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #142614; }
+        ::-webkit-scrollbar-thumb { background: #2f4f2f; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00bcd4; }
+
+        .slide-section {
+            min-height: 100vh;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 4px solid #000;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            background-color: #0a1a0a;
+        }
+
+        /* Code Row Layout */
+        .code-row {
+            display: flex;
+            width: 100%;
+            align-items: stretch;
+            border-bottom: 1px solid #1f331f;
+            transition: background-color 0.1s;
+            line-height: 1.6;
+        }
+        .code-row:hover { background-color: #1a331a !important; }
+        
+        .line-num {
+            width: 2.5rem;
+            text-align: right;
+            padding-right: 0.75rem;
+            padding-top: 0.5rem;
+            color: #4a664a;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            user-select: none;
+            border-right: 1px solid #1f331f;
+            flex-shrink: 0;
+        }
+        
+        .connector-col {
+            width: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+        
+        .code-content {
+            flex: 1; 
+            padding: 0.5rem 0.5rem 0.5rem 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            white-space: pre;
+            color: #d4d4d4;
+            overflow-x: auto;
+            display: flex;
+            align-items: center;
+        }
+        
+        .code-text-wrapper {
+            display: inline-block;
+            vertical-align: baseline;
+        }
+
+        .explanation-content {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border-left: 1px solid #1f331f;
+            font-size: 0.9rem;
+            color: #a3cfa3; 
+            display: flex;
+            align-items: center;
+        }
+
+        /* Visual Blocks */
+        .func-def-block { border-left: 2px solid #9b59b6; background: rgba(155, 89, 182, 0.05); }
+        .func-call-block { border-left: 2px solid #00bcd4; background: rgba(0, 188, 212, 0.05); }
+        .loop-block { border-left: 2px solid #2ecc71; background: rgba(46, 204, 113, 0.05); }
+
+        /* Indentation */
+        .indent-2 { margin-left: 1.5rem; padding-left: 1rem; border-left: 1px solid #444; }
+        .indent-3 { margin-left: 3rem; padding-left: 1rem; border-left: 1px solid #555; }
+
+        .nav-item {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+            padding: 6px 0;
+            width: 100%;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #5d8a5d;
+        }
+        .nav-item:hover { color: #00bcd4; background: #142614; }
+    </style>
+</head>
+<body class="font-sans">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 h-full w-16 bg-[#0f1f0f] flex flex-col items-center py-6 z-50 border-r border-[#1f331f] hidden md:flex">
+        <div class="text-forest-param font-bold text-lg mb-6"><i class="fas fa-sliders-h"></i></div>
+        <div class="flex flex-col space-y-1 w-full overflow-y-auto h-full pb-4 scrollbar-hide">
+            <a href="#intro" class="nav-item">封面</a>
+            <a href="#level43" class="nav-item">第43关</a>
+            <a href="#level44" class="nav-item">第44关</a>
+            <a href="#level45" class="nav-item">第45关</a>
+            <a href="#level46" class="nav-item">第46关</a>
+            <a href="#level47" class="nav-item">第47关</a>
+            <a href="#level48" class="nav-item">第48关</a>
+        </div>
+    </nav>
+
+    <div class="md:pl-16">
+
+        <!-- INTRO -->
+        <section id="intro" class="slide-section items-center justify-center text-center bg-gradient-to-b from-[#0a1a0a] to-[#05151a]">
+            <div class="max-w-4xl p-10 border border-cyan-900 rounded-xl bg-[#0f1f0f] shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
+                <div class="text-7xl text-white mb-6"><i class="fas fa-cubes"></i></div>
+                <h1 class="text-5xl font-bold mb-4 text-white">CodeCombat 森林篇：多参数</h1>
+                <h2 class="text-2xl text-gray-400 mb-10 font-light">一次传递多个信息</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left max-w-2xl mx-auto">
+                    <div class="p-4 bg-[#142614] rounded border-l-4 border-cyan-500">
+                        <div class="text-cyan-400 font-bold mb-2 font-mono">def func(x, y):</div>
+                        <div class="text-xs text-gray-400 leading-relaxed">
+                            <strong>多形参 (Multiple Parameters):</strong><br>
+                            用逗号分隔。<br>
+                            就像给了英雄一张有经纬度的地图。
+                        </div>
+                    </div>
+                    <div class="p-4 bg-[#142614] rounded border-l-4 border-blue-500">
+                        <div class="text-blue-400 font-bold mb-2 font-mono">func(type, x, y)</div>
+                        <div class="text-xs text-gray-400 leading-relaxed">
+                            <strong>混合类型 (Mixed Types):</strong><br>
+                            你可以同时传递字符串（造什么）和数字（在哪里造）。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 43 -->
+        <section id="level43" class="slide-section">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-param text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.43</span>
+                <h2 class="text-2xl font-bold text-white">返回荆棘农场</h2>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row gap-6 flex-1 h-full">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg flex-1">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-map-signs mr-2"></i>坐标参数 (X, Y)
+                        </h3>
+                        <p class="text-gray-400 text-sm leading-7 mb-4">
+                            以前我们只传一个 <code>target</code>。
+                            <br>现在我们需要告诉函数**去哪里**。
+                        </p>
+                        <div class="bg-black p-3 rounded border border-cyan-900 text-xs text-gray-300 space-y-2 font-mono">
+                            <p>def maybeBuildTrap(<span class="text-yellow-400">x</span>, <span class="text-yellow-400">y</span>):</p>
+                            <p class="pl-4">hero.moveXY(<span class="text-yellow-400">x</span>, <span class="text-yellow-400">y</span>)</p>
+                            <p class="pl-4">...</p>
+                            <p class="border-t border-gray-700 pt-2">调用: maybeBuildTrap(43, 50)</p>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <code>x</code> 变成了 43，<code>y</code> 变成了 50。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="lg:w-2/3 flex flex-col bg-[#111] border border-gray-700 rounded-lg overflow-hidden shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py</div>
+                    <div class="flex-1 overflow-auto">
+                        <!-- Function Definition -->
+                        <div class="code-row func-def-block border-l-4 border-purple-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">def </span> <span class="text-py-func">maybeBuildTrap</span>(<span class="text-py-param">x</span>, <span class="text-py-param">y</span>):</div><div class="explanation-content text-purple-300">定义双参数函数。</div></div>
+                        
+                        <div class="code-row func-def-block"><div class="line-num">2</div><div class="connector-col indent-2"><i class="fas fa-walking text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">hero</span>.<span class="text-py-func">moveXY</span>(<span class="text-py-param">x</span>, <span class="text-py-param">y</span>)</div></div><div class="explanation-content">移动到传入的坐标。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">3</div><div class="connector-col indent-2"><i class="fas fa-search text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-var">enemy</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestEnemy</span>()</div></div><div class="explanation-content">到了后侦察。</div></div>
+                        
+                        <div class="code-row func-def-block"><div class="line-num">4</div><div class="connector-col indent-2"><i class="fas fa-question text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">if</span> <span class="text-py-var">enemy</span>:</div></div><div class="explanation-content">有敌人吗？</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">5</div><div class="connector-col indent-3"><i class="fas fa-hammer text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-white">hero</span>.<span class="text-py-func">buildXY</span>(<span class="text-py-str">"fire-trap"</span>, <span class="text-py-param">x</span>, <span class="text-py-param">y</span>)</div></div><div class="explanation-content">就在那个坐标造陷阱。</div></div>
+
+                        <div class="code-row bg-[#111] h-4"></div>
+
+                        <!-- Main Loop -->
+                        <div class="code-row loop-block"><div class="line-num">7</div><div class="code-content"><span class="text-py-key">while </span> <span class="text-py-def">True</span>:</div><div class="explanation-content">三点巡逻循环。</div></div>
+                        
+                        <!-- Call 1 -->
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">8</div><div class="connector-col indent-2"><i class="fas fa-arrow-right text-xs text-cyan-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">maybeBuildTrap</span>(<span class="text-py-num">43</span>, <span class="text-py-num">50</span>)</div></div><div class="explanation-content text-cyan-300">检查上路 (Top)。</div></div>
+                        
+                        <!-- Call 2 -->
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">9</div><div class="connector-col indent-2"><i class="fas fa-arrow-right text-xs text-cyan-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">maybeBuildTrap</span>(<span class="text-py-num">25</span>, <span class="text-py-num">34</span>)</div></div><div class="explanation-content text-cyan-300">检查左路 (Left)。</div></div>
+                        
+                        <!-- Call 3 -->
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">10</div><div class="connector-col indent-2"><i class="fas fa-arrow-right text-xs text-cyan-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">maybeBuildTrap</span>(<span class="text-py-num">43</span>, <span class="text-py-num">20</span>)</div></div><div class="explanation-content text-cyan-300">检查下路 (Bottom)。</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 44 -->
+        <section id="level44" class="slide-section bg-[#0f1f0f]">
+             <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-func text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.44</span>
+                <h2 class="text-2xl font-bold text-white">Agrippa 重构</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-green-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-broom mr-2"></i>代码重构 (Refactoring)
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            之前的代码太乱了？全是嵌套的 if/else？
+                            <br>我们把最复杂的“战斗判断”部分提取出来，做成一个函数。
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            <strong>目标：</strong> 让主循环只负责找人，函数负责打架。
+                        </p>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py</div>
+                    <div class="flex-1 overflow-auto">
+                        <!-- Helper Function -->
+                        <div class="code-row func-def-block border-l-4 border-purple-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">def </span> <span class="text-py-func">cleaveOrAttack</span>(<span class="text-py-param">enemy</span>):</div><div class="explanation-content text-purple-300">战斗逻辑封装。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">2</div><div class="connector-col indent-2"><i class="fas fa-stopwatch text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">if</span> <span class="text-white">hero</span>.<span class="text-py-func">isReady</span>(<span class="text-py-str">"cleave"</span>):</div></div><div class="explanation-content">判断技能。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">3</div><div class="connector-col indent-3"><i class="fas fa-bomb text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-white">hero</span>.<span class="text-py-func">cleave</span>(<span class="text-py-param">enemy</span>)</div></div><div class="explanation-content">劈。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">4</div><div class="connector-col indent-2"><i class="fas fa-code-branch text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">else</span>:</div></div><div class="explanation-content">否则。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">5</div><div class="connector-col indent-3"><i class="fas fa-khanda text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-white">hero</span>.<span class="text-py-func">attack</span>(<span class="text-py-param">enemy</span>)</div></div><div class="explanation-content">打。</div></div>
+
+                        <div class="code-row bg-[#111] h-4"></div>
+
+                        <!-- Main Loop (Clean!) -->
+                        <div class="code-row loop-block"><div class="line-num">7</div><div class="code-content"><span class="text-py-key">while </span> <span class="text-py-def">True</span>:</div><div class="explanation-content">主循环变得很清爽。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">8</div><div class="connector-col indent-2"><i class="fas fa-search text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-var">enemy</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestEnemy</span>()</div></div><div class="explanation-content">找怪。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">9</div><div class="connector-col indent-2"><i class="fas fa-question text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">if</span> <span class="text-py-var">enemy</span>:</div></div><div class="explanation-content">有怪？</div></div>
+                        <div class="code-row loop-block"><div class="line-num">10</div><div class="connector-col indent-3"><i class="fas fa-ruler text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-var">distance</span> = <span class="text-white">hero</span>.<span class="text-py-func">distanceTo</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content">测距。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">11</div><div class="connector-col indent-3"><i class="fas fa-less-than text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-key">if</span> <span class="text-py-var">distance</span> < <span class="text-py-num">5</span>:</div></div><div class="explanation-content">够近？</div></div>
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">12</div><div class="connector-col indent-4"><i class="fas fa-scroll text-xs text-cyan-400"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-white">cleaveOrAttack</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content text-cyan-300">交给函数去打！</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 45 -->
+        <section id="level45" class="slide-section">
+             <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-param text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.45</span>
+                <h2 class="text-2xl font-bold text-white">封闭的十字路口</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-blue-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-shapes mr-2"></i>混合参数类型
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            你的函数可以极其灵活！
+                            <br>你可以传递：
+                            <br>1. 字符串 <code>type</code> (造什么?)
+                            <br>2. 数字 <code>x, y</code> (在哪里造?)
+                        </p>
+                        <div class="bg-blue-900/20 p-2 rounded border border-blue-800 text-xs font-mono">
+                            hero.buildXY(typeToBuild, x, y)
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py</div>
+                    <div class="flex-1 overflow-auto h-[400px]">
+                        <div class="code-row func-def-block border-l-4 border-purple-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">def </span> <span class="text-py-func">maybeBuildSomething</span>(<span class="text-py-param">typeToBuild</span>, <span class="text-py-param">x</span>, <span class="text-py-param">y</span>):</div><div class="explanation-content text-purple-300">三个参数！</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">2</div><div class="connector-col indent-2"><i class="fas fa-walking text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">hero</span>.<span class="text-py-func">moveXY</span>(<span class="text-py-param">x</span>, <span class="text-py-param">y</span>)</div></div><div class="explanation-content">移动到位。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">3</div><div class="connector-col indent-2"><i class="fas fa-search text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-var">enemy</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestEnemy</span>()</div></div><div class="explanation-content">侦察。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">4</div><div class="connector-col indent-2"><i class="fas fa-question text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">if</span> <span class="text-py-var">enemy</span>:</div></div><div class="explanation-content">有敌人？</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">5</div><div class="connector-col indent-3"><i class="fas fa-hammer text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-white">hero</span>.<span class="text-py-func">buildXY</span>(<span class="text-py-param">typeToBuild</span>, <span class="text-py-param">x</span>, <span class="text-py-param">y</span>)</div></div><div class="explanation-content">建造指定类型！</div></div>
+
+                        <div class="code-row bg-[#111] h-4"></div>
+
+                        <div class="code-row loop-block"><div class="line-num">7</div><div class="code-content"><span class="text-py-key">while </span> <span class="text-py-def">True</span>:</div><div class="explanation-content">巡逻建造。</div></div>
+                        
+                        <!-- Fire Trap Call -->
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">8</div><div class="connector-col indent-2"><i class="fas fa-fire text-xs text-red-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">maybeBuildSomething</span>(<span class="text-py-str">"fire-trap"</span>, <span class="text-py-num">40</span>, <span class="text-py-num">20</span>)</div></div><div class="explanation-content text-cyan-300">下路：造陷阱。</div></div>
+                        
+                        <!-- Fence Call -->
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">9</div><div class="connector-col indent-2"><i class="fas fa-bars text-xs text-yellow-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">maybeBuildSomething</span>(<span class="text-py-str">"fence"</span>, <span class="text-py-num">26</span>, <span class="text-py-num">34</span>)</div></div><div class="explanation-content text-cyan-300">左路：造围栏。</div></div>
+                        
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">10</div><div class="connector-col indent-2"><i class="fas fa-fire text-xs text-red-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">maybeBuildSomething</span>(<span class="text-py-str">"fire-trap"</span>, <span class="text-py-num">40</span>, <span class="text-py-num">50</span>)</div></div><div class="explanation-content text-cyan-300">上路：造陷阱。</div></div>
+                        
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">11</div><div class="connector-col indent-2"><i class="fas fa-bars text-xs text-yellow-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">maybeBuildSomething</span>(<span class="text-py-str">"fence"</span>, <span class="text-py-num">54</span>, <span class="text-py-num">34</span>)</div></div><div class="explanation-content text-cyan-300">右路：造围栏。</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 46 -->
+        <section id="level46" class="slide-section bg-[#0f1f0f]">
+             <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-func text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.46</span>
+                <h2 class="text-2xl font-bold text-white">贪婪陷阱</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-yellow-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-coins mr-2"></i>诱饵战术
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            食人魔很贪婪。
+                            <br>策略：
+                            1. 巡逻到指定地点。
+                            2. 如果地上有**金币** (作为诱饵)。
+                            3. 在金币的位置造**陷阱**。
+                        </p>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row func-def-block border-l-4 border-purple-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">def </span> <span class="text-py-func">maybeBuildTrap</span>(<span class="text-py-param">x</span>, <span class="text-py-param">y</span>):</div><div class="explanation-content text-purple-300">定义逻辑。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">2</div><div class="connector-col indent-2"><i class="fas fa-walking text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">hero</span>.<span class="text-py-func">moveXY</span>(<span class="text-py-param">x</span>, <span class="text-py-param">y</span>)</div></div><div class="explanation-content">前往点位。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">3</div><div class="connector-col indent-2"><i class="fas fa-search text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-var">coin</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestItem</span>()</div></div><div class="explanation-content">找诱饵。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">4</div><div class="connector-col indent-2"><i class="fas fa-question text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">if</span> <span class="text-py-var">coin</span>:</div></div><div class="explanation-content">有诱饵？</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">5</div><div class="connector-col indent-3"><i class="fas fa-hammer text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-white">hero</span>.<span class="text-py-func">buildXY</span>(<span class="text-py-str">"fire-trap"</span>, <span class="text-py-param">x</span>, <span class="text-py-param">y</span>)</div></div><div class="explanation-content">埋雷！</div></div>
+
+                        <div class="code-row bg-[#111] h-4"></div>
+
+                        <div class="code-row loop-block"><div class="line-num">7</div><div class="code-content"><span class="text-py-key">while </span> <span class="text-py-def">True</span>:</div><div class="explanation-content">四点巡逻。</div></div>
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">8</div><div class="connector-col indent-2"><i class="fas fa-arrow-right text-xs text-cyan-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">maybeBuildTrap</span>(<span class="text-py-num">12</span>, <span class="text-py-num">56</span>)</div></div><div class="explanation-content text-cyan-300">左上。</div></div>
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">9</div><div class="connector-col indent-2"><i class="fas fa-arrow-right text-xs text-cyan-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">maybeBuildTrap</span>(<span class="text-py-num">68</span>, <span class="text-py-num">56</span>)</div></div><div class="explanation-content text-cyan-300">右上。</div></div>
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">10</div><div class="connector-col indent-2"><i class="fas fa-arrow-right text-xs text-cyan-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">maybeBuildTrap</span>(<span class="text-py-num">68</span>, <span class="text-py-num">12</span>)</div></div><div class="explanation-content text-cyan-300">右下。</div></div>
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">11</div><div class="connector-col indent-2"><i class="fas fa-arrow-right text-xs text-cyan-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">maybeBuildTrap</span>(<span class="text-py-num">12</span>, <span class="text-py-num">12</span>)</div></div><div class="explanation-content text-cyan-300">左下。</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 47 & 48 -->
+        <section id="level47" class="slide-section">
+             <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-func text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.47-48</span>
+                <h2 class="text-2xl font-bold text-white">最后的大炮 & 函数巡逻</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-purple-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-flag-checkered mr-2"></i>森林篇结业
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            恭喜！你已经掌握了：
+                            <br><i class="fas fa-check text-green-500"></i> 变量与坐标
+                            <br><i class="fas fa-check text-green-500"></i> If/Else 逻辑
+                            <br><i class="fas fa-check text-green-500"></i> 自定义函数
+                            <br><i class="fas fa-check text-green-500"></i> 参数传递
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            最后两个挑战是对这些知识的综合运用。
+                            <br>定义一个 <code>patrol(x, y)</code> 函数，打败所有试图靠近的敌人！
+                        </p>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py (函数巡逻)</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row func-def-block border-l-4 border-purple-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">def </span> <span class="text-py-func">patrol</span>(<span class="text-py-param">x</span>, <span class="text-py-param">y</span>):</div><div class="explanation-content text-purple-300">定义通用巡逻函数。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">2</div><div class="connector-col indent-2"><i class="fas fa-walking text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">hero</span>.<span class="text-py-func">moveXY</span>(<span class="text-py-param">x</span>, <span class="text-py-param">y</span>)</div></div><div class="explanation-content">移动。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">3</div><div class="connector-col indent-2"><i class="fas fa-search text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-var">enemy</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestEnemy</span>()</div></div><div class="explanation-content">侦察。</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">4</div><div class="connector-col indent-2"><i class="fas fa-question text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">if</span> <span class="text-py-var">enemy</span>:</div></div><div class="explanation-content">有敌？</div></div>
+                        <div class="code-row func-def-block"><div class="line-num">5</div><div class="connector-col indent-3"><i class="fas fa-khanda text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-white">hero</span>.<span class="text-py-func">attack</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content">打。</div></div>
+
+                        <div class="code-row bg-[#111] h-4"></div>
+
+                        <div class="code-row loop-block"><div class="line-num">7</div><div class="code-content"><span class="text-py-key">while </span> <span class="text-py-def">True</span>:</div><div class="explanation-content">无限巡逻。</div></div>
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">8</div><div class="connector-col indent-2"><i class="fas fa-arrow-right text-xs text-cyan-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">patrol</span>(<span class="text-py-num">18</span>, <span class="text-py-num">34</span>)</div></div><div class="explanation-content text-cyan-300">点1。</div></div>
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">9</div><div class="connector-col indent-2"><i class="fas fa-arrow-right text-xs text-cyan-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">patrol</span>(<span class="text-py-num">40</span>, <span class="text-py-num">46</span>)</div></div><div class="explanation-content text-cyan-300">点2。</div></div>
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">10</div><div class="connector-col indent-2"><i class="fas fa-arrow-right text-xs text-cyan-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">patrol</span>(<span class="text-py-num">62</span>, <span class="text-py-num">34</span>)</div></div><div class="explanation-content text-cyan-300">点3。</div></div>
+                        <div class="code-row func-call-block border-l-4 border-cyan-500"><div class="line-num">11</div><div class="connector-col indent-2"><i class="fas fa-arrow-right text-xs text-cyan-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-white">patrol</span>(<span class="text-py-num">40</span>, <span class="text-py-num">22</span>)</div></div><div class="explanation-content text-cyan-300">点4。</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+</body>
+</html>

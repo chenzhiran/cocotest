@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编程小英雄挑战赛 - 对象与方法篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 (紫色现代风格) --- */
+        :root {
+            --primary-color: #6C5CE7; /* 主色调：紫色 */
+            --secondary-color: #A29BFE;
+            --bg-color: #DFE6E9;     /* 背景灰 */
+            --card-bg: #FFFFFF;
+            --text-color: #2D3436;   /* 深色文字 */
+            --correct-color: #00b894;/* 正确绿 */
+            --wrong-color: #d63031;  /* 错误红 */
+            --accent-yellow: #fdcb6e;/* 强调黄 */
+            
+            /* 代码高亮颜色 */
+            --code-bg: #2d2d2d;
+            --code-text: #ccc;
+            --code-kw: #cc99cd; /* 关键字 (purple/pink) */
+            --code-fn: #6196cc; /* 函数/方法 (blue) */
+            --code-num: #f08d49; /* 数字 (orange) */
+            --code-str: #7ec699; /* 字符串 (green) */
+            --code-cmt: #777777; /* 注释 (grey) */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            /* 点阵背景纹理 */
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* --- 游戏容器 --- */
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 700px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目区域 --- */
+        .question-area {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        
+        .question-area h2 {
+            color: var(--text-color);
+            font-size: 1.3rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* --- 代码高亮样式 --- */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', monospace;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            text-align: left;
+            font-size: 0.95rem;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+            overflow-x: auto; /* 防止长代码溢出 */
+        }
+        /* 语法着色 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 0.95rem; 
+            font-family: 'Fira Code', inherit;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            position: relative;
+            top: 0;
+            box-shadow: 0 5px 0 #bdc3c7;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #aab0b3;
+        }
+
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+        }
+        
+        .option-btn[disabled] {
+            cursor: default;
+        }
+
+        /* --- 答题状态 --- */
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析区域 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+
+        .feedback-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+
+        .explanation-text {
+            color: #636e72;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        /* --- 下一题按钮 --- */
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 5px 0 #5649c0;
+            transition: all 0.2s;
+            float: right;
+        }
+        .next-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .next-btn:active { transform: translateY(5px); box-shadow: none; }
+
+        /* --- 结算画面 --- */
+        .end-screen {
+            display: none;
+            padding: 20px 0;
+        }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score-box {
+            background: var(--accent-yellow);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 25px;
+            display: inline-block;
+            margin: 30px 0;
+            box-shadow: 0 8px 0 #e1b12c;
+        }
+        .end-score { font-size: 3.5rem; font-weight: bold; line-height: 1; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+        
+        .perfect-score-text {
+            background: linear-gradient(45deg, #FFD700, #FF8C00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        /* --- 动画定义 --- */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall {
+            to { transform: translateY(80vh) rotate(720deg); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container">
+                </div>
+
+            <div class="options-grid" id="options-container">
+                </div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen">
+            </div>
+    </div>
+
+    <script>
+        // --- 题目数据 (对象、方法与事件逻辑篇) ---
+        const quizData = [
+            {
+                q: "1. 题目： 在编程中，player、munchkinSpawner、passageForest1 这样的游戏元素被称为？",
+                options: [
+                    "A. 变量",
+                    "B. 函数",
+                    "C. 对象",
+                    "D. 参数"
+                ],
+                correct: 2, // C
+                desc: "材料中明确指出：“游戏里的‘东西’都是对象（object）”。player（玩家）、munchkinSpawner（生成器）、passageForest1（森林）等都是游戏世界中的具体实体，因此它们都是对象。"
+            },
+            {
+                q: "2. 题目： 代码 munchkinSpawner.spawnType = \"munchkin\" 和 munchkinSpawner.defeat() 分别代表了什么操作？",
+                code: "munchkinSpawner.spawnType = \"munchkin\"\nmunchkinSpawner.defeat()",
+                options: [
+                    "A. 都是调用对象的方法",
+                    "B. 都是设置对象的属性",
+                    "C. 前者是设置属性，后者是调用方法",
+                    "D. 前者是调用方法，后者是设置属性"
+                ],
+                correct: 2, // C
+                desc: "spawnType = \"munchkin\" 是为 munchkinSpawner 这个对象设置一个属性。而 .defeat() 是让该对象执行一个动作，因此是调用方法。"
+            },
+            {
+                q: "3. 题目： 对游戏中的一个 \"generator\"（生成器）对象使用 .defeat() 方法，最直接的效果是什么？",
+                code: "generator.defeat()",
+                options: [
+                    "A. 它会被立即从游戏场景中移除。",
+                    "B. 它的生命值（health）会变为0，并停止生成怪物。",
+                    "C. 它会立即生成一个怪物。",
+                    "D. 它会移动到另一个随机位置。"
+                ],
+                correct: 1, // B
+                desc: ".defeat() 方法用于单位或可攻击物体，效果类似于将生命值设为0。对于生成器，这意味着它停止生成怪物，但本身仍留在场景中。"
+            },
+            {
+                q: "4. 题目： 为了移除一个堵路的 \"forest\"（森林）对象，应该使用以下哪个方法？",
+                options: [
+                    "A. .defeat()",
+                    "B. .remove()",
+                    "C. .destroy()",
+                    "D. .disable()"
+                ],
+                correct: 2, // C
+                desc: "forest 这类障碍物没有生命值，不能被打“死”，但可以被 .destroy() 方法直接从游戏场景中移除。"
+            },
+            {
+                q: "5. 题目： 关于 .defeat() 和 .destroy() 的区别，以下哪项描述是正确的？",
+                options: [
+                    "A. .defeat() 会移除对象，而 .destroy() 会让对象失去生命值。",
+                    "B. .defeat() 适用于任何对象，而 .destroy() 只适用于单位。",
+                    "C. .defeat() 让对象“死亡”但留在场景，.destroy() 让对象完全消失。",
+                    "D. 两者效果完全相同，可以互换使用。"
+                ],
+                correct: 2, // C
+                desc: ".defeat() 像把怪物打倒留在地上（尸体可见），而 .destroy() 像用魔法把东西完全抹掉（从场景移除）。"
+            },
+            {
+                q: "6. 题目： 在代码 def onDefeat(event): 中，event 参数的作用是什么？",
+                code: "def onDefeat(event):",
+                options: [
+                    "A. 它存储了当前游戏的时间。",
+                    "B. 它代表了被打败的敌人数量。",
+                    "C. 它包含了关于这次击败事件的信息。",
+                    "D. 它用于设置一个新的计时器。"
+                ],
+                correct: 2, // C
+                desc: "event 是一个事件对象，它携带了事件发生时的相关信息。可以通过 event.target 来获取是哪个单位触发了这个事件。"
+            },
+            {
+                q: "7. 题目： 代码 game.defeated += 1 实现了什么功能？",
+                code: "game.defeated += 1",
+                options: [
+                    "A. 将 game.defeated 的值设置为1。",
+                    "B. 将 game.defeated 的值增加1。",
+                    "C. 比较 game.defeated 是否等于1。",
+                    "D. 将 game.defeated 的值减少1。"
+                ],
+                correct: 1, // B
+                desc: "+= 是一个自增运算符。game.defeated += 1 等价于 game.defeated = game.defeated + 1，即计数器增加1。"
+            },
+            {
+                q: "8. 题目： 观察以下代码片段，当 game.defeated 的值为多少时，大括号内的代码会被执行？",
+                code: "if game.defeated == 3:\n    munchkinSpawner.defeat()\n    passageForest1.destroy()",
+                options: [
+                    "A. 当 game.defeated 大于等于3时。",
+                    "B. 当 game.defeated 小于等于3时。",
+                    "C. 当 game.defeated 恰好等于3时。",
+                    "D. 每当一个敌人被击败时。"
+                ],
+                correct: 2, // C
+                desc: "== 是相等比较运算符。条件语句只有在 game.defeated 的值精确等于3时，其内部的代码块才会执行。"
+            },
+            {
+                q: "9. 题目： 代码 game.setActionFor(\"munchkin\", \"defeat\", onDefeat) 的作用是？",
+                code: "game.setActionFor(\"munchkin\",\n    \"defeat\", onDefeat)",
+                options: [
+                    "A. 立即生成一个“munchkin”并击败它。",
+                    "B. 为所有“munchkin”单位设置一个名字叫“defeat”的属性。",
+                    "C. 指定当任何一个“munchkin”被击败时，就调用 onDefeat 函数。",
+                    "D. 检查名为“munchkin”的生成器是否已经被击败。"
+                ],
+                correct: 2, // C
+                desc: "setActionFor 方法为特定类型(\"munchkin\")的特定事件(\"defeat\")绑定一个处理函数(onDefeat)。"
+            },
+            {
+                q: "10. 题目： 根据关卡的逻辑，玩家需要击败多少个敌人才能完全打通所有通道并停止所有怪物生成？",
+                options: [
+                    "A. 3个",
+                    "B. 6个",
+                    "C. 9个",
+                    "D. 所有敌人"
+                ],
+                correct: 1, // B
+                desc: "击败3个敌人时执行第一个操作；击败6个敌人时执行第二个操作，此时所有通道打通，所有生成器停止工作。"
+            },
+            {
+                q: "11. 题目： 在 onDefeat 事件处理函数中，defeated = event.target 这行代码的目的是什么？",
+                code: "defeated = event.target",
+                options: [
+                    "A. 将击败总数设置为1。",
+                    "B. 创建一个新的敌人目标。",
+                    "C. 获取触发此次击败事件的那个具体单位。",
+                    "D. 检查最近的目标是否是敌人。"
+                ],
+                correct: 2, // C
+                desc: "event.target 指向的是触发当前事件的对象本身。在这里，就是那个刚刚被击败的“munchkin”或“scout”。"
+            },
+            {
+                q: "12. 题目： 在关卡开始时，ui.track(game, \"defeated\") 这行代码最可能产生什么效果？",
+                code: "ui.track(game, \"defeated\")",
+                options: [
+                    "A. 在游戏界面上显示 game.defeated 计数器的数值。",
+                    "B. 开始追踪所有敌人的移动路径。",
+                    "C. 重置 game.defeated 计数器为0。",
+                    "D. 生成一个用于计数的新的游戏对象。"
+                ],
+                correct: 0, // A
+                desc: "ui.track 函数通常用于在用户界面（UI）上显示某个游戏变量的值。这里是显示击败计数。"
+            }
+        ];
+
+        // --- 游戏状态变量 ---
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        // --- DOM 元素 ---
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        // --- 初始化游戏 ---
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                // 优化的 HTML 转义与高亮逻辑
+                let codeHtml = escapeHtml(data.code);
+
+                // 1. 字符串高亮
+                codeHtml = codeHtml.replace(/(".*?")/g, '<span class="str">$1</span>');
+
+                // 2. 注释高亮
+                codeHtml = codeHtml.replace(/(#.*)/g, '<span class="cmt">$1</span>');
+
+                // 3. 关键字高亮 (新增 munchkinSpawner, passageForest1, spawnType, defeat, destroy, track 等)
+                codeHtml = codeHtml.replace(/\b(def|return|hero|game|ui|player|pet|on|off|hear|spawn|event|onSpawn|setActionFor|friendUnit|enemy|target|attack|moveXY|soldier|while|True|False|if|else|unit|findNearestEnemy|centerFormation|defendLane|pos|spawnPlayerXY|addDefeatGoal|guardian|munchkin|spawnTime|nextTime|time|randomInteger|onDefeat|toDefeat|defeated|spawnXY|behavior|min|max|ogre|addManualGoal|setGoalState|scoutGoal|bossGoal|scoutsDefeated|type|global|completeGoal|setState|munchkinSpawner|passageForest1|spawnType|defeat|destroy|track|generator)\b/g, '<span class="kw">$1</span>');
+                
+                // 4. 数字高亮
+                codeHtml = codeHtml.replace(/\b(\d+|-\d+)\b/g, '<span class="num">$1</span>');
+
+                // 5. 方法调用 (.xxx)
+                codeHtml = codeHtml.replace(/(\.\w+)/g, '<span class="fn">$1</span>');
+
+                html += `<div class="code-block">${codeHtml}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // --- 检查答案 ---
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => {
+                   allBtns[data.correct].classList.add('correct');
+                }, 400);
+                const rightAnswerChar = ["A", "B", "C", "D"][data.correct];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${rightAnswerChar}`, data.desc);
+            }
+        }
+
+        // --- 显示解析 ---
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // --- 下一题 ---
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        // --- 结束画面 ---
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none'; 
+
+            const totalScore = quizData.length * 100;
+            const isPerfect = (score === totalScore);
+            
+            let html = '';
+            if (isPerfect) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 对象操作大师！ 🎉</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score perfect-score-text">${score}</div></div>`;
+                html += `<div class="end-desc">太棒了！你已经透彻理解了对象、属性与方法的本质！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score">${score} / ${totalScore}</div></div>`;
+                html += `<div class="end-desc">做得不错！继续加油，灵活运用代码操控游戏世界！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; font-size:1.2rem; padding: 15px 40px;">🔄 再玩一次</button>`;
+            
+            endScreen.innerHTML = html;
+        }
+
+        // --- 撒花特效 ---
+        function createConfetti() {
+            const colors = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#fdcb6e'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-20px';
+                const scale = Math.random() * 0.6 + 0.4;
+                confetti.style.transform = `scale(${scale}) rotate(${Math.random()*360}deg)`;
+                confetti.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                
+                container.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 2500);
+            }
+        }
+
+        // --- HTML转义 ---
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // --- 启动游戏 ---
+        loadQuestion();
+
+    </script>
+</body>
+</html>

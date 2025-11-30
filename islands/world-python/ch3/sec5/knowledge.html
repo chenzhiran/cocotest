@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第26-30关 嵌套选择结构</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-color: #2c3e50;       /* 深蓝背景 */
+            --folder-bg: #f1c40f;      /* 档案袋黄 */
+            --paper-bg: #fdfbf7;       /* 纸张白 */
+            --primary: #2980b9;        /* 侦探蓝 */
+            --accent: #e67e22;         /* 线索橙 */
+            --success: #27ae60;        /* 逻辑绿 */
+            --text-main: #2c3e50;
+            
+            /* 代码高亮 */
+            --code-bg: #34495e;
+            --code-fg: #ecf0f1;
+            --tok-kw: #e74c3c;         /* 关键字 */
+            --tok-func: #3498db;       /* 函数 */
+            --tok-str: #f1c40f;        /* 字符串 */
+            --tok-comment: #95a5a6;    /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-color);
+            /* 侦探风格背景 */
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+        }
+
+        /* --- 3. 侦探风格按钮 (外部) --- */
+        .nav-btn {
+            width: 80px;
+            height: 80px;
+            background: #fff;
+            border: 6px solid #34495e;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 40px;
+            color: #34495e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 0 rgba(0,0,0,0.3);
+            transition: all 0.1s;
+            position: relative;
+            z-index: 100;
+        }
+        
+        /* 放大镜手柄装饰 */
+        .nav-btn::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 40px;
+            background: #7f8c8d;
+            bottom: -35px;
+            right: -20px;
+            transform: rotate(-45deg);
+            border-radius: 10px;
+            border: 4px solid #34495e;
+            z-index: -1;
+        }
+
+        .nav-btn:hover { transform: scale(1.1); background: #f1c40f; }
+        .nav-btn:active { transform: scale(0.95); box-shadow: 0 5px 0 rgba(0,0,0,0.3); }
+        
+        .disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 档案袋屏幕容器 --- */
+        .screen-container {
+            width: 960px;
+            height: 580px;
+            background: var(--folder-bg);
+            border-radius: 20px;
+            position: relative;
+            box-shadow: 
+                0 20px 0 #c0392b, /* 档案袋厚度 */
+                0 40px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            transform: rotate(-1deg);
+        }
+        
+        /* 档案袋标签 */
+        .folder-tab {
+            position: absolute;
+            top: -30px;
+            left: 50px;
+            width: 200px;
+            height: 40px;
+            background: var(--folder-bg);
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #c0392b;
+            font-family: monospace;
+            box-shadow: 0 -5px 10px rgba(0,0,0,0.1);
+        }
+
+        /* 内部纸张 */
+        .paper {
+            flex: 1;
+            background: var(--paper-bg);
+            border-radius: 10px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #dcdde1;
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px 60px;
+            flex-direction: column;
+            animation: pageFlip 0.6s ease-out;
+            overflow-y: auto;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes pageFlip { 
+            0% { opacity: 0; transform: translateY(20px) rotateX(10deg); } 
+            100% { opacity: 1; transform: translateY(0) rotateX(0); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            border-bottom: 3px dashed #bdc3c7;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .icon { font-size: 45px; margin-right: 20px; animation: float 3s infinite ease-in-out; }
+        h1 { margin: 0; color: var(--text-main); font-size: 32px; text-shadow: 1px 1px 0 rgba(0,0,0,0.1); }
+        .page-num { margin-left: auto; font-family: monospace; color: #95a5a6; font-weight: bold; background: #ecf0f1; padding: 5px 15px; border-radius: 15px; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .text-col { flex: 1.2; font-size: 20px; line-height: 1.6; color: var(--text-main); }
+        .visual-col { 
+            flex: 0.8; 
+            background: #fff; 
+            border-radius: 15px; 
+            border: 2px solid #ecf0f1; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 18px;
+            margin-top: 15px;
+            border-left: 5px solid var(--accent);
+            box-shadow: 5px 5px 0 rgba(0,0,0,0.1);
+            position: relative;
+        }
+        /* 缩进辅助线 */
+        .indent-line {
+            position: absolute; left: 25px; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.1);
+        }
+        .indent-line-2 { left: 45px; }
+        
+        .kw { color: var(--tok-kw); font-weight: bold; }
+        .fn { color: var(--tok-func); }
+        .st { color: var(--tok-str); }
+        .cm { color: var(--tok-comment); font-style: italic; }
+
+        /* 卡片 */
+        .card {
+            background: #eaf2f8;
+            border-left: 5px solid var(--primary);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 10px 10px 0;
+            font-size: 18px;
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 俄罗斯套娃效果 */
+        .matryoshka-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .doll {
+            border-radius: 50% 50% 40% 40%; /* 娃娃形状 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            position: absolute;
+            transition: all 0.5s;
+        }
+        .doll-outer {
+            width: 220px; height: 280px; background: #e74c3c; z-index: 1; top: 20px;
+            border: 4px solid #c0392b;
+        }
+        .doll-middle {
+            width: 150px; height: 200px; background: #f1c40f; z-index: 2; top: 60px;
+            border: 4px solid #f39c12;
+        }
+        .doll-inner {
+            width: 80px; height: 110px; background: #3498db; z-index: 3; top: 105px;
+            border: 4px solid #2980b9;
+        }
+        .doll-face {
+            width: 60%; height: 30%; background: #fce4ec; border-radius: 50%; margin-bottom: 10px;
+            display: flex; justify-content: center; align-items: center; font-size: 20px;
+        }
+        
+        /* 动画：剥洋葱 */
+        .peel-anim .doll-outer { transform: translateX(-120px) scale(0.9); opacity: 0.5; }
+        .peel-anim .doll-middle { transform: translateX(120px) scale(0.9); opacity: 0.8; }
+        
+        /* 逻辑流程图节点 */
+        .flow-node {
+            padding: 8px 15px; border-radius: 20px; color: white; font-weight: bold; text-align: center; margin: 5px 0; width: 180px; position: relative;
+        }
+        .node-check { background: #e67e22; clip-path: polygon(10% 0, 90% 0, 100% 50%, 90% 100%, 10% 100%, 0% 50%); }
+        .node-action { background: #27ae60; border-radius: 5px; }
+        .node-line { width: 2px; height: 15px; background: #bdc3c7; margin: 0 auto; }
+
+        /* 动画 */
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 6px;
+            background: #dcdde1;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn prev" id="btnPrev" onclick="moveSlide(-1)">❮</button>
+
+    <!-- 档案袋容器 -->
+    <div class="screen-container">
+        <div class="folder-tab">TOP SECRET: LEVEL 26-30</div>
+        <div class="paper">
+            
+            <!-- Slide 1: 封面 -->
+            <div class="slide active" style="align-items: center; justify-content: center; text-align: center;">
+                <div style="font-size: 100px; margin-bottom: 20px;">🕵️‍♀️</div>
+                <h1 style="font-size: 48px; color: var(--text-main); margin-bottom: 10px;">嵌套选择结构</h1>
+                <h2 style="font-size: 28px; color: #7f8c8d; font-weight: normal;">CodeCombat 侦探档案</h2>
+                <div style="margin-top: 40px; display: flex; gap: 30px;">
+                    <div style="padding: 15px 30px; background: #e74c3c; color: white; border-radius: 30px; font-weight: bold; box-shadow: 0 5px 0 #c0392b;">🪆 层层剥茧</div>
+                    <div style="padding: 15px 30px; background: #f39c12; color: white; border-radius: 30px; font-weight: bold; box-shadow: 0 5px 0 #d35400;">🧠 精密推理</div>
+                </div>
+            </div>
+
+            <!-- Slide 2: 什么是嵌套选择 -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">🪆</div>
+                    <h1>什么是嵌套选择？</h1>
+                    <div class="page-num">01/10</div>
+                </div>
+                <div class="layout">
+                    <div class="text-col">
+                        <p>想象你在玩一个<b>超级侦探游戏</b>，要做层层推理：</p>
+                        <ol style="font-size: 18px; line-height: 1.8;">
+                            <li style="color: #c0392b;">第一层：有没有敌人？</li>
+                            <li style="color: #f39c12;">第二层：如果有，距离够近吗？</li>
+                            <li style="color: #2980b9;">第三层：如果够近，大招好了吗？</li>
+                        </ol>
+                        <div class="card">
+                            "嵌套选择就像<b>俄罗斯套娃</b>，一层套一层！只有打开外面的，才能看到里面的。"
+                        </div>
+                    </div>
+                    <div class="visual-col" id="dollDemo">
+                        <div class="matryoshka-container">
+                            <div class="doll doll-outer"><div class="doll-face">外层</div></div>
+                            <div class="doll doll-middle"><div class="doll-face">中层</div></div>
+                            <div class="doll doll-inner"><div class="doll-face">核心</div></div>
+                        </div>
+                        <button onclick="togglePeel()" style="position:absolute; bottom: 10px; padding: 5px 15px; cursor: pointer;">打开套娃</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: 语法结构 -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">🧅</div>
+                    <h1>洋葱剥皮法</h1>
+                    <div class="page-num">02/10</div>
+                </div>
+                <div class="layout">
+                    <div class="text-col">
+                        <p>代码也是这样一层层缩进的：</p>
+                        <div class="code-box">
+                            <div class="indent-line"></div>
+                            <div class="indent-line-2"></div>
+                            <span class="kw">if</span> 外层条件成立:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> 内层条件成立:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 执行核心精细动作</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attack()<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">else</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 内层不成立</span><br>
+                            <span class="kw">else</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># 外层都不成立</span>
+                        </div>
+                    </div>
+                    <div class="visual-col">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="flow-node node-check" style="background: #c0392b;">外层：有敌人?</div>
+                            <div class="node-line"></div>
+                            <div class="flow-node node-check" style="background: #f39c12; width: 140px;">内层：距离近?</div>
+                            <div class="node-line"></div>
+                            <div class="flow-node node-action">👊 攻击！</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 4: 第一个程序分析 (两层) -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">🔭</div>
+                    <h1>两层侦察系统</h1>
+                    <div class="page-num">03/10</div>
+                </div>
+                <div class="layout">
+                    <div class="text-col">
+                        <div class="code-box" style="font-size: 16px;">
+                            enemy = <span class="fn">hero.findNearestEnemy</span>()<br>
+                            <br>
+                            <span class="kw">if</span> enemy: <span class="cm"># 第1层</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;dist = <span class="fn">hero.distanceTo</span>(enemy)<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> dist < 15: <span class="cm"># 第2层</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">hero.attack</span>(enemy)<br>
+                            <span class="kw">else</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">hero.moveXY</span>(40, 34)
+                        </div>
+                    </div>
+                    <div class="visual-col" style="flex-direction: column; justify-content: space-around;">
+                        <div class="card" style="width: 80%; border-left-color: #c0392b;">
+                            <b>第一步：</b> 确认有人影 (enemy 存在)
+                        </div>
+                        <div style="font-size: 30px;">⬇️</div>
+                        <div class="card" style="width: 80%; border-left-color: #f39c12;">
+                            <b>第二步：</b> 确认在射程内 (< 15m)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5: 第二个程序分析 (三层) -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">⚔️</div>
+                    <h1>三层智能战斗</h1>
+                    <div class="page-num">04/10</div>
+                </div>
+                <div class="layout">
+                    <div class="text-col">
+                        <p>更高级的 AI 需要三层判断！</p>
+                        <div class="code-box" style="font-size: 14px;">
+                            <span class="kw">if</span> enemy:<br>
+                            &nbsp;&nbsp;<span class="kw">if</span> dist < 10:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> <span class="fn">isReady</span>(<span class="st">"cleave"</span>):<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">hero.cleave</span>(enemy) <span class="cm"># 大招!</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">else</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">hero.attack</span>(enemy) <span class="cm"># 普攻</span><br>
+                            &nbsp;&nbsp;<span class="kw">else</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">hero.say</span>(dist) <span class="cm"># 太远</span>
+                        </div>
+                    </div>
+                    <div class="visual-col">
+                        <div style="position: relative; width: 200px; height: 200px;">
+                            <!-- 漏斗示意图 -->
+                            <div style="position:absolute; top:0; left:0; width:100%; height:60px; background:#c0392b; border-radius:10px; color:white; text-align:center; line-height:60px;">1. 有敌人</div>
+                            <div style="position:absolute; top:70px; left:10%; width:80%; height:50px; background:#f39c12; border-radius:10px; color:white; text-align:center; line-height:50px;">2. 很近</div>
+                            <div style="position:absolute; top:130px; left:20%; width:60%; height:40px; background:#2980b9; border-radius:10px; color:white; text-align:center; line-height:40px;">3. 技能好</div>
+                            <div style="position:absolute; bottom:0; left:40%; font-size:30px;">💥</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 6: 嵌套 vs 多分支 -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">⚖️</div>
+                    <h1>嵌套 vs 多分支</h1>
+                    <div class="page-num">05/10</div>
+                </div>
+                <div class="layout">
+                    <div class="text-col">
+                        <div class="card" style="background: #fef9e7; border-color: #f1c40f;">
+                            <b>多分支 (if-elif-else)</b><br>
+                            像做<b>选择题</b> (A/B/C/D)。<br>
+                            处于同一层级，非此即彼。
+                        </div>
+                        <div class="card" style="background: #e8f8f5; border-color: #1abc9c;">
+                            <b>嵌套选择</b><br>
+                            像<b>判断题 + 选择题</b>。<br>
+                            先判断大方向，再进入内部做细致选择。
+                        </div>
+                    </div>
+                    <div class="visual-col">
+                        <div style="font-size: 60px;">🍱 vs 🧅</div>
+                        <div style="position: absolute; bottom: 20px; font-size: 14px; color: #7f8c8d;">便当格子 vs 洋葱层</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 7: 逻辑清晰的优势 -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">🧹</div>
+                    <h1>为什么用嵌套？</h1>
+                    <div class="page-num">06/10</div>
+                </div>
+                <div class="layout">
+                    <div class="text-col">
+                        <p>避免重复检查，逻辑更清晰！</p>
+                        <div class="code-box" style="border-color: #e74c3c;">
+                            <span class="cm"># ❌ 啰嗦写法</span><br>
+                            <span class="kw">if</span> enemy:<br>
+                            &nbsp;&nbsp;d = <span class="fn">dist</span>(enemy)<br>
+                            <span class="kw">if</span> enemy <span class="kw">and</span> d < 10: <span class="cm"># 又查一遍!</span><br>
+                            &nbsp;&nbsp;...
+                        </div>
+                        <div class="code-box" style="border-color: #27ae60;">
+                            <span class="cm"># ✅ 嵌套写法</span><br>
+                            <span class="kw">if</span> enemy:<br>
+                            &nbsp;&nbsp;d = <span class="fn">dist</span>(enemy)<br>
+                            &nbsp;&nbsp;<span class="kw">if</span> d < 10: <span class="cm"># 直接用上一层结果</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;...
+                        </div>
+                    </div>
+                    <div class="visual-col">
+                        <div style="font-size: 80px;">🧠</div>
+                        <div style="position: absolute; bottom: 10px;">聪明的大脑不走回头路</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 8: 生活中的例子 -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">🥘</div>
+                    <h1>晚餐吃什么？</h1>
+                    <div class="page-num">07/10</div>
+                </div>
+                <div class="layout">
+                    <div class="text-col">
+                        <div class="code-box" style="font-size: 16px;">
+                            <span class="kw">if</span> 妈妈在家:<br>
+                            &nbsp;&nbsp;<span class="kw">if</span> 冰箱有菜:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> 妈妈不累:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">妈妈做饭</span>() <span class="cm"># 幸福!</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">else</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">点外卖</span>() <span class="cm"># 累了</span><br>
+                            &nbsp;&nbsp;<span class="kw">else</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">去买菜</span>()<br>
+                            <span class="kw">else</span>:<br>
+                            &nbsp;&nbsp;<span class="fn">自己泡面</span>() <span class="cm"># 悲催...</span>
+                        </div>
+                    </div>
+                    <div class="visual-col">
+                        <div style="font-size: 60px;">👩‍🍳 🍕 🍜</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 9: 编程概念 (作用域) -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">🔒</div>
+                    <h1>重要概念：作用域</h1>
+                    <div class="page-num">08/10</div>
+                </div>
+                <div class="layout">
+                    <div class="text-col">
+                        <p><b>内层代码可以访问外层变量！</b></p>
+                        <p>就像你在客厅（外层）拿了一个苹果，带进卧室（内层）依然可以吃。</p>
+                        <div class="code-box">
+                            <span class="kw">if</span> enemy: <span class="cm"># 外层确认了enemy</span><br>
+                            &nbsp;&nbsp;dist = <span class="fn">distanceTo</span>(enemy)<br>
+                            &nbsp;&nbsp;<span class="kw">if</span> dist < 10:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">attack</span>(enemy) <span class="cm"># 内层直接用!</span>
+                        </div>
+                    </div>
+                    <div class="visual-col">
+                        <div style="border: 4px solid #2c3e50; padding: 20px; border-radius: 10px; background: #bdc3c7;">
+                            客厅 🍎
+                            <div style="border: 4px solid #2980b9; padding: 20px; border-radius: 10px; background: #ecf0f1; margin-top: 10px;">
+                                卧室 (我有🍎了!)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 10: 总结 -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">🎓</div>
+                    <h1>侦探结案口诀</h1>
+                    <div class="page-num">09/10</div>
+                </div>
+                <div class="layout">
+                    <div class="text-col" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                        <div style="background: #d5f5e3; padding: 20px; border-radius: 20px; border: 3px dashed #27ae60; transform: rotate(-2deg); margin-bottom: 20px;">
+                            <h2 style="color: #27ae60; margin: 0;">"嵌套选择像套娃，<br>一层一层往里查，<br>缩进对齐不能差！"</h2>
+                        </div>
+                        <div style="background: #fadbd8; padding: 20px; border-radius: 20px; border: 3px dashed #c0392b; transform: rotate(2deg);">
+                            <h3 style="color: #c0392b; margin: 0;">"先判存在再测距，<br>技能就绪最后查！"</h3>
+                        </div>
+                    </div>
+                    <div class="visual-col" style="border:none; background: transparent; box-shadow: none;">
+                        <div style="font-size: 120px; animation: pulse 2s infinite;">📂</div>
+                        <div style="position: absolute; transform: rotate(-20deg); color: #c0392b; border: 5px solid #c0392b; padding: 10px 20px; font-weight: bold; font-size: 30px; border-radius: 10px; opacity: 0.8;">TOP SECRET</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部进度条 -->
+            <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+        </div>
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn next" id="btnNext" onclick="moveSlide(1)">❯</button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    // 键盘支持
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    // 俄罗斯套娃动画逻辑
+    let isPeeled = false;
+    function togglePeel() {
+        const container = document.getElementById('dollDemo');
+        isPeeled = !isPeeled;
+        if (isPeeled) {
+            container.classList.add('peel-anim');
+        } else {
+            container.classList.remove('peel-anim');
+        }
+    }
+
+    // 初始化
+    updateUI();
+</script>
+
+</body>
+</html>

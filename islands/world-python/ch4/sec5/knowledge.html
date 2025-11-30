@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第8关 游戏管理：随机数</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-color: #2d1b4e;       /* 神秘紫背景 */
+            --screen-bg: #fdfbf7;      /* 纸张白 */
+            --primary: #6c5ce7;        /* 魔法紫 */
+            --secondary: #e84393;      /* 霓虹粉 */
+            --accent: #fdcb6e;         /* 幸运金 */
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            
+            /* 代码高亮 */
+            --code-bg: #1e272e;
+            --code-fg: #d2dae2;
+            --tok-kw: #ff5e57;         /* 关键字 */
+            --tok-func: #4bcffa;       /* 函数名 */
+            --tok-var: #ffdd59;        /* 变量 */
+            --tok-num: #0be881;        /* 数字 */
+            --tok-cm: #808e9b;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-color);
+            /* 扑克牌花色背景 */
+            background-image: 
+                radial-gradient(rgba(255,255,255,0.05) 15%, transparent 15%),
+                radial-gradient(rgba(255,255,255,0.05) 15%, transparent 15%);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 问号砖块按钮 (外部) --- */
+        .nav-btn {
+            width: 80px;
+            height: 80px;
+            background: var(--accent);
+            border: 4px solid #d35400;
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 8px 0 #d35400, 0 15px 20px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #d35400;
+            font-size: 40px;
+            font-weight: bold;
+            font-family: monospace;
+        }
+        
+        .nav-btn::before {
+            content: '';
+            position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border: 2px dashed rgba(211, 84, 0, 0.5);
+            border-radius: 5px;
+        }
+
+        /* 问号钉子 */
+        .nav-btn::after {
+            content: ''; position: absolute; width: 6px; height: 6px; background: #d35400; border-radius: 50%;
+            box-shadow: 
+                70px 0 0 #d35400,
+                0 70px 0 #d35400,
+                70px 70px 0 #d35400;
+            top: 2px; left: 2px;
+        }
+
+        .nav-btn:hover { transform: translateY(4px); box-shadow: 0 4px 0 #d35400; background: #ffeaa7; }
+        .nav-btn:active { transform: translateY(8px); box-shadow: none; }
+        
+        .disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 游戏机屏幕容器 --- */
+        .console-container {
+            width: 960px;
+            height: 600px;
+            background: var(--screen-bg);
+            border-radius: 20px;
+            /* 霓虹边框 */
+            border: 8px solid #4b4b4b;
+            box-shadow: 
+                0 0 0 12px var(--primary),
+                0 0 30px var(--primary),
+                inset 0 0 50px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部信息栏 */
+        .info-bar {
+            height: 50px;
+            background: #2d3436;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+            font-family: monospace;
+            font-weight: bold;
+            border-bottom: 4px solid var(--secondary);
+            z-index: 20;
+        }
+        .map-name {
+            background: var(--primary);
+            padding: 5px 15px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .level-info { color: var(--accent); }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 50px 70px;
+            flex-direction: column;
+            animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow-y: auto;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes slideIn { 
+            0% { opacity: 0; transform: scale(0.9); } 
+            100% { opacity: 1; transform: scale(1); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px dashed #dfe6e9;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1)); }
+        h1 { margin: 0; color: var(--primary); font-size: 36px; letter-spacing: 1px; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.2; font-size: 19px; line-height: 1.6; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.8; 
+            background: #fff;
+            border-radius: 15px; 
+            border: 2px solid #dfe6e9; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 17px;
+            margin-top: 15px;
+            border-left: 6px solid var(--secondary);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .k { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .v { color: var(--tok-var); } 
+        .n { color: var(--tok-num); }
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #fff0f6;
+            border-left: 5px solid var(--secondary);
+            color: #c2185b;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 10px 10px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 3D 骰子 */
+        .dice-container {
+            perspective: 1000px;
+            width: 150px; height: 150px;
+        }
+        .dice {
+            width: 100%; height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(-20deg);
+            animation: rotateDice 5s infinite linear;
+        }
+        .face {
+            position: absolute;
+            width: 150px; height: 150px;
+            background: white;
+            border: 2px solid #aaa;
+            border-radius: 20px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 60px; font-weight: bold; color: var(--text-main);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+        }
+        .face-1 { transform: translateZ(75px); }
+        .face-2 { transform: rotateY(180deg) translateZ(75px); }
+        .face-3 { transform: rotateY(90deg) translateZ(75px); }
+        .face-4 { transform: rotateY(-90deg) translateZ(75px); }
+        .face-5 { transform: rotateX(90deg) translateZ(75px); }
+        .face-6 { transform: rotateX(-90deg) translateZ(75px); }
+
+        @keyframes rotateDice {
+            0% { transform: rotateX(0) rotateY(0); }
+            100% { transform: rotateX(360deg) rotateY(360deg); }
+        }
+
+        /* 随机坐标网格 */
+        .grid-map {
+            width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(#dcdde1 1px, transparent 1px),
+                linear-gradient(90deg, #dcdde1 1px, transparent 1px);
+            background-size: 40px 40px;
+            position: relative;
+        }
+        .grid-dot {
+            width: 15px; height: 15px; background: var(--secondary); border-radius: 50%;
+            position: absolute; transform: translate(-50%, -50%);
+            box-shadow: 0 0 0 5px rgba(232, 67, 147, 0.3);
+            animation: pop 0.5s;
+        }
+        .grid-label {
+            position: absolute; font-family: monospace; font-size: 12px; color: #636e72;
+        }
+
+        /* 时间轴随机 */
+        .timeline-box {
+            width: 100%; height: 100%; padding: 20px; display: flex; flex-direction: column; justify-content: center;
+        }
+        .timeline-track {
+            width: 100%; height: 4px; background: #b2bec3; position: relative; margin-top: 20px;
+        }
+        .spawn-mark {
+            position: absolute; top: -20px; width: 4px; height: 40px; background: var(--secondary);
+        }
+        .monster-icon {
+            position: absolute; top: -50px; font-size: 30px; transform: translateX(-50%);
+        }
+        .interval-label {
+            position: absolute; top: 25px; font-size: 12px; color: var(--primary); transform: translateX(50%);
+        }
+
+        /* 流程图节点 */
+        .flow-node {
+            padding: 8px 15px; border-radius: 20px; color: white; font-weight: bold; margin: 8px 0; text-align: center; width: 240px;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+        .bg-purple { background: var(--primary); }
+        .bg-pink { background: var(--secondary); }
+        .bg-orange { background: #e17055; }
+        .arrow-down { font-size: 20px; color: #b2bec3; margin: 0; text-align: center; width: 100%; }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #dfe6e9;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 动画 */
+        @keyframes pop { 0% { transform: translate(-50%, -50%) scale(0); } 80% { transform: translate(-50%, -50%) scale(1.2); } 100% { transform: translate(-50%, -50%) scale(1); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    </style>
+</head>
+<body>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn" id="btnPrev" onclick="moveSlide(-1)">?</button>
+
+    <!-- 屏幕容器 -->
+    <div class="console-container">
+        <div class="info-bar">
+            <div class="map-name">🗺️ 游戏开发 2</div>
+            <div class="level-info">第 8 关</div>
+        </div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">🎲</div>
+            <h1 style="font-size: 50px; margin: 10px 0; color: var(--primary);">游戏管理：随机数</h1>
+            <h2 style="font-size: 26px; color: var(--secondary); font-weight: bold; margin-top: 0; background: #fff0f6; padding: 5px 20px; border-radius: 20px;">Random Numbers</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: var(--accent); color: #d35400; border-radius: 10px; font-weight: bold; font-size: 20px; border: 2px solid #d35400;">📍 随机位置</div>
+                <div style="padding: 15px 30px; background: var(--primary); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; border: 2px solid #2d1b4e;">⏰ 随机时间</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 什么是随机数 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">❓</div>
+                <h1>什么是“随机数” (Random Number)?</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>就像你掷骰子、抽卡牌，每次结果都可能不一样，而且你事先不知道。</p>
+                    <div class="code-box">
+                        <span class="v">num</span> = <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">0</span>, <span class="n">3</span>)
+                    </div>
+                    <p style="margin-top: 10px;">这句代码的意思是：<br>
+                    从 0, 1, 2, 3 中<b>随机</b>选一个整数给我。</p>
+                    <div class="card">
+                        "这就像有一个 0~3 的四面骰子，每次丢出来的数字都不一样。"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="dice-container">
+                        <div class="dice">
+                            <div class="face face-1">0</div>
+                            <div class="face face-2">1</div>
+                            <div class="face face-3">2</div>
+                            <div class="face face-4">3</div>
+                            <div class="face face-5">?</div>
+                            <div class="face face-6">!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 语法重点 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📝</div>
+                <h1>语法重点：函数调用</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><code>game.randomInteger(10, 70)</code> 是在给游戏管理员下命令：</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">🧑‍💼 <b>game</b>：对象 (Object)</li>
+                        <li style="margin-bottom: 10px;">🛠️ <b>randomInteger</b>：方法 (Method)</li>
+                        <li>📋 <b>(10, 70)</b>：参数 (Parameters)<br>
+                            <span style="font-size: 14px; color: var(--text-sub);">Min=10, Max=70</span>
+                        </li>
+                    </ul>
+                    <div class="code-box">
+                        <span class="c"># 请在 10 到 70 之间随便选一个数</span><br>
+                        <span class="v">x</span> = <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">10</span>, <span class="n">70</span>)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px; margin-bottom: 20px;">🎰</div>
+                        <button onclick="generateRandom()" style="padding: 10px 20px; font-size: 18px; cursor: pointer; background: var(--primary); color: white; border: none; border-radius: 5px;">点击生成 (10-70)</button>
+                        <div id="randDisplay" style="font-size: 40px; font-weight: bold; margin-top: 20px; color: var(--secondary);">?</div>
+                    </div>
+                    <script>
+                        function generateRandom() {
+                            const num = Math.floor(Math.random() * (70 - 10 + 1)) + 10;
+                            const disp = document.getElementById('randDisplay');
+                            disp.innerText = num;
+                            disp.style.transform = 'scale(1.5)';
+                            setTimeout(() => disp.style.transform = 'scale(1)', 200);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 随机位置 (Random Position) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📍</div>
+                <h1>随机位置：让怪物“闪现”</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>我们用两个骰子来决定敌人的位置：</p>
+                    <div class="code-box">
+                        <span class="c"># 1. 掷骰子决定 X (横坐标)</span><br>
+                        <span class="v">x</span> = <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">10</span>, <span class="n">70</span>)<br>
+                        <span class="c"># 2. 掷骰子决定 Y (纵坐标)</span><br>
+                        <span class="v">y</span> = <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">10</span>, <span class="n">60</span>)<br>
+                        <span class="c"># 3. 生成怪物</span><br>
+                        <span class="v">game</span>.<span class="f">spawnXY</span>(<span class="s">"munchkin"</span>, <span class="v">x</span>, <span class="v">y</span>)
+                    </div>
+                    <p style="margin-top: 10px;">这样每次刷怪的位置都不一样，玩家永远猜不到下一只在哪！</p>
+                </div>
+                <div class="col-visual">
+                    <div class="grid-map" id="randomGrid">
+                        <div class="grid-label" style="bottom: 5px; left: 5px;">(0,0)</div>
+                        <div class="grid-label" style="bottom: 5px; right: 5px;">X →</div>
+                        <div class="grid-label" style="top: 5px; left: 5px;">Y ↑</div>
+                    </div>
+                    <script>
+                        setInterval(() => {
+                            const map = document.getElementById('randomGrid');
+                            if(map.offsetParent !== null) { // Only if visible
+                                const dot = document.createElement('div');
+                                dot.className = 'grid-dot';
+                                const rx = Math.random() * 80 + 10;
+                                const ry = Math.random() * 80 + 10;
+                                dot.style.left = rx + '%';
+                                dot.style.bottom = ry + '%';
+                                map.appendChild(dot);
+                                setTimeout(() => dot.remove(), 1500);
+                            }
+                        }, 800);
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 随机时间 (Random Interval) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">⏱️</div>
+                <h1>随机时间：忽快忽慢</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>让敌人出现的节奏变幻莫测：</p>
+                    <div class="code-box">
+                        <span class="c"># 0到4秒后再次生成</span><br>
+                        <span class="v">interval</span> = <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">0</span>, <span class="n">4</span>)<br>
+                        <br>
+                        <span class="v">spawnTime</span> = <span class="v">game</span>.<span class="p">time</span> + <span class="v">interval</span>
+                    </div>
+                    <p>有时怪隔 0 秒就接着来（连刷！），有时隔 4 秒才来（松一口气）。</p>
+                    <div class="card">
+                        公式：<br>
+                        下一次时间 = 当前时间 + 随机间隔
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="timeline-box">
+                        <div style="font-weight: bold; color: var(--text-main);">时间轴演示：</div>
+                        <div class="timeline-track">
+                            <div class="spawn-mark" style="left: 10%;">
+                                <div class="monster-icon">👾</div>
+                            </div>
+                            <!-- Random intervals visually -->
+                            <div class="spawn-mark" style="left: 25%;">
+                                <div class="monster-icon">👾</div>
+                                <div class="interval-label">+1s</div>
+                            </div>
+                            <div class="spawn-mark" style="left: 60%;">
+                                <div class="monster-icon">👾</div>
+                                <div class="interval-label">+3.5s</div>
+                            </div>
+                            <div class="spawn-mark" style="left: 65%;">
+                                <div class="monster-icon">👾</div>
+                                <div class="interval-label">+0.5s</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 完整逻辑 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔄</div>
+                <h1>完整逻辑串起来</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <div class="code-box" style="font-size: 14px;">
+                        <span class="v">spawnTime</span> = <span class="n">0</span><br>
+                        <span class="k">while</span> True:<br>
+                        &nbsp;&nbsp;<span class="k">if</span> <span class="v">game</span>.<span class="p">time</span> > <span class="v">spawnTime</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 1. 随机位置</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">x</span> = <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">10</span>, <span class="n">70</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">y</span> = <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">10</span>, <span class="n">60</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">game</span>.<span class="f">spawnXY</span>(<span class="s">"munchkin"</span>, <span class="v">x</span>, <span class="v">y</span>)<br>
+                        <br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 2. 随机下次时间</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">interval</span> = <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">0</span>, <span class="n">4</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">spawnTime</span> = <span class="v">game</span>.<span class="p">time</span> + <span class="v">interval</span>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                        <div class="flow-node bg-orange">⏰ 时间到了?</div>
+                        <div class="arrow-down">⬇️ Yes</div>
+                        <div class="flow-node bg-purple">🎲 随机 X, Y</div>
+                        <div class="arrow-down">⬇️</div>
+                        <div class="flow-node bg-purple">👾 生成怪物</div>
+                        <div class="arrow-down">⬇️</div>
+                        <div class="flow-node bg-pink">🎲 随机下一次时间</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 复习：事件处理器 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🤖</div>
+                <h1>复习：让怪动起来</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>随机数只负责<b>“生”</b>，事件处理器负责<b>“养”</b>（控制行为）。</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        <span class="k">def</span> <span class="f">onSpawn</span>(event):<br>
+                        &nbsp;&nbsp;<span class="k">while</span> True:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 自动攻击逻辑...</span><br>
+                        <br>
+                        <span class="v">game</span>.<span class="f">setActionFor</span>(<span class="s">"munchkin"</span>, <span class="s">"spawn"</span>, onSpawn)
+                    </div>
+                    <div class="card">
+                        配合使用：<br>
+                        随机生成位置 + 自动攻击 AI = 完美的游戏体验！
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px; display: flex; gap: 20px; align-items: center;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            🎲<span style="font-size: 14px;">出生</span>
+                        </div>
+                        <div>➡️</div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            🧠<span style="font-size: 14px;">行动</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 数学概率 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📊</div>
+                <h1>数学小知识：概率</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><code>game.randomInteger(0, 3)</code></p>
+                    <p>可能的结果：0, 1, 2, 3</p>
+                    <p>这就像一个只有 4 个面的骰子，每一面朝上的机会是<b>一样大</b>的（公平的）。</p>
+                    <p>在地图上，这就意味着怪物出现在任何一个格子的机会都差不多，这就是<b>“均匀随机”</b>。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="width: 100%; height: 200px; display: flex; align-items: flex-end; justify-content: space-around; padding-bottom: 20px;">
+                        <div style="width: 40px; height: 25%; background: var(--primary); border-radius: 5px 5px 0 0; color: white; text-align: center;">0</div>
+                        <div style="width: 40px; height: 25%; background: var(--primary); border-radius: 5px 5px 0 0; color: white; text-align: center;">1</div>
+                        <div style="width: 40px; height: 25%; background: var(--primary); border-radius: 5px 5px 0 0; color: white; text-align: center;">2</div>
+                        <div style="width: 40px; height: 25%; background: var(--primary); border-radius: 5px 5px 0 0; color: white; text-align: center;">3</div>
+                    </div>
+                    <div style="position: absolute; bottom: 5px; font-size: 12px; color: #636e72;">机会均等 (≈25%)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎓</div>
+                <h1>随机数口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: #dff9fb; border-color: var(--primary); color: var(--primary);">
+                        <b>掷骰子：</b><br>
+                        randomInteger(min, max)<br>
+                        给你一个范围内的随机数。
+                    </div>
+                    <div class="card" style="background: #fff0f6; border-color: var(--secondary); color: var(--secondary); margin-top: 20px;">
+                        <b>随机大法：</b><br>
+                        "坐标 + 随机数 = 瞬间移动"<br>
+                        "时间 + 随机数 = 忽快忽慢"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; animation: float 3s infinite;">🎉</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn" id="btnNext" onclick="moveSlide(1)">!</button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

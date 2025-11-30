@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编程小英雄挑战赛 - 多重判断篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 (紫色现代风格) --- */
+        :root {
+            --primary-color: #6C5CE7; /* 主色调：紫色 */
+            --secondary-color: #A29BFE;
+            --bg-color: #DFE6E9;     /* 背景灰 */
+            --card-bg: #FFFFFF;
+            --text-color: #2D3436;   /* 深色文字 */
+            --correct-color: #00b894;/* 正确绿 */
+            --wrong-color: #d63031;  /* 错误红 */
+            --accent-yellow: #fdcb6e;/* 强调黄 */
+            
+            /* 代码高亮颜色 */
+            --code-bg: #2d2d2d;
+            --code-text: #ccc;
+            --code-kw: #cc99cd; /* 关键字 (purple/pink) */
+            --code-fn: #6196cc; /* 函数/方法 (blue) */
+            --code-num: #f08d49; /* 数字 (orange) */
+            --code-str: #7ec699; /* 字符串 (green) */
+            --code-cmt: #777777; /* 注释 (grey) */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            /* 点阵背景纹理 */
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* --- 游戏容器 --- */
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 700px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目区域 --- */
+        .question-area {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        
+        .question-area h2 {
+            color: var(--text-color);
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* --- 代码高亮样式 --- */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', monospace;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            text-align: left;
+            font-size: 0.95rem;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+        }
+        /* 语法着色 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 0.95rem; 
+            font-family: 'Fira Code', inherit; /* 使用等宽字体以对齐代码 */
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            position: relative;
+            top: 0;
+            box-shadow: 0 5px 0 #bdc3c7;
+            word-break: break-all;
+            white-space: pre-wrap; /* 允许选项中的代码换行和保留空格 */
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #aab0b3;
+        }
+
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+        }
+        
+        .option-btn[disabled] {
+            cursor: default;
+        }
+
+        /* --- 答题状态 --- */
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析区域 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+
+        .feedback-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+
+        .explanation-text {
+            color: #636e72;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        /* --- 下一题按钮 --- */
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 5px 0 #5649c0;
+            transition: all 0.2s;
+            float: right;
+        }
+        .next-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .next-btn:active { transform: translateY(5px); box-shadow: none; }
+
+        /* --- 结算画面 --- */
+        .end-screen {
+            display: none;
+            padding: 20px 0;
+        }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score-box {
+            background: var(--accent-yellow);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 25px;
+            display: inline-block;
+            margin: 30px 0;
+            box-shadow: 0 8px 0 #e1b12c;
+        }
+        .end-score { font-size: 3.5rem; font-weight: bold; line-height: 1; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+        
+        .perfect-score-text {
+            background: linear-gradient(45deg, #FFD700, #FF8C00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        /* --- 动画定义 --- */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall {
+            to { transform: translateY(80vh) rotate(720deg); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container">
+                </div>
+
+            <div class="options-grid" id="options-container">
+                </div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen">
+            </div>
+    </div>
+
+    <script>
+        // --- 题目数据 ---
+        const quizData = [
+            {
+                q: "if-elif-else 语句的执行顺序是？",
+                options: ["A. 只执行第一个条件满足的代码块", "B. 按顺序检查所有条件，直到找到满足的条件", "C. 如果第一个条件不成立，跳过后续所有条件", "D. 检查所有条件，并执行每个满足条件的代码块"],
+                correct: 1, // B
+                desc: "if-elif-else 按照顺序逐个检查条件，直到找到满足条件的代码块执行。"
+            },
+            {
+                // 题目修改：明确策略，消除歧义
+                q: "以下哪个代码正确实现了这个策略：'如果技能 cleave 就绪则释放技能；否则，如果距离小于 5 则攻击敌人；如果都不满足，则攻击 Door'？",
+                options: [
+                    "A. if hero.isReady(\"cleave\"):\n    hero.cleave(enemy)\nelif distance < 5:\n    hero.attack(enemy)\nelse:\n    hero.attack(\"Door\")",
+                    "B. if hero.isReady(\"cleave\"):\n    hero.attack(enemy)\nif distance < 5:\n    hero.attack(enemy)\nelse:\n    hero.attack(\"Door\")",
+                    "C. if distance < 5:\n    hero.attack(enemy)\nelif hero.isReady(\"cleave\"):\n    hero.cleave(enemy)\nelse:\n    hero.attack(\"Door\")",
+                    "D. if distance < 5:\n    hero.attack(enemy)\nelse:\n    hero.attack(\"Door\")"
+                ],
+                correct: 0, // A
+                desc: "选项 A 严格按照题目要求的优先级顺序：先检查 cleave，再检查距离，最后执行 else。"
+            },
+            {
+                q: "hero.isReady(\"cleave\") 返回的是什么类型的值？",
+                options: ["A. 字符串", "B. 数字", "C. 布尔值", "D. 列表"],
+                correct: 2, // C
+                desc: "hero.isReady(\"cleave\") 返回一个布尔值，表示技能是否准备就绪。"
+            },
+            {
+                q: "if-elif-else 语句中，else 部分的代码会在什么情况下执行？",
+                options: ["A. 条件1不成立且条件2不成立时", "B. 条件1成立时", "C. 条件2成立时", "D. 条件1、2都成立时"],
+                correct: 0, // A
+                desc: "else 部分在前面的条件都不成立时执行。"
+            },
+            {
+                q: "以下哪个代码会在英雄的 cleave 技能准备好时，优先使用 cleave 技能？",
+                options: [
+                    "A. if hero.isReady(\"cleave\"):\n    hero.cleave(enemy)\nelif distance < 5:\n    hero.attack(enemy)\nelse:\n    hero.attack(\"Door\")",
+                    "B. if hero.isReady(\"cleave\"):\n    hero.attack(enemy)\nelif distance < 5:\n    hero.attack(enemy)\nelse:\n    hero.attack(\"Door\")",
+                    "C. if distance < 5:\n    hero.attack(enemy)\nelif hero.isReady(\"cleave\"):\n    hero.cleave(enemy)\nelse:\n    hero.attack(\"Door\")",
+                    "D. if distance < 5:\n    hero.attack(enemy)\nelse:\n    hero.attack(\"Door\")"
+                ],
+                correct: 0, // A
+                desc: "if-elif-else 语句首先检查 cleave 技能是否准备好，如果准备好就执行 cleave，否则根据距离选择攻击敌人或攻击门。"
+            },
+            {
+                q: "elif 语句的作用是什么？",
+                options: ["A. 执行条件成立的代码块", "B. 检查多个条件，并执行第一个满足条件的代码块", "C. 在所有条件都不成立时执行", "D. 永久循环执行代码块"],
+                correct: 1, // B
+                desc: "elif 用于检查多个条件，并在第一个满足条件时执行对应的代码块。"
+            },
+            {
+                q: "你可以通过 if-elif-else 来处理多少个分支选择？",
+                options: ["A. 1", "B. 2", "C. 3", "D. 无限制，取决于 elif 的数量"],
+                correct: 3, // D
+                desc: "if-elif-else 可以处理多个条件，每个 elif 增加一个新的选择分支。"
+            },
+            {
+                // 题目修改：修改场景为不同距离执行完全不同的动作，避免逻辑重复
+                q: "如果想要实现：距离小于5米时攻击，距离在5到10米之间时举盾(shield)，更远时移动。以下哪个代码是正确的？",
+                options: [
+                    "A. if distance < 5:\n    hero.attack(enemy)\nelif distance < 10:\n    hero.shield()\nelse:\n    hero.moveXY(0, 0)",
+                    "B. if distance < 5:\n    hero.attack(enemy)\nelif distance < 10:\n    hero.attack(enemy)\nelse:\n    hero.attack(\"Door\")",
+                    "C. if distance < 5:\n    hero.attack(enemy)\nelse:\n    hero.shield()",
+                    "D. if distance < 5:\n    hero.attack(\"Door\")\nelse:\n    hero.attack(enemy)"
+                ],
+                correct: 0, // A
+                desc: "选项 A 正确区分了三个范围：小于5米(attack)，5到10米之间(shield)，大于等于10米(move)。"
+            },
+            {
+                q: "以下哪个是 if-elif-else 语句的优势？",
+                options: ["A. 可以检查多个条件，只会执行一个符合条件的代码块", "B. 允许在每个条件下执行多个动作", "C. 所有条件都会执行一次", "D. 只适用于二分选择"],
+                correct: 0, // A
+                desc: "if-elif-else 语句可以检查多个条件，但只会执行第一个符合条件的代码块，避免了执行多个动作。"
+            },
+            {
+                q: "以下哪个是 if-elif-else 语句的正确执行流程？",
+                options: ["A. 按顺序检查所有条件并执行所有符合条件的代码块", "B. 检查所有条件并执行第一个符合条件的代码块", "C. 只执行 if 语句中的代码", "D. 只有 elif 语句中的条件成立时才执行"],
+                correct: 1, // B
+                desc: "if-elif-else 语句会按顺序检查条件，并执行第一个满足条件的代码块。"
+            },
+            {
+                q: "如果在 if-elif-else 语句中，所有条件都不满足，那么执行的是？",
+                options: ["A. if 语句", "B. elif 语句", "C. else 语句", "D. 程序会报错"],
+                correct: 2, // C
+                desc: "如果所有条件都不满足，else 语句中的代码会执行。"
+            },
+            {
+                // 题目修改：明确具体条件，问题改为“程序执行了什么”
+                q: "阅读以下代码。当 hero.isReady(\"cleave\") 为真 且 distance = 3 时，程序实际执行了什么动作？",
+                code: "if hero.isReady(\"cleave\"):\n    hero.cleave(enemy)\nelif distance < 5:\n    hero.attack(enemy)",
+                options: ["A. 只执行了 hero.cleave(enemy)", "B. 只执行了 hero.attack(enemy)", "C. 同时执行了 cleave 和 attack", "D. 什么都没执行"],
+                correct: 0, // A
+                desc: "因为第一个条件 hero.isReady(\"cleave\") 已经满足，程序执行 cleave 后就会跳过后续的 elif，即使 distance < 5 也成立，attack 也不会被执行。"
+            }
+        ];
+
+        // --- 游戏状态变量 ---
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        // --- DOM 元素 ---
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        // --- 初始化游戏 ---
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                // 优化的 HTML 转义与高亮逻辑（防止标签冲突）
+                let codeHtml = escapeHtml(data.code);
+
+                // 1. 优先替换字符串 (避免匹配到后续生成的 class="kw")
+                codeHtml = codeHtml.replace(/(".*?")/g, '<span class="str">$1</span>');
+
+                // 2. 替换注释
+                codeHtml = codeHtml.replace(/(#.*)/g, '<span class="cmt">$1</span>');
+
+                // 3. 替换关键字 (扩充了游戏开发常用词和逻辑控制词)
+                codeHtml = codeHtml.replace(/\b(hero|game|ui|player|findNearestEnemy|attack|moveXY|buildXY|distanceTo|while|True|False|if|else|elif|break|left|right|isReady|cleave|shield)\b/g, '<span class="kw">$1</span>');
+
+                // 4. 替换数字
+                codeHtml = codeHtml.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+
+                // 5. 替换方法调用 (.xxx)
+                codeHtml = codeHtml.replace(/(\.\w+)/g, '<span class="fn">$1</span>');
+
+                html += `<div class="code-block">${codeHtml}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // --- 检查答案 ---
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => {
+                   allBtns[data.correct].classList.add('correct');
+                }, 400);
+                // 获取正确选项的字母 (A/B/C/D)
+                // 这里处理一下，如果选项包含代码，取第一个字符(A/B/C/D)
+                const rightAnswerStr = data.options[data.correct].charAt(0);
+                showFeedback(false, `❌ 回答错误，正确答案是 ${rightAnswerStr}`, data.desc);
+            }
+        }
+
+        // --- 显示解析 ---
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // --- 下一题 ---
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        // --- 结束画面 ---
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none'; 
+
+            const totalScore = quizData.length * 100;
+            const isPerfect = (score === totalScore);
+            
+            let html = '';
+            if (isPerfect) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 完美的逻辑大师！ 🎉</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score perfect-score-text">${score}</div></div>`;
+                html += `<div class="end-desc">太棒了！你已经完全掌握了多重分支判断的技巧！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score">${score} / ${totalScore}</div></div>`;
+                html += `<div class="end-desc">做得不错！继续加油，下次争取拿满分哦！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; font-size:1.2rem; padding: 15px 40px;">🔄 再玩一次</button>`;
+            
+            endScreen.innerHTML = html;
+        }
+
+        // --- 撒花特效 ---
+        function createConfetti() {
+            const colors = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#fdcb6e'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-20px';
+                const scale = Math.random() * 0.6 + 0.4;
+                confetti.style.transform = `scale(${scale}) rotate(${Math.random()*360}deg)`;
+                confetti.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                
+                container.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 2500);
+            }
+        }
+
+        // --- HTML转义 ---
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // --- 启动游戏 ---
+        loadQuestion();
+
+    </script>
+</body>
+</html>

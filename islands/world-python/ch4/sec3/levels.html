@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 进阶战术手册 - 时间篇</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-green: #4fd1c5;
+            --accent-yellow: #f6ad55;
+            --accent-pink: #ff79c6;
+            --accent-purple: #b794f4;
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else */
+            --code-func: #8be9fd;    /* spawnXY, attack, moveXY */
+            --code-string: #f1fa8c;  /* "soldier" */
+            --code-num: #bd93f9;     /* 42 */
+            --code-comment: #6272a4;
+            --code-prop: #f8f8f2;    /* unit.pos.x */
+            --code-var: #ffb86c;     /* spawnTime */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: radial-gradient(#333 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            border-left: 4px solid var(--accent-purple);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .level-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+            border-left-color: var(--accent-pink);
+        }
+
+        .level-header {
+            border-bottom: 1px solid #444;
+            background: linear-gradient(to right, rgba(183, 148, 244, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        /* 代码编辑器 UI */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+        }
+
+        .code-row {
+            display: flex;
+            min-height: 24px;
+        }
+        
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* 注释列 */
+        .code-annotation {
+            width: 35%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-yellow);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        
+        /* 动画 */
+        @keyframes tick-tock {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .clock-hand {
+            transform-origin: bottom center;
+            animation: tick-tock 2s linear infinite;
+        }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-hourglass-half text-purple-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-purple-400">时间魔法</span></h1>
+                    <p class="text-xs text-gray-500">Python 游戏循环与计时器</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-clock text-green-500 mr-1"></i>game.time</span>
+                <span><i class="fa-solid fa-bell text-yellow-500 mr-1"></i>spawnTime</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 6 -->
+        <section id="level-6" class="level-card">
+            <div class="level-header p-6 flex justify-between items-center">
+                <div>
+                    <span class="bg-purple-900 text-purple-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">LEVEL 6</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">冒险时刻 (Adventure Time)</h2>
+                </div>
+                <div class="text-yellow-500 text-sm"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-purple-400 mb-3"><i class="fa-solid fa-stopwatch mr-2"></i>时间控制台</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                指挥官，我们需要源源不断的敌人来训练士兵！如果只写一次 <code>spawnXY</code>，敌人打完就没了。如果写一万行 <code>spawnXY</code>，手指会断掉的！
+                                <br>
+                                我们需要一台<span class="text-yellow-400 font-bold">“自动刷怪机”</span>！
+                            </p>
+                            <div class="bg-gray-800 p-4 rounded border-l-4 border-yellow-500 space-y-3">
+                                <h4 class="font-bold text-white">核心逻辑：设定闹钟</h4>
+                                <p class="text-sm text-gray-400">
+                                    想象你有一个闹钟，我们叫它 <code>spawnTime</code>（生成时间）。
+                                    <br>
+                                    游戏里还有一个一直走的挂钟，叫 <code>game.time</code>。
+                                </p>
+                                <ul class="text-sm text-gray-300 list-disc list-inside">
+                                    <li>第一步：闹钟设在 0秒。</li>
+                                    <li>第二步：一直看表（while True）。如果 <code>挂钟时间 > 闹钟时间</code>...</li>
+                                    <li>第三步：叮铃铃！生成一个怪兽！</li>
+                                    <li><strong>第四步（最重要）：把闹钟拨到 2秒 以后！</strong></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 视觉化图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="relative w-32 h-32 border-4 border-gray-600 rounded-full bg-gray-900 flex items-center justify-center mb-4">
+                            <!-- 模拟时钟 -->
+                            <div class="absolute w-1 h-14 bg-purple-500 bottom-1/2 left-1/2 -translate-x-1/2 clock-hand"></div>
+                            <div class="w-2 h-2 bg-white rounded-full z-10"></div>
+                            <div class="absolute top-2 text-xs text-gray-500">12</div>
+                            <div class="absolute bottom-2 text-xs text-gray-500">6</div>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-purple-300 font-code text-sm font-bold">game.time += 1s</p>
+                            <div class="mt-2 bg-black px-2 py-1 rounded text-xs text-yellow-500">
+                                <i class="fa-solid fa-bell mr-1"></i>Next: +2s
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 代码部分 -->
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">loop_spawner.py</div>
+                    </div>
+
+                    <!-- 代码行 -->
+                    <div class="code-body">
+                        <!-- Setup -->
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="comment"># game.time是游戏经过的时间</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">"guardian"</span>, <span class="num">10</span>, <span class="num">35</span>)</div>
+                            <div class="code-annotation">生成玩家英雄</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">addSurviveGoal</span>()</div>
+                            <div class="code-annotation">目标：存活</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">addDefeatGoal</span>(<span class="num">5</span>)</div>
+                            <div class="code-annotation">目标：击败5个敌人</div>
+                        </div>
+                        
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Munchkin Logic -->
+                        <div class="code-row">
+                            <div class="line-num">6</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onSpawn</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation">定义怪物的AI逻辑</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="code-content">    <span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation">怪物出生后进入无限循环</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">8</div>
+                            <div class="code-content">        <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation">获取当前的怪物单位</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">9</div>
+                            <div class="code-content">        <span class="var">enemy</span> <span class="op">=</span> <span class="var">unit</span>.<span class="func">findNearestEnemy</span>()</div>
+                            <div class="code-annotation">寻找玩家</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">10</div>
+                            <div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>:</div>
+                            <div class="code-annotation">如果找到玩家</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">11</div>
+                            <div class="code-content">            <span class="var">unit</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div>
+                            <div class="code-annotation">发起攻击</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Binding Logic -->
+                        <div class="code-row">
+                            <div class="line-num">13</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"munchkin"</span>, <span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div>
+                            <div class="code-annotation">所有munchkin出生即执行攻击逻辑</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Time Loop (Main Logic) -->
+                        <div class="code-row">
+                            <div class="line-num">15</div>
+                            <div class="code-content"><span class="comment"># game.time从0开始，并以秒为单位自动更新</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">16</div>
+                            <div class="code-content"><span class="var">spawnTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-bell mr-1"></i>初始化闹钟：现在(0秒)就响</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">17</div>
+                            <div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation">游戏主循环（时刻监控时间）</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">18</div>
+                            <div class="code-content">    <span class="comment"># spawnTime是生成单位的时间。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">19</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="prop">time</span> <span class="op">></span> <span class="var">spawnTime</span>:</div>
+                            <div class="code-annotation"><i class="fa-solid fa-question mr-1"></i>判断：挂钟时间是否超过了闹钟时间？</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">20</div>
+                            <div class="code-content">        <span class="comment"># 在60, 35处生成一个"munchkin"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">21</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"munchkin"</span>, <span class="num">60</span>, <span class="num">35</span>)</div>
+                            <div class="code-annotation"><i class="fa-solid fa-skull mr-1"></i>到时间了！生成敌人！</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">22</div>
+                            <div class="code-content">        <span class="comment"># 使用spawnTime = game.time + 2 设置 敌人每2秒生成一次</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">23</div>
+                            <div class="code-content">        <span class="comment"># #</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">24</div>
+                            <div class="code-content">        <span class="var">spawnTime</span> <span class="op">=</span> <span class="var">game</span>.<span class="prop">time</span> <span class="op">+</span> <span class="num">2</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-rotate mr-1"></i>重设闹钟：定在当前时间的2秒后</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 bg-purple-900/30 border border-purple-800 p-3 rounded text-sm text-purple-200 flex items-center">
+                    <i class="fa-solid fa-lightbulb mr-3 text-xl text-yellow-400"></i>
+                    <span><strong>教官提示：</strong> <code>game.time</code> 是不可修改的，它自己会走。但 <code>spawnTime</code> 是我们自己定义的变量，我们可以随意修改它来决定下一次生成是什么时候。</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Strategy Dept. | Mastery of Time Loops</p>
+    </footer>
+
+</body>
+</html>

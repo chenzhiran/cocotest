@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 进阶战术手册 - 对象销毁</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-dust: #d69e2e; /* 尘埃黄 */
+            --accent-steel: #a0aec0; /* 钢铁灰 */
+            --accent-red: #fc8181;
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else */
+            --code-func: #8be9fd;    /* spawnXY, destroy, defeat */
+            --code-string: #f1fa8c;  /* "forest" */
+            --code-num: #bd93f9;     /* 42 */
+            --code-comment: #6272a4;
+            --code-prop: #f8f8f2;    /* game.defeated */
+            --code-var: #ffb86c;     /* passageForest1 */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            /* 废土纹理背景 */
+            background-image: repeating-linear-gradient(
+                45deg,
+                #1e1e1e,
+                #1e1e1e 10px,
+                #252525 10px,
+                #252525 20px
+            );
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 1px solid #444;
+            transition: transform 0.3s ease;
+        }
+        
+        .level-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row {
+            display: flex;
+            min-height: 24px;
+        }
+        
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* 注释列 */
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-dust);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+
+        /* 特效图标 */
+        .icon-fade {
+            animation: fadeOut 2s infinite;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.9); }
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-eraser text-yellow-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-yellow-500">创世与毁灭</span></h1>
+                    <p class="text-xs text-gray-500">Method: .destroy() vs .defeat()</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-skull text-red-500 mr-1"></i>defeat()</span>
+                <span><i class="fa-solid fa-magic text-blue-500 mr-1"></i>destroy()</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 13 -->
+        <section id="level-13" class="level-card" style="border-top: 4px solid var(--accent-dust);">
+            <div class="level-header bg-gradient-to-r from-yellow-900/20 to-transparent">
+                <div>
+                    <span class="bg-yellow-900 text-yellow-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">LEVEL 13</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">从尘埃变到尘埃 (From Dust to Dust)</h2>
+                </div>
+                <div class="text-yellow-500 text-sm"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-yellow-500 mb-3"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>魔法清除术</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                指挥官，森林的道路被树木挡住了！而且敌人不断地从生成器里涌出来。
+                                <br>
+                                我们需要掌握两种魔法：
+                            </p>
+                            <div class="space-y-4">
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-red-500">
+                                    <h4 class="font-bold text-white text-sm mb-1"><i class="fa-solid fa-skull mr-1"></i> defeat() - 击败</h4>
+                                    <p class="text-xs text-gray-400">
+                                        这对有生命的单位（如生成器、怪物）使用。
+                                        <br>
+                                        这就像把对方打晕了，或者机器坏掉了。<strong>它还在那里，只是不动了。</strong>
+                                        <br>
+                                        <code class="text-red-300">munchkinSpawner.defeat()</code>
+                                    </p>
+                                </div>
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-white text-sm mb-1"><i class="fa-solid fa-eraser mr-1"></i> destroy() - 销毁</h4>
+                                    <p class="text-xs text-gray-400">
+                                        这对任何东西都有效（树木、墙壁）。
+                                        <br>
+                                        这就像灭霸打了个响指。<strong>彻底消失，连渣都不剩！</strong>
+                                        <br>
+                                        <code class="text-blue-300">passageForest1.destroy()</code>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 视觉化图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="grid grid-cols-2 gap-8 text-center">
+                            <div>
+                                <div class="mb-2 text-red-500 text-sm font-bold">Defeat</div>
+                                <i class="fa-solid fa-skull-crossbones text-4xl text-gray-500"></i>
+                                <div class="mt-2 text-xs text-gray-500">尸体残留</div>
+                            </div>
+                            <div>
+                                <div class="mb-2 text-blue-500 text-sm font-bold">Destroy</div>
+                                <i class="fa-solid fa-tree text-4xl text-green-600 icon-fade"></i>
+                                <div class="mt-2 text-xs text-gray-500">完全消失</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 代码部分 -->
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">dust_magic.py</div>
+                    </div>
+
+                    <div class="code-body">
+                        <!-- Setup -->
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="comment"># 用森林瓦片堵塞通道。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content"><span class="comment"># 然后在玩家击败一些食人魔时摧毁他们。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content"><span class="var">player</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">"duelist"</span>, <span class="num">6</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">attackDamage</span> <span class="op">=</span> <span class="num">35</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">6</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">maxHealth</span> <span class="op">=</span> <span class="num">750</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="num">15</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">8</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">addMoveGoalXY</span>(<span class="num">76</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Spawners -->
+                        <div class="code-row">
+                            <div class="line-num">10</div>
+                            <div class="code-content"><span class="var">munchkinSpawner</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"generator"</span>, <span class="num">16</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation">矮人生成器</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">11</div>
+                            <div class="code-content"><span class="var">munchkinSpawner</span>.<span class="prop">spawnType</span> <span class="op">=</span> <span class="str">"munchkin"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">12</div>
+                            <div class="code-content"><span class="var">munchkinSpawner</span>.<span class="prop">spawnDelay</span> <span class="op">=</span> <span class="num">3</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">13</div>
+                            <div class="code-content"><span class="var">scoutSpawner</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"generator"</span>, <span class="num">40</span>, <span class="num">10</span>)</div>
+                            <div class="code-annotation">侦察兵生成器</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">14</div>
+                            <div class="code-content"><span class="var">scoutSpawner</span>.<span class="prop">spawnType</span> <span class="op">=</span> <span class="str">"scout"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">15</div>
+                            <div class="code-content"><span class="var">scoutSpawner</span>.<span class="prop">spawnDelay</span> <span class="op">=</span> <span class="num">6</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Obstacles -->
+                        <div class="code-row">
+                            <div class="line-num">17</div>
+                            <div class="code-content"><span class="var">passageForest1</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">28</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation">生成第一片森林路障</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">18</div>
+                            <div class="code-content"><span class="var">passageForest2</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">52</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation">生成第二片森林路障</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Variables -->
+                        <div class="code-row">
+                            <div class="line-num">20</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">defeated</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">初始化击败计数器</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">21</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"defeated"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">22</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Logic Core -->
+                        <div class="code-row">
+                            <div class="line-num">23</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onDefeat</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"><i class="fa-solid fa-code mr-1"></i>定义死亡事件逻辑</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">24</div>
+                            <div class="code-content">    <span class="var">defeated</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">25</div>
+                            <div class="code-content">    <span class="var">game</span>.<span class="var">defeated</span> <span class="op">+=</span> <span class="num">1</span></div>
+                            <div class="code-annotation">计数器 + 1</div>
+                        </div>
+                        
+                        <!-- Threshold 1 -->
+                        <div class="code-row">
+                            <div class="line-num">26</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="var">defeated</span> <span class="op">==</span> <span class="num">3</span>:</div>
+                            <div class="code-annotation">条件：如果击败了3个</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">27</div>
+                            <div class="code-content">        <span class="comment"># munchkinSpawner对象调用defeat()方法</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">28</div>
+                            <div class="code-content">        <span class="var">munchkinSpawner</span>.<span class="func">defeat</span>()</div>
+                            <div class="code-annotation">让生成器“坏掉”（停止生成）</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">29</div>
+                            <div class="code-content">        <span class="comment"># 摧毁第一片森林通道。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">30</div>
+                            <div class="code-content">        <span class="var">passageForest1</span>.<span class="func">destroy</span>()</div>
+                            <div class="code-annotation"><i class="fa-solid fa-eraser mr-1"></i>让森林彻底消失！</div>
+                        </div>
+
+                        <!-- Threshold 2 -->
+                        <div class="code-row">
+                            <div class="line-num">31</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="var">defeated</span> <span class="op">==</span> <span class="num">6</span>:</div>
+                            <div class="code-annotation">条件：如果击败了6个</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">32</div>
+                            <div class="code-content">        <span class="comment"># scoutSpawner对象调用defeat()方法</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">33</div>
+                            <div class="code-content">        <span class="var">scoutSpawner</span>.<span class="func">defeat</span>()</div>
+                            <div class="code-annotation">让第二个生成器停止</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">34</div>
+                            <div class="code-content">        <span class="comment"># 摧毁第二片森林通道。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">35</div>
+                            <div class="code-content">        <span class="var">passageForest2</span>.<span class="func">destroy</span>()</div>
+                            <div class="code-annotation"><i class="fa-solid fa-eraser mr-1"></i>让第二片森林消失</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">36</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">37</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"munchkin"</span>, <span class="str">"defeat"</span>, <span class="var">onDefeat</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">38</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"scout"</span>, <span class="str">"defeat"</span>, <span class="var">onDefeat</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- LEVEL 14 -->
+        <section id="level-14" class="level-card" style="border-top: 4px solid var(--accent-steel);">
+            <div class="level-header bg-gradient-to-r from-gray-700/50 to-transparent">
+                <div>
+                    <span class="bg-gray-700 text-gray-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">LEVEL 14</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">牢笼 (Cages)</h2>
+                </div>
+                <div class="text-yellow-500 text-sm"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-gray-400 mb-3"><i class="fa-solid fa-dungeon mr-2"></i>释放野兽</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                我们把两个大 Boss 关在了围栏（Fence）里。但现在我们需要击败他们来通关。
+                                <br>
+                                我们需要利用“小兵”来触发机关：
+                            </p>
+                            <div class="space-y-3">
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                    <h4 class="font-bold text-white text-sm mb-1">Step 1: 计数生成 (Counting)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        这次我们在 <code>spawn</code>（生成）时计数，而不是 <code>defeat</code>。
+                                        <br>
+                                        只要生成了足够的小兵，就说明机关充能完毕。
+                                    </p>
+                                </div>
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-gray-500">
+                                    <h4 class="font-bold text-white text-sm mb-1">Step 2: 拆除围栏 (Breakout)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        当计数达到要求：
+                                        <br>
+                                        1. <code>defeat()</code> 生成器：别再出小兵了，烦人。
+                                        <br>
+                                        2. <code>destroy()</code> 围栏：把路障变没，让 Boss 走出来！
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="relative w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-600 rounded">
+                            <i class="fa-solid fa-bars text-6xl text-gray-500 absolute z-10"></i>
+                            <i class="fa-solid fa-dragon text-4xl text-red-500 absolute z-0"></i>
+                            <div class="absolute bottom-2 text-xs text-gray-400 font-code">fence.destroy()</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">cage_break.py</div>
+                    </div>
+
+                    <div class="code-body">
+                        <!-- Setup -->
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="comment"># 了解destroy与defeat的区别。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content"><span class="var">ogre1</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"ogre"</span>, <span class="num">12</span>, <span class="num">18</span>)</div>
+                            <div class="code-annotation">生成左边的Boss</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="code-content"><span class="var">ogre1</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"AttacksNearest"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content"><span class="var">ogre2</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"ogre"</span>, <span class="num">68</span>, <span class="num">50</span>)</div>
+                            <div class="code-annotation">生成右边的Boss</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="code-content"><span class="var">ogre2</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"AttacksNearest"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="code-content"><span class="var">munchkinGenerator</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"generator"</span>, <span class="num">12</span>, <span class="num">50</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">8</div>
+                            <div class="code-content"><span class="var">munchkinGenerator</span>.<span class="prop">spawnAI</span> <span class="op">=</span> <span class="str">"Scampers"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">9</div>
+                            <div class="code-content"><span class="var">munchkinGenerator</span>.<span class="prop">spawnType</span> <span class="op">=</span> <span class="str">"munchkin"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">10</div>
+                            <div class="code-content"><span class="var">scoutGenerator</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"generator"</span>, <span class="num">68</span>, <span class="num">12</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">11</div>
+                            <div class="code-content"><span class="var">scoutGenerator</span>.<span class="prop">spawnAI</span> <span class="op">=</span> <span class="str">"Scampers"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">12</div>
+                            <div class="code-content"><span class="var">scoutGenerator</span>.<span class="prop">spawnType</span> <span class="op">=</span> <span class="str">"scout"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Fences -->
+                        <div class="code-row">
+                            <div class="line-num">14</div>
+                            <div class="code-content"><span class="comment"># 后面会被摧毁的围栏。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">15</div>
+                            <div class="code-content"><span class="var">leftFence</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"fence"</span>, <span class="num">26</span>, <span class="num">14</span>)</div>
+                            <div class="code-annotation">左侧围栏（挡住Boss）</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">16</div>
+                            <div class="code-content"><span class="var">rightFence</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"fence"</span>, <span class="num">54</span> , <span class="num">50</span>)</div>
+                            <div class="code-annotation">右侧围栏（挡住Boss）</div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">17</div>
+                            <div class="code-content"><span class="var">player</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">"knight"</span>, <span class="num">40</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">18</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="num">16</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">19</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">attackDamage</span> <span class="op">=</span> <span class="num">20</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <!-- Variables -->
+                        <div class="code-row">
+                            <div class="line-num">20</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">scoutsSpawned</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">初始化侦察兵计数</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">21</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">munchkinsSpawned</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">初始化矮人计数</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">22</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">bossesDefeated</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">初始化Boss击杀数</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">23</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"scoutsSpawned"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">24</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"munchkinsSpawned"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">25</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"bossesDefeated"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">26</div>
+                            <div class="code-content"><span class="var">bossesGoal</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">addManualGoal</span>(<span class="str">"击败两个大食人魔。"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">27</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Spawn Logic (The Trigger) -->
+                        <div class="code-row">
+                            <div class="line-num">28</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onSpawn</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"><i class="fa-solid fa-bolt mr-1"></i>生成事件处理器</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">29</div>
+                            <div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        
+                        <!-- Scout Logic -->
+                        <div class="code-row">
+                            <div class="line-num">30</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"scout"</span>:</div>
+                            <div class="code-annotation">如果是侦察兵生成</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">31</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">scoutsSpawned</span> <span class="op">+=</span> <span class="num">1</span></div>
+                            <div class="code-annotation">计数 + 1</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">32</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="var">scoutsSpawned</span> <span class="op">>=</span> <span class="num">3</span>:</div>
+                            <div class="code-annotation">如果生成了3个侦察兵</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">33</div>
+                            <div class="code-content">        <span class="comment"># scoutGenerator（侦察兵生成器）调用击败defeat()方法</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">34</div>
+                            <div class="code-content">        <span class="var">scoutGenerator</span>.<span class="func">defeat</span>()</div>
+                            <div class="code-annotation">停止生成侦察兵</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">35</div>
+                            <div class="code-content">        <span class="comment"># rightFence（右边的围栏）调用destroy()摧毁方法</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">36</div>
+                            <div class="code-content">        <span class="var">rightFence</span>.<span class="func">destroy</span>()</div>
+                            <div class="code-annotation"><i class="fa-solid fa-unlock mr-1"></i>移除右边围栏！</div>
+                        </div>
+
+                        <!-- Munchkin Logic -->
+                        <div class="code-row">
+                            <div class="line-num">37</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"munchkin"</span>:</div>
+                            <div class="code-annotation">如果是矮人生成</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">38</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">munchkinsSpawned</span> <span class="op">+=</span> <span class="num">1</span></div>
+                            <div class="code-annotation">计数 + 1</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">39</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="var">munchkinsSpawned</span> <span class="op">>=</span> <span class="num">2</span>:</div>
+                            <div class="code-annotation">如果生成了2个矮人</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">40</div>
+                            <div class="code-content">        <span class="comment"># munchkinGenerator（矮人生成器）调用击败defeat()方法</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">41</div>
+                            <div class="code-content">        <span class="var">munchkinGenerator</span>.<span class="func">defeat</span>()</div>
+                            <div class="code-annotation">停止生成矮人</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">42</div>
+                            <div class="code-content">        <span class="comment"># leftFence（左边的围栏）调用destroy()摧毁方法</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">43</div>
+                            <div class="code-content">        <span class="var">leftFence</span>.<span class="func">destroy</span>()</div>
+                            <div class="code-annotation"><i class="fa-solid fa-unlock mr-1"></i>移除左边围栏！</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">44</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Defeat Logic (Goal Check) -->
+                        <div class="code-row">
+                            <div class="line-num">45</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onDefeat</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation">定义Boss死亡事件</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">46</div>
+                            <div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">47</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"ogre"</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">48</div>
+                            <div class="code-content">        <span class="comment"># 对game.bossesDefeated计数器加一：</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">49</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">bossesDefeated</span> <span class="op">+=</span> <span class="num">1</span></div>
+                            <div class="code-annotation">击杀计数</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">50</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Binding -->
+                        <div class="code-row">
+                            <div class="line-num">51</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"munchkin"</span>, <span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">52</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"scout"</span>, <span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">53</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"ogre"</span>, <span class="str">"defeat"</span>, <span class="var">onDefeat</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">54</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Victory Check -->
+                        <div class="code-row">
+                            <div class="line-num">55</div>
+                            <div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">56</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="var">bossesDefeated</span> <span class="op">>=</span> <span class="num">2</span>:</div>
+                            <div class="code-annotation">如果击败了2个Boss</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">57</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="func">setGoalState</span>(<span class="var">bossesGoal</span>, <span class="kwd">True</span>)</div>
+                            <div class="code-annotation">游戏胜利！</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Strategy Dept. | Object Lifecycle Management</p>
+    </footer>
+
+</body>
+</html>

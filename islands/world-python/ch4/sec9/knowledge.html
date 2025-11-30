@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第15-16关 游戏事件：collect</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-cave: #263238;        /* 洞穴深色 */
+            --board-bg: #FFF8E1;       /* 羊皮纸色 */
+            --gold: #FFC107;           /* 金币黄 */
+            --gem-red: #FF5252;        /* 宝石红 */
+            --gem-blue: #448AFF;       /* 宝石蓝 */
+            --text-main: #3E2723;      /* 深褐文字 */
+            --text-sub: #5D4037;
+            
+            /* 代码高亮 */
+            --code-bg: #212121;
+            --code-fg: #EEEEEE;
+            --tok-def: #BA68C8;        /* def */
+            --tok-func: #42A5F5;       /* 函数名 */
+            --tok-var: #FFCA28;        /* 变量 */
+            --tok-prop: #66BB6A;       /* 属性 */
+            --tok-num: #FF7043;        /* 数字 */
+            --tok-str: #26A69A;        /* 字符串 */
+            --tok-cm: #90A4AE;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-cave);
+            /* 宝藏背景 */
+            background-image: 
+                radial-gradient(#FFD54F 15%, transparent 16%),
+                radial-gradient(#FFD54F 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 闪烁星星动画 */
+        @keyframes sparkle {
+            0% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.3; transform: scale(0.8); }
+        }
+        .sparkle {
+            position: absolute; width: 5px; height: 5px; background: white; border-radius: 50%;
+            box-shadow: 0 0 5px white; animation: sparkle 2s infinite;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 宝石按钮 (外部) --- */
+        .nav-btn {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #81D4FA, #0288D1);
+            border: 4px solid #B3E5FC;
+            border-radius: 20px; /* 宝石切角 */
+            transform: rotate(45deg);
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-btn span {
+            transform: rotate(-45deg);
+            font-size: 40px;
+            color: white;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .nav-btn:hover { transform: rotate(45deg) scale(1.1); background: linear-gradient(135deg, #4FC3F7, #0277BD); }
+        .nav-btn:active { transform: rotate(45deg) scale(0.95); box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
+        
+        .btn-prev { background: linear-gradient(135deg, #FFCC80, #F57C00); border-color: #FFE0B2; }
+        
+        .disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 藏宝图容器 --- */
+        .map-container {
+            width: 960px;
+            height: 600px;
+            background: #5D4037; /* 皮革色 */
+            border-radius: 30px;
+            border: 15px solid #3E2723;
+            box-shadow: 
+                inset 0 0 50px rgba(0,0,0,0.5),
+                0 30px 60px rgba(0,0,0,0.6);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 金属角装饰 */
+        .corner {
+            position: absolute; width: 60px; height: 60px;
+            background: linear-gradient(135deg, #FFD700, #FFA000);
+            border-radius: 5px;
+            z-index: 20;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+        .corner-tl { top: 0; left: 0; border-bottom-right-radius: 30px; }
+        .corner-tr { top: 0; right: 0; border-bottom-left-radius: 30px; }
+        .corner-bl { bottom: 0; left: 0; border-top-right-radius: 30px; }
+        .corner-br { bottom: 0; right: 0; border-top-left-radius: 30px; }
+
+        /* 顶部标题区 */
+        .map-header {
+            height: 60px;
+            background: #4E342E;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 80px; /* 避开角 */
+            color: #FFD54F;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 20px;
+            border-bottom: 4px solid #3E2723;
+            z-index: 10;
+        }
+        .map-title-tag { background: #3E2723; padding: 5px 15px; border-radius: 10px; border: 1px solid #FFD54F; }
+
+        /* 幻灯片 (羊皮纸) */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 50px 70px;
+            flex-direction: column;
+            animation: paperUnfold 0.6s ease-out;
+            overflow-y: auto;
+            background-color: var(--board-bg);
+            /* 纸张纹理 */
+            background-image: url('data:image/svg+xml;utf8,<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.05"/></svg>');
+        }
+        .slide.active { display: flex; }
+
+        @keyframes paperUnfold { 
+            0% { opacity: 0; transform: scaleY(0.1); } 
+            100% { opacity: 1; transform: scaleY(1); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px dashed #8D6E63;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2)); }
+        h1 { margin: 0; color: #BF360C; font-size: 34px; letter-spacing: 1px; font-weight: 800; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 19px; line-height: 1.7; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.9; 
+            background: #FFF;
+            border-radius: 15px; 
+            border: 4px solid #8D6E63; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.1);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 5px;
+            font-family: 'Consolas', monospace;
+            font-size: 17px;
+            margin-top: 15px;
+            border-left: 5px solid var(--gold);
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .k { color: var(--tok-def); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .v { color: var(--tok-var); } 
+        .p { color: var(--tok-prop); } 
+        .n { color: var(--tok-num); }
+        .s { color: var(--tok-str); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #FFF3E0;
+            border-left: 5px solid #FF6F00;
+            color: #E65100;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 10px 10px 0;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 收集演示动画 */
+        .collect-scene {
+            width: 100%; height: 100%; position: relative;
+            background: #4E342E;
+        }
+        .hero {
+            font-size: 60px; position: absolute; bottom: 20px; left: 20px; transition: all 0.5s; z-index: 10;
+        }
+        .item {
+            font-size: 40px; position: absolute; cursor: pointer; transition: transform 0.2s;
+            animation: floatItem 2s infinite ease-in-out;
+        }
+        .item:hover { transform: scale(1.2); }
+        
+        @keyframes floatItem { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        /* UI 面板模拟 */
+        .ui-panel {
+            position: absolute; top: 10px; left: 10px; right: 10px;
+            background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 10px;
+            color: white; font-family: monospace; font-weight: bold; font-size: 18px;
+            display: flex; justify-content: space-between;
+        }
+        .stat-val { color: var(--gold); }
+        
+        /* 飘字动画 */
+        .float-text {
+            position: absolute; font-weight: bold; color: var(--gold); font-size: 24px;
+            animation: floatUp 1s forwards; pointer-events: none; z-index: 20;
+        }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
+
+        /* 骰子随机演示 */
+        .dice-box {
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
+        }
+        .dice {
+            width: 80px; height: 80px; background: white; border-radius: 15px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 40px; border: 2px solid #333; box-shadow: 5px 5px 0 #ccc;
+            font-weight: bold; color: #333;
+        }
+        .result-box {
+            width: 200px; padding: 15px; text-align: center; border-radius: 10px;
+            font-weight: bold; color: white; font-size: 20px;
+            transition: all 0.3s; opacity: 0;
+        }
+        .btn-roll {
+            padding: 10px 20px; background: var(--gold); border: none; border-radius: 50px;
+            font-weight: bold; cursor: pointer; font-size: 18px; color: #3E2723;
+            box-shadow: 0 4px 0 #FF8F00;
+        }
+        .btn-roll:active { transform: translateY(4px); box-shadow: none; }
+
+        /* 流程图节点 */
+        .flow-node {
+            padding: 8px 15px; border-radius: 20px; color: white; font-weight: bold; margin: 8px 0; text-align: center; width: 220px; position: relative; font-size: 16px;
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+        }
+        .bg-blue { background: #42A5F5; }
+        .bg-orange { background: #FFA726; }
+        .bg-green { background: #66BB6A; }
+        .arrow-down { font-size: 20px; color: #BCAAA4; margin: 0; text-align: center; width: 100%; }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #D7CCC8;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold), var(--gem-red));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 动画 */
+        @keyframes pop { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+    </style>
+</head>
+<body>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">
+        <span>💎</span>
+    </button>
+
+    <!-- 藏宝图容器 -->
+    <div class="map-container">
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+        
+        <div class="map-header">
+            <div class="map-title-tag">🗺️ 游戏开发 2</div>
+            <div>第 15-16 关</div>
+        </div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; animation: floatItem 3s infinite;">💰</div>
+            <h1 style="font-size: 50px; margin: 10px 0; color: #3E2723;">游戏事件：Collect</h1>
+            <h2 style="font-size: 26px; color: #E65100; font-weight: bold; margin-top: 0;">收集宝藏的魔法</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: #FFECB3; color: #F57F17; border: 2px dashed #F57F17; border-radius: 10px; font-weight: bold; font-size: 20px;">✨ 物品价值</div>
+                <div style="padding: 15px 30px; background: #B2DFDB; color: #00695C; border: 2px solid #00695C; border-radius: 10px; font-weight: bold; font-size: 20px;">🎲 随机掉落</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 什么是 collect -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎒</div>
+                <h1>什么是 "collect" 事件？</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>当玩家<b>“踩到”</b>一个物品（金币、宝石、药水）时，就会触发 <b>collect</b> 事件。</p>
+                    <p>游戏会喊：“叮！捡到宝啦！”</p>
+                    <div class="card">
+                        <b>主角介绍：</b><br>
+                        🤠 <b>collector</b> (event.target): 谁捡的？<br>
+                        💎 <b>item</b> (event.other): 捡了啥？
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px; display: flex; gap: 20px; align-items: center;">
+                        <div style="text-align:center;">🤠<br><span style="font-size:14px; color:#555;">target</span></div>
+                        <div>➡️</div>
+                        <div style="text-align:center;">💎<br><span style="font-size:14px; color:#555;">other</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: onCollect 函数 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📜</div>
+                <h1>onCollect：处理函数</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>我们要写一个函数来处理“捡到东西”这件事。</p>
+                    <div class="code-box">
+                        <span class="k">def</span> <span class="f">onCollect</span>(event):<br>
+                        &nbsp;&nbsp;<span class="c"># 起个好名字</span><br>
+                        &nbsp;&nbsp;<span class="v">collector</span> = event.<span class="p">target</span><br>
+                        &nbsp;&nbsp;<span class="v">item</span> = event.<span class="p">other</span><br>
+                        <br>
+                        &nbsp;&nbsp;<span class="c"># 加分加血...</span>
+                    </div>
+                    <p style="margin-top: 10px;">把生硬的代码名字，变成好懂的“收集者”和“物品”。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="flow-node bg-blue">事件触发 (ding!)</div>
+                        <div class="arrow-down">⬇️</div>
+                        <div class="flow-node bg-orange">onCollect(event)</div>
+                        <div class="arrow-down">⬇️</div>
+                        <div class="flow-node bg-green">谁? (collector)<br>啥? (item)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 物品价值 item.value -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">💲</div>
+                <h1>item.value：物品的价值</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>不同宝物值不同的钱：</p>
+                    <ul style="list-style: none; padding: 0; color: #5D4037;">
+                        <li>🟤 铜币 (Bronze) = 小</li>
+                        <li>🟡 金币 (Gold) = 中</li>
+                        <li>💎 宝石 (Gem) = 大</li>
+                    </ul>
+                    <div class="code-box">
+                        <span class="k">if</span> <span class="v">item</span>.<span class="p">value</span>:<br>
+                        &nbsp;&nbsp;<span class="v">game</span>.<span class="p">score</span> += <span class="v">item</span>.<span class="p">value</span><br>
+                        &nbsp;&nbsp;<span class="v">collector</span>.<span class="p">health</span> += <span class="v">item</span>.<span class="p">value</span>
+                    </div>
+                    <p><b>+=</b>：在原来基础上增加。捡多少，加多少！</p>
+                </div>
+                <div class="col-visual">
+                    <div class="collect-scene" id="valueDemo">
+                        <div class="ui-panel">
+                            <div>❤️ <span id="hpVal" class="stat-val">100</span></div>
+                            <div>🏆 <span id="scoreVal" class="stat-val">0</span></div>
+                        </div>
+                        <div class="hero" style="left: 20px;">🤠</div>
+                        
+                        <!-- 点击互动的宝物 -->
+                        <div class="item" onclick="collectItem(this, 10)" style="top: 60%; left: 40%;">🟤<br><span style="font-size:12px; color:#fff;">10</span></div>
+                        <div class="item" onclick="collectItem(this, 20)" style="top: 40%; left: 60%;">🟡<br><span style="font-size:12px; color:#fff;">20</span></div>
+                        <div class="item" onclick="collectItem(this, 50)" style="top: 70%; left: 80%;">💎<br><span style="font-size:12px; color:#fff;">50</span></div>
+                    </div>
+                    <script>
+                        let hp = 100;
+                        let score = 0;
+                        function collectItem(el, val) {
+                            if(el.style.opacity === '0') return;
+                            
+                            // 更新数据
+                            hp += val;
+                            score += val;
+                            document.getElementById('hpVal').innerText = hp;
+                            document.getElementById('scoreVal').innerText = score;
+                            
+                            // 动画
+                            el.style.transition = 'all 0.2s';
+                            el.style.transform = 'scale(1.5)';
+                            el.style.opacity = '0';
+                            
+                            // 飘字
+                            const floatText = document.createElement('div');
+                            floatText.className = 'float-text';
+                            floatText.innerText = '+' + val;
+                            floatText.style.left = el.style.left;
+                            floatText.style.top = el.style.top;
+                            el.parentNode.appendChild(floatText);
+                            setTimeout(() => floatText.remove(), 1000);
+
+                            // 重置
+                            setTimeout(() => {
+                                el.style.transform = 'scale(1)';
+                                el.style.opacity = '1';
+                            }, 2000);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 绑定事件 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔗</div>
+                <h1>绑定事件：player.on</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>别忘了告诉主角这条规矩！</p>
+                    <div class="code-box">
+                        <span class="o">player</span>.<span class="f">on</span>(<span class="s">"collect"</span>, onCollect)
+                    </div>
+                    <p style="margin-top: 20px;">
+                        含义：<br>
+                        "嘿 player，每当你捡到东西 (collect)，就去执行 onCollect 函数，给你加分！"
+                    </div>
+                <div class="col-visual">
+                    <div style="font-size: 80px;">🤝</div>
+                    <div style="position: absolute; bottom: 20px; font-weight: bold; color: #5D4037;">达成协议</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 随机生成宝物 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎲</div>
+                <h1>宝物从哪来？随机数!</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>用骰子决定生成什么：</p>
+                    <div class="code-box">
+                        <span class="v">n</span> = <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">1</span>, <span class="n">3</span>)<br>
+                        <span class="k">if</span> <span class="v">n</span> == <span class="n">1</span>:<br>
+                        &nbsp;&nbsp;<span class="v">game</span>.<span class="f">spawnXY</span>(<span class="s">"bronze-coin"</span>, ...)<br>
+                        <span class="k">elif</span> <span class="v">n</span> == <span class="n">2</span>:<br>
+                        &nbsp;&nbsp;<span class="v">game</span>.<span class="f">spawnXY</span>(<span class="s">"gold-coin"</span>, ...)<br>
+                        <span class="k">else</span>:<br>
+                        &nbsp;&nbsp;<span class="v">game</span>.<span class="f">spawnXY</span>(<span class="s">"gem"</span>, ...)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="dice-box">
+                        <div class="dice" id="diceVal">?</div>
+                        <div class="result-box" id="resBox">点击生成</div>
+                        <button class="btn-roll" onclick="rollDice()">掷骰子 (1-3)</button>
+                    </div>
+                    <script>
+                        function rollDice() {
+                            const d = document.getElementById('diceVal');
+                            const r = document.getElementById('resBox');
+                            
+                            // 动画效果
+                            let count = 0;
+                            let interval = setInterval(() => {
+                                d.innerText = Math.floor(Math.random() * 3) + 1;
+                                count++;
+                                if(count > 10) {
+                                    clearInterval(interval);
+                                    const val = Math.floor(Math.random() * 3) + 1;
+                                    d.innerText = val;
+                                    r.style.opacity = 1;
+                                    if(val === 1) {
+                                        r.innerText = "🟤 铜币"; r.style.background = "#8D6E63";
+                                    } else if(val === 2) {
+                                        r.innerText = "🟡 金币"; r.style.background = "#FFC107";
+                                    } else {
+                                        r.innerText = "💎 宝石"; r.style.background = "#29B6F6";
+                                    }
+                                }
+                            }, 50);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 随机位置 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📍</div>
+                <h1>随机位置 (Coordinate)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>不仅种类随机，地点也随机！</p>
+                    <div class="code-box">
+                        <span class="v">x</span> = <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">12</span>, <span class="n">68</span>)<br>
+                        <span class="v">y</span> = <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">12</span>, <span class="n">56</span>)<br>
+                        <span class="v">game</span>.<span class="f">spawnXY</span>(<span class="s">"gem"</span>, <span class="v">x</span>, <span class="v">y</span>)
+                    </div>
+                    <div class="card" style="margin-top: 15px;">
+                        数学坐标 + 随机数 = <br>
+                        <b>满屏惊喜！</b>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="width: 100%; height: 100%; position: relative; background: #333;">
+                        <!-- 网格 -->
+                        <div style="position: absolute; width: 100%; height: 1px; top: 20%; background: rgba(255,255,255,0.2);"></div>
+                        <div style="position: absolute; width: 100%; height: 1px; top: 50%; background: rgba(255,255,255,0.2);"></div>
+                        <div style="position: absolute; width: 100%; height: 1px; top: 80%; background: rgba(255,255,255,0.2);"></div>
+                        <div style="position: absolute; height: 100%; width: 1px; left: 20%; background: rgba(255,255,255,0.2);"></div>
+                        <div style="position: absolute; height: 100%; width: 1px; left: 50%; background: rgba(255,255,255,0.2);"></div>
+                        <div style="position: absolute; height: 100%; width: 1px; left: 80%; background: rgba(255,255,255,0.2);"></div>
+                        
+                        <!-- 随机点 -->
+                        <div style="position: absolute; top: 30%; left: 25%; font-size: 30px;">💎</div>
+                        <div style="position: absolute; top: 60%; left: 70%; font-size: 30px;">🟡</div>
+                        <div style="position: absolute; top: 80%; left: 40%; font-size: 30px;">🟤</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 通关检查 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🏆</div>
+                <h1>胜利条件：检查分数</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>每一帧都要检查：分够了吗？</p>
+                    <div class="code-box">
+                        <span class="v">requiredScore</span> = <span class="n">220</span><br>
+                        <br>
+                        <span class="k">def</span> <span class="f">checkGoals</span>():<br>
+                        &nbsp;&nbsp;<span class="k">if</span> <span class="v">game</span>.<span class="p">score</span> >= <span class="v">requiredScore</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">game</span>.<span class="f">setGoalState</span>(<span class="v">goldGoal</span>, <span class="k">True</span>)
+                    </div>
+                    <p style="margin-top: 15px;">
+                        捡东西 -> <b>collect</b> 触发 -> 分数 <b>+=</b> -> <b>check</b> 检查 -> <b>True</b> 胜利！
+                    </p>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">📊</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #2E7D32;">220 / 220</div>
+                        <div style="font-size: 60px; margin-top: 10px;">✅</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📝</div>
+                <h1>寻宝口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: #E0F7FA; border-color: #006064; color: #006064;">
+                        "target 捡了 other，<br>
+                        有 value 才加分！"
+                    </div>
+                    <div class="card" style="background: #FFF8E1; border-color: #FF6F00; color: #E65100; margin-top: 20px;">
+                        "给主角绑上 onCollect，<br>
+                        分数到了就通关！"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; animation: floatItem 3s infinite;">🏅</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn" id="btnNext" onclick="moveSlide(1)">
+        <span>💎</span>
+    </button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

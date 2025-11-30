@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 进阶战术手册 - 游戏平衡性</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0f0f1a;
+            --card-bg: #1a1a2e;
+            --code-bg: #16213e;
+            --accent-neon-cyan: #00ffff; /* 平衡青色 */
+            --accent-neon-pink: #ff00ff;
+            --accent-neon-red: #ff3333;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            
+            /* Python 代码高亮配色 - 霓虹风格 */
+            --code-keyword: #ff79c6; 
+            --code-func: #8be9fd;    
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-var: #ffb86c;     
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+        .font-arcade { font-family: 'Press Start 2P', cursive; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 2px solid #333;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .level-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-neon-cyan);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #333;
+            background: linear-gradient(90deg, rgba(0,255,255,0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row {
+            display: flex;
+            min-height: 24px;
+        }
+        
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #0f0f1a;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* 注释列 */
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-neon-cyan);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+
+        /* 参数卡片 */
+        .param-card {
+            background-color: var(--code-bg);
+            border: 2px solid var(--accent-neon-cyan);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .param-line {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Fira Code', monospace;
+            padding: 4px 0;
+            border-bottom: 1px dotted rgba(0, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-scale-balanced text-cyan-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white font-arcade text-xs md:text-xl">COIN GAME <span class="text-cyan-400">FINALE</span></h1>
+                    <p class="text-xs text-gray-500">Game Balance & Constant Refactoring</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-wrench text-yellow-500 mr-1"></i>Refactoring</span>
+                <span><i class="fa-solid fa-sliders text-cyan-500 mr-1"></i>Constants</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 25 -->
+        <section id="level-25" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block font-arcade">LEVEL 25</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">硬币游戏第5步：平衡 (Balance)</h2>
+                </div>
+                <div class="text-yellow-500 text-sm flex gap-1">
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                </div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3 font-arcade"><i class="fa-solid fa-scale-balanced mr-2"></i>平衡艺术</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                恭喜你完成了所有游戏机制！但是，一个好的游戏需要“调味”。
+                                <br>
+                                如果难度太高，玩家会摔手柄；难度太低，玩家会感到无聊。
+                                <br>
+                                **平衡性**就是寻找挑战与乐趣之间的完美平衡点。
+                            </p>
+                            <div class="bg-gray-900 p-4 rounded border-l-4 border-cyan-500 space-y-3">
+                                <h4 class="font-bold text-white text-sm">工程师的最佳实践：常量管理</h4>
+                                <p class="text-xs text-gray-400">
+                                    为了方便调试，我们把所有会影响难度的数字，都放到了代码的最顶部，并用 **大写字母** 来命名，例如 <code>HERO_SPEED</code>。
+                                </p>
+                                <div class="param-card text-xs text-cyan-200">
+                                    <div class="param-line"><span class="text-gray-400">玩家速度:</span> <span class="text-white">HERO_SPEED</span></div>
+                                    <div class="param-line"><span class="text-gray-400">敌人速度:</span> <span class="text-white">OGRE_SPEED</span></div>
+                                    <div class="param-line"><span class="text-gray-400">时间扣分:</span> <span class="text-white">TIME_SCORE</span></div>
+                                </div>
+                                <p class="text-xs text-gray-400 pt-2">
+                                    现在，你只需要修改这几个数字，就能彻底改变游戏的体验，而不用在 150 行代码里翻找！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 视觉化图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-900 rounded-lg p-4 border border-gray-700">
+                        <div class="text-center font-arcade text-xs w-full space-y-3">
+                            <div class="text-cyan-400">ADJUSTMENT</div>
+                            <div class="flex justify-between items-center bg-black p-2 rounded">
+                                <span class="text-gray-500">SPEED:</span>
+                                <span class="text-green-400">22</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-black p-2 rounded">
+                                <span class="text-gray-500">PENALTY:</span>
+                                <span class="text-red-400">0.5</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-black p-2 rounded">
+                                <span class="text-gray-500">POWER-UP:</span>
+                                <span class="text-pink-400">4s</span>
+                            </div>
+                            <i class="fa-solid fa-arrow-down text-gray-500 mt-3"></i>
+                            <div class="text-white">FUN GAME!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 代码部分 -->
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">coin_game_balance.py</div>
+                    </div>
+
+                    <div class="code-body">
+                        <!-- CONSTANTS (CORE) -->
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="comment"># 游戏参数定义游戏难度。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content"><span class="comment"># 改变游戏参数来平衡游戏。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="code-content"><span class="var">POWER_DURATION</span> <span class="op">=</span> <span class="num">4</span> <span class="comment"># ∆ 能力强化时间持续多长时间（秒）。</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-sliders mr-1"></i>修改这里改变强化时长</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content"><span class="var">COIN_SCORE</span> <span class="op">=</span> <span class="num">1</span> <span class="comment"># 硬币、蘑菇和食人魔的分值。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="code-content"><span class="var">MUSHROOM_SCORE</span> <span class="op">=</span> <span class="num">5</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">6</div>
+                            <div class="code-content"><span class="var">DEFEATED_SCORE</span> <span class="op">=</span> <span class="num">10</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="code-content"><span class="var">TIME_SCORE</span> <span class="op">=</span> <span class="num">0.5</span> <span class="comment"># ∆ 每单位游戏时间流逝减少多少分数。</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-sliders mr-1"></i>修改这里改变时间压力</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">8</div>
+                            <div class="code-content"><span class="var">HERO_SPEED</span> <span class="op">=</span> <span class="num">22</span> <span class="comment"># ∆ 玩家和食人魔的速度。</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-sliders mr-1"></i>修改这里改变玩家速度</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">9</div>
+                            <div class="code-content"><span class="var">OGRE_SPEED</span> <span class="op">=</span> <span class="num">12</span> <span class="comment"># ∆ 食人魔速度</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-sliders mr-1"></i>修改这里改变敌人速度</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">10</div>
+                            <div class="code-content"><span class="var">SPAWN_DELAY</span> <span class="op">=</span> <span class="num">6</span> <span class="comment"># ∆ 食人魔生成延迟（秒）。</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-sliders mr-1"></i>修改这里改变生成频率</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Layout (Condensed) -->
+                        <div class="code-row">
+                            <div class="line-num">12-58</div>
+                            <div class="code-content"><span class="comment"># 关卡布局 - 森林图块和硬币 (与上级关卡相同，此处省略)</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">59-62</div>
+                            <div class="code-content"><span class="comment"># 蘑菇布局 (与上级关卡相同，此处省略)</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">63</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Game Setup - Using Constants -->
+                        <div class="code-row">
+                            <div class="line-num">64</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">score</span> <span class="op">=</span> <span class="num">1000</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">65</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">powerDuration</span> <span class="op">=</span> <span class="var">POWER_DURATION</span></div>
+                            <div class="code-annotation">从常量读取持续时间</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">66</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">powerTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">67</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">powerEndTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">68</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"time"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">69</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"score"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">70</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"powerTime"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">71</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">addCollectGoal</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">72</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">addSurviveGoal</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">73</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Hero Setup - Using Constants -->
+                        <div class="code-row">
+                            <div class="line-num">74</div>
+                            <div class="code-content"><span class="var">player</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">"knight"</span>, <span class="num">8</span>, <span class="num">8</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">75</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="var">HERO_SPEED</span></div>
+                            <div class="code-annotation">从常量读取玩家速度</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">76</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- PowerUp Functions - Using Constants -->
+                        <div class="code-row">
+                            <div class="line-num">77</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">powerPlayerUp</span>():</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">78</div>
+                            <div class="code-content">    <span class="var">player</span>.<span class="prop">scale</span> <span class="op">=</span> <span class="num">2</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">79</div>
+                            <div class="code-content">    <span class="var">player</span>.<span class="prop">attackDamage</span> <span class="op">=</span> <span class="num">100</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">80</div>
+                            <div class="code-content">    <span class="var">game</span>.<span class="var">powerEndTime</span> <span class="op">=</span> <span class="var">game</span>.<span class="prop">time</span> <span class="op">+</span> <span class="var">game</span>.<span class="var">powerDuration</span></div>
+                            <div class="code-annotation">使用 game.powerDuration</div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">81</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">powerPlayerDown</span>():</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">82</div>
+                            <div class="code-content">    <span class="var">player</span>.<span class="prop">scale</span> <span class="op">=</span> <span class="num">1</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">83</div>
+                            <div class="code-content">    <span class="var">player</span>.<span class="prop">attackDamage</span> <span class="op">=</span> <span class="num">1</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">84</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Collect Handler - Using Constants -->
+                        <div class="code-row">
+                            <div class="line-num">85</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onCollect</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">86</div>
+                            <div class="code-content">    <span class="var">player</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">87</div>
+                            <div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">other</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">88</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"bronze-coin"</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">89</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">score</span> <span class="op">+=</span> <span class="var">COIN_SCORE</span></div>
+                            <div class="code-annotation">使用 COIN_SCORE 常量</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">90</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"mushroom"</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">91</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">score</span> <span class="op">+=</span> <span class="var">MUSHROOM_SCORE</span></div>
+                            <div class="code-annotation">使用 MUSHROOM_SCORE 常量</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">92</div>
+                            <div class="code-content">        <span class="func">powerPlayerUp</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">93</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onCollide</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">94</div>
+                            <div class="code-content">    <span class="var">player</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">95</div>
+                            <div class="code-content">    <span class="var">other</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">other</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">96</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">other</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"scout"</span> <span class="kwd">and </span><span class="var">player</span>.<span class="prop">scale</span> <span class="op">==</span> <span class="num">2</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">97</div>
+                            <div class="code-content">        <span class="var">other</span>.<span class="func">defeat</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">98</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="func">on</span>(<span class="str">"collect"</span>, <span class="var">onCollect</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">99</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="func">on</span>(<span class="str">"collide"</span>, <span class="var">onCollide</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">100</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Enemy Setup - Using Constants -->
+                        <div class="code-row">
+                            <div class="line-num">101</div>
+                            <div class="code-content"><span class="var">generator</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"generator"</span>, <span class="num">41</span>, <span class="num">31</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">102</div>
+                            <div class="code-content"><span class="var">generator</span>.<span class="prop">spawnType</span> <span class="op">=</span> <span class="str">"scout"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">103</div>
+                            <div class="code-content"><span class="var">generator</span>.<span class="prop">spawnDelay</span> <span class="op">=</span> <span class="var">SPAWN_DELAY</span></div>
+                            <div class="code-annotation">使用 SPAWN_DELAY 常量</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">104</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">105</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onSpawn</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">106</div>
+                            <div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">107</div>
+                            <div class="code-content">    <span class="var">unit</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="var">OGRE_SPEED</span></div>
+                            <div class="code-annotation">使用 OGRE_SPEED 常量</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">108</div>
+                            <div class="code-content">    <span class="var">unit</span>.<span class="prop">attackDamage</span> <span class="op">=</span> <span class="var">player</span>.<span class="prop">maxHealth</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">109</div>
+                            <div class="code-content">    <span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">110</div>
+                            <div class="code-content">        <span class="kwd">if </span><span class="var">player</span>.<span class="prop">scale</span> <span class="op">==</span> <span class="num">2</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">111</div>
+                            <div class="code-content">            <span class="var">unit</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"RunsAway"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">112</div>
+                            <div class="code-content">        <span class="kwd">else</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">113</div>
+                            <div class="code-content">            <span class="var">unit</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"AttacksNearest"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">114</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onDefeat</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">115</div>
+                            <div class="code-content">    <span class="var">game</span>.<span class="var">score</span> <span class="op">+=</span> <span class="var">DEFEATED_SCORE</span></div>
+                            <div class="code-annotation">使用 DEFEATED_SCORE 常量</div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">116</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"scout"</span>, <span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">117</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"scout"</span>, <span class="str">"defeat"</span>, <span class="var">onDefeat</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">118</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Timer Logic - Using Constants -->
+                        <div class="code-row">
+                            <div class="line-num">119</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">checkTimeScore</span>():</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">120</div>
+                            <div class="code-content">    <span class="var">game</span>.<span class="var">score</span> <span class="op">-=</span> <span class="var">TIME_SCORE</span></div>
+                            <div class="code-annotation">使用 TIME_SCORE 常量</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">121</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="var">score</span> <span class="op"><</span> <span class="num">0</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">122</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">score</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">123</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">checkPowerTimer</span>():</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">124</div>
+                            <div class="code-content">    <span class="var">game</span>.<span class="var">powerTime</span> <span class="op">=</span> <span class="var">game</span>.<span class="var">powerEndTime</span> <span class="op">-</span> <span class="var">game</span>.<span class="prop">time</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">125</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="var">powerTime</span> <span class="op"><=</span> <span class="num">0</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">126</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">powerTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">127</div>
+                            <div class="code-content">        <span class="kwd">if </span><span class="var">player</span>.<span class="prop">scale</span> <span class="op">==</span> <span class="num">2</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">128</div>
+                            <div class="code-content">            <span class="func">powerPlayerDown</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">129</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">130</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">checkTimers</span>():</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">131</div>
+                            <div class="code-content">    <span class="func">checkTimeScore</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">132</div>
+                            <div class="code-content">    <span class="func">checkPowerTimer</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">133</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">134</div>
+                            <div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">135</div>
+                            <div class="code-content">    <span class="func">checkTimers</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-500 text-sm mt-10 pb-10 font-arcade">
+        <p>© 2023 CodeCombat Strategy Dept. | GAME OVER - FINAL SCORE</p>
+    </footer>
+
+</body>
+</html>

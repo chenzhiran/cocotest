@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 最终项目：魔法森林守卫战</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-magic: #9f7aea; /* 魔法紫 */
+            --accent-crystal: #00ffff; /* 水晶青 */
+            --accent-red: #fc8181;
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; 
+            --code-func: #8be9fd;    
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-prop: #f8f8f2;     
+            --code-var: #ffb86c;     
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(159, 122, 234, 0.08) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 标题和卡片样式 */
+        .project-title {
+            text-shadow: 0 0 15px rgba(159, 122, 234, 0.5);
+        }
+
+        .section-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-magic);
+            transition: border-left-color 0.3s;
+        }
+        
+        .section-card:hover {
+            border-left-color: var(--accent-crystal);
+        }
+
+        .section-header {
+            padding: 1rem;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(159, 122, 234, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-magic);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-hat-wizard text-purple-500 text-2xl project-title"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white project-title">最终项目：<span class="text-cyan-400">魔法森林守卫战</span></h1>
+                    <p class="text-xs text-gray-500">Python Game Project Documentation</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-list-check text-green-500 mr-1"></i>Multi-Goal</span>
+                <span><i class="fa-solid fa-wand-magic-sparkles text-purple-500 mr-1"></i>Power-Up Logic</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- 游戏设计与概念 -->
+        <section id="design" class="section-card">
+            <div class="section-header">
+                <h2 class="text-2xl font-bold text-purple-400"><i class="fa-solid fa-feather-pointed mr-2"></i>项目设计与故事背景</h2>
+            </div>
+            <div class="p-6 md:p-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3">故事背景：最后的守护者</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                在古老的“永恒森林”深处，沉睡着能够维持世界平衡的**能量水晶**。你，是一名年轻的**元素法师**，是森林最后的守卫者。
+                                <br>
+                                现在，来自黑暗深渊的食人魔（Munchkin）和投矛手（Thrower）开始入侵，它们的目标是偷走水晶。
+                                <br>
+                                你的任务是：收集地图上的水晶，积攒能量，施放短暂的“能量爆发”魔法来击败敌人，并守卫森林 30 秒！
+                            </p>
+                        </div>
+                        
+                        <h3 class="text-lg font-bold text-cyan-400 mt-6 mb-3">核心玩法设计</h3>
+                        <ul class="list-disc list-inside text-gray-300 space-y-2">
+                            <li>**收集与强化：** 收集水晶（Gem）会增加分数，并且每收集 3 颗水晶，会触发短暂的**“能量爆发”**（Power-Up）。</li>
+                            <li>**攻防转换：** 正常状态下，法师需要躲避敌人。能量爆发状态下，法师体型变大，可以直接触碰敌人将其消灭（攻防角色反转）。</li>
+                            <li>**目标多样性：** 游戏胜利需要同时满足存活时间、击败敌人数量和总分数等多个条件。</li>
+                        </ul>
+                    </div>
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-hat-wizard text-6xl text-purple-400 mb-4"></i>
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-gem text-cyan-400 text-xl"></i>
+                            <i class="fa-solid fa-arrow-right text-gray-500"></i>
+                            <i class="fa-solid fa-burst text-red-400 text-xl"></i>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">Crystal → Power Up → Defeat Enemy</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 游戏参数与环境配置 -->
+        <section id="config" class="section-card">
+            <div class="section-header">
+                <h2 class="text-2xl font-bold text-purple-400"><i class="fa-solid fa-sliders mr-2"></i>程序实现（I）：参数与环境</h2>
+            </div>
+            <div class="p-6 md:p-8">
+                <h3 class="text-lg font-bold text-cyan-400 mb-3">代码：基础参数与迷宫生成</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">forest_defense_setup.py</div>
+                    </div>
+                    <div class="code-body">
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="comment"># 游戏概念：玩家控制一个魔法师，在森林中抵御不断来袭的怪物，收集能量水晶来施放强大的魔法</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content"></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="code-content"><span class="comment"># 游戏参数设置</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content"><span class="var">HERO_SPEED</span> <span class="op">=</span> <span class="num">8</span></div>
+                            <div class="code-annotation">玩家初始移动速度</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="code-content"><span class="var">ENEMY_SPEED</span> <span class="op">=</span> <span class="num">6</span></div>
+                            <div class="code-annotation">敌人移动速度</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">6</div>
+                            <div class="code-content"><span class="var">POWER_DURATION</span> <span class="op">=</span> <span class="num">5</span></div>
+                            <div class="code-annotation">能量爆发持续 5 秒</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="code-content"><span class="var">SPAWN_INTERVAL</span> <span class="op">=</span> <span class="num">3</span></div>
+                            <div class="code-annotation">敌人每 3 秒生成一次</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">8</div>
+                            <div class="code-content"><span class="var">CRYSTAL_SPAWN_INTERVAL</span> <span class="op">=</span> <span class="num">4</span></div>
+                            <div class="code-annotation">水晶重生时间</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">9</div>
+                            <div class="code-content"><span class="var">INITIAL_SCORE</span> <span class="op">=</span> <span class="num">1000</span></div>
+                            <div class="code-annotation">初始分数</div>
+                        </div>
+                        
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">11</div>
+                            <div class="code-content"><span class="comment"># 游戏设置</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">12</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">score</span> <span class="op">=</span> <span class="var">INITIAL_SCORE</span></div>
+                            <div class="code-annotation">初始化分数</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">13</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">powerTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">能力剩余时间（UI）</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">14</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">powerEndTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">能力结束时间戳</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">15</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">enemiesDefeated</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">击败敌人计数</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">16</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">crystalsCollected</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">收集水晶计数</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">18</div>
+                            <div class="code-content"><span class="comment"># 创建迷宫环境</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">19</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">createMaze</span>():</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">20</div>
+                            <div class="code-content">    <span class="comment"># 创建边界 (省略部分生成代码)</span></div>
+                            <div class="code-annotation">使用 forest 图块构建边界</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">21-27</div>
+                            <div class="code-content"><span class="comment"># ... 边界和内部障碍物生成 ...</span></div>
+                            <div class="code-annotation">构建迷宫结构</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">28</div>
+                            <div class="code-content">    <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">56</span>, <span class="num">40</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">29</div>
+                            <div class="code-content"></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">30</div>
+                            <div class="code-content"><span class="func">createMaze</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">31</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        
+                        <div class="code-row">
+                            <div class="line-num">32</div>
+                            <div class="code-content"><span class="comment"># 生成能量水晶</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">33-40</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">spawnCrystals</span>():<span class="comment"> # ... 水晶位置列表 ...</span></div>
+                            <div class="code-annotation">在关键位置生成水晶（gem）</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">41</div>
+                            <div class="code-content">    <span class="kwd">for </span><span class="var">pos</span> <span class="kwd">in </span><span class="var">positions</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">42</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"gem"</span>, <span class="var">pos</span>[<span class="num">0</span>], <span class="var">pos</span>[<span class="num">1</span>])</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">43</div>
+                            <div class="code-content"></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">44</div>
+                            <div class="code-content"><span class="func">spawnCrystals</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">45</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"potion-medium"</span>, <span class="num">50</span>, <span class="num">32</span>)</div>
+                            <div class="code-annotation">生成初始药水</div>
+                        </div>
+                        
+                        <div class="code-row"><div class="line-num">46</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">47</div>
+                            <div class="code-content"><span class="comment"># 设置玩家</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">48</div>
+                            <div class="code-content"><span class="var">player</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">"captain"</span>, <span class="num">40</span>, <span class="num">32</span>)</div>
+                            <div class="code-annotation">法师（英雄）出生在中心</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">49</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="var">HERO_SPEED</span></div>
+                            <div class="code-annotation">应用 HERO_SPEED</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">50</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">attackDamage</span> <span class="op">=</span> <span class="num">25</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">51</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">52</div>
+                            <div class="code-content"><span class="comment"># 游戏目标</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-flag mr-1"></i>多重胜利条件</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">53</div>
+                            <div class="code-content"><span class="var">surviveGoal</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">addSurviveGoal</span>(<span class="num">30</span>)</div>
+                            <div class="code-annotation">存活 30 秒</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">54</div>
+                            <div class="code-content"><span class="var">crystalGoal</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">addManualGoal</span>(<span class="str">"收集至少8个能量水晶"</span>)</div>
+                            <div class="code-annotation">手动目标 1</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">55</div>
+                            <div class="code-content"><span class="var">defeatGoal</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">addManualGoal</span>(<span class="str">"击败15个敌人"</span>)</div>
+                            <div class="code-annotation">手动目标 2</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">56</div>
+                            <div class="code-content"><span class="var">scoreGoal</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">addManualGoal</span>(<span class="str">"获得2000分以上"</span>)</div>
+                            <div class="code-annotation">手动目标 3</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">57</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">58</div>
+                            <div class="code-content"><span class="comment"># 用户界面</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">59-63</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"time"</span>)<span class="comment"> # ...追踪所有核心变量...</span></div>
+                            <div class="code-annotation">将游戏状态变量显示在 UI 上</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 核心机制实现 -->
+        <section id="mechanics" class="section-card">
+            <div class="section-header">
+                <h2 class="text-2xl font-bold text-purple-400"><i class="fa-solid fa-code-branch mr-2"></i>程序实现（II）：核心机制</h2>
+            </div>
+            <div class="p-6 md:p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 法师强化状态管理</h3>
+                        <div class="code-container font-code text-sm mb-4">
+                            <div class="code-row">
+                                <div class="line-num">64</div>
+                                <div class="code-content"><span class="kwd">def </span><span class="func">powerUpPlayer</span>():</div>
+                                <div class="code-annotation">开启强化状态</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">65</div>
+                                <div class="code-content">    <span class="var">player</span>.<span class="prop">scale</span> <span class="op">=</span> <span class="num">1.5</span></div>
+                                <div class="code-annotation">体型变大</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">66</div>
+                                <div class="code-content">    <span class="var">player</span>.<span class="prop">attackDamage</span> <span class="op">=</span> <span class="num">50</span></div>
+                                <div class="code-annotation">伤害提高</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">67</div>
+                                <div class="code-content">    <span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="num">12</span></div>
+                                <div class="code-annotation">速度略微提升</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">68</div>
+                                <div class="code-content">    <span class="var">game</span>.<span class="var">powerEndTime</span> <span class="op">=</span> <span class="var">game</span>.<span class="prop">time</span> <span class="op">+</span> <span class="var">POWER_DURATION</span></div>
+                                <div class="code-annotation">设置结束时间</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">69</div>
+                                <div class="code-content">    <span class="var">player</span>.<span class="func">say</span>(<span class="str">"能量爆发!"</span>)</div>
+                                <div class="code-annotation"></div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">70</div>
+                                <div class="code-content"></div>
+                                <div class="code-annotation"></div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">71</div>
+                                <div class="code-content"><span class="kwd">def </span><span class="func">powerDownPlayer</span>():</div>
+                                <div class="code-annotation">关闭强化状态</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">72</div>
+                                <div class="code-content">    <span class="var">player</span>.<span class="prop">scale</span> <span class="op">=</span> <span class="num">1</span></div>
+                                <div class="code-annotation">恢复体型</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">73</div>
+                                <div class="code-content">    <span class="var">player</span>.<span class="prop">attackDamage</span> <span class="op">=</span> <span class="num">25</span></div>
+                                <div class="code-annotation">恢复伤害</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">74</div>
+                                <div class="code-content">    <span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="var">HERO_SPEED</span></div>
+                                <div class="code-annotation">恢复速度</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-ghost mr-1"></i> 敌人生成与行为</h3>
+                        <div class="code-container font-code text-sm">
+                            <div class="code-row">
+                                <div class="line-num">75</div>
+                                <div class="code-content"><span class="var">enemySpawnTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                                <div class="code-annotation">下次生成敌人的时间</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">76</div>
+                                <div class="code-content"><span class="kwd">def </span><span class="func">spawnEnemies</span>():</div>
+                                <div class="code-annotation">生成敌人函数</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">77-88</div>
+                                <div class="code-content"><span class="comment"># ... 随机选择生成点和敌人类型 ...</span></div>
+                                <div class="code-annotation">随机在四个角落生成 Munchkin 或 Thrower</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">89</div>
+                                <div class="code-content">    <span class="var">enemy</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"AttacksNearest"</span></div>
+                                <div class="code-annotation">默认追击玩家</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">90</div>
+                                <div class="code-content">    <span class="var">enemy</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="var">ENEMY_SPEED</span></div>
+                                <div class="code-annotation">应用 ENEMY_SPEED</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">91</div>
+                                <div class="code-content"></div>
+                                <div class="code-annotation"></div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">92</div>
+                                <div class="code-content"><span class="kwd">def </span><span class="func">onEnemySpawn</span>(<span class="var">event</span>):</div>
+                                <div class="code-annotation">敌人出生时的配置</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">93</div>
+                                <div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                                <div class="code-annotation"></div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">94</div>
+                                <div class="code-content">    <span class="var">unit</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="var">ENEMY_SPEED</span></div>
+                                <div class="code-annotation"></div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">95</div>
+                                <div class="code-content">    <span class="comment"># 随机赋予敌人特殊能力</span></div>
+                                <div class="code-annotation"></div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">96-98</div>
+                                <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="func">randomInteger</span>(<span class="num">1</span>, <span class="num">4</span>) <span class="op">==</span> <span class="num">1</span>:<span class="comment"> # ... 随机 1/4 概率 ...</span></div>
+                                <div class="code-annotation">1/4 概率变大变强（增加难度）</div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">99</div>
+                                <div class="code-content"></div>
+                                <div class="code-annotation"></div>
+                            </div>
+                            <div class="code-row">
+                                <div class="line-num">100-101</div>
+                                <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"munchkin"</span>, <span class="str">"spawn"</span>, <span class="var">onEnemySpawn</span>)</div>
+                                <div class="code-annotation">绑定出生事件</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-bold text-cyan-400 mt-8 mb-3"><i class="fa-solid fa-handshake mr-1"></i> 互动逻辑（收集与碰撞）</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row">
+                        <div class="line-num">102</div>
+                        <div class="code-content"><span class="kwd">def </span><span class="func">onEnemyDefeat</span>(<span class="var">event</span>):</div>
+                        <div class="code-annotation">敌人被击败时</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">103-118</div>
+                        <div class="code-content"><span class="comment"># ... 增加分数、计数、随机掉落金币或药水 ...</span></div>
+                        <div class="code-annotation">增加分数 20，随机掉落金币或药水，并 destroy 尸体</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">119</div>
+                        <div class="code-content">    <span class="var">unit</span>.<span class="func">destroy</span>()</div>
+                        <div class="code-annotation">销毁单位以节省内存</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">120-121</div>
+                        <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"munchkin"</span>, <span class="str">"defeat"</span>, <span class="var">onEnemyDefeat</span>)</div>
+                        <div class="code-annotation">绑定击败事件</div>
+                    </div>
+
+                    <div class="code-row"><div class="line-num">122</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                    <div class="code-row">
+                        <div class="line-num">123</div>
+                        <div class="code-content"><span class="kwd">def </span><span class="func">onCollect</span>(<span class="var">event</span>):</div>
+                        <div class="code-annotation">玩家收集物品时</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">124-138</div>
+                        <div class="code-content"><span class="comment"># ... 区分物品类型：gem, potion, coin ...</span></div>
+                        <div class="code-annotation">gem 增加水晶计数 (每 3 个触发 powerUpPlayer)；Potion 治疗；Coin 加分</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">139</div>
+                        <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="var">crystalsCollected</span> <span class="op">%</span> <span class="num">3</span> <span class="op">==</span> <span class="num">0</span>:</div>
+                        <div class="code-annotation">核心：每收集 3 个水晶</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">140</div>
+                        <div class="code-content">        <span class="func">powerUpPlayer</span>()</div>
+                        <div class="code-annotation"><i class="fa-solid fa-bolt mr-1"></i>触发强化！</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">141</div>
+                        <div class="code-content"></div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">142</div>
+                        <div class="code-content"><span class="var">player</span>.<span class="func">on</span>(<span class="str">"collect"</span>, <span class="var">onCollect</span>)</div>
+                        <div class="code-annotation"></div>
+                    </div>
+
+                    <div class="code-row"><div class="line-num">143</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                    
+                    <div class="code-row">
+                        <div class="line-num">144</div>
+                        <div class="code-content"><span class="kwd">def </span><span class="func">onCollide</span>(<span class="var">event</span>):</div>
+                        <div class="code-annotation">玩家碰撞时</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">145-151</div>
+                        <div class="code-content"><span class="comment"># ... 玩家与敌人碰撞检测 ...</span></div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">152</div>
+                        <div class="code-content">        <span class="kwd">if </span><span class="var">player</span>.<span class="prop">scale</span> <span class="op">==</span> <span class="num">1.5</span>:</div>
+                        <div class="code-annotation">如果是强化状态</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">153</div>
+                        <div class="code-content">            <span class="var">other</span>.<span class="func">defeat</span>()</div>
+                        <div class="code-annotation">立即击败敌人</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">154</div>
+                        <div class="code-content">        <span class="kwd">else</span>:</div>
+                        <div class="code-annotation">否则</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">155</div>
+                        <div class="code-content">            <span class="var">player</span>.<span class="func">say</span>(<span class="str">"危险!"</span>)</div>
+                        <div class="code-annotation">玩家受到伤害（游戏默认行为）</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">156</div>
+                        <div class="code-content"></div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">157</div>
+                        <div class="code-content"><span class="var">player</span>.<span class="func">on</span>(<span class="str">"collide"</span>, <span class="var">onCollide</span>)</div>
+                        <div class="code-annotation"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- 主循环和计时器 -->
+        <section id="loop" class="section-card">
+            <div class="section-header">
+                <h2 class="text-2xl font-bold text-purple-400"><i class="fa-solid fa-clock-rotate-left mr-2"></i>程序实现（III）：主循环与计时器</h2>
+            </div>
+            <div class="p-6 md:p-8">
+                <h3 class="text-lg font-bold text-cyan-400 mb-3">代码：时间管理与目标判定</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row">
+                        <div class="line-num">158</div>
+                        <div class="code-content"><span class="var">crystalRespawnTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                        <div class="code-annotation">下次水晶重生的时间</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">159</div>
+                        <div class="code-content"><span class="kwd">def </span><span class="func">respawnCrystals</span>():</div>
+                        <div class="code-annotation">水晶重生系统</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">160-172</div>
+                        <div class="code-content"><span class="comment"># ... 检查时间并随机重生 ...</span></div>
+                        <div class="code-annotation">检查是否到时间，并在空位随机生成新的水晶</div>
+                    </div>
+                    
+                    <div class="code-row"><div class="line-num">173</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                    <div class="code-row">
+                        <div class="line-num">174</div>
+                        <div class="code-content"><span class="kwd">def </span><span class="func">checkGoals</span>():</div>
+                        <div class="code-annotation">检查所有手动目标是否达成</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">175-184</div>
+                        <div class="code-content"><span class="comment"># ... 检查 crystalsCollected, enemiesDefeated, score ...</span></div>
+                        <div class="code-annotation">通过 if 语句设置目标状态 (True)</div>
+                    </div>
+                    
+                    <div class="code-row"><div class="line-num">185</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                    <div class="code-row">
+                        <div class="line-num">186</div>
+                        <div class="code-content"><span class="kwd">def </span><span class="func">checkPowerTimer</span>():</div>
+                        <div class="code-annotation">检查能力强化倒计时</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">187-193</div>
+                        <div class="code-content"><span class="comment"># ... 计时器逻辑和 powerDownPlayer 调用 ...</span></div>
+                        <div class="code-annotation">时间归零则恢复玩家状态</div>
+                    </div>
+                    
+                    <div class="code-row"><div class="line-num">194</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                    <div class="code-row">
+                        <div class="line-num">195</div>
+                        <div class="code-content"><span class="kwd">def </span><span class="func">updateTimeScore</span>():</div>
+                        <div class="code-annotation">时间分数递减逻辑</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">196-199</div>
+                        <div class="code-content"><span class="comment"># ... 分数 -0.5 并防止分数小于 0 ...</span></div>
+                        <div class="code-annotation">给玩家带来时间上的紧迫感</div>
+                    </div>
+
+                    <div class="code-row"><div class="line-num">200</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                    <div class="code-row">
+                        <div class="line-num">201</div>
+                        <div class="code-content"><span class="comment"># 主游戏循环</span></div>
+                        <div class="code-annotation"><i class="fa-solid fa-infinity mr-1"></i>游戏的永动机</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">202</div>
+                        <div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">203</div>
+                        <div class="code-content">    <span class="comment"># 生成敌人</span></div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">204-206</div>
+                        <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="prop">time</span> <span class="op">></span> <span class="var">enemySpawnTime</span>:<span class="comment"> # ... 触发生成 ...</span></div>
+                        <div class="code-annotation">生成敌人并重设计时器</div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">207</div>
+                        <div class="code-content"></div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">208</div>
+                        <div class="code-content">    <span class="comment"># 重生水晶</span></div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">209</div>
+                        <div class="code-content">    <span class="func">respawnCrystals</span>()</div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">210</div>
+                        <div class="code-content"></div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">211</div>
+                        <div class="code-content">    <span class="comment"># 更新各种状态</span></div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">212</div>
+                        <div class="code-content">    <span class="func">checkPowerTimer</span>()</div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">213</div>
+                        <div class="code-content">    <span class="func">updateTimeScore</span>()</div>
+                        <div class="code-annotation"></div>
+                    </div>
+                    <div class="code-row">
+                        <div class="line-num">214</div>
+                        <div class="code-content">    <span class="func">checkGoals</span>()</div>
+                        <div class="code-annotation"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Strategy Dept. | Python Game Project Finalized</p>
+    </footer>
+
+</body>
+</html>

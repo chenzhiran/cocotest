@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 教学指南 - 森林篇 (嵌套逻辑)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans SC"', 'sans-serif'],
+                        mono: ['"Fira Code"', 'monospace'],
+                    },
+                    colors: {
+                        forest: {
+                            bg: '#0a1a0a',
+                            panel: '#142614',
+                            accent: '#2ecc71',
+                            outer: '#e67e22',   /* Outer IF Color */
+                            inner: '#3498db',   /* Inner IF Color */
+                            pos: '#9b59b6',     /* Position Color */
+                        },
+                        py: {
+                            def: '#569cd6',   /* blue */
+                            func: '#dcdcaa',  /* yellow */
+                            str: '#ce9178',   /* orange */
+                            key: '#c586c0',   /* purple */
+                            num: '#b5cea8',   /* green */
+                            comment: '#6a9955', /* green */
+                            var: '#9cdcfe',   /* light blue */
+                            prop: '#4ec9b0',  /* teal property */
+                            text: '#d4d4d4'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0a1a0a;
+            color: #d4d4d4;
+            scroll-behavior: smooth;
+        }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #142614; }
+        ::-webkit-scrollbar-thumb { background: #2f4f2f; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #e67e22; }
+
+        .slide-section {
+            min-height: 100vh;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 4px solid #000;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            background-color: #0a1a0a;
+        }
+
+        /* Code Row Layout */
+        .code-row {
+            display: flex;
+            width: 100%;
+            align-items: stretch;
+            border-bottom: 1px solid #1f331f;
+            transition: background-color 0.1s;
+        }
+        .code-row:hover { background-color: #1a331a !important; }
+        
+        .line-num {
+            width: 2.5rem;
+            text-align: right;
+            padding-right: 0.75rem;
+            padding-top: 0.6rem;
+            color: #4a664a;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            user-select: none;
+            border-right: 1px solid #1f331f;
+            flex-shrink: 0;
+        }
+        
+        .connector-col {
+            width: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+        
+        .code-content {
+            flex: 1; 
+            padding: 0.5rem 0.5rem 0.5rem 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            white-space: pre;
+            color: #d4d4d4;
+            overflow-x: auto;
+            display: flex;
+            align-items: center;
+        }
+        
+        .code-text-wrapper {
+            display: inline-block;
+            vertical-align: baseline;
+            line-height: 1.5;
+        }
+
+        .explanation-content {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border-left: 1px solid #1f331f;
+            font-size: 0.9rem;
+            color: #a3cfa3; 
+            display: flex;
+            align-items: center;
+        }
+
+        /* Logic Blocks */
+        .loop-block { border-left: 2px solid #2ecc71; background: rgba(46, 204, 113, 0.05); }
+        
+        /* Outer Logic */
+        .outer-if { border-left: 2px solid #e67e22; background: rgba(230, 126, 34, 0.05); }
+        .outer-else { border-left: 2px solid #d35400; background: rgba(211, 84, 0, 0.05); }
+        
+        /* Inner Logic */
+        .inner-if { border-left: 2px solid #3498db; background: rgba(52, 152, 219, 0.1); }
+        .inner-else { border-left: 2px solid #2980b9; background: rgba(41, 128, 185, 0.1); }
+
+        .indent-guide { margin-left: 1.5rem; padding-left: 1rem; border-left: 1px solid #444; }
+        .indent-guide-2 { margin-left: 1.5rem; padding-left: 1rem; border-left: 1px solid #555; }
+        .indent-guide-3 { margin-left: 1.5rem; padding-left: 1rem; border-left: 1px solid #666; }
+
+        .nav-item {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+            padding: 4px 0;
+            width: 100%;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #5d8a5d;
+        }
+        .nav-item:hover { color: #e67e22; background: #142614; }
+    </style>
+</head>
+<body class="font-sans">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 h-full w-16 bg-[#0f1f0f] flex flex-col items-center py-6 z-50 border-r border-[#1f331f] hidden md:flex">
+        <div class="text-forest-outer font-bold text-lg mb-6"><i class="fas fa-sitemap"></i></div>
+        <div class="flex flex-col space-y-1 w-full overflow-y-auto h-full pb-4 scrollbar-hide">
+            <a href="#intro" class="nav-item">封面</a>
+            <a href="#level26" class="nav-item">第26关</a>
+            <a href="#level27" class="nav-item">第27关</a>
+            <a href="#level28" class="nav-item">第28关</a>
+            <a href="#level29" class="nav-item">第29关</a>
+            <a href="#level30" class="nav-item">第30关</a>
+        </div>
+    </nav>
+
+    <div class="md:pl-16">
+
+        <!-- INTRO -->
+        <section id="intro" class="slide-section items-center justify-center text-center bg-gradient-to-b from-[#0a1a0a] to-[#150a05]">
+            <div class="max-w-4xl p-10 border border-orange-900 rounded-xl bg-[#0f1f0f] shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-blue-500"></div>
+                <div class="text-7xl text-white mb-6"><i class="fas fa-network-wired"></i></div>
+                <h1 class="text-5xl font-bold mb-4 text-white">CodeCombat 森林篇：嵌套逻辑</h1>
+                <h2 class="text-2xl text-gray-400 mb-10 font-light">思维的俄罗斯套娃</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left max-w-2xl mx-auto">
+                    <div class="p-4 bg-[#142614] rounded border-l-4 border-orange-500">
+                        <div class="text-orange-400 font-bold mb-2">嵌套 If (Nested If)</div>
+                        <div class="text-xs text-gray-400">
+                            如果(IF) 有敌人：<br>
+                            &nbsp;&nbsp;如果(IF) 距离很近：<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;攻击！<br>
+                            一层套一层，处理更复杂的情况。
+                        </div>
+                    </div>
+                    <div class="p-4 bg-[#142614] rounded border-l-4 border-purple-500">
+                        <div class="text-purple-400 font-bold mb-2">对象属性 (Properties)</div>
+                        <div class="text-xs text-gray-400">
+                            <code>item.pos.x</code><br>
+                            获取物品的坐标位置，不仅限于找人。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 26 -->
+        <section id="level26" class="slide-section">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-outer text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.26</span>
+                <h2 class="text-2xl font-bold text-white">跃火林中</h2>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row gap-6 flex-1 h-full">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg flex-1">
+                        <h3 class="text-lg font-bold text-purple-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-map-marked mr-2"></i>位置与判断
+                        </h3>
+                        <p class="text-gray-400 text-sm leading-7 mb-4">
+                            这一关有两个火球飞来飞去，我们要躲避它们，同时根据**宝石的位置**来决定去向。
+                        </p>
+                        <div class="space-y-3 text-xs text-gray-300">
+                            <p><strong>第一层判断：</strong> 有没有宝石？(<code>if evilstone</code>)</p>
+                            <p class="pl-4 border-l-2 border-blue-500">
+                                <strong>第二层判断：</strong> 宝石在哪里？(<code>if pos.x == 34</code>)<br>
+                                <span class="text-gray-500">如果宝石在左边(34)，我们就去右边躲避。</span>
+                            </p>
+                        </div>
+                        <div class="mt-4 bg-black p-2 rounded border border-purple-900 text-center">
+                            <code class="text-purple-300">pos = item.pos</code><br>
+                            <span class="text-xs text-gray-500">获取坐标对象</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:w-2/3 flex flex-col bg-[#111] border border-gray-700 rounded-lg overflow-hidden shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row loop-block border-l-4 border-green-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">while</span> <span class="text-py-def">True</span>:</div><div class="explanation-content">循环。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">2</div><div class="connector-col indent-guide"><i class="fas fa-search text-xs text-purple-400"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-var">evilstone</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestItem</span>()</div></div><div class="explanation-content">找宝石。</div></div>
+                        
+                        <!-- Outer IF -->
+                        <div class="code-row outer-if ml-6"><div class="line-num">3</div><div class="connector-col indent-guide"><i class="fas fa-question text-xs text-orange-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">if</span> <span class="text-py-var">evilstone</span>:</div></div><div class="explanation-content text-orange-300">找到宝石了吗？</div></div>
+                        
+                        <div class="code-row outer-if ml-6"><div class="line-num">4</div><div class="connector-col indent-guide-2"><i class="fas fa-map-pin text-xs text-purple-400"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-var">pos</span> = <span class="text-py-var">evilstone</span>.<span class="text-py-prop">pos</span></div></div><div class="explanation-content text-purple-300">获取它的坐标。</div></div>
+                        
+                        <!-- Inner IF -->
+                        <div class="code-row inner-if ml-12"><div class="line-num">5</div><div class="connector-col indent-guide-2"><i class="fas fa-ruler text-xs text-blue-400"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-key">if</span> <span class="text-py-var">pos</span>.<span class="text-py-prop">x</span> == <span class="text-py-num">34</span>:</div></div><div class="explanation-content text-blue-300">如果X坐标是34(左边)...</div></div>
+                        <div class="code-row inner-if ml-12"><div class="line-num">6</div><div class="connector-col indent-guide-3"><i class="fas fa-arrow-right text-xs text-gray-300"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-white">hero</span>.<span class="text-py-func">moveXY</span>(<span class="text-py-num">46</span>, <span class="text-py-num">22</span>)</div></div><div class="explanation-content">去右边避难。</div></div>
+                        
+                        <!-- Inner ELSE -->
+                        <div class="code-row inner-else ml-12"><div class="line-num">7</div><div class="connector-col indent-guide-2"><i class="fas fa-code-branch text-xs text-blue-400"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-key">else</span>:</div></div><div class="explanation-content text-blue-300">否则(在右边)...</div></div>
+                        <div class="code-row inner-else ml-12"><div class="line-num">8</div><div class="connector-col indent-guide-3"><i class="fas fa-arrow-left text-xs text-gray-300"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-white">hero</span>.<span class="text-py-func">moveXY</span>(<span class="text-py-num">34</span>, <span class="text-py-num">22</span>)</div></div><div class="explanation-content">去左边避难。</div></div>
+
+                        <!-- Outer ELSE -->
+                        <div class="code-row outer-else ml-6"><div class="line-num">9</div><div class="connector-col indent-guide"><i class="fas fa-code-branch text-xs text-orange-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">else</span>:</div></div><div class="explanation-content text-orange-300">没宝石了？</div></div>
+                        <div class="code-row outer-else ml-6"><div class="line-num">10</div><div class="connector-col indent-guide-2"><i class="fas fa-home text-xs text-gray-300"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-white">hero</span>.<span class="text-py-func">moveXY</span>(<span class="text-py-num">40</span>, <span class="text-py-num">22</span>)</div></div><div class="explanation-content">回中间安全点。</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 27 -->
+        <section id="level27" class="slide-section bg-[#0f1f0f]">
+             <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-outer text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.27</span>
+                <h2 class="text-2xl font-bold text-white">以静制动</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-orange-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-layer-group mr-2"></i>战术嵌套
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            这个关卡是嵌套逻辑的经典应用。
+                        </p>
+                        <div class="space-y-3 text-sm">
+                            <div class="p-2 border-l-4 border-orange-500 bg-[#111]">
+                                <span class="text-orange-400 font-bold">1. 有敌人吗？</span>
+                                <div class="pl-4 mt-2 text-xs text-gray-400">
+                                    <span class="text-blue-300 font-bold">2. 距离近吗 (<5m)?</span>
+                                    <br> -> 是：攻击
+                                    <br> -> 否：防御 (Shield)
+                                </div>
+                            </div>
+                            <div class="p-2 border-l-4 border-red-500 bg-[#111]">
+                                <span class="text-red-400 font-bold">没有敌人？</span>
+                                <br> -> 回家防守。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row loop-block border-l-4 border-green-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">while</span> <span class="text-py-def">True</span>:</div><div class="explanation-content">循环。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">2</div><div class="connector-col indent-guide"><i class="fas fa-search text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-var">enemy</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestEnemy</span>()</div></div><div class="explanation-content">找敌人。</div></div>
+                        
+                        <!-- Outer IF: Enemy Exists -->
+                        <div class="code-row outer-if ml-6"><div class="line-num">3</div><div class="connector-col indent-guide"><i class="fas fa-question text-xs text-orange-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">if</span> <span class="text-py-var">enemy</span>:</div></div><div class="explanation-content text-orange-300">有敌人？</div></div>
+                        <div class="code-row outer-if ml-6"><div class="line-num">4</div><div class="connector-col indent-guide-2"><i class="fas fa-ruler-horizontal text-xs text-blue-300"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-var">dist</span> = <span class="text-white">hero</span>.<span class="text-py-func">distanceTo</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content text-blue-300">量距离。</div></div>
+                        
+                        <!-- Inner IF: Close -->
+                        <div class="code-row inner-if ml-12"><div class="line-num">5</div><div class="connector-col indent-guide-2"><i class="fas fa-less-than text-xs text-blue-400"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-key">if</span> <span class="text-py-var">dist</span> < <span class="text-py-num">5</span>:</div></div><div class="explanation-content text-blue-300">太近了？</div></div>
+                        <div class="code-row inner-if ml-12"><div class="line-num">6</div><div class="connector-col indent-guide-3"><i class="fas fa-khanda text-xs text-red-500"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-white">hero</span>.<span class="text-py-func">attack</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content text-red-300">打！</div></div>
+                        
+                        <!-- Inner ELSE: Far -->
+                        <div class="code-row inner-else ml-12"><div class="line-num">7</div><div class="connector-col indent-guide-2"><i class="fas fa-code-branch text-xs text-blue-400"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-key">else</span>:</div></div><div class="explanation-content text-blue-300">还远...</div></div>
+                        <div class="code-row inner-else ml-12"><div class="line-num">8</div><div class="connector-col indent-guide-3"><i class="fas fa-shield-alt text-xs text-gray-300"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-white">hero</span>.<span class="text-py-func">shield</span>()</div></div><div class="explanation-content">举盾防守。</div></div>
+
+                        <!-- Outer ELSE: No Enemy -->
+                        <div class="code-row outer-else ml-6"><div class="line-num">9</div><div class="connector-col indent-guide"><i class="fas fa-code-branch text-xs text-orange-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">else</span>:</div></div><div class="explanation-content text-orange-300">没敌人？</div></div>
+                        <div class="code-row outer-else ml-6"><div class="line-num">10</div><div class="connector-col indent-guide-2"><i class="fas fa-home text-xs text-gray-300"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-white">hero</span>.<span class="text-py-func">moveXY</span>(<span class="text-py-num">40</span>, <span class="text-py-num">34</span>)</div></div><div class="explanation-content">回防。</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 28 -->
+        <section id="level28" class="slide-section">
+             <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-outer text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.28</span>
+                <h2 class="text-2xl font-bold text-white">Agrippa守卫战</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-red-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-stopwatch mr-2"></i>忍耐与爆发
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            敌人太多了，不能看见就打。
+                            <br>要等他们**聚在一起**（距离 < 5米）再放 Cleave！
+                        </p>
+                        <div class="bg-red-900/20 p-3 rounded border border-red-800 text-xs text-gray-300">
+                            <i class="fas fa-check text-green-500"></i> <strong>完美连招：</strong>
+                            <br>1. 有敌人?
+                            <br>2. 够近吗 (<5)?
+                            <br>3. 大招好了吗 (isReady)?
+                            <br>-> <strong>Cleave!</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row loop-block border-l-4 border-green-500"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">while</span> <span class="text-py-def">True</span>:</div><div class="explanation-content">循环。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">2</div><div class="connector-col indent-guide"><i class="fas fa-search text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-var">enemy</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestEnemy</span>()</div></div><div class="explanation-content">找人。</div></div>
+                        
+                        <div class="code-row outer-if ml-6"><div class="line-num">3</div><div class="connector-col indent-guide"><i class="fas fa-question text-xs text-orange-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">if</span> <span class="text-py-var">enemy</span>:</div></div><div class="explanation-content text-orange-300">有敌人。</div></div>
+                        <div class="code-row outer-if ml-6"><div class="line-num">4</div><div class="connector-col indent-guide-2"><i class="fas fa-ruler text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-var">dist</span> = <span class="text-white">hero</span>.<span class="text-py-func">distanceTo</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content">测距。</div></div>
+                        
+                        <!-- Inner IF: Close -->
+                        <div class="code-row inner-if ml-12"><div class="line-num">5</div><div class="connector-col indent-guide-2"><i class="fas fa-less-than text-xs text-blue-400"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-key">if</span> <span class="text-py-var">dist</span> < <span class="text-py-num">5</span>:</div></div><div class="explanation-content text-blue-300">太近了？</div></div>
+                        
+                        <!-- Deep Inner IF: Cleave Ready -->
+                        <div class="code-row inner-if ml-20 border-l-2 border-red-500 bg-red-900/10"><div class="line-num">6</div><div class="connector-col indent-guide-3"><i class="fas fa-stopwatch text-xs text-red-400"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-py-key">if</span> <span class="text-white">hero</span>.<span class="text-py-func">isReady</span>(<span class="text-py-str">"cleave"</span>):</div></div><div class="explanation-content text-red-300">三层嵌套：技能好了？</div></div>
+                        <div class="code-row inner-if ml-20 border-l-2 border-red-500 bg-red-900/10"><div class="line-num">7</div><div class="connector-col indent-guide-3"><i class="fas fa-bomb text-xs text-red-500"></i></div><div class="code-content"><div class="code-text-wrapper">                <span class="text-white">hero</span>.<span class="text-py-func">cleave</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content text-red-300">放大招！</div></div>
+                        
+                        <div class="code-row inner-else ml-20"><div class="line-num">8</div><div class="connector-col indent-guide-3"><i class="fas fa-code-branch text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-py-key">else</span>:</div></div><div class="explanation-content">没好...</div></div>
+                        <div class="code-row inner-else ml-20"><div class="line-num">9</div><div class="connector-col indent-guide-3"><i class="fas fa-khanda text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">                <span class="text-white">hero</span>.<span class="text-py-func">attack</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content">普攻。</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 29 -->
+        <section id="level29" class="slide-section">
+             <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-outer text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.29</span>
+                <h2 class="text-2xl font-bold text-white">概念挑战：危险的树</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-gray-300 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-eye mr-2"></i>侦察与反击
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            你穿了迷彩服，敌人看不见你，除非你靠得太近。
+                        </p>
+                        <p class="text-gray-400 text-sm">
+                            逻辑挑战：
+                            <br>1. 有敌人吗？
+                            <br>2. 距离小于 15 吗？
+                            <br>3. 满足上述两点 -> 攻击。
+                            <br>4. 否则 -> 去中间 (40, 34) 躲着。
+                        </p>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row loop-block"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">while</span> <span class="text-py-def">True</span>:</div><div class="explanation-content">循环。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">2</div><div class="connector-col indent-guide"><i class="fas fa-search text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-var">enemy</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestEnemy</span>()</div></div><div class="explanation-content">侦察。</div></div>
+                        
+                        <div class="code-row outer-if ml-6"><div class="line-num">3</div><div class="connector-col indent-guide"><i class="fas fa-question text-xs text-orange-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">if</span> <span class="text-py-var">enemy</span>:</div></div><div class="explanation-content text-orange-300">有敌人？</div></div>
+                        <div class="code-row outer-if ml-6"><div class="line-num">4</div><div class="connector-col indent-guide-2"><i class="fas fa-ruler text-xs text-blue-300"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-var">dist</span> = <span class="text-white">hero</span>.<span class="text-py-func">distanceTo</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content text-blue-300">测距。</div></div>
+                        
+                        <div class="code-row inner-if ml-12"><div class="line-num">5</div><div class="connector-col indent-guide-2"><i class="fas fa-less-than text-xs text-blue-400"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-key">if</span> <span class="text-py-var">dist</span> < <span class="text-py-num">15</span>:</div></div><div class="explanation-content text-blue-300">进入射程？</div></div>
+                        <div class="code-row inner-if ml-12"><div class="line-num">6</div><div class="connector-col indent-guide-3"><i class="fas fa-khanda text-xs text-red-500"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-white">hero</span>.<span class="text-py-func">attack</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content text-red-300">攻击！</div></div>
+                        
+                        <div class="code-row outer-else ml-6"><div class="line-num">7</div><div class="connector-col indent-guide"><i class="fas fa-code-branch text-xs text-orange-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">else</span>:</div></div><div class="explanation-content text-orange-300">没敌人？</div></div>
+                        <div class="code-row outer-else ml-6"><div class="line-num">8</div><div class="connector-col indent-guide-2"><i class="fas fa-home text-xs text-gray-300"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-white">hero</span>.<span class="text-py-func">moveXY</span>(<span class="text-py-num">40</span>, <span class="text-py-num">34</span>)</div></div><div class="explanation-content">躲好。</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 30 -->
+        <section id="level30" class="slide-section">
+             <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-forest-outer text-white font-bold px-3 py-1 rounded mr-3 font-mono">No.30</span>
+                <h2 class="text-2xl font-bold text-white">组合挑战：最后的守护者</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-forest-panel p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-forest-accent mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-crown mr-2"></i>终极测试
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            你需要用上学到的所有知识：嵌套If, Else, Cleave, Distance。
+                        </p>
+                        <div class="bg-black p-3 rounded border border-green-900 text-xs space-y-2">
+                            <p><span class="text-blue-300 font-bold">近战 (<10m):</span> 有Cleave用Cleave，没有普攻。</p>
+                            <p><span class="text-purple-300 font-bold">远程 (>10m):</span> 呼叫火炮支援 (<code>hero.say(dist)</code>)。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#1a331a] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.py</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row loop-block"><div class="line-num">1</div><div class="code-content"><span class="text-py-key">while</span> <span class="text-py-def">True</span>:</div><div class="explanation-content">循环。</div></div>
+                        <div class="code-row loop-block"><div class="line-num">2</div><div class="connector-col indent-guide"><i class="fas fa-search text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-var">enemy</span> = <span class="text-white">hero</span>.<span class="text-py-func">findNearestEnemy</span>()</div></div><div class="explanation-content">侦察。</div></div>
+                        
+                        <div class="code-row outer-if ml-6"><div class="line-num">3</div><div class="connector-col indent-guide"><i class="fas fa-question text-xs text-orange-500"></i></div><div class="code-content"><div class="code-text-wrapper">    <span class="text-py-key">if</span> <span class="text-py-var">enemy</span>:</div></div><div class="explanation-content text-orange-300">有敌人？</div></div>
+                        <div class="code-row outer-if ml-6"><div class="line-num">4</div><div class="connector-col indent-guide-2"><i class="fas fa-ruler text-xs text-blue-300"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-var">dist</span> = <span class="text-white">hero</span>.<span class="text-py-func">distanceTo</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content text-blue-300">测距。</div></div>
+                        
+                        <!-- Close Range -->
+                        <div class="code-row inner-if ml-12"><div class="line-num">5</div><div class="connector-col indent-guide-2"><i class="fas fa-less-than text-xs text-blue-400"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-key">if</span> <span class="text-py-var">dist</span> < <span class="text-py-num">10</span>:</div></div><div class="explanation-content text-blue-300">近战范围。</div></div>
+                        
+                        <!-- Cleave Logic -->
+                        <div class="code-row inner-if ml-20 bg-red-900/10 border-l-2 border-red-500"><div class="line-num">6</div><div class="connector-col indent-guide-3"><i class="fas fa-stopwatch text-xs text-red-400"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-py-key">if</span> <span class="text-white">hero</span>.<span class="text-py-func">isReady</span>(<span class="text-py-str">"cleave"</span>):</div></div><div class="explanation-content text-red-300">大招好了？</div></div>
+                        <div class="code-row inner-if ml-20 bg-red-900/10 border-l-2 border-red-500"><div class="line-num">7</div><div class="connector-col indent-guide-3"><i class="fas fa-bomb text-xs text-red-500"></i></div><div class="code-content"><div class="code-text-wrapper">                <span class="text-white">hero</span>.<span class="text-py-func">cleave</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content text-red-300">劈！</div></div>
+                        <div class="code-row inner-else ml-20"><div class="line-num">8</div><div class="connector-col indent-guide-3"><i class="fas fa-code-branch text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-py-key">else</span>:</div></div><div class="explanation-content">没好。</div></div>
+                        <div class="code-row inner-else ml-20"><div class="line-num">9</div><div class="connector-col indent-guide-3"><i class="fas fa-khanda text-xs text-gray-500"></i></div><div class="code-content"><div class="code-text-wrapper">                <span class="text-white">hero</span>.<span class="text-py-func">attack</span>(<span class="text-py-var">enemy</span>)</div></div><div class="explanation-content">普攻。</div></div>
+
+                        <!-- Far Range -->
+                        <div class="code-row inner-else ml-12"><div class="line-num">10</div><div class="connector-col indent-guide-2"><i class="fas fa-code-branch text-xs text-blue-400"></i></div><div class="code-content"><div class="code-text-wrapper">        <span class="text-py-key">else</span>:</div></div><div class="explanation-content text-blue-300">远程范围。</div></div>
+                        <div class="code-row inner-else ml-12"><div class="line-num">11</div><div class="connector-col indent-guide-3"><i class="fas fa-bullhorn text-xs text-purple-400"></i></div><div class="code-content"><div class="code-text-wrapper">            <span class="text-white">hero</span>.<span class="text-py-func">say</span>(<span class="text-py-var">dist</span>)</div></div><div class="explanation-content text-purple-300">报数开炮！</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+</body>
+</html>

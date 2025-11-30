@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 进阶战术手册 - 收集系统</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-gold: #ecc94b; /* 金币色 */
+            --accent-ruby: #e53e3e; /* 红宝石色 */
+            --accent-teal: #38b2ac; /* 科技蓝 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else, elif */
+            --code-func: #8be9fd;    /* spawnXY, on, track */
+            --code-string: #f1fa8c;  /* "gem" */
+            --code-num: #bd93f9;     /* 42 */
+            --code-comment: #6272a4;
+            --code-prop: #f8f8f2;    /* item.value */
+            --code-var: #ffb86c;     /* collector, item */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(236, 201, 75, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(229, 62, 62, 0.05) 0%, transparent 20%);
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 1px solid #444;
+            transition: transform 0.3s ease;
+        }
+        
+        .level-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row {
+            display: flex;
+            min-height: 24px;
+        }
+        
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* 注释列 */
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-gold);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+
+        /* 动画效果 */
+        @keyframes shine {
+            0% { text-shadow: 0 0 5px #ecc94b; }
+            50% { text-shadow: 0 0 20px #ecc94b, 0 0 10px white; }
+            100% { text-shadow: 0 0 5px #ecc94b; }
+        }
+        .shiny-text { animation: shine 3s infinite; }
+
+        .coin-icon { color: #ecc94b; }
+        .gem-icon { color: #9f7aea; }
+        .bad-gem-icon { color: #e53e3e; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-sack-dollar text-yellow-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-yellow-500">财富密码</span></h1>
+                    <p class="text-xs text-gray-500">Event: "collect" (收集事件)</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-user text-blue-500 mr-1"></i>event.target</span>
+                <span><i class="fa-solid fa-gem text-purple-500 mr-1"></i>event.other</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 15 -->
+        <section id="level-15" class="level-card" style="border-top: 4px solid var(--accent-gold);">
+            <div class="level-header bg-gradient-to-r from-yellow-900/20 to-transparent">
+                <div>
+                    <span class="bg-yellow-900 text-yellow-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">LEVEL 15</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white shiny-text">会计部 (Accounting Department)</h2>
+                </div>
+                <div class="text-yellow-500 text-sm"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-yellow-400 mb-3"><i class="fa-solid fa-calculator mr-2"></i>审计师手册</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                欢迎来到王家会计部！这里的每一枚金币、每一颗宝石都需要登记在册。
+                                我们的任务是：当英雄捡起东西时，自动计算它的价值。
+                            </p>
+                            <div class="space-y-4">
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-white text-sm mb-1">谁捡的？(Target)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        <code>event.target</code> = 收集者（英雄）。
+                                        <br>
+                                        我们要给他加血、加分。
+                                    </p>
+                                </div>
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-purple-500">
+                                    <h4 class="font-bold text-white text-sm mb-1">捡了啥？(Other)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        <code>event.other</code> = 被收集的物品（金币/宝石）。
+                                        <br>
+                                        我们通过 <code>item.value</code> 来知道它值多少钱。
+                                        <br>
+                                        铜币=1，金币=3，宝石=10（举例）。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 视觉化图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="text-center space-y-4">
+                            <div class="flex justify-center gap-4 text-3xl">
+                                <div><i class="fa-solid fa-coins text-yellow-700"></i><br><span class="text-xs text-gray-500">Value: 1</span></div>
+                                <div><i class="fa-solid fa-coins text-yellow-400"></i><br><span class="text-xs text-gray-500">Value: 3</span></div>
+                                <div><i class="fa-solid fa-gem text-purple-400"></i><br><span class="text-xs text-gray-500">Value: 10</span></div>
+                            </div>
+                            <div class="text-2xl font-bold text-white">+</div>
+                            <div class="bg-black px-4 py-2 rounded border border-yellow-600 text-yellow-400 font-mono">
+                                Total: <span class="animate-pulse">220</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 代码部分 -->
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">accountant.py</div>
+                    </div>
+
+                    <div class="code-body">
+                        <!-- Setup -->
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="comment"># 计算收集物品的价值，并用其计分。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content"><span class="var">player</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">"captain"</span>, <span class="num">40</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation">生成玩家</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="num">20</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"chest"</span>, <span class="num">68</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation">生成宝箱（大奖）</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"chest"</span>, <span class="num">14</span>, <span class="num">14</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Random Spawner -->
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">spawnRandomItem</span>():</div>
+                            <div class="code-annotation">随机生成物品的函数</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">8</div>
+                            <div class="code-content">    <span class="var">itemNumber</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">randomInteger</span>(<span class="num">1</span>, <span class="num">3</span>)</div>
+                            <div class="code-annotation">随机选一种物品</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">9</div>
+                            <div class="code-content">    <span class="var">x</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">randomInteger</span>(<span class="num">12</span>, <span class="num">68</span>)</div>
+                            <div class="code-annotation">随机X坐标</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">10</div>
+                            <div class="code-content">    <span class="var">y</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">randomInteger</span>(<span class="num">12</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation">随机Y坐标</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">11</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">itemNumber</span> <span class="op">==</span> <span class="num">1</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">12</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="var">x</span>, <span class="var">y</span>)</div>
+                            <div class="code-annotation">生成铜币</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">13</div>
+                            <div class="code-content">    <span class="kwd">elif </span><span class="var">itemNumber</span> <span class="op">==</span> <span class="num">2</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">14</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"gold-coin"</span>, <span class="var">x</span>, <span class="var">y</span>)</div>
+                            <div class="code-annotation">生成金币</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">15</div>
+                            <div class="code-content">    <span class="kwd">elif </span><span class="var">itemNumber</span> <span class="op">==</span> <span class="num">3</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">16</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"gem"</span>, <span class="var">x</span>, <span class="var">y</span>)</div>
+                            <div class="code-annotation">生成宝石</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Timer Variables -->
+                        <div class="code-row">
+                            <div class="line-num">18</div>
+                            <div class="code-content"><span class="var">itemInterval</span> <span class="op">=</span> <span class="num">1</span></div>
+                            <div class="code-annotation">生成间隔1秒</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">19</div>
+                            <div class="code-content"><span class="var">itemSpawnTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">20</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">checkSpawnTimer</span>():</div>
+                            <div class="code-annotation">检查生成时间的函数</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">21</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="prop">time</span> <span class="op">>=</span> <span class="var">itemSpawnTime</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">22</div>
+                            <div class="code-content">        <span class="comment"># 调用spawnRandomItem函数。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">23</div>
+                            <div class="code-content">        <span class="func">spawnRandomItem</span>()</div>
+                            <div class="code-annotation">执行生成</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">24</div>
+                            <div class="code-content">        <span class="var">itemSpawnTime</span> <span class="op">+=</span> <span class="var">itemInterval</span></div>
+                            <div class="code-annotation">更新下次生成时间</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">25</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- COLLECT EVENT CORE -->
+                        <div class="code-row">
+                            <div class="line-num">26</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">score</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">初始化分数</div>
+                        </div>
+                        
+                        <div class="code-row">
+                            <div class="line-num">27</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onCollect</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"><i class="fa-solid fa-hand-holding-dollar mr-1"></i>定义收集事件</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">28</div>
+                            <div class="code-content">    <span class="comment"># event.target存放收集者。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">29</div>
+                            <div class="code-content">    <span class="var">collector</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation">也就是玩家</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">30</div>
+                            <div class="code-content">    <span class="comment"># event.other存放收集的物品。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">31</div>
+                            <div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">other</span></div>
+                            <div class="code-annotation">被捡起的金币或宝石</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">32</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">value</span>:</div>
+                            <div class="code-annotation">如果这个东西有价值</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">33</div>
+                            <div class="code-content">        <span class="comment"># 将收集物品的价值（value）增加到收集者的生命值上</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">34</div>
+                            <div class="code-content">        <span class="var">collector</span>.<span class="prop">health</span> <span class="op">+=</span> <span class="var">item</span>.<span class="prop">value</span></div>
+                            <div class="code-annotation">加血</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">35</div>
+                            <div class="code-content">        <span class="comment"># 将收集物品的价值（value）增加到游戏分数（game.score）上</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">36</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">score</span> <span class="op">+=</span> <span class="var">item</span>.<span class="prop">value</span></div>
+                            <div class="code-annotation">加分</div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">37</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="func">on</span>(<span class="str">"collect"</span>, <span class="var">onCollect</span>)</div>
+                            <div class="code-annotation"><i class="fa-solid fa-link mr-1"></i>将事件绑定给玩家</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">38</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Goals & UI -->
+                        <div class="code-row">
+                            <div class="line-num">39</div>
+                            <div class="code-content"><span class="var">endTime</span> <span class="op">=</span> <span class="num">20</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">40</div>
+                            <div class="code-content"><span class="var">requiredScore</span> <span class="op">=</span> <span class="num">220</span></div>
+                            <div class="code-annotation">目标分数220</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">41</div>
+                            <div class="code-content"><span class="var">goldGoal</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">addManualGoal</span>(<span class="str">'在20秒内收集至少220金。'</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">42</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"score"</span>)</div>
+                            <div class="code-annotation">在屏幕显示分数</div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">43</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">checkGoals</span>():</div>
+                            <div class="code-annotation">检查目标的函数</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">44</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="var">score</span> <span class="op">>=</span> <span class="var">requiredScore</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">45</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="func">setGoalState</span>(<span class="var">goldGoal</span>, <span class="kwd">True</span>)</div>
+                            <div class="code-annotation">达成目标</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">46</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">47</div>
+                            <div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">48</div>
+                            <div class="code-content">    <span class="func">checkSpawnTimer</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">49</div>
+                            <div class="code-content">    <span class="func">checkGoals</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- LEVEL 16 -->
+        <section id="level-16" class="level-card" style="border-top: 4px solid var(--accent-ruby);">
+            <div class="level-header bg-gradient-to-r from-red-900/20 to-transparent">
+                <div>
+                    <span class="bg-red-900 text-red-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">LEVEL 16</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">烫手的宝石 (Hot Gems)</h2>
+                </div>
+                <div class="text-yellow-500 text-sm"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-red-400 mb-3"><i class="fa-solid fa-fire mr-2"></i>危险的贪婪</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这个关卡有点反直觉：<span class="text-red-400">宝石是坏的！</span> 它们被诅咒了，捡起来会烫手（扣血）。
+                                反而是普通的金币可以治愈你。
+                            </p>
+                            <div class="space-y-4">
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                    <h4 class="font-bold text-white text-sm mb-1">
+                                        <i class="fa-solid fa-coins coin-icon mr-1"></i> 金币 (Gold Coin)
+                                    </h4>
+                                    <p class="text-xs text-gray-400">
+                                        <code>item.type == "gold-coin"</code>
+                                        <br>
+                                        <span class="text-green-400">Effect: + Health</span> (加血)
+                                    </p>
+                                </div>
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-red-500">
+                                    <h4 class="font-bold text-white text-sm mb-1">
+                                        <i class="fa-solid fa-gem bad-gem-icon mr-1"></i> 宝石 (Gem)
+                                    </h4>
+                                    <p class="text-xs text-gray-400">
+                                        <code>item.type == "gem"</code>
+                                        <br>
+                                        <span class="text-red-400">Effect: - Health</span> (扣血！)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="relative w-full h-32 flex items-center justify-center">
+                            <i class="fa-solid fa-person-running text-white text-4xl absolute"></i>
+                            <i class="fa-solid fa-fire text-red-500 text-xl absolute -top-4 right-10 animate-bounce"></i>
+                            <div class="absolute bottom-2 bg-red-900 px-2 py-1 rounded text-xs text-red-200">
+                                HP: -25
+                            </div>
+                        </div>
+                        <div class="mt-2 text-center text-xs text-gray-500">
+                            不要捡宝石！
+                        </div>
+                    </div>
+                </div>
+
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">cursed_treasure.py</div>
+                    </div>
+
+                    <div class="code-body">
+                        <!-- Setup -->
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="comment"># 黄金会治愈你，宝石会伤害你。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content"><span class="var">player</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">"captain"</span>, <span class="num">40</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="num">20</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content"><span class="comment"># 我们对宝石和硬币使用相对生命值。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="code-content"><span class="var">healthValue</span> <span class="op">=</span> <span class="var">player</span>.<span class="prop">maxHealth</span> <span class="op">/</span> <span class="num">4</span></div>
+                            <div class="code-annotation">每次加/扣 1/4 血量</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Random Spawner Helper -->
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">spawnRandomPlaced</span>(<span class="var">type</span>):</div>
+                            <div class="code-annotation">辅助函数：随机位置生成</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">8</div>
+                            <div class="code-content">    <span class="var">x</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">randomInteger</span>(<span class="num">12</span>, <span class="num">68</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">9</div>
+                            <div class="code-content">    <span class="var">y</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">randomInteger</span>(<span class="num">12</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">10</div>
+                            <div class="code-content">    <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="var">type</span>, <span class="var">x</span>, <span class="var">y</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Variables & UI -->
+                        <div class="code-row">
+                            <div class="line-num">12</div>
+                            <div class="code-content"><span class="var">itemInterval</span> <span class="op">=</span> <span class="num">2</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">13</div>
+                            <div class="code-content"><span class="var">itemSpawnTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">14</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">collected</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">15</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"time"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">16</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"collected"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">17</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">player</span>, <span class="str">"health"</span>)</div>
+                            <div class="code-annotation">一定要盯着血量！</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">18</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">addCollectGoal</span>(<span class="num">10</span>)</div>
+                            <div class="code-annotation">目标：收集10个任意物品</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">19</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">addSurviveGoal</span>()</div>
+                            <div class="code-annotation">目标：别死</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">21</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onSpawn</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">22</div>
+                            <div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">23</div>
+                            <div class="code-content">    <span class="var">unit</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"AttacksNearest"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">24</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"munchkin"</span>, <span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">25</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Logic Core -->
+                        <div class="code-row">
+                            <div class="line-num">26</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onCollect</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"><i class="fa-solid fa-code mr-1"></i>收集事件处理器</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">27</div>
+                            <div class="code-content">    <span class="var">collector</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation">玩家</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">28</div>
+                            <div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">other</span></div>
+                            <div class="code-annotation">物品</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">29</div>
+                            <div class="code-content">    <span class="var">game</span>.<span class="var">collected</span> <span class="op">+=</span> <span class="num">1</span></div>
+                            <div class="code-annotation">计数 + 1</div>
+                        </div>
+                        
+                        <!-- Check Item Type -->
+                        <div class="code-row">
+                            <div class="line-num">30</div>
+                            <div class="code-content">    <span class="comment"># 如果 item.type 是"gold-coin"：</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">31</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"gold-coin"</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">32</div>
+                            <div class="code-content">        <span class="comment"># 玩家的健康值 collector.health 增加 healthValue</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">33</div>
+                            <div class="code-content">        <span class="var">collector</span>.<span class="prop">health</span> <span class="op">+=</span> <span class="var">healthValue</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-heart text-red-500 mr-1"></i>加血</div>
+                        </div>
+                        
+                        <div class="code-row">
+                            <div class="line-num">34</div>
+                            <div class="code-content">    <span class="comment"># 如果 item.type 是"gem"：</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">35</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"gem"</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">36</div>
+                            <div class="code-content">        <span class="comment"># 玩家的健康值collector.health 减少 healthValue</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">37</div>
+                            <div class="code-content">        <span class="var">collector</span>.<span class="prop">health</span> <span class="op">-=</span> <span class="var">healthValue</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-skull text-gray-400 mr-1"></i>扣血！</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">38</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Binding -->
+                        <div class="code-row">
+                            <div class="line-num">39</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="func">on</span>(<span class="str">"collect"</span>, <span class="var">onCollect</span>)</div>
+                            <div class="code-annotation">绑定收集事件</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">40</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Spawn Timer Loop -->
+                        <div class="code-row">
+                            <div class="line-num">41</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">checkSpawnTimer</span>():</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">42</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="prop">time</span> <span class="op">>=</span> <span class="var">itemSpawnTime</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">43</div>
+                            <div class="code-content">        <span class="func">spawnRandomPlaced</span>(<span class="str">"gem"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">44</div>
+                            <div class="code-content">        <span class="func">spawnRandomPlaced</span>(<span class="str">"gold-coin"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">45</div>
+                            <div class="code-content">        <span class="func">spawnRandomPlaced</span>(<span class="str">"munchkin"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">46</div>
+                            <div class="code-content">        <span class="var">itemSpawnTime</span> <span class="op">+=</span> <span class="var">itemInterval</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">47</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">48</div>
+                            <div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">49</div>
+                            <div class="code-content">    <span class="func">checkSpawnTimer</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Strategy Dept. | Value Tracking Systems</p>
+    </footer>
+
+</body>
+</html>
