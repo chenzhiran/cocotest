@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第9-16关 编程世界的基础概念</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-dark: #2D1B4E; /* 深魔法紫 */
+            --slide-bg: #FFFFFF;
+            --primary-color: #8B5CF6; /* 魔法紫 */
+            --accent-color: #F472B6;  /* 魔法粉 */
+            --text-main: #1F2937;
+            --text-sub: #6B7280;
+            
+            /* 代码高亮色 */
+            --code-bg: #1E1E2E;
+            --code-fg: #CDD6F4;
+            --tok-keyword: #CBA6F7;   /* while, True */
+            --tok-func: #89B4FA;      /* 函数 */
+            --tok-str: #A6E3A1;       /* 字符串 */
+            --tok-comment: #6C7086;   /* 注释 */
+            --tok-num: #FAB387;       /* 数字 */
+            --tok-obj: #F9E2AF;       /* 对象 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.2) 0%, transparent 20%),
+                radial-gradient(circle at 80% 80%, rgba(244, 114, 182, 0.2) 0%, transparent 20%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 舞台区域：确保按钮在外部 */
+        .stage-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            width: 98vw;
+        }
+
+        /* --- 2. PPT 容器 (16:9) --- */
+        .ppt-wrapper {
+            width: 80vw;
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+            background: var(--slide-bg);
+            border-radius: 30px;
+            box-shadow: 
+                0 0 0 8px rgba(255, 255, 255, 0.1),
+                0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 幻灯片页面 */
+        .slide {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            padding: 40px 60px;
+            animation: slideIn 0.5s ease-out;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .slide.active {
+            display: flex;
+        }
+
+        /* 标题栏 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #F3F4F6;
+            padding-bottom: 15px;
+            flex-shrink: 0;
+        }
+        .title-box h1 { margin: 0; font-size: 36px; color: var(--primary-color); display: flex; align-items: center; gap: 15px; }
+        .title-box p { margin: 5px 0 0; font-size: 16px; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1px; }
+        .page-badge {
+            background: linear-gradient(135deg, #E0E7FF 0%, #F3E8FF 100%);
+            color: #6D28D9;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 18px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        /* 内容区布局 */
+        .content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 50px;
+            height: 100%;
+        }
+        
+        .content.center { justify-content: center; flex-direction: column; text-align: center; }
+        .half { flex: 1; display: flex; flex-direction: column; justify-content: center; height: 100%; }
+        
+        /* 说明卡片 */
+        .info-card {
+            background: #F8FAFC;
+            border-left: 6px solid var(--card-color, #8B5CF6);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        .info-card:hover { transform: translateY(-5px); }
+        .info-card h3 { margin: 0 0 15px 0; font-size: 24px; color: #1F2937; }
+        .info-card p { margin: 0; font-size: 18px; line-height: 1.7; color: #4B5563; }
+
+        /* 代码编辑器 */
+        .code-editor {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            border-radius: 16px;
+            padding: 25px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 20px;
+            line-height: 1.6;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);
+            position: relative;
+            border: 1px solid #45475A;
+            min-width: 380px;
+        }
+        .editor-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #45475A;
+            padding-bottom: 10px;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        
+        /* 语法高亮类 */
+        .tok-kw { color: var(--tok-keyword); font-weight: bold; }
+        .tok-func { color: var(--tok-func); }
+        .tok-str { color: var(--tok-str); }
+        .tok-comment { color: var(--tok-comment); font-style: italic; }
+        .tok-num { color: var(--tok-num); }
+        .tok-obj { color: var(--tok-obj); font-weight: bold; }
+        .indent-guide {
+            display: inline-block;
+            width: 20px;
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+
+        /* --- 3. 可爱按钮设计 --- */
+        .nav-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+            
+            /* 可爱的渐变和阴影 */
+            background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%);
+            color: white;
+            box-shadow: 
+                0 10px 20px rgba(139, 92, 246, 0.3),
+                inset 0 2px 5px rgba(255, 255, 255, 0.5);
+        }
+        
+        .nav-btn:hover { 
+            transform: scale(1.15) rotate(5deg); 
+            box-shadow: 
+                0 15px 30px rgba(139, 92, 246, 0.5),
+                inset 0 2px 5px rgba(255, 255, 255, 0.8);
+        }
+        
+        .nav-btn:active { transform: scale(0.95); }
+        
+        .nav-btn.prev { padding-right: 5px; } /* 视觉微调 */
+        .nav-btn.next { padding-left: 5px; }
+        
+        .disabled { 
+            opacity: 0.5; 
+            pointer-events: none; 
+            filter: grayscale(100%);
+        }
+
+        /* 进度条 */
+        .progress-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: #F3F4F6;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #F472B6 0%, #8B5CF6 100%);
+            width: 10%;
+            transition: width 0.5s ease-out;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* --- 4. 动画与特效 --- */
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        
+        .anim-spin { animation: spin 4s linear infinite; }
+        .anim-float { animation: float 3s ease-in-out infinite; }
+        
+        /* 缩进可视化的特殊样式 */
+        .indent-block {
+            background: rgba(139, 92, 246, 0.1);
+            border: 2px dashed #8B5CF6;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 5px 0;
+            position: relative;
+        }
+        .indent-block::before {
+            content: "缩进";
+            position: absolute;
+            left: -45px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #8B5CF6;
+            background: white;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        /* 颜色主题类 */
+        .theme-magic { --card-color: #8B5CF6; --primary-color: #7C3AED; }
+        .theme-pink { --card-color: #EC4899; --primary-color: #DB2777; }
+        .theme-blue { --card-color: #3B82F6; --primary-color: #2563EB; }
+        .theme-green { --card-color: #10B981; --primary-color: #059669; }
+        .theme-orange { --card-color: #F59E0B; --primary-color: #D97706; }
+
+    </style>
+</head>
+<body>
+
+<div class="stage-area">
+
+    <!-- 左按钮 -->
+    <button class="nav-btn prev" onclick="moveSlide(-1)" id="btnPrev" title="上一页">❮</button>
+
+    <div class="ppt-wrapper">
+        
+        <!-- ================= 幻灯片内容 ================= -->
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active center theme-magic">
+            <div class="content center">
+                <div class="anim-float" style="font-size: 120px; filter: drop-shadow(0 10px 20px rgba(139,92,246,0.3));">
+                    🔮
+                </div>
+                <h1 style="font-size: 56px; margin: 20px 0; background: -webkit-linear-gradient(45deg, #8B5CF6, #F472B6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    编程世界的基础概念
+                </h1>
+                <h2 style="font-size: 32px; color: #6B7280; font-weight: normal; margin-top: 0;">CodeCombat 第9-16关 知识点大揭秘</h2>
+                <div style="margin-top: 50px; display: flex; gap: 40px;">
+                    <div style="text-align: center;">
+                        <span style="font-size: 50px; display: block; margin-bottom: 10px;">🔁</span>
+                        <span style="font-weight: bold; color: #8B5CF6;">循环魔法</span>
+                    </div>
+                    <div style="text-align: center;">
+                        <span style="font-size: 50px; display: block; margin-bottom: 10px;">📐</span>
+                        <span style="font-weight: bold; color: #F472B6;">缩进规则</span>
+                    </div>
+                    <div style="text-align: center;">
+                        <span style="font-size: 50px; display: block; margin-bottom: 10px;">✅</span>
+                        <span style="font-weight: bold; color: #3B82F6;">真假逻辑</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 循环 (Loop) -->
+        <div class="slide theme-pink">
+            <div class="header">
+                <div class="title-box"><h1><span>🔁</span> 1. 循环 (Loop)</h1><p>THE MAGIC OF REPETITION</p></div>
+                <div class="page-badge">01</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>✨ 重复动作的魔法</h3>
+                        <p><b>循环</b>就像一个自动魔法咒语！<br>想象一下，如果你要拍100下皮球，不需要说100次“拍球”，只需要说：“重复拍球 100 次”。<br>它让计算机自动帮我们做重复的苦力活。</p>
+                    </div>
+                    <!-- 动画演示：拍球 -->
+                    <div style="height: 150px; background: #FDF2F8; border-radius: 16px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 2px dashed #FBCFE8;">
+                        <div style="position: relative;">
+                            <div style="font-size: 40px; animation: bounce 1s infinite;">🏀</div>
+                            <div style="font-size: 12px; color: #DB2777; text-align: center; margin-top: 5px;">Looping...</div>
+                        </div>
+                    </div>
+                    <style>@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-50px); } }</style>
+                </div>
+                <div class="half">
+                    <div style="background: #FFF1F2; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #F43F5E;">
+                        <strong style="color: #F43F5E;">❌ 没有循环 (好累!)</strong>
+                        <div style="font-family: monospace; color: #881337; margin-top: 5px;">
+                            hero.moveRight()<br>
+                            hero.moveRight()<br>
+                            hero.moveRight()<br>
+                            ... (写100遍?)
+                        </div>
+                    </div>
+                    <div style="background: #ECFDF5; padding: 15px; border-radius: 10px; border-left: 4px solid #10B981;">
+                        <strong style="color: #10B981;">✅ 使用循环 (轻松!)</strong>
+                        <div class="code-editor" style="margin-top: 5px; min-width: auto; padding: 15px; font-size: 18px;">
+                            <span class="tok-kw">while</span> <span class="tok-kw">True</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span>()
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: while循环 -->
+        <div class="slide theme-blue">
+            <div class="header">
+                <div class="title-box"><h1><span>⏳</span> 2. while 循环</h1><p>"WHILE... DO..."</p></div>
+                <div class="page-badge">02</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>🤔 "当...的时候"</h3>
+                        <p><b>while</b> 的意思就是“当...的时候”。<br>
+                        就像妈妈说：“<b>当</b>(while) 作业没写完，就一直写！”<br>
+                        只要那个<b>条件</b>是成立的，循环就会一直继续下去。</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 20px; font-size: 20px; background: #EFF6FF; padding: 20px; border-radius: 12px;">
+                        <div style="background: #3B82F6; color: white; padding: 5px 15px; border-radius: 8px;">while</div>
+                        <div>条件成立</div>
+                        <div>➡️</div>
+                        <div>重复做事 🔄</div>
+                    </div>
+                </div>
+                <div class="half">
+                    <div class="code-editor">
+                        <div class="editor-header"><div class="dot" style="background:#FF5F56"></div><div class="dot" style="background:#FFBD2E"></div><div class="dot" style="background:#27C93F"></div></div>
+                        <div>
+                            <span class="tok-comment"># 基本结构</span><br>
+                            <span class="tok-kw">while</span> <span style="border-bottom: 2px dashed #FCD34D;">条件</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-comment"># 重复执行的代码</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span>()
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: True & while True -->
+        <div class="slide theme-magic">
+            <div class="header">
+                <div class="title-box"><h1><span>♾️</span> 3. True & while True</h1><p>FOREVER LOOP</p></div>
+                <div class="page-badge">03</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>✅ 永远成立的真话</h3>
+                        <p><b>True</b> 是一个特殊的词，意思是“真的”、“对的”。<br>
+                        <b style="color:#8B5CF6">while True</b> 就像一个永动机！因为条件永远是“真”的，所以它永远不会停下来。</p>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <div class="anim-spin" style="font-size: 80px; display: inline-block;">🎡</div>
+                        <p style="color: #6B7280;">像摩天轮一样永远转动</p>
+                    </div>
+                </div>
+                <div class="half">
+                    <div class="code-editor">
+                        <div class="code-line">
+                            <span class="tok-kw">while</span> <span class="tok-kw">True</span>: <span class="tok-comment"># 永远循环</span>
+                        </div>
+                        <div class="code-line" style="background: rgba(139,92,246,0.1); padding: 5px; margin: 5px 0; border-radius: 5px;">
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-obj">hero</span>.<span class="tok-func">moveUp</span>()<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span>()
+                        </div>
+                        <div style="color: #A6ADC8; font-size: 16px; margin-top: 10px;">
+                            ⬆️ 只要没有停止命令，<br>这两行代码会无限重复！
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 缩进 (Indentation) -->
+        <div class="slide theme-orange">
+            <div class="header">
+                <div class="title-box"><h1><span>📏</span> 4. 缩进 (Indentation)</h1><p>THE QUEUING RULE</p></div>
+                <div class="page-badge">04</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>📐 代码的排队规则</h3>
+                        <p>在 Python 中，<b>缩进</b>非常重要！<br>
+                        使用 <b>Tab键</b> 或 <b>4个空格</b> 让代码向右排队。<br>
+                        只有<b>缩进</b>了的代码，才属于循环的“身体部分”，会被重复执行。</p>
+                    </div>
+                </div>
+                <div class="half">
+                    <div class="code-editor" style="padding-left: 10px;">
+                        <div><span class="tok-kw">while</span> <span class="tok-kw">True</span>:</div>
+                        
+                        <!-- 缩进可视化 -->
+                        <div style="display: flex; align-items: center; margin-top: 5px;">
+                            <div style="width: 30px; height: 40px; border-bottom: 2px solid #F97316; border-left: 2px solid #F97316; margin-left: 10px; border-radius: 0 0 0 10px;"></div>
+                            <div class="indent-block" style="flex: 1; background: rgba(249, 115, 22, 0.1); border-color: #F97316;">
+                                <span class="tok-obj">hero</span>.<span class="tok-func">moveUp</span>()
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center;">
+                            <div style="width: 30px; height: 40px; border-left: 2px solid #F97316; margin-left: 10px;"></div>
+                            <div class="indent-block" style="flex: 1; background: rgba(249, 115, 22, 0.1); border-color: #F97316;">
+                                <span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span>()
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 15px; opacity: 0.5;">
+                            <span class="tok-obj">hero</span>.<span class="tok-func">say</span>(<span class="tok-str">"我在外面!"</span>) <span style="font-size: 14px; color: #6B7280;">← 没缩进，不循环</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 代码块 (Code Block) -->
+        <div class="slide theme-green">
+            <div class="header">
+                <div class="title-box"><h1><span>📦</span> 5. 代码块 (Code Block)</h1><p>BODY OF THE LOOP</p></div>
+                <div class="page-badge">05</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>🧱 循环的“身体”</h3>
+                        <p>所有缩进在一起的代码，组成了一个<b>代码块</b>。<br>
+                        它们就像一个团队，要么一起执行，要么一起不执行。<br>
+                        循环会一遍又一遍地运行整个代码块。</p>
+                    </div>
+                </div>
+                <div class="half">
+                    <div class="code-editor">
+                        <div><span class="tok-kw">while</span> <span class="tok-kw">True</span>:</div>
+                        <div style="background: rgba(16, 185, 129, 0.15); border: 2px solid #10B981; border-radius: 10px; padding: 15px; margin: 10px 0 10px 20px; position: relative;">
+                            <div style="position: absolute; right: -110px; top: 50%; transform: translateY(-50%); color: #10B981; font-weight: bold;">
+                                ⬅️ 这是<br>代码块
+                            </div>
+                            <span class="tok-obj">hero</span>.<span class="tok-func">moveUp</span>()<br>
+                            <span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span>()<br>
+                            <span class="tok-obj">hero</span>.<span class="tok-func">moveDown</span>()
+                        </div>
+                        <div style="color: #6C7086; margin-left: 20px;">
+                            <span class="tok-comment"># 循环会重复执行框里的所有内容</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 无限循环 & 控制 -->
+        <div class="slide theme-blue">
+            <div class="header">
+                <div class="title-box"><h1><span>🎮</span> 6. 循环控制</h1><p>INFINITE & CONTROL</p></div>
+                <div class="page-badge">06</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card" style="border-left-color: #EF4444;">
+                        <h3>♾️ 无限循环 (Infinite Loop)</h3>
+                        <p><b>停不下来的循环！</b><br>就像一首单曲循环的歌。<br>
+                        <code style="background:#FEE2E2; padding: 2px 5px; border-radius: 4px;">while True</code> 就是最常见的无限循环。</p>
+                    </div>
+                    <div class="info-card" style="border-left-color: #3B82F6;">
+                        <h3>🎛️ 循环控制</h3>
+                        <p>给循环定规矩！<br>
+                        比如：“重复 5 次”或者“直到碰到墙壁”。<br>
+                        这样循环就不会永远跑下去了。</p>
+                    </div>
+                </div>
+                <div class="half" style="position: relative; height: 100%;">
+                    <!-- 视觉化：跑圈圈 -->
+                    <div style="width: 100%; height: 200px; border: 4px solid #E5E7EB; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center;">
+                        <div style="position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); background: white; padding: 5px;">Start</div>
+                        <div id="runner" style="font-size: 40px; position: absolute;">🏃</div>
+                        <div style="text-align: center; color: #9CA3AF;">无限跑圈中...</div>
+                    </div>
+                    <script>
+                        // 简单的跑圈动画逻辑
+                        let angle = 0;
+                        function animateRunner() {
+                            angle += 0.02;
+                            const r = 100; // 半径
+                            const x = Math.cos(angle) * r + 150; // 这里的150是容器宽度的一半估算
+                            const y = Math.sin(angle) * r + 100;
+                            // 实际在CSS里做动画更流畅，这里简化处理
+                            const runner = document.getElementById('runner');
+                            if(runner) {
+                                runner.style.left = (50 + 50 * Math.cos(angle)) + '%';
+                                runner.style.top = (50 + 50 * Math.sin(angle)) + '%';
+                            }
+                            requestAnimationFrame(animateRunner);
+                        }
+                        animateRunner();
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 循环的威力 -->
+        <div class="slide theme-magic">
+            <div class="header">
+                <div class="title-box"><h1><span>⚡</span> 7. 循环的威力</h1><p>THE POWER OF LOOPS</p></div>
+                <div class="page-badge">07</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div style="background: #FFE4E6; padding: 20px; border-radius: 16px; height: 300px; overflow: hidden; position: relative;">
+                        <h3 style="color: #BE123C; margin-top: 0;">❌ 没有循环 (太长了!)</h3>
+                        <div class="code-editor" style="font-size: 14px; min-width: auto; opacity: 0.7;">
+                            hero.moveUp(2)<br>
+                            hero.moveRight(2)<br>
+                            hero.moveDown()<br>
+                            hero.moveLeft()<br>
+                            hero.moveUp(2)<br>
+                            hero.moveRight(2)<br>
+                            hero.moveDown()<br>
+                            hero.moveLeft()<br>
+                            hero.moveUp(2)<br>
+                            ... (还有好多行)
+                        </div>
+                        <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 50px; background: linear-gradient(transparent, #FFE4E6);"></div>
+                    </div>
+                </div>
+                <div style="font-size: 40px;">🆚</div>
+                <div class="half">
+                    <div style="background: #D1FAE5; padding: 20px; border-radius: 16px; height: 300px; display: flex; flex-direction: column; justify-content: center;">
+                        <h3 style="color: #047857; margin-top: 0;">✅ 使用循环 (真简洁!)</h3>
+                        <div class="code-editor" style="min-width: auto;">
+                            <span class="tok-kw">while</span> <span class="tok-kw">True</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-obj">hero</span>.<span class="tok-func">moveUp</span>(2)<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span>(2)<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-obj">hero</span>.<span class="tok-func">moveDown</span>()<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-obj">hero</span>.<span class="tok-func">moveLeft</span>()
+                        </div>
+                        <p style="color: #059669; text-align: center; margin-top: 10px; font-weight: bold;">只需要 5 行代码！🎉</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 总结 -->
+        <div class="slide center theme-magic">
+            <div class="content center">
+                <div class="anim-float" style="font-size: 80px;">🎓</div>
+                <h1 style="font-size: 48px; margin: 20px 0; color: #4B5563;">恭喜你掌握了循环魔法！</h1>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; max-width: 800px; margin: 0 auto;">
+                    <div class="info-card" style="border-left-color: #EC4899; padding: 15px;">🔁 <b>循环</b>：让计算机帮你做重复的事</div>
+                    <div class="info-card" style="border-left-color: #3B82F6; padding: 15px;">⏳ <b>while</b>：当条件成立时一直做</div>
+                    <div class="info-card" style="border-left-color: #8B5CF6; padding: 15px;">♾️ <b>while True</b>：永不停歇的无限循环</div>
+                    <div class="info-card" style="border-left-color: #F59E0B; padding: 15px;">📐 <b>缩进</b>：代码的排队规则 (Tab)</div>
+                    <div class="info-card" style="border-left-color: #10B981; grid-column: span 2; padding: 15px; text-align: center;">📦 <b>代码块</b>：循环要执行的一组指令</div>
+                </div>
+
+                <button onclick="goToSlide(0)" style="margin-top: 40px; padding: 15px 40px; font-size: 24px; background: linear-gradient(90deg, #8B5CF6, #F472B6); color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 10px 20px rgba(139, 92, 246, 0.4); transition: transform 0.2s;">
+                    再复习一遍 🔄
+                </button>
+            </div>
+        </div>
+
+        <!-- 进度条 -->
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn next" onclick="moveSlide(1)" id="btnNext" title="下一页">❯</button>
+
+</div>
+
+<script>
+    // --- 逻辑控制 ---
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const progressBar = document.getElementById('progressBar');
+    const totalSlides = slides.length;
+
+    // 初始化
+    updateSlide();
+
+    function updateSlide() {
+        slides.forEach((slide, idx) => {
+            slide.classList.remove('active');
+            if (idx === currentSlide) slide.classList.add('active');
+        });
+
+        // 按钮状态
+        document.getElementById('btnPrev').classList.toggle('disabled', currentSlide === 0);
+        document.getElementById('btnNext').classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        // 进度条
+        const percent = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = percent + '%';
+    }
+
+    function moveSlide(dir) {
+        const next = currentSlide + dir;
+        if (next >= 0 && next < totalSlides) {
+            currentSlide = next;
+            updateSlide();
+        }
+    }
+    
+    function goToSlide(idx) {
+        currentSlide = idx;
+        updateSlide();
+    }
+
+    // 键盘支持
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') moveSlide(1);
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+    });
+
+</script>
+</body>
+</html>

@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第17-25关 编程世界的基础概念</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-dark: #1e293b; /* 深蓝背景 */
+            --slide-bg: #FFFFFF;
+            --primary-color: #F59E0B; /* 宝箱金 */
+            --accent-color: #3B82F6;  /* 魔法蓝 */
+            --text-main: #334155;
+            --text-sub: #64748B;
+            
+            /* 代码高亮色 */
+            --code-bg: #0F172A;
+            --code-fg: #E2E8F0;
+            --tok-var: #FCD34D;       /* 变量名 - 金色 */
+            --tok-func: #60A5FA;      /* 函数 - 蓝色 */
+            --tok-op: #F472B6;        /* 运算符 = 粉色 */
+            --tok-comment: #94A3B8;   /* 注释 - 灰色 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-dark);
+            /* 更有趣的背景图案 */
+            background-image: 
+                radial-gradient(#334155 1px, transparent 1px),
+                radial-gradient(#334155 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 舞台区域 */
+        .stage-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            width: 98vw;
+        }
+
+        /* --- 2. PPT 容器 (16:9) --- */
+        .ppt-wrapper {
+            width: 80vw;
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+            background: var(--slide-bg);
+            border-radius: 30px;
+            /* 双层边框效果 */
+            box-shadow: 
+                0 0 0 10px rgba(245, 158, 11, 0.3),
+                0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 幻灯片页面 */
+        .slide {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            padding: 40px 60px;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .slide.active {
+            display: flex;
+        }
+
+        /* 标题栏 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #F1F5F9;
+            padding-bottom: 15px;
+            flex-shrink: 0;
+        }
+        .title-box h1 { margin: 0; font-size: 36px; color: var(--text-main); display: flex; align-items: center; gap: 15px; }
+        .title-box span { font-size: 40px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1)); }
+        .title-box p { margin: 5px 0 0; font-size: 16px; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .page-badge {
+            background: #FEF3C7;
+            color: #D97706;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 18px;
+            border: 2px solid #FCD34D;
+        }
+
+        /* 内容区布局 */
+        .content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 50px;
+            height: 100%;
+        }
+        
+        .content.center { justify-content: center; flex-direction: column; text-align: center; }
+        .half { flex: 1; display: flex; flex-direction: column; justify-content: center; height: 100%; position: relative; }
+        
+        /* 说明卡片 */
+        .info-card {
+            background: #F8FAFC;
+            border-left: 6px solid var(--card-color, #F59E0B);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .info-card h3 { margin: 0 0 15px 0; font-size: 24px; color: #1E293B; display: flex; align-items: center; gap: 10px; }
+        .info-card p { margin: 0; font-size: 18px; line-height: 1.7; color: #475569; }
+
+        /* 代码编辑器 */
+        .code-editor {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            border-radius: 16px;
+            padding: 25px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 22px;
+            line-height: 1.6;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);
+            position: relative;
+            border: 2px solid #334155;
+            min-width: 400px;
+        }
+        .editor-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        
+        /* 语法高亮类 */
+        .tok-var { color: var(--tok-var); font-weight: bold; }
+        .tok-func { color: var(--tok-func); }
+        .tok-op { color: var(--tok-op); font-weight: bold; }
+        .tok-comment { color: var(--tok-comment); font-style: italic; font-size: 0.9em; }
+        
+        /* --- 3. 可爱按钮设计 --- */
+        .nav-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px; /* 方圆形 */
+            border: none;
+            cursor: pointer;
+            font-size: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 100;
+            
+            /* 可爱的3D风格 */
+            background: #38BDF8;
+            color: white;
+            box-shadow: 
+                0 6px 0 #0284C7,
+                0 15px 20px rgba(0,0,0,0.2);
+        }
+        
+        .nav-btn:hover { 
+            transform: translateY(-2px);
+            background: #7DD3FC;
+        }
+        
+        .nav-btn:active { 
+            transform: translateY(4px);
+            box-shadow: 
+                0 2px 0 #0284C7,
+                inset 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .disabled { 
+            background: #94A3B8;
+            box-shadow: 0 6px 0 #64748B;
+            opacity: 0.6;
+            pointer-events: none; 
+        }
+
+        /* 进度条 */
+        .progress-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: #F1F5F9;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #F59E0B 0%, #F472B6 100%);
+            width: 10%;
+            transition: width 0.5s ease-out;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* --- 4. 动画与特效 --- */
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes putInBox {
+            0% { transform: translate(-100px, -50px) scale(0.5); opacity: 0; }
+            50% { transform: translate(0, -30px) scale(1.1); opacity: 1; }
+            100% { transform: translate(0, 0) scale(1); opacity: 1; }
+        }
+
+        .anim-float { animation: float 3s ease-in-out infinite; }
+        .box-anim { transition: all 0.5s; }
+        
+        /* 盒子模型样式 */
+        .variable-box {
+            width: 120px;
+            height: 100px;
+            background: #F59E0B;
+            border-radius: 0 0 10px 10px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid #B45309;
+            box-shadow: inset 0 -10px 0 rgba(0,0,0,0.1);
+            margin: 0 auto;
+        }
+        .variable-lid {
+            position: absolute;
+            top: -20px;
+            left: -10px;
+            width: 140px;
+            height: 30px;
+            background: #FBBF24;
+            border: 4px solid #B45309;
+            border-radius: 5px;
+            transform-origin: left bottom;
+            transition: transform 0.3s;
+        }
+        .variable-label {
+            position: absolute;
+            bottom: -30px;
+            background: #FEF3C7;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-weight: bold;
+            color: #B45309;
+            border: 2px solid #F59E0B;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .variable-content {
+            font-size: 40px;
+            z-index: 10;
+        }
+        .variable-box:hover .variable-lid {
+            transform: rotate(-20deg);
+        }
+
+        /* 颜色主题类 */
+        .theme-gold { --card-color: #F59E0B; }
+        .theme-blue { --card-color: #3B82F6; }
+        .theme-pink { --card-color: #EC4899; }
+        .theme-green { --card-color: #10B981; }
+        .theme-purple { --card-color: #8B5CF6; }
+
+    </style>
+</head>
+<body>
+
+<div class="stage-area">
+
+    <!-- 左按钮 -->
+    <button class="nav-btn prev" onclick="moveSlide(-1)" id="btnPrev" title="上一页">❮</button>
+
+    <div class="ppt-wrapper">
+        
+        <!-- ================= 幻灯片内容 ================= -->
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active center theme-gold">
+            <div class="content center">
+                <div class="anim-float" style="font-size: 120px; filter: drop-shadow(0 10px 0 rgba(0,0,0,0.1));">
+                    📦
+                </div>
+                <h1 style="font-size: 56px; margin: 20px 0; color: #1E293B;">
+                    编程世界的神奇储物间
+                </h1>
+                <h2 style="font-size: 28px; color: #64748B; font-weight: normal; margin-top: 0;">CodeCombat 第17-25关：变量与赋值</h2>
+                
+                <div style="display: flex; gap: 30px; margin-top: 50px;">
+                    <div class="variable-box" style="transform: scale(0.8);">
+                        <div class="variable-lid" style="transform: rotate(-10deg);"></div>
+                        <div class="variable-content">👾</div>
+                        <div class="variable-label">enemy</div>
+                    </div>
+                    <div class="variable-box" style="transform: scale(0.8); background: #3B82F6; border-color: #1D4ED8;">
+                        <div class="variable-lid" style="background: #60A5FA; border-color: #1D4ED8; transform: rotate(-10deg);"></div>
+                        <div class="variable-content">💎</div>
+                        <div class="variable-label">gem</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 变量 (Variable) -->
+        <div class="slide theme-gold">
+            <div class="header">
+                <div class="title-box"><h1><span>📦</span> 1. 变量 (Variable)</h1><p>THE STORAGE BOX</p></div>
+                <div class="page-badge">01</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>🏠 编程的储物盒</h3>
+                        <p><b>变量</b>就像一个贴了名字标签的<b>储物盒</b>。<br>
+                        你可以在里面存放任何东西：数字、文字，甚至是找到的敌人！<br>
+                        需要用的时候，叫一声盒子的名字，就能拿出里面的东西。</p>
+                    </div>
+                </div>
+                <div class="half">
+                    <!-- 视觉演示 -->
+                    <div style="height: 250px; display: flex; align-items: center; justify-content: center; position: relative;">
+                        <div class="variable-box" style="transform: scale(1.5);">
+                            <div class="variable-lid"></div>
+                            <div class="variable-content" id="demoBoxContent">👾</div>
+                            <div class="variable-label">enemy1</div>
+                        </div>
+                        <div style="position: absolute; right: 20px; top: 0; font-family: monospace; color: #64748B; text-align: right;">
+                            <div>盒子名字: enemy1</div>
+                            <div>里面装着: 那个食人魔</div>
+                        </div>
+                    </div>
+                    
+                    <div class="code-editor" style="margin-top: 20px;">
+                        <div>
+                            <span class="tok-var">enemy1</span> <span class="tok-op">=</span> <span class="tok-func">hero.findNearestEnemy</span>()
+                        </div>
+                        <div class="tok-comment"># 创建一个叫 enemy1 的盒子并装入敌人</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 赋值 (Assignment) -->
+        <div class="slide theme-blue">
+            <div class="header">
+                <div class="title-box"><h1><span>📥</span> 2. 赋值 (Assignment)</h1><p>PUTTING THINGS IN</p></div>
+                <div class="page-badge">02</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card" style="border-color: #3B82F6;">
+                        <h3>🤲 往盒子里放东西</h3>
+                        <p><b>赋值</b>就是把数据（东西）放进变量（盒子）里的动作。<br>
+                        就像你把玩具放进玩具箱整理好一样。</p>
+                    </div>
+                    <div style="text-align: center; font-size: 20px; color: #3B82F6; font-weight: bold; background: #EFF6FF; padding: 20px; border-radius: 12px; border: 2px dashed #3B82F6;">
+                        找到敌人 👀 ➡️ 放进盒子 📦
+                    </div>
+                </div>
+                <div class="half">
+                    <!-- 动画演示 -->
+                    <div style="height: 200px; position: relative; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 30px;">
+                        <div class="variable-box" style="background: #3B82F6; border-color: #1E40AF;">
+                            <div class="variable-lid" style="background: #60A5FA; border-color: #1E40AF; transform: rotate(-30deg);"></div>
+                            <div class="variable-content" style="animation: putInBox 2s infinite;">👾</div>
+                            <div class="variable-label">enemy</div>
+                        </div>
+                    </div>
+                    <div class="code-editor">
+                        <div>
+                            <span class="tok-var">enemy</span> <span class="tok-op">=</span> <span class="tok-func">hero.findNearestEnemy</span>()
+                        </div>
+                        <div class="tok-comment"># 把找到的敌人"赋值"给 enemy</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 赋值号 (Assignment Operator) -->
+        <div class="slide theme-pink">
+            <div class="header">
+                <div class="title-box"><h1><span>⬅️</span> 3. 赋值号 (=)</h1><p>THE ARROW</p></div>
+                <div class="page-badge">03</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card" style="border-color: #EC4899;">
+                        <h3>🏹 存放东西的箭头</h3>
+                        <p>注意！编程里的 <b>=</b> 不是数学里的“等于”。<br>
+                        它像一个<b>向左的小箭头</b>，意思是：<br>
+                        <b style="color:#EC4899">“把右边的东西，放到左边的盒子里”</b>。</p>
+                    </div>
+                </div>
+                <div class="half">
+                    <div class="code-editor" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                        <div style="display: flex; align-items: center; gap: 15px; font-size: 32px;">
+                            <span class="tok-var">enemy1</span> 
+                            <span class="tok-op" style="font-size: 50px; color: #EC4899;">⬅️</span> 
+                            <span class="tok-func">hero.find...</span>
+                        </div>
+                        <div style="width: 100%; border-top: 2px dashed #334155;"></div>
+                        <div style="text-align: left; width: 100%;">
+                            <span class="tok-var">enemy1</span> <span class="tok-op" style="background: #FCE7F3; padding: 0 10px; border-radius: 4px; border: 2px solid #EC4899;">=</span> <span class="tok-func">hero.findNearestEnemy</span>()
+                        </div>
+                        <div class="tok-comment" style="align-self: flex-start;"># 读作：把右边的结果赋值给左边</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 变量名 (Variable Name) -->
+        <div class="slide theme-green">
+            <div class="header">
+                <div class="title-box"><h1><span>🏷️</span> 4. 变量名 (Name)</h1><p>THE LABEL</p></div>
+                <div class="page-badge">04</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card" style="border-color: #10B981;">
+                        <h3>📝 盒子的名字标签</h3>
+                        <p>起名字很重要！<br>
+                        好名字就像清晰的标签，一看就知道盒子里装的是什么。<br>
+                        坏名字就像乱写的符号，下次自己都忘了里面是啥。</p>
+                    </div>
+                </div>
+                <div class="half">
+                    <div style="display: flex; gap: 20px; justify-content: center; margin-bottom: 30px;">
+                        <!-- Good Name -->
+                        <div class="variable-box" style="background: #10B981; border-color: #047857;">
+                            <div class="variable-lid" style="background: #34D399; border-color: #047857;"></div>
+                            <div class="variable-content">👾</div>
+                            <div class="variable-label" style="background: #D1FAE5; color: #047857;">enemy1</div>
+                            <div style="position: absolute; top: -40px; color: #10B981; font-weight: bold;">✅ 好名字</div>
+                        </div>
+                        <!-- Bad Name -->
+                        <div class="variable-box" style="background: #94A3B8; border-color: #475569;">
+                            <div class="variable-lid" style="background: #CBD5E1; border-color: #475569;"></div>
+                            <div class="variable-content">❓</div>
+                            <div class="variable-label" style="background: #E2E8F0; color: #475569;">x</div>
+                            <div style="position: absolute; top: -40px; color: #94A3B8; font-weight: bold;">❌ 坏名字</div>
+                        </div>
+                    </div>
+                    <div class="code-editor">
+                        <div><span class="tok-var">enemy1</span> = ... <span style="color:#10B981"># 清楚！</span></div>
+                        <div><span class="tok-var">x</span> = ... &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#EF4444"># x 是啥？</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 变量的值 (Value) -->
+        <div class="slide theme-purple">
+            <div class="header">
+                <div class="title-box"><h1><span>💎</span> 5. 变量的值 (Value)</h1><p>WHAT'S INSIDE</p></div>
+                <div class="page-badge">05</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card" style="border-color: #8B5CF6;">
+                        <h3>📦 盒子里的实际内容</h3>
+                        <p><b>变量的值</b>就是盒子里面装的那个东西。<br>
+                        它可以是一个数字，一段文字，或者一个怪物。<br>
+                        同一个变量盒子，在不同时间可以装不同的东西哦！</p>
+                    </div>
+                </div>
+                <div class="half">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 40px;">
+                        <div style="text-align: center;">
+                            <div style="margin-bottom: 10px; font-weight: bold; color: #64748B;">刚才...</div>
+                            <div class="variable-box" style="background: #8B5CF6; border-color: #5B21B6;">
+                                <div class="variable-lid" style="background: #A78BFA; border-color: #5B21B6;"></div>
+                                <div class="variable-content">🧟</div>
+                                <div class="variable-label">enemy</div>
+                            </div>
+                        </div>
+                        <div style="font-size: 30px; color: #8B5CF6;">🔜 变成</div>
+                        <div style="text-align: center;">
+                            <div style="margin-bottom: 10px; font-weight: bold; color: #64748B;">现在!</div>
+                            <div class="variable-box" style="background: #8B5CF6; border-color: #5B21B6;">
+                                <div class="variable-lid" style="background: #A78BFA; border-color: #5B21B6;"></div>
+                                <div class="variable-content">👹</div>
+                                <div class="variable-label">enemy</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="code-editor" style="margin-top: 30px;">
+                        <div class="tok-comment"># 值是可以改变的！</div>
+                        <div><span class="tok-var">enemy</span> <span class="tok-op">=</span> <span class="tok-func">hero.findNearestEnemy</span>()</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 重新赋值 (Reassignment) -->
+        <div class="slide theme-gold">
+            <div class="header">
+                <div class="title-box"><h1><span>🔄</span> 6. 重新赋值</h1><p>CHANGING CONTENT</p></div>
+                <div class="page-badge">06</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>♻️ 更换盒子里的东西</h3>
+                        <p>为什么叫“<b>变</b>”量？因为它里面的值可以改变！<br>
+                        <b>重新赋值</b>就是把盒子里的旧东西拿出来，放进新东西。<br>
+                        就像你把玩具箱里的积木倒出来，换成小汽车。</p>
+                    </div>
+                    <button onclick="swapContent()" style="background: #F59E0B; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 18px; cursor: pointer; box-shadow: 0 4px #B45309;">👉 点我换东西</button>
+                </div>
+                <div class="half">
+                    <div style="height: 250px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px;">
+                        <div class="variable-box" style="transform: scale(1.2);">
+                            <div class="variable-lid" id="swapLid"></div>
+                            <div class="variable-content" id="swapItem">🧸</div>
+                            <div class="variable-label">myBox</div>
+                        </div>
+                    </div>
+                    <div class="code-editor">
+                        <div id="codeLine1"><span class="tok-var">myBox</span> <span class="tok-op">=</span> <span class="tok-func">"小熊"</span></div>
+                        <div id="codeLine2" style="opacity: 0.3;"><span class="tok-var">myBox</span> <span class="tok-op">=</span> <span class="tok-func">"汽车"</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 变量作用域 (Scope) -->
+        <div class="slide theme-blue">
+            <div class="header">
+                <div class="title-box"><h1><span>🔭</span> 7. 变量作用域</h1><p>WHERE TO USE</p></div>
+                <div class="page-badge">07</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card" style="border-color: #3B82F6;">
+                        <h3>🚧 盒子的使用范围</h3>
+                        <p><b>作用域</b>就是变量生效的区域。<br>
+                        有些变量在<b>外面</b>创建，整个屋子都能用。<br>
+                        有些变量在<b>循环里</b>创建，每次循环都会重新刷新。</p>
+                    </div>
+                </div>
+                <div class="half">
+                    <div class="code-editor" style="padding: 0; overflow: hidden;">
+                        <div style="padding: 20px; background: rgba(59, 130, 246, 0.1);">
+                            <span class="tok-comment"># 全局范围 (大厅)</span><br>
+                            <span class="tok-var">enemy1</span> <span class="tok-op">=</span> ... <span class="tok-comment"># 只执行一次</span>
+                        </div>
+                        <div style="padding: 20px; background: rgba(236, 72, 153, 0.1); border-top: 2px dashed #EC4899;">
+                            <span class="tok-func">while</span> True:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-comment"># 局部范围 (房间)</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-var">enemy</span> <span class="tok-op">=</span> ... <span class="tok-comment"># 每次循环都更新</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-func">hero.attack</span>(<span class="tok-var">enemy</span>)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 总结 -->
+        <div class="slide center theme-gold">
+            <div class="content center">
+                <div class="anim-float" style="font-size: 80px;">🎓</div>
+                <h1 style="font-size: 48px; margin: 20px 0; color: #1E293B;">储物间的大师！</h1>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; max-width: 900px; margin: 0 auto;">
+                    <div class="info-card" style="padding: 15px; margin: 0;">📦 <b>变量</b>：存储数据的魔法盒子</div>
+                    <div class="info-card" style="padding: 15px; margin: 0; border-color: #3B82F6;">📥 <b>赋值</b>：把东西放进盒子里</div>
+                    <div class="info-card" style="padding: 15px; margin: 0; border-color: #EC4899;">⬅️ <b>赋值号(=)</b>：向左存放的箭头</div>
+                    <div class="info-card" style="padding: 15px; margin: 0; border-color: #10B981;">🏷️ <b>变量名</b>：清楚好记的标签</div>
+                    <div class="info-card" style="padding: 15px; margin: 0; border-color: #8B5CF6;">💎 <b>变量值</b>：盒子里实际的内容</div>
+                    <div class="info-card" style="padding: 15px; margin: 0; border-color: #F59E0B;">🔄 <b>重新赋值</b>：更换盒子里的内容</div>
+                </div>
+
+                <button onclick="goToSlide(0)" style="margin-top: 40px; padding: 15px 40px; font-size: 24px; background: #38BDF8; color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 6px 0 #0284C7; transition: transform 0.2s;">
+                    再复习一遍 🚀
+                </button>
+            </div>
+        </div>
+
+        <!-- 进度条 -->
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn next" onclick="moveSlide(1)" id="btnNext" title="下一页">❯</button>
+
+</div>
+
+<script>
+    // --- 逻辑控制 ---
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const progressBar = document.getElementById('progressBar');
+    const totalSlides = slides.length;
+
+    // 初始化
+    updateSlide();
+
+    function updateSlide() {
+        slides.forEach((slide, idx) => {
+            slide.classList.remove('active');
+            if (idx === currentSlide) slide.classList.add('active');
+        });
+
+        // 按钮状态
+        const btnPrev = document.getElementById('btnPrev');
+        const btnNext = document.getElementById('btnNext');
+        
+        if (currentSlide === 0) {
+            btnPrev.classList.add('disabled');
+        } else {
+            btnPrev.classList.remove('disabled');
+        }
+        
+        if (currentSlide === totalSlides - 1) {
+            btnNext.classList.add('disabled');
+        } else {
+            btnNext.classList.remove('disabled');
+        }
+
+        // 进度条
+        const percent = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = percent + '%';
+    }
+
+    function moveSlide(dir) {
+        const next = currentSlide + dir;
+        if (next >= 0 && next < totalSlides) {
+            currentSlide = next;
+            updateSlide();
+        }
+    }
+    
+    function goToSlide(idx) {
+        currentSlide = idx;
+        updateSlide();
+    }
+
+    // 键盘支持
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') moveSlide(1);
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+    });
+
+    // --- 重新赋值动画 ---
+    let isBear = true;
+    function swapContent() {
+        const item = document.getElementById('swapItem');
+        const lid = document.getElementById('swapLid');
+        const line1 = document.getElementById('codeLine1');
+        const line2 = document.getElementById('codeLine2');
+
+        // 打开盖子
+        lid.style.transform = 'rotate(-45deg)';
+        lid.style.top = '-40px';
+        
+        // 物品飞出
+        item.style.transition = 'all 0.3s';
+        item.style.transform = 'translateY(-50px) scale(0)';
+        
+        setTimeout(() => {
+            // 切换内容
+            isBear = !isBear;
+            item.innerHTML = isBear ? '🧸' : '🚗';
+            
+            // 切换代码高亮
+            if (isBear) {
+                line1.style.opacity = '1';
+                line2.style.opacity = '0.3';
+            } else {
+                line1.style.opacity = '0.3';
+                line2.style.opacity = '1';
+            }
+            
+            // 物品飞入
+            item.style.transform = 'translateY(0) scale(1)';
+            
+            // 关盖子
+            setTimeout(() => {
+                lid.style.transform = 'rotate(0)';
+                lid.style.top = '-20px';
+            }, 300);
+            
+        }, 300);
+    }
+
+</script>
+</body>
+</html>

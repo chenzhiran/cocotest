@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编程小英雄挑战赛 - 游戏设计篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 (紫色现代风格) --- */
+        :root {
+            --primary-color: #6C5CE7; /* 主色调：紫色 */
+            --secondary-color: #A29BFE;
+            --bg-color: #DFE6E9;     /* 背景灰 */
+            --card-bg: #FFFFFF;
+            --text-color: #2D3436;   /* 深色文字 */
+            --correct-color: #00b894;/* 正确绿 */
+            --wrong-color: #d63031;  /* 错误红 */
+            --accent-yellow: #fdcb6e;/* 强调黄 */
+            
+            /* 代码高亮颜色 */
+            --code-bg: #2d2d2d;
+            --code-text: #ccc;
+            --code-kw: #cc99cd; /* 关键字 (purple/pink) */
+            --code-fn: #6196cc; /* 函数/方法 (blue) */
+            --code-num: #f08d49; /* 数字 (orange) */
+            --code-str: #7ec699; /* 字符串 (green) */
+            --code-cmt: #777777; /* 注释 (grey) */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            /* 点阵背景纹理 */
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* --- 游戏容器 --- */
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 700px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目区域 --- */
+        .question-area {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        
+        .question-area h2 {
+            color: var(--text-color);
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* --- 代码高亮样式 --- */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', monospace;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            text-align: left;
+            font-size: 0.95rem;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+        }
+        /* 语法着色 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1.0rem; /* 稍微调小字体以适应长选项 */
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            position: relative;
+            top: 0;
+            box-shadow: 0 5px 0 #bdc3c7;
+            word-break: break-all;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #aab0b3;
+        }
+
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+        }
+        
+        .option-btn[disabled] {
+            cursor: default;
+        }
+
+        /* --- 答题状态 --- */
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析区域 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+
+        .feedback-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+
+        .explanation-text {
+            color: #636e72;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        /* --- 下一题按钮 --- */
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 5px 0 #5649c0;
+            transition: all 0.2s;
+            float: right;
+        }
+        .next-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .next-btn:active { transform: translateY(5px); box-shadow: none; }
+
+        /* --- 结算画面 --- */
+        .end-screen {
+            display: none;
+            padding: 20px 0;
+        }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score-box {
+            background: var(--accent-yellow);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 25px;
+            display: inline-block;
+            margin: 30px 0;
+            box-shadow: 0 8px 0 #e1b12c;
+        }
+        .end-score { font-size: 3.5rem; font-weight: bold; line-height: 1; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+        
+        .perfect-score-text {
+            background: linear-gradient(45deg, #FFD700, #FF8C00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        /* --- 动画定义 --- */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall {
+            to { transform: translateY(80vh) rotate(720deg); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 20</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container">
+                </div>
+
+            <div class="options-grid" id="options-container">
+                </div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen">
+            </div>
+    </div>
+
+    <script>
+        // --- 题目数据 ---
+        const quizData = [
+            {
+                q: "在地图上生成一个玩家英雄应该使用哪个函数？",
+                options: ["A. game.addMoveGoalXY()", "B. game.spawnPlayerXY()", "C. game.spawnXY()", "D. ui.setText()"],
+                correct: 1, // B
+                desc: "game.spawnPlayerXY() 用于在指定位置生成玩家角色。"
+            },
+            {
+                q: "以下哪项不是玩家属性？",
+                options: ["A. player.maxHealth", "B. player.attackDamage", "C. player.flySpeed", "D. player.maxSpeed"],
+                correct: 2, // C
+                desc: "flySpeed 不是玩家的一个标准属性，干扰项。"
+            },
+            {
+                q: "如果想让玩家走到地图上一个点，应该使用哪个命令？",
+                options: ["A. game.addDefeatGoal()", "B. game.addMoveGoalXY()", "C. player.move()", "D. game.spawnPlayerXY()"],
+                correct: 1, // B
+                desc: "game.addMoveGoalXY(x, y) 用于设置玩家需要到达的目标位置。"
+            },
+            {
+                q: "如何让游戏玩家收集3个宝石才能胜利？",
+                options: ["A. game.addCollectGoal(3)", "B. game.collectGem(3)", "C. player.getGems(3)", "D. addGemGoal(3)"],
+                correct: 0, // A
+                desc: "game.addCollectGoal(n) 用于设置收集目标，n 是需要收集的数量。"
+            },
+            {
+                q: "下面哪个代码能在(30, 30) 位置放置一颗宝石？",
+                // code 被删除，避免直接展示答案
+                options: ["A. game.spawnPlayerXY(\"gem\", 30, 30)", "B. player.spawnXY(\"gem\", 30, 30)", "C. game.spawnXY(\"gem\", 30, 30)", "D. spawnXY(\"gem\", 30, 30)"],
+                correct: 2, // C
+                desc: "game.spawnXY() 用于在指定位置生成物体或单位。"
+            },
+            {
+                q: "如果要设置“打败所有敌人”的目标，应该使用：",
+                options: ["A. game.addWinGoal()", "B. game.addDefeatGoal()", "C. game.setEnemyGoal()", "D. player.defeatEnemies()"],
+                correct: 1, // B
+                desc: "game.addDefeatGoal() 用于设置击败敌人的目标。"
+            },
+            {
+                q: "哪个代码能生成一个食人魔（munchkin）在(20, 25)？",
+                options: ["A. game.spawnXY(\"munchkin\", 20, 25)", "B. spawnXY(\"ogre\", 20, 25)", "C. game.spawnXY(\"ogre\", 20, 25)", "D. player.spawnEnemy(\"munchkin\", 20, 25)"],
+                correct: 0, // A
+                desc: "game.spawnXY(\"munchkin\", 20, 25) 用于生成食人魔。"
+            },
+            {
+                q: "火焰喷射器的方向可以设置成什么？",
+                options: ["A. north or south", "B. clockwise or counterclockwise", "C. \"horizontal\" or \"vertical\"", "D. \"up\" or \"down\""],
+                correct: 2, // C
+                desc: "火焰喷射器的方向可以设置为 \"horizontal\" (水平) 或 \"vertical\" (垂直)。"
+            },
+            {
+                q: "如何让士兵归为“人类”阵营？",
+                // code 被删除，避免直接展示答案
+                options: ["A. soldier.faction = \"humans\"", "B. soldier.group = \"humans\"", "C. soldier.team = \"humans\"", "D. soldier.side = \"humans\""],
+                correct: 2, // C
+                desc: "设置阵营时，正确的属性是 team = \"humans\"。"
+            },
+            {
+                q: "如果要创建一个森林类型的迷宫，应该使用哪一行代码？",
+                options: ["A. game.createMaze(\"forest\", 5)", "B. game.spawnMaze(\"forest\", 5)", "C. game.spawnXY(\"maze\", 5)", "D. maze.spawn(\"forest\", 5)"],
+                correct: 1, // B
+                desc: "game.spawnMaze(\"forest\", 5) 用于生成森林类型的迷宫。"
+            },
+            {
+                q: "想要在右侧界面追踪玩家的生命值，应该写什么？",
+                // code 被删除，避免直接展示答案
+                options: ["A. trackUI(player.health)", "B. ui.health(player)", "C. ui.track(player, \"health\")", "D. player.track(\"health\")"],
+                correct: 2, // C
+                desc: "ui.track(player, \"health\") 用于追踪并显示玩家的生命值。"
+            },
+            {
+                q: "如何记录玩家玩了1次游戏？",
+                // code 被删除，避免直接展示答案
+                options: ["A. db.add(\"plays\", 1)", "B. add(\"plays\", 1)", "C. db.store(\"plays\", 1)", "D. game.track(plays, 1)"],
+                correct: 0, // A
+                desc: "使用 game.db.add() 来记录数据到数据库。"
+            },
+            {
+                q: "想在游戏左侧添加一条说明文字，应该用：",
+                options: ["A. game.setText()", "B. ui.setText(\"directions\", \"按空格跳跃\")", "C. ui.directions(\"按空格跳跃\")", "D. print(\"按空格跳跃\")"],
+                correct: 1, // B
+                desc: "ui.setText() 用于设置UI中的说明文字，类型是 \"directions\"。"
+            },
+            {
+                q: "如果生成器生成“骷髅怪”，代码应为：",
+                // code 被删除，避免直接展示答案
+                options: ["A. generator.create(\"skeleton\")", "B. generator.spawnType = \"skeleton\"", "C. game.spawnXY(\"skeleton\", generator)", "D. spawnType(generator, \"skeleton\")"],
+                correct: 1, // B
+                desc: "generator.spawnType = \"skeleton\" 设置生成器生成的敌人类型。"
+            },
+            {
+                q: "以下哪个设置能让游戏要求生存20秒？",
+                options: ["A. game.addSurviveGoal(20)", "B. game.setTimer(20)", "C. player.survive(20)", "D. survive(20)"],
+                correct: 0, // A
+                desc: "game.addSurviveGoal(20) 设置生存目标，要求生存 20 秒。"
+            },
+            {
+                q: "如果要生成一个生命药水在(21, 20)，应该用：",
+                options: ["A. game.spawnXY(\"potion-small\", 21, 20)", "B. game.spawnXY(\"life-potion\", 21, 20)", "C. game.spawnPotion(\"small\", 21, 20)", "D. game.createPotion(\"potion-small\", 21, 20)"],
+                correct: 0, // A
+                desc: "game.spawnXY(\"potion-small\", 21, 20) 用于生成生命药水。"
+            },
+            {
+                q: "若要让敌人攻击最近的单位，应设置生成器的哪项？",
+                // code 被删除，避免直接展示答案
+                options: ["A. generator.attack = \"nearest\"", "B. generator.spawnAI = \"AttacksNearest\"", "C. generator.target = \"close\"", "D. generator.attackTo = \"player\""],
+                correct: 1, // B
+                desc: "generator.spawnAI = \"AttacksNearest\" 设置生成器生成的敌人攻击最近的单位。"
+            },
+            {
+                q: "如果要放置一个箱子（chest），应写哪一行代码？",
+                options: ["A. game.spawnXY(\"box\", x, y)", "B. game.spawnXY(\"chest\", x, y)", "C. spawnXY(\"chest\", x, y)", "D. game.createObject(\"chest\", x, y)"],
+                correct: 1, // B
+                desc: "game.spawnXY(\"chest\", x, y) 用于在指定位置生成箱子。"
+            },
+            {
+                q: "关于游戏设计，下面哪一项不属于重点？",
+                options: ["A. 游戏的目标", "B. 地图结构", "C. 敌人名字", "D. 游戏难度"],
+                correct: 2, // C
+                desc: "敌人名字虽然有趣，但相比游戏目标、地图结构和难度平衡，它不属于影响玩法的核心要素。"
+            },
+            {
+                q: "下面哪个是创建红色“走到这里”的目标？",
+                options: ["A. game.spawnMoveGoalXY(x, y)", "B. game.addMoveGoalXY(x, y)", "C. player.goTo(x, y)", "D. goal.moveTo(x, y)"],
+                correct: 1, // B
+                desc: "game.addMoveGoalXY(x, y) 用于设置移动目标，通常在地图上显示为红色 X。"
+            }
+        ];
+
+        // --- 游戏状态变量 ---
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        // --- DOM 元素 ---
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        // --- 初始化游戏 ---
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                // 优化的 HTML 转义与高亮逻辑（防止标签冲突）
+                let codeHtml = escapeHtml(data.code);
+
+                // 1. 优先替换字符串 (避免匹配到后续生成的 class="kw")
+                codeHtml = codeHtml.replace(/(".*?")/g, '<span class="str">$1</span>');
+
+                // 2. 替换注释
+                codeHtml = codeHtml.replace(/(#.*)/g, '<span class="cmt">$1</span>');
+
+                // 3. 替换关键字 (扩充了游戏开发常用词)
+                codeHtml = codeHtml.replace(/\b(game|ui|player|generator|spawnXY|spawnPlayerXY|addMoveGoalXY|addCollectGoal|addDefeatGoal|addSurviveGoal|spawnMaze|track|setText|db|add|while|True|False|if|else|break)\b/g, '<span class="kw">$1</span>');
+
+                // 4. 替换数字
+                codeHtml = codeHtml.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+
+                // 5. 替换方法调用 (.xxx)
+                codeHtml = codeHtml.replace(/(\.\w+)/g, '<span class="fn">$1</span>');
+
+                html += `<div class="code-block">${codeHtml}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // --- 检查答案 ---
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => {
+                   allBtns[data.correct].classList.add('correct');
+                }, 400);
+                // 获取正确选项的字母 (A/B/C/D)
+                const rightAnswerStr = data.options[data.correct].charAt(0);
+                showFeedback(false, `❌ 回答错误，正确答案是 ${rightAnswerStr}`, data.desc);
+            }
+        }
+
+        // --- 显示解析 ---
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // --- 下一题 ---
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        // --- 结束画面 ---
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none'; 
+
+            const totalScore = quizData.length * 100;
+            const isPerfect = (score === totalScore);
+            
+            let html = '';
+            if (isPerfect) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 完美的游戏设计师！ 🎉</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score perfect-score-text">${score}</div></div>`;
+                html += `<div class="end-desc">太棒了！你对游戏生成的代码了如指掌！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score">${score} / ${totalScore}</div></div>`;
+                html += `<div class="end-desc">做得不错！继续加油，设计出更棒的游戏吧！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; font-size:1.2rem; padding: 15px 40px;">🔄 再玩一次</button>`;
+            
+            endScreen.innerHTML = html;
+        }
+
+        // --- 撒花特效 ---
+        function createConfetti() {
+            const colors = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#fdcb6e'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-20px';
+                const scale = Math.random() * 0.6 + 0.4;
+                confetti.style.transform = `scale(${scale}) rotate(${Math.random()*360}deg)`;
+                confetti.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                
+                container.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 2500);
+            }
+        }
+
+        // --- HTML转义 ---
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // --- 启动游戏 ---
+        loadQuestion();
+
+    </script>
+</body>
+</html>
