@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 编程小英雄 - 逻辑与分支挑战</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 --- */
+        :root {
+            /* 主题色：活泼的蓝紫色系 */
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --bg-color: #dfe6e9;
+            --card-bg: #ffffff;
+            --text-color: #2d3436;
+            --correct-color: #00b894;
+            --wrong-color: #d63031;
+            --accent-yellow: #fdcb6e;
+            
+            /* 代码高亮配色 (VS Code Dark 风格优化) */
+            --code-bg: #1e1e1e;
+            --code-text: #d4d4d4;
+            --code-kw: #569cd6;   /* 关键字 (蓝) */
+            --code-type: #4ec9b0; /* 类型 (青) */
+            --code-fn: #dcdcaa;   /* 函数 (黄) */
+            --code-num: #b5cea8;  /* 数字 (浅绿) */
+            --code-str: #ce9178;  /* 字符串 (红褐) */
+            --code-cmt: #6a9955;  /* 注释 (绿) */
+            --code-op: #d4d4d4;   /* 运算符 (白/灰) */
+            --code-logic: #c586c0; /* 逻辑符号 (粉紫) */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 800px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目与代码 --- */
+        .question-area h2 {
+            text-align: left;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* 代码块样式：保证换行和空格 */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', Consolas, monospace;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 核心：保留空格和换行 */
+            word-break: break-all;
+            text-align: left;
+            font-size: 1rem;
+            line-height: 1.6;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+            overflow-x: auto;
+        }
+
+        /* 高亮类定义 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .type { color: var(--code-type); }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .op { color: var(--code-op); }
+        .logic { color: var(--code-logic); font-weight: bold; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1rem; 
+            font-family: 'Fira Code', 'Microsoft YaHei', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #bdc3c7;
+            position: relative;
+            top: 0;
+            line-height: 1.4;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #aab0b3;
+        }
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+            transform: translateY(0);
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析与反馈 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        .explanation-text { line-height: 1.6; color: #555; }
+        
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #5649c0;
+            transition: transform 0.1s;
+        }
+        .next-btn:active { transform: translateY(3px); box-shadow: none; }
+        
+        /* 结束画面 */
+        .end-screen { display: none; padding: 20px 0; }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score { font-size: 3.5rem; font-weight: bold; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        // C++ 逻辑与分支结构测试数据
+        const quizData = [
+            {
+                q: "1. 在C++中，逻辑与运算符(AND)的符号是：",
+                options: ["A. &", "B. &&", "C. ||", "D. !"],
+                correct: 1, // B
+                desc: "在C++中，逻辑与运算符使用 && 符号，表示两个条件都必须为真时结果才为真。"
+            },
+            {
+                q: "2. 关于逻辑运算符的短路特性，以下说法正确的是：",
+                options: [
+                    "A. &&运算符左侧为false时，不再计算右侧",
+                    "B. ||运算符左侧为true时，仍然计算右侧",
+                    "C. &&运算符总是计算两侧表达式",
+                    "D. ||运算符左侧为false时，不再计算右侧"
+                ],
+                correct: 0, // A
+                desc: "逻辑与(&&)具有短路特性：如果左侧表达式为false，整个表达式结果必定为false，不再计算右侧表达式。"
+            },
+            {
+                q: "3. 表达式 (5 > 3) && (4 < 2) 的结果是：",
+                options: ["A. true", "B. false", "C. 1", "D. 0"],
+                correct: 1, // B
+                desc: "(5 > 3) 为 true，(4 < 2) 为 false。因为 true && false 的结果是 false。"
+            },
+            {
+                q: "4. 在C++中，bool类型的变量可以取的值是：",
+                options: ["A. 只有0和1", "B. 只有true和false", "C. 任何整数", "D. 任何数字"],
+                correct: 1, // B
+                desc: "bool 类型只有两个值：true 和 false。虽然在内存中它们对应 1 和 0，但在 C++ 语言层面定义为 true 和 false。"
+            },
+            {
+                q: "5. 以下哪个条件可以判断数字 a 是偶数？",
+                options: ["A. a % 2 == 0", "B. a % 2 == 1", "C. a / 2 == 0", "D. a * 2 == 0"],
+                correct: 0, // A
+                desc: "判断偶数的标准方法是使用取余运算符：如果一个数除以 2 的余数为 0，那么它就是偶数。"
+            },
+            {
+                q: "6. 关于 if-else 语句，以下描述正确的是：",
+                options: [
+                    "A. if条件为真时执行else块",
+                    "B. if条件为假时执行else块",
+                    "C. if和else块总是同时执行",
+                    "D. else块可以单独使用，不需要if"
+                ],
+                correct: 1, // B
+                desc: "if-else 语句的执行规则是：当 if 条件为真时执行 if 块，当 if 条件为假时执行 else 块。"
+            },
+            {
+                q: "7. 以下代码的输出结果是什么？",
+                code: `int a = 10, b = 5;\nif (a > b) {\n    cout << "A";\n} else {\n    cout << "B";\n}`,
+                options: ["A. A", "B. B", "C. AB", "D. 无输出"],
+                correct: 0, // A
+                desc: "因为 a(10) > b(5) 为 true，所以条件成立，程序执行 if 块中的代码，输出 \"A\"。"
+            },
+            {
+                q: "8. 表达式 (x >= 60) && (x < 100) 表示：",
+                options: [
+                    "A. x在60到100之间（包含60，不包含100）",
+                    "B. x在60到100之间（不包含60，包含100）",
+                    "C. x大于60或小于100",
+                    "D. x等于60或100"
+                ],
+                correct: 0, // A
+                desc: "x >= 60 表示 x 大于或等于 60，x < 100 表示 x 小于 100，两者用 && (与) 连接，表示 x 在 [60, 100) 区间内。"
+            },
+            {
+                q: "9. 以下哪个表达式可以判断 num 是否能被 3 整除？",
+                options: ["A. num % 3 == 0", "B. num % 3 == 1", "C. num / 3 == 0", "D. num * 3 == 0"],
+                correct: 0, // A
+                desc: "判断一个数能否被另一个数整除，使用取余运算符 %。如果余数为 0，则表示可以整除。"
+            },
+            {
+                q: "10. 关于自增运算符，以下代码的输出结果是什么？",
+                code: `int a = 3, k;\nk = ++a;\ncout << k << " " << a;`,
+                options: ["A. 3 3", "B. 3 4", "C. 4 3", "D. 4 4"],
+                correct: 3, // D
+                desc: "前置自增 ++a 会先增加 a 的值（变为4），然后再使用 a 的值赋值给 k。所以 k 和 a 最终都是 4。"
+            },
+            {
+                q: "11. 以下代码的输出结果是什么？",
+                code: `int a = 0;\nif (a) {\n    cout << "True";\n} else {\n    cout << "False";\n}`,
+                options: ["A. True", "B. False", "C. 编译错误", "D. 运行错误"],
+                correct: 1, // B
+                desc: "在C++条件判断中，数值 0 表示 false，非 0 表示 true。因为 a = 0，条件为假，执行 else 块，输出 \"False\"。"
+            },
+            {
+                q: "12. 表达式 (a % 10 == 0) 用于判断：",
+                options: [
+                    "A. a的个位是否为0",
+                    "B. a是否能被10整除",
+                    "C. a是否是10的倍数",
+                    "D. 所有以上选项"
+                ],
+                correct: 3, // D
+                desc: "a % 10 == 0 判断 a 除以 10 的余数是否为 0。这等价于判断 a 的个位是否为 0、a 是否能被 10 整除、a 是否是 10 的倍数。这些描述在数学上是等价的。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                html += `<div class="code-block">${highlightCode(data.code)}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * 强力词法分析器 (Single-Pass Regex Lexer)
+         * 专门针对C++逻辑与运算设计，无占位符，直接生成高亮HTML。
+         */
+        function highlightCode(code) {
+            // 正则表达式优先级：
+            // 1. 字符串 ("..." 或 '...')
+            // 2. 注释 (//... 或 #include...)
+            // 3. 数字 (123, 3.14)
+            // 4. 关键字 (int, bool, if, else, true, false, return)
+            // 5. 常用函数/对象 (cout, cin, endl, main)
+            // 6. 逻辑与比较运算符 (&&, ||, ==, !=, <=, >=, !, %, +=, ++)
+            // 7. 其他符号
+            const pattern = /(".*?"|'.*?')|(\/\/.*|#include\s*<.*?>)|(\b\d+(?:\.\d+)?\b)|(\b(?:int|float|double|char|void|bool|string|if|else|while|for|return|using|namespace|true|false)\b)|(\b(?:cout|cin|endl|main)\b)|(&&|\|\||==|!=|<=|>=|\+=|-=|\*=|\/=|%=|\+\+|--|[!%+\-*/=<>])|([\[\]\{\}\(\);,\.])/g;
+
+            let lastIndex = 0;
+            let html = "";
+            let match;
+
+            while ((match = pattern.exec(code)) !== null) {
+                // 1. 转义并添加匹配项之前的普通文本
+                const plainText = code.slice(lastIndex, match.index);
+                html += escapeHtml(plainText);
+
+                // 2. 识别 token 类型
+                let content = match[0];
+                let cls = "";
+
+                if (match[1]) cls = "str";       // 字符串
+                else if (match[2]) cls = "cmt";  // 注释
+                else if (match[3]) cls = "num";  // 数字
+                else if (match[4]) cls = "kw";   // 关键字
+                else if (match[5]) cls = "fn";   // 函数
+                else if (match[6]) cls = "logic"; // 逻辑/运算符
+                // match[7] 是普通标点，不加特定颜色，跟随默认文本颜色
+
+                // 特殊处理：预处理指令颜色
+                if (content.startsWith("#")) cls = "cmt";
+
+                // 3. 包裹 span
+                if (cls) {
+                    html += `<span class="${cls}">${escapeHtml(content)}</span>`;
+                } else {
+                    html += escapeHtml(content);
+                }
+
+                lastIndex = pattern.lastIndex;
+            }
+
+            // 4. 添加剩余文本
+            html += escapeHtml(code.slice(lastIndex));
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => allBtns[data.correct].classList.add('correct'), 400);
+                const chars = ["A", "B", "C", "D"];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${chars[data.correct]}`, data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none';
+            
+            let html = '';
+            const totalScore = quizData.length * 100;
+            if (score === totalScore) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 逻辑思维大师！ 🎉</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">太棒了！你的逻辑像计算机一样严密！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score} / ${totalScore}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">做得不错！多练习分支结构和逻辑运算，你会更厉害的！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; padding:15px 40px; margin-top:30px">🔄 再挑战一次</button>`;
+            endScreen.innerHTML = html;
+        }
+
+        function createConfetti() {
+            const colors = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#fdcb6e'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.transform = `scale(${Math.random() * 0.6 + 0.4}) rotate(${Math.random()*360}deg)`;
+                c.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2500);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>

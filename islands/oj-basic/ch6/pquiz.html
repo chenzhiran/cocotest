@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python 编程小英雄 - 循环魔法圈 (While)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 --- */
+        :root {
+            /* 主题色：清新薄荷绿与活力橙 - 象征循环的生机 */
+            --primary-color: #00b894;
+            --secondary-color: #ff7675;
+            --bg-color: #e0f7fa;
+            --card-bg: #ffffff;
+            --text-color: #2d3436;
+            --correct-color: #00cec9;
+            --wrong-color: #d63031;
+            
+            /* 代码高亮配色 (VS Code 风格优化) */
+            --code-bg: #2d3436;
+            --code-text: #dfe6e9;
+            --code-kw: #e056fd;   /* 关键字 (紫粉) */
+            --code-fn: #ffeaa7;   /* 函数 (黄) */
+            --code-num: #74b9ff;  /* 数字 (蓝) */
+            --code-str: #55efc4;  /* 字符串 (绿) */
+            --code-cmt: #636e72;  /* 注释 (灰) */
+            --code-op: #dfe6e9;   /* 运算符 (白) */
+            --code-bool: #fd79a8; /* 布尔值 */
+        }
+
+        body {
+            font-family: 'Poppins', 'YouYuan', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#81ecec 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 800px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 5px solid var(--primary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--secondary-color);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #ffffff;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+            box-shadow: 0 4px 0 #d63031;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #b2bec3;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目与代码 --- */
+        .question-area h2 {
+            text-align: left;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* 代码块样式：严格保留空格 */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', Consolas, monospace;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 核心：保留缩进和换行 */
+            word-break: break-all;
+            text-align: left;
+            font-size: 1rem;
+            line-height: 1.6;
+            border-left: 5px solid var(--primary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            overflow-x: auto;
+            tab-size: 4;
+        }
+
+        /* 高亮类定义 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .op { color: var(--code-op); }
+        .bool { color: var(--code-bool); font-weight: bold; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #b2bec3;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1rem; 
+            font-family: 'Fira Code', 'Microsoft YaHei', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #95a5a6;
+            position: relative;
+            top: 0;
+            line-height: 1.5;
+            white-space: pre-wrap; /* 允许选项内换行 */
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #00947e;
+        }
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #95a5a6;
+            transform: translateY(0);
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00947e;
+        }
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析与反馈 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #e0f7fa;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        .explanation-text { line-height: 1.6; color: #555; }
+        
+        .next-btn {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #d63031;
+            transition: transform 0.1s;
+        }
+        .next-btn:active { transform: translateY(3px); box-shadow: none; }
+        
+        /* 结束画面 */
+        .end-screen { display: none; padding: 20px 0; }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score { font-size: 3.5rem; font-weight: bold; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        // Python 循环结构 - while 基础测试数据
+        const quizData = [
+            {
+                q: "1. 关于while循环的基本语法，以下正确的是：",
+                options: [
+                    "A. while (条件) { 循环体 }",
+                    "B. while 条件: 循环体",
+                    "C. while 条件 then 循环体 end",
+                    "D. while 条件 do 循环体"
+                ],
+                correct: 1, // B
+                desc: "Python 中 while 循环的正确语法是 'while 条件:'，条件后面跟冒号，循环体代码通过缩进来表示。A是C++/Java风格，C/D是Pascal/Lua风格。"
+            },
+            {
+                q: "2. 循环三要素不包括：",
+                options: [
+                    "A. 循环变量初始化",
+                    "B. 循环条件",
+                    "C. 循环体内容",
+                    "D. 循环变量更新"
+                ],
+                correct: 2, // C
+                desc: "控制循环逻辑的三个核心要素是：1.初始化（开始） 2.条件（结束） 3.更新（变化）。循环体是执行的具体任务，不属于控制循环本身的要素。"
+            },
+            {
+                q: "3. 以下代码的输出结果是什么？",
+                code: `i = 1\nwhile i <= 3:\n    print(i)\n    i = i + 1`,
+                options: ["A. 1 2 3", "B. 1 2", "C. 2 3", "D. 1 2 3 4"],
+                correct: 0, // A
+                desc: "i 从 1 开始，依次输出 1, 2, 3。当 i 变为 4 时，条件 i <= 3 不满足，循环结束。"
+            },
+            {
+                q: "4. 以下代码会执行多少次循环？",
+                code: `i = 5\nwhile i > 0:\n    print(i)\n    i = i - 1`,
+                options: ["A. 4次", "B. 5次", "C. 6次", "D. 无限循环"],
+                correct: 1, // B
+                desc: "i 从 5 开始，依次为 5, 4, 3, 2, 1（均大于 0，执行 5 次）。当 i=0 时，条件 i>0 不满足，循环结束。"
+            },
+            {
+                q: "5. 计算1到n的和，空白处应填入：",
+                code: `n = int(input())\ni = 1\ntotal = 0\nwhile i <= n:\n    total = ________\n    i = i + 1\nprint(total)`,
+                options: ["A. i", "B. total + i", "C. total + 1", "D. i + 1"],
+                correct: 1, // B
+                desc: "累加求和的逻辑是：新总和 = 旧总和 + 当前数。所以应该是 total = total + i。"
+            },
+            {
+                q: "6. 以下哪个是死循环？",
+                options: [
+                    "A. while True: print(\"循环\")",
+                    "B. while False: print(\"循环\")",
+                    "C. while 1 == 1: print(\"循环\")",
+                    "D. while 0: print(\"循环\")"
+                ],
+                correct: 0, // A (注：C 也是死循环，但 A 是最典型的写法，题目原答案为 A)
+                desc: "`while True:` 的条件永远为真，程序会无限重复执行循环体，称为死循环。"
+            },
+            {
+                q: "7. 输出1到100的所有奇数，最高效的方法是：",
+                options: [
+                    "A. 使用if判断每个数是否为奇数",
+                    "B. 从1开始，每次加2",
+                    "C. 从0开始，每次加1",
+                    "D. 从2开始，每次加2"
+                ],
+                correct: 1, // B
+                desc: "从 1 开始，每次加 2 得到的序列是 1, 3, 5, 7... 正好是奇数。这种方法不需要每次循环都进行 if 判断，效率更高。"
+            },
+            {
+                q: "8. 以下代码的输出结果是什么？",
+                code: `i = 1\nwhile i < 10:\n    if i % 3 == 0:\n        print(i)\n    i = i + 1`,
+                options: ["A. 3 6 9", "B. 1 2 3", "C. 3 6", "D. 3 6 9 12"],
+                correct: 0, // A
+                desc: "循环范围是 1 到 9 (i < 10)。`i % 3 == 0` 筛选出能被 3 整除的数：3, 6, 9。"
+            },
+            {
+                q: "9. 关于循环变量更新，以下描述正确的是：",
+                options: [
+                    "A. 循环变量只能在循环体内更新",
+                    "B. 循环变量更新可以写在循环条件中",
+                    "C. 如果忘记更新循环变量会导致死循环",
+                    "D. 循环变量只能每次增加1"
+                ],
+                correct: 2, // C
+                desc: "如果忘记更新循环变量（例如忘记写 i = i + 1），循环条件可能永远保持为真（例如 i 永远小于 10），从而导致程序陷入死循环。"
+            },
+            {
+                q: "10. 统计1到n中能被3整除的数的个数，空白处应填入：",
+                code: `n = int(input())\ni = 1\ncount = 0\nwhile i <= n:\n    if i % 3 == 0:\n        ________\n    i = i + 1\nprint(count)`,
+                options: ["A. count = count + 1", "B. i = i + 1", "C. count = i", "D. count = 1"],
+                correct: 0, // A
+                desc: "count 是计数器。每当找到一个满足条件的数（能被 3 整除），就需要让计数器加 1。"
+            },
+            {
+                q: "11. 以下代码中，循环体会执行多少次？",
+                code: `i = 0\nwhile i < 10:\n    i = i + 2\n    print(i)`,
+                options: ["A. 4次", "B. 5次", "C. 6次", "D. 10次"],
+                correct: 1, // B
+                desc: "i 的变化轨迹：\n初始 0 -> 第一次循环后 2\n-> 第二次 4\n-> 第三次 6\n-> 第四次 8\n-> 第五次 10\n此时 10 < 10 不满足，循环结束。共执行 5 次。"
+            },
+            {
+                q: "12. 关于while循环的执行流程，正确的是：",
+                options: [
+                    "A. 先执行循环体，再检查条件",
+                    "B. 先检查条件，条件为真时执行循环体",
+                    "C. 条件为假时执行循环体",
+                    "D. 只执行一次循环体"
+                ],
+                correct: 1, // B
+                desc: "while 循环是“当型”循环：首先检查条件，如果条件为真 (True)，则执行循环体；执行完后再回来检查条件，依此往复。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                html += `<div class="code-block">${highlightCode(data.code)}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * Python 专用一次性词法分析高亮引擎
+         * 优化支持：while, if, print, input, int 等
+         */
+        function highlightCode(code) {
+            // Python 正则表达式模式
+            const pattern = /(".*?"|'.*?')|(#.*)|(\b\d+(?:\.\d+)?\b)|(\b(?:while|if|else|elif|and|or|not|in|is|True|False|None|print|input|int|str|len|range)\b)|(\+=|-=|\*=|==|!=|<=|>=|[+\-*/%=:])/g;
+
+            let lastIndex = 0;
+            let html = "";
+            let match;
+
+            while ((match = pattern.exec(code)) !== null) {
+                // 添加普通文本
+                const plainText = code.slice(lastIndex, match.index);
+                html += escapeHtml(plainText);
+
+                let content = match[0];
+                let cls = "";
+
+                if (match[1]) cls = "str";       // 字符串
+                else if (match[2]) cls = "cmt";  // 注释
+                else if (match[3]) cls = "num";  // 数字
+                else if (match[4]) cls = "kw";   // 关键字/函数
+                else if (match[5]) cls = "op";   // 运算符
+
+                // 特殊处理 True/False
+                if (content === 'True' || content === 'False') cls = "bool";
+                
+                if (cls) {
+                    html += `<span class="${cls}">${escapeHtml(content)}</span>`;
+                } else {
+                    html += escapeHtml(content);
+                }
+
+                lastIndex = pattern.lastIndex;
+            }
+
+            // 添加剩余文本
+            html += escapeHtml(code.slice(lastIndex));
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => allBtns[data.correct].classList.add('correct'), 400);
+                const chars = ["A", "B", "C", "D"];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${chars[data.correct]}`, data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none';
+            
+            let html = '';
+            const totalScore = quizData.length * 100;
+            if (score === totalScore) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 循环魔法师！ 🎉</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">太棒了！你已经完全掌握了 while 循环的奥秘！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score} / ${totalScore}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">做得不错！多练习循环逻辑，你会更强大的！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; padding:15px 40px; margin-top:30px">🔄 再玩一次</button>`;
+            endScreen.innerHTML = html;
+        }
+
+        function createConfetti() {
+            const colors = ['#00b894', '#00cec9', '#ff7675', '#dfe6e9', '#fab1a0'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.transform = `scale(${Math.random() * 0.6 + 0.4}) rotate(${Math.random()*360}deg)`;
+                c.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2500);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>

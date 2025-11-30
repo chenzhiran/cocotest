@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python 编程小英雄 - 循环控制篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 --- */
+        :root {
+            /* 主题色：深空蓝与闪电黄 - 象征控制流的跳转 */
+            --primary-color: #2f3640;
+            --secondary-color: #fbc531;
+            --bg-color: #f5f6fa;
+            --card-bg: #ffffff;
+            --text-color: #2f3640;
+            --correct-color: #4cd137;
+            --wrong-color: #e84118;
+            
+            /* 代码高亮配色 (VS Code 风格优化) */
+            --code-bg: #1e1e1e;
+            --code-text: #dcdde1;
+            --code-kw: #c23616;   /* 关键字 (红/橙 - 强调控制流) */
+            --code-fn: #e1b12c;   /* 函数 (黄) */
+            --code-num: #00a8ff;  /* 数字 (蓝) */
+            --code-str: #4cd137;  /* 字符串 (绿) */
+            --code-cmt: #718093;  /* 注释 (灰) */
+            --code-op: #dcdde1;   /* 运算符 (白) */
+            --code-bool: #9c88ff; /* 布尔值 */
+        }
+
+        body {
+            font-family: 'Poppins', 'YouYuan', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#dcdde1 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 800px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border-top: 8px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--secondary-color);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #2f3640;
+            text-shadow: none;
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #dcdde1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), #e1b12c);
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目与代码 --- */
+        .question-area h2 {
+            text-align: left;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* 代码块样式：严格保留空格 */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', Consolas, monospace;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 核心：保留缩进和换行 */
+            word-break: break-all;
+            text-align: left;
+            font-size: 1rem;
+            line-height: 1.6;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            overflow-x: auto;
+            tab-size: 4;
+        }
+
+        /* 高亮类定义 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .op { color: var(--code-op); }
+        .bool { color: var(--code-bool); font-weight: bold; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #dcdde1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1rem; 
+            font-family: 'Fira Code', 'Microsoft YaHei', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #b2bec3;
+            position: relative;
+            top: 0;
+            line-height: 1.5;
+            white-space: pre-wrap; /* 允许选项内换行 */
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #e1b12c;
+        }
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #b2bec3;
+            transform: translateY(0);
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #44bd32;
+        }
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c23616;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析与反馈 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f5f6fa;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        .explanation-text { line-height: 1.6; color: #555; }
+        
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #1e272e;
+            transition: transform 0.1s;
+        }
+        .next-btn:active { transform: translateY(3px); box-shadow: none; }
+        
+        /* 结束画面 */
+        .end-screen { display: none; padding: 20px 0; }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score { font-size: 3.5rem; font-weight: bold; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        // Python 循环控制(break/continue)测试数据
+        const quizData = [
+            {
+                q: "1. 关于 break 语句的作用，以下描述正确的是：",
+                options: [
+                    "A. 跳过当前循环的剩余语句，继续下一次循环",
+                    "B. 立即终止整个循环",
+                    "C. 暂停程序执行",
+                    "D. 重新开始循环"
+                ],
+                correct: 1, // B
+                desc: "break 语句的作用是“打破”循环，立即终止包含它的最内层循环，程序流程会跳转到循环结构之后的代码。"
+            },
+            {
+                q: "2. 关于 continue 语句的作用，以下描述正确的是：",
+                options: [
+                    "A. 立即终止整个循环",
+                    "B. 跳过当前循环的剩余语句，继续下一次循环",
+                    "C. 暂停程序执行",
+                    "D. 重新开始程序"
+                ],
+                correct: 1, // B
+                desc: "continue 语句用于“继续”下一次尝试。它会跳过当前循环体中 continue 之后的语句，直接回到循环条件判断部分，开始下一次迭代。"
+            },
+            {
+                q: "3. 以下代码的输出结果是什么？",
+                code: `i = 1\nwhile i <= 5:\n    if i == 3:\n        break\n    print(i)\n    i += 1`,
+                options: ["A. 1 2", "B. 1 2 3", "C. 1 2 3 4 5", "D. 3 4 5"],
+                correct: 0, // A
+                desc: "当 i 等于 3 时，触发 break，循环立即终止。print(i) 在 break 之后，所以 3 不会被打印。输出为 1 2。"
+            },
+            {
+                q: "4. 以下代码的输出结果是什么？",
+                code: `i = 0\nwhile i < 5:\n    i += 1\n    if i == 3:\n        continue\n    print(i, end=\" \")`,
+                options: ["A. 1 2 4 5", "B. 1 2 3 4 5", "C. 2 3 4 5", "D. 1 2 3 4"],
+                correct: 0, // A
+                desc: "i 从 0 开始，进入循环先加 1。当 i=3 时，执行 continue，跳过 print 语句。因此 3 不会被输出。结果为 1 2 4 5。"
+            },
+            {
+                q: "5. 在以下代码中，如果输入序列为：1 2 3 0 4 5，输出结果是什么？",
+                code: `total = 0\nwhile True:\n    x = int(input())\n    if x == 0:\n        break\n    total += x\nprint(total)`,
+                options: ["A. 6", "B. 15", "C. 0", "D. 10"],
+                correct: 0, // A
+                desc: "程序读取数字并累加。1+2+3=6。当读到 0 时，触发 break 退出循环。0 后面的 4 和 5 不会被读取。输出 6。"
+            },
+            {
+                q: "6. 关于 break 和 continue 的区别，以下描述正确的是：",
+                options: [
+                    "A. break用于结束整个循环，continue用于结束当前循环",
+                    "B. break用于结束当前循环，continue用于结束整个循环",
+                    "C. break和continue功能完全相同",
+                    "D. break只能用于while循环，continue只能用于for循环"
+                ],
+                correct: 0, // A
+                desc: "这是两者最核心的区别：break 是彻底停止（Quit），continue 是跳过本次继续下次（Skip）。"
+            },
+            {
+                q: "7. 以下代码会输出多少个数字？",
+                code: `i = 1\nwhile i <= 10:\n    if i % 2 == 0:\n        i += 1\n        continue\n    print(i)\n    i += 1`,
+                options: ["A. 5个", "B. 10个", "C. 0个", "D. 无限循环"],
+                correct: 0, // A (Modified wording to match answer key logically)
+                desc: "该代码的逻辑是：如果是偶数，加 1 并跳过；如果是奇数，打印并加 1。结果是打印 1, 3, 5, 7, 9，共 5 个奇数。"
+            },
+            {
+                q: "8. 以下代码的输出结果是什么？",
+                code: `n = 1\nwhile True:\n    if n % 7 == 0 and n % 13 == 0:\n        print(n)\n        break\n    n += 1`,
+                options: ["A. 7", "B. 13", "C. 91", "D. 无限循环"],
+                correct: 2, // C
+                desc: "代码寻找第一个既能被 7 整除又能被 13 整除的数（即最小公倍数）。7 * 13 = 91。输出 91 后 break。"
+            },
+            {
+                q: "9. 在使用 continue 语句时，需要特别注意：",
+                options: [
+                    "A. 在continue前更新循环变量，避免死循环",
+                    "B. continue只能用于循环的起始位置",
+                    "C. continue后面必须跟一个else语句",
+                    "D. continue不能用于while循环"
+                ],
+                correct: 0, // A
+                desc: "在 while 循环中，如果 continue 之前没有更新控制循环的变量（如 i += 1），程序可能会一直卡在同一个值上不断 continue，导致死循环。"
+            },
+            {
+                q: "10. 以下代码中，如果输入序列为：5 -2 8 -1 10 0，输出结果是什么？",
+                code: `total = 0\nwhile True:\n    x = int(input())\n    if x == 0:\n        break\n    if x < 0:\n        continue\n    total += x\nprint(total)`,
+                options: ["A. 23", "B. 15", "C. 20", "D. 0"],
+                correct: 0, // A
+                desc: "逻辑是：正数累加，负数跳过，0 结束。计算：5 + (跳过-2) + 8 + (跳过-1) + 10 = 23。"
+            },
+            {
+                q: "11. 关于 break 语句，以下描述正确的是：",
+                options: [
+                    "A. break只能用于循环结构中",
+                    "B. break可以用于if语句中",
+                    "C. break可以用于函数定义中",
+                    "D. break可以用于类定义中"
+                ],
+                correct: 0, // A
+                desc: "break 关键字专门用于循环结构（while 或 for）。虽然它常放在 if 语句块内，但它作用的对象必须是包裹它的循环。"
+            },
+            {
+                q: "12. 以下代码的输出结果是什么？",
+                code: `i = 1\nwhile i <= 5:\n    if i == 2:\n        i += 1\n        continue\n    print(i, end=\" \")\n    if i == 4:\n        break\n    i += 1`,
+                options: ["A. 1 3 4", "B. 1 2 3 4", "C. 1 3 4 5", "D. 1 2 3 4 5"],
+                correct: 0, // A
+                desc: "i=1: 输出 1。i=2: continue 跳过输出。i=3: 输出 3。i=4: 输出 4，然后遇到 break 终止循环。结果：1 3 4。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                html += `<div class="code-block">${highlightCode(data.code)}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * Python 专用一次性词法分析高亮引擎
+         * 优化支持：break, continue, while, if, print, input 等
+         */
+        function highlightCode(code) {
+            // Python 正则表达式模式
+            const pattern = /(".*?"|'.*?')|(#.*)|(\b\d+(?:\.\d+)?\b)|(\b(?:while|if|else|elif|break|continue|and|or|not|in|is|True|False|None)\b)|(\b(?:print|input|int|str|range|len)\b)|(\+=|-=|\*=|==|!=|<=|>=|[+\-*/%=:])/g;
+
+            let lastIndex = 0;
+            let html = "";
+            let match;
+
+            while ((match = pattern.exec(code)) !== null) {
+                // 添加普通文本
+                const plainText = code.slice(lastIndex, match.index);
+                html += escapeHtml(plainText);
+
+                let content = match[0];
+                let cls = "";
+
+                if (match[1]) cls = "str";       // 字符串
+                else if (match[2]) cls = "cmt";  // 注释
+                else if (match[3]) cls = "num";  // 数字
+                else if (match[4]) cls = "kw";   // 关键字
+                else if (match[5]) cls = "fn";   // 内置函数
+                else if (match[6]) cls = "op";   // 运算符
+
+                // 特殊处理 True/False
+                if (content === 'True' || content === 'False') cls = "bool";
+                
+                if (cls) {
+                    html += `<span class="${cls}">${escapeHtml(content)}</span>`;
+                } else {
+                    html += escapeHtml(content);
+                }
+
+                lastIndex = pattern.lastIndex;
+            }
+
+            // 添加剩余文本
+            html += escapeHtml(code.slice(lastIndex));
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => allBtns[data.correct].classList.add('correct'), 400);
+                const chars = ["A", "B", "C", "D"];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${chars[data.correct]}`, data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none';
+            
+            let html = '';
+            const totalScore = quizData.length * 100;
+            if (score === totalScore) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 控制流大师！ 🎉</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">太棒了！你已经完全掌握了 break 和 continue 的奥秘！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score} / ${totalScore}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">做得不错！多加练习，你一定会成为编程高手！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; padding:15px 40px; margin-top:30px">🔄 再玩一次</button>`;
+            endScreen.innerHTML = html;
+        }
+
+        function createConfetti() {
+            const colors = ['#2f3640', '#fbc531', '#4cd137', '#e84118', '#00a8ff'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.transform = `scale(${Math.random() * 0.6 + 0.4}) rotate(${Math.random()*360}deg)`;
+                c.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2500);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>

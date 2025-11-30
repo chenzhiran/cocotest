@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J 循环结构 (While) - 编程题解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 全局样式 */
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* 隐藏滚动条 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* 幻灯片容器 */
+        .slide {
+            min-height: 100vh;
+            width: 100%;
+            padding: 2rem 4rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 2px solid #1e293b;
+            position: relative;
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 代码逻辑行 - 核心布局 */
+        .logic-row {
+            display: grid;
+            grid-template-columns: 1fr 140px 1fr; /* Python - Explain - C++ */
+            gap: 15px;
+            margin-bottom: 8px;
+            align-items: stretch;
+            transition: transform 0.2s;
+        }
+
+        .logic-row:hover {
+            transform: scale(1.01);
+            background: rgba(255,255,255,0.02);
+            border-radius: 6px;
+        }
+
+        .code-box {
+            font-family: 'JetBrains Mono', monospace;
+            padding: 12px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            white-space: pre-wrap;
+            border-radius: 6px;
+            overflow-x: auto;
+            color: #e2e8f0;
+            position: relative;
+        }
+
+        .explain-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #0f172a;
+            border-radius: 6px;
+            padding: 4px;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 颜色主题系统 */
+        /* 初始化/变量 (蓝色) */
+        .theme-init .code-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; }
+        .theme-init .explain-box { background: linear-gradient(135deg, #7dd3fc, #38bdf8); }
+        
+        /* 循环条件 (橙色) */
+        .theme-loop .code-box { background: rgba(251, 146, 60, 0.1); border-left: 3px solid #fb923c; }
+        .theme-loop .explain-box { background: linear-gradient(135deg, #fdba74, #fb923c); }
+
+        /* 核心操作/输出 (绿色) */
+        .theme-action .code-box { background: rgba(74, 222, 128, 0.1); border-left: 3px solid #4ade80; }
+        .theme-action .explain-box { background: linear-gradient(135deg, #86efac, #4ade80); }
+
+        /* 变量更新/步长 (紫色) */
+        .theme-update .code-box { background: rgba(167, 139, 250, 0.1); border-left: 3px solid #a78bfa; }
+        .theme-update .explain-box { background: linear-gradient(135deg, #c4b5fd, #a78bfa); }
+
+        /* 基础结构 (灰色) */
+        .theme-base .code-box { color: #64748b; font-size: 0.8rem; }
+        .theme-base .explain-box { background: #94a3b8; color: #334155; }
+
+        /* 侧边导航 */
+        .nav-dots {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 50;
+        }
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            background: #475569;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .nav-dot:hover {
+            background: #38bdf8;
+            transform: scale(1.4);
+            box-shadow: 0 0 10px #38bdf8;
+        }
+
+        .lang-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 0.6rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 侧边导航 -->
+    <div class="nav-dots">
+        <a href="#p1601" class="nav-dot" title="定时陷阱"></a>
+        <a href="#p1602" class="nav-dot" title="奇数游戏"></a>
+        <a href="#p1603" class="nav-dot" title="宠物动能"></a>
+        <a href="#p1604" class="nav-dot" title="对称花园"></a>
+        <a href="#p1605" class="nav-dot" title="魔法数"></a>
+        <a href="#p1606" class="nav-dot" title="山顶旗帜"></a>
+    </div>
+
+    <!-- 1601 定时陷阱 -->
+    <section id="p1601" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-red-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1601</span>
+            <h1 class="text-3xl font-bold text-red-400">定时陷阱 (倒计时)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-fire mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们要帮英雄做一个倒计时器。</p>
+                    <p class="mt-2 text-white font-bold">思考过程：</p>
+                    <ul class="list-disc ml-4 space-y-1">
+                        <li>起点：<span class="text-blue-400">100</span></li>
+                        <li>终点：<span class="text-blue-400">1</span> (包含1)</li>
+                        <li>变化：每次 <span class="text-purple-400">减 1</span></li>
+                    </ul>
+                    <div class="mt-4 p-3 bg-red-900/30 border border-red-500/30 rounded text-center">
+                        <i class="fas fa-hourglass-half text-2xl mb-2 text-orange-400"></i><br>
+                        While (只要) 还有时间<br>就一直报数！
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">i = 100</div>
+                    <div class="explain-box">1. 设定起点</div>
+                    <div class="code-box">int i = 100;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">while i >= 1:</div>
+                    <div class="explain-box">2. 只要还没数完<br>(大于等于1)</div>
+                    <div class="code-box">while (i >= 1) {</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print(i)</div>
+                    <div class="explain-box">3. 报数</div>
+                    <div class="code-box">&nbsp;&nbsp;cout << i << endl;</div>
+                </div>
+                <div class="logic-row theme-update">
+                    <div class="code-box">&nbsp;&nbsp;i = i - 1</div>
+                    <div class="explain-box">4. 倒扣一秒</div>
+                    <div class="code-box">&nbsp;&nbsp;i--; <span class="text-gray-500">}</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1602 奇数游戏 -->
+    <section id="p1602" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1602</span>
+            <h1 class="text-3xl font-bold text-blue-400">奇数游戏 (跳着数)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-frog mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>农民们在玩“跳一跳”游戏。</p>
+                    <p class="mt-2">奇数是：1, 3, 5, 7, 9...</p>
+                    <p class="mt-2 text-white font-bold">找规律：</p>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="bg-blue-600 px-2 rounded">1</span>
+                        <i class="fas fa-arrow-right text-gray-400"></i>
+                        <span class="bg-gray-700 px-2 rounded">+2</span>
+                        <i class="fas fa-arrow-right text-gray-400"></i>
+                        <span class="bg-blue-600 px-2 rounded">3</span>
+                    </div>
+                    <p class="mt-4">我们可以从1开始，每次循环 <span class="text-purple-400">加 2</span>，直到超过 100。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">i = 1</div>
+                    <div class="explain-box">1. 从1开始</div>
+                    <div class="code-box">int i = 1;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">while i <= 100:</div>
+                    <div class="explain-box">2. 只要不超界</div>
+                    <div class="code-box">while (i <= 100) {</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print(i, end=" ")</div>
+                    <div class="explain-box">3. 输出数字<br><span class="text-[0.6rem] font-normal">Python用空格隔开</span></div>
+                    <div class="code-box">&nbsp;&nbsp;cout << i << " ";</div>
+                </div>
+                <div class="logic-row theme-update">
+                    <div class="code-box">&nbsp;&nbsp;i = i + 2</div>
+                    <div class="explain-box">4. 跳两步</div>
+                    <div class="code-box">&nbsp;&nbsp;i += 2; <span class="text-gray-500">}</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1603 宠物动能 -->
+    <section id="p1603" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-green-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1603</span>
+            <h1 class="text-3xl font-bold text-green-400">宠物动能 (平方计算)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-paw mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>动能和速度的平方有关。</p>
+                    <p>我们需要输出 1 到 100 每个数字的平方。</p>
+                    <ul class="list-disc ml-4 space-y-1 mt-2">
+                        <li>速度 1 -> <span class="text-green-400">1</span> (1x1)</li>
+                        <li>速度 2 -> <span class="text-green-400">4</span> (2x2)</li>
+                        <li>速度 3 -> <span class="text-green-400">9</span> (3x3)</li>
+                        <li>...</li>
+                    </ul>
+                    <p class="mt-4">循环遍历 1 到 100，每次计算 <code>i * i</code> 即可。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">i = 1</div>
+                    <div class="explain-box">1. 初始化速度</div>
+                    <div class="code-box">int i = 1;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">while i <= 100:</div>
+                    <div class="explain-box">2. 循环范围</div>
+                    <div class="code-box">while (i <= 100) {</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print(i * i, end=" ")</div>
+                    <div class="explain-box">3. 计算平方并输出</div>
+                    <div class="code-box">&nbsp;&nbsp;cout << i * i << " ";</div>
+                </div>
+                <div class="logic-row theme-update">
+                    <div class="code-box">&nbsp;&nbsp;i = i + 1</div>
+                    <div class="explain-box">4. 下一个速度</div>
+                    <div class="code-box">&nbsp;&nbsp;i++; <span class="text-gray-500">}</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1604 对称花园 -->
+    <section id="p1604" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-purple-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1604</span>
+            <h1 class="text-3xl font-bold text-purple-400">对称花园 (偶数求和)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-seedling mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们要算 1 到 n 之间所有偶数的和。</p>
+                    <p>这就像是一个存钱罐 (变量 <code class="text-yellow-400">s</code>)。</p>
+                    <p class="mt-2">我们可以从 2 开始（第一个偶数），每次往存钱罐里加钱，然后跳 2 步找下一个偶数。</p>
+                    <div class="bg-slate-800 p-2 rounded mt-2 text-center text-xs font-mono">
+                        s = 0 (空罐子)<br>
+                        s = s + 2<br>
+                        s = s + 4<br>
+                        s = s + 6...
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-input">
+                    <div class="code-box">n = int(input())</div>
+                    <div class="explain-box">输入 n</div>
+                    <div class="code-box">int n; cin >> n;</div>
+                </div>
+                <div class="logic-row theme-init">
+                    <div class="code-box">s = 0<br>i = 2</div>
+                    <div class="explain-box">准备求和变量 s<br>偶数从 2 开始</div>
+                    <div class="code-box">long long s = 0;<br>int i = 2;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">while i <= n:</div>
+                    <div class="explain-box">只要没超过 n</div>
+                    <div class="code-box">while (i <= n) {</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;s = s + i</div>
+                    <div class="explain-box">累加当前偶数</div>
+                    <div class="code-box">&nbsp;&nbsp;s += i;</div>
+                </div>
+                <div class="logic-row theme-update">
+                    <div class="code-box">&nbsp;&nbsp;i = i + 2</div>
+                    <div class="explain-box">找下一个偶数</div>
+                    <div class="code-box">&nbsp;&nbsp;i += 2; <span class="text-gray-500">}</span></div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">print(s)</div>
+                    <div class="explain-box">输出总和</div>
+                    <div class="code-box">cout << s;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1605 魔法数 -->
+    <section id="p1605" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1605</span>
+            <h1 class="text-3xl font-bold text-amber-400">魔法数 (条件计数)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-wand-magic-sparkles mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们要找一种特殊的数字：</p>
+                    <ol class="list-decimal ml-4 space-y-1 mt-2">
+                        <li>末尾是 6 -> <span class="text-amber-400">i % 10 == 6</span></li>
+                        <li>能被 8 整除 -> <span class="text-amber-400">i % 8 == 0</span></li>
+                    </ol>
+                    <p class="mt-4">我们需要一个计数器 (cnt)，每次找到满足条件的数字，就摁一下计数器 (+1)。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-input">
+                    <div class="code-box">n = int(input())</div>
+                    <div class="explain-box">输入范围 n</div>
+                    <div class="code-box">int n; cin >> n;</div>
+                </div>
+                <div class="logic-row theme-init">
+                    <div class="code-box">cnt = 0<br>i = 1</div>
+                    <div class="explain-box">计数器清零<br>从1开始找</div>
+                    <div class="code-box">int cnt = 0; int i = 1;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">while i <= n:</div>
+                    <div class="explain-box">遍历所有数字</div>
+                    <div class="code-box">while (i <= n) {</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;if i % 10 == 6 and i % 8 == 0:<br>&nbsp;&nbsp;&nbsp;&nbsp;cnt = cnt + 1</div>
+                    <div class="explain-box">
+                        判断魔法条件<br>
+                        <span class="text-[0.6rem] font-normal">满足则计数+1</span>
+                    </div>
+                    <div class="code-box">&nbsp;&nbsp;if(i%10==6 && i%8==0)<br>&nbsp;&nbsp;&nbsp;&nbsp;cnt++;</div>
+                </div>
+                <div class="logic-row theme-update">
+                    <div class="code-box">&nbsp;&nbsp;i = i + 1</div>
+                    <div class="explain-box">检查下一个数</div>
+                    <div class="code-box">&nbsp;&nbsp;i++; <span class="text-gray-500">}</span></div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">print(cnt)</div>
+                    <div class="explain-box">输出个数</div>
+                    <div class="code-box">cout << cnt;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1606 山顶旗帜 -->
+    <section id="p1606" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1606</span>
+            <h1 class="text-3xl font-bold text-indigo-400">山顶旗帜 (数字反转)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-flag mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>输入一个三位数，比如 <code class="bg-indigo-900 px-1">123</code>，要变成 <code class="bg-indigo-900 px-1">321</code>。</p>
+                    <p>输入 <code class="bg-indigo-900 px-1">100</code>，要变成 <code class="bg-indigo-900 px-1">001</code>。</p>
+                    <p class="mt-2 text-white font-bold">数字分离法：</p>
+                    <ul class="list-disc ml-4 space-y-1">
+                        <li>个位：<span class="text-indigo-300">n % 10</span></li>
+                        <li>十位：<span class="text-indigo-300">(n / 10) % 10</span></li>
+                        <li>百位：<span class="text-indigo-300">n / 100</span></li>
+                    </ul>
+                    <p class="mt-2 text-xs text-gray-400">提示：题目要求输出001，所以不能算成数字1，要挨个输出数字。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-input">
+                    <div class="code-box">n = int(input())</div>
+                    <div class="explain-box">输入三位数</div>
+                    <div class="code-box">int n; cin >> n;</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">ge = n % 10</div>
+                    <div class="explain-box">取个位</div>
+                    <div class="code-box">int ge = n % 10;</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">shi = (n // 10) % 10</div>
+                    <div class="explain-box">取十位<br><span class="text-[0.6rem] font-normal">先去尾再取个位</span></div>
+                    <div class="code-box">int shi = (n / 10) % 10;</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">bai = n // 100</div>
+                    <div class="explain-box">取百位</div>
+                    <div class="code-box">int bai = n / 100;</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">print(ge, shi, bai, sep="")</div>
+                    <div class="explain-box">倒序输出<br><span class="text-[0.6rem] font-normal">不换行不加空格</span></div>
+                    <div class="code-box">cout << ge << shi << bai;</div>
+                </div>
+                
+                <div class="mt-4 p-2 border border-dashed border-gray-600 rounded text-center text-xs text-gray-400">
+                    小贴士：如果是任意位数的数字反转，通常需要用到 while 循环配合 % 和 / 运算哦！<br>
+                    但这里明确是三位数，直接数学拆分最快。
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 编程小英雄挑战赛 - 基础篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 --- */
+        :root {
+            --primary-color: #6C5CE7;
+            --secondary-color: #A29BFE;
+            --bg-color: #DFE6E9;
+            --card-bg: #FFFFFF;
+            --text-color: #2D3436;
+            --correct-color: #00b894;
+            --wrong-color: #d63031;
+            --accent-yellow: #fdcb6e;
+            
+            /* VS Code Dark 风格配色 (优化版) */
+            --code-bg: #1e1e1e;
+            --code-text: #d4d4d4;
+            --code-kw: #569cd6;  /* 关键字 (蓝) */
+            --code-type: #4ec9b0; /* 类型 (青) */
+            --code-fn: #dcdcaa;   /* 函数 (黄) */
+            --code-num: #b5cea8;  /* 数字 (浅绿) */
+            --code-str: #ce9178;  /* 字符串 (红褐) */
+            --code-cmt: #6a9955;  /* 注释 (绿) */
+            --code-prep: #c586c0; /* 预处理 (粉紫) */
+            --code-op: #d4d4d4;   /* 运算符 (白/灰) */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 800px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目与代码 --- */
+        .question-area h2 {
+            text-align: left;
+            color: var(--text-color);
+            font-size: 1.3rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* 关键 CSS：保证代码正确换行和缩进 */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', Consolas, monospace;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 核心：保留空格和换行 */
+            word-break: break-all; /* 防止长单词撑破布局 */
+            text-align: left;
+            font-size: 1rem;
+            line-height: 1.6;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+            overflow-x: auto;
+        }
+
+        /* 高亮颜色定义 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .type { color: var(--code-type); }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .prep { color: var(--code-prep); }
+        .op { color: var(--code-op); }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1rem; 
+            font-family: 'Fira Code', 'Microsoft YaHei', inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #bdc3c7;
+            white-space: pre-wrap;
+            position: relative;
+            top: 0;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #aab0b3;
+        }
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+            transform: translateY(0);
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析与结束 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #5649c0;
+            transition: transform 0.1s;
+        }
+        .next-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #5649c0; }
+        
+        .end-screen { display: none; padding: 20px 0; }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score { font-size: 3.5rem; font-weight: bold; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 10</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        // C++ 基础篇题目数据
+        const quizData = [
+            {
+                q: "1. 关于C++程序的执行顺序，以下描述正确的是：",
+                options: [
+                    "A. 程序可以随机执行任意一行代码",
+                    "B. 程序按照代码的书写顺序从上到下依次执行",
+                    "C. 程序先执行输出语句，再执行输入语句",
+                    "D. 程序先执行变量定义，再执行其他所有语句"
+                ],
+                correct: 1, // B
+                desc: "顺序结构是C++程序的基本执行方式，代码按照书写顺序从上到下依次执行，不会跳跃或随机执行。"
+            },
+            {
+                q: "2. 在C++中，用于输入数据的语句是：",
+                options: [
+                    "A. cin >> 变量名;",
+                    "B. cout << 变量名;",
+                    "C. input >> 变量名;",
+                    "D. scan >> 变量名;"
+                ],
+                correct: 0, // A
+                desc: "cin 是C++中的标准输入流，与提取运算符 >> 配合使用，用于从键盘读取数据并存储到变量中。"
+            },
+            {
+                q: "3. 下列哪个关键字用于定义整数类型的变量？",
+                options: [
+                    "A. int",
+                    "B. float",
+                    "C. char",
+                    "D. string"
+                ],
+                correct: 0, // A
+                desc: "int 是整数类型的关键字。float 用于浮点数，char 用于字符，string 用于字符串。"
+            },
+            {
+                q: "4. 关于C++程序的基本结构，以下说法错误的是：",
+                options: [
+                    "A. 必须包含 #include <iostream> 来使用输入输出功能",
+                    "B. using namespace std; 用于引入标准命名空间",
+                    "C. 主函数可以命名为 main 或 Main",
+                    "D. return 0; 通常表示程序正常结束"
+                ],
+                correct: 2, // C
+                desc: "错误的是C。C++是大小写敏感的语言，主函数必须命名为 main，不能写成 Main。"
+            },
+            {
+                q: "5. 在C++中，以下输出语句的作用是：",
+                code: 'cout << "Hello" << endl;',
+                options: [
+                    "A. 输入 \"Hello\" 并换行",
+                    "B. 输出 \"Hello\" 并换行",
+                    "C. 定义字符串变量 \"Hello\"",
+                    "D. 计算 \"Hello\" 的长度"
+                ],
+                correct: 1, // B
+                desc: "cout 用于输出数据，<< 是插入运算符，endl 表示换行。该语句的作用是输出 'Hello' 并换行。"
+            },
+            {
+                q: "6. 下列哪个数据类型适合存储带有小数点的数字？",
+                options: [
+                    "A. float",
+                    "B. int",
+                    "C. char",
+                    "D. string"
+                ],
+                correct: 0, // A
+                desc: "float 是浮点数类型，专门用于存储带小数点的数字。int 只能存储整数。"
+            },
+            {
+                q: "7. 关于变量的描述，以下正确的是：",
+                options: [
+                    "A. 变量的值在程序运行过程中可以改变",
+                    "B. 变量一旦定义，其值就不能再改变",
+                    "C. 变量名可以以数字开头",
+                    "D. 变量可以不经定义直接使用"
+                ],
+                correct: 0, // A
+                desc: "变量的核心特征就是其值可以在程序运行过程中改变。变量名不能以数字开头，且必须先定义后使用。"
+            },
+            {
+                q: "8. 在C++中，endl 的作用是：",
+                options: [
+                    "A. 结束程序",
+                    "B. 输出一个空行",
+                    "C. 换行并刷新输出缓冲区",
+                    "D. 输入结束标志"
+                ],
+                correct: 2, // C
+                desc: "endl 是 end line 的缩写，它不仅会换行，还会刷新输出缓冲区，确保内容立即显示。"
+            },
+            {
+                q: "9. 下列哪个是合法的C++变量定义语句？",
+                code: "int a, b;",
+                options: [
+                    "A. int a, b;",
+                    "B. int a; b;",
+                    "C. int a b;",
+                    "D. integer a;"
+                ],
+                correct: 0, // A
+                desc: "在C++中，可以用逗号分隔在同一行定义多个同类型变量。B和C语法错误，D中 integer 不是关键字。"
+            },
+            {
+                q: "10. 关于内存存储单位的换算，正确的是：",
+                options: [
+                    "A. 1KB = 1024B",
+                    "B. 1MB = 1000KB",
+                    "C. 1GB = 1000MB",
+                    "D. 1TB = 1000GB"
+                ],
+                correct: 0, // A
+                desc: "计算机存储单位采用二进制，进率为1024。1KB = 1024B，1MB = 1024KB。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                html += `<div class="code-block">${highlightCode(data.code)}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                // 检测选项中是否包含代码片段，如果包含则简单高亮（这里为了保持选项按钮样式，主要显示文本）
+                btn.textContent = opt; 
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * C++ 一次性词法分析高亮引擎
+         * 优先级：字符串 > 预处理/注释 > 数字 > 关键字/类型 > 函数/对象 > 运算符
+         */
+        function highlightCode(code) {
+            // 正则表达式分组：
+            // 1. 字符串 ("..." 或 '...')
+            // 2. 预处理 (#...) 或 注释 (//...)
+            // 3. 数字 (123, 12.3)
+            // 4. 关键字 (return, if, while...)
+            // 5. 类型 (int, float, void...)
+            // 6. 函数/常用对象 (main, cout, cin, endl)
+            // 7. 运算符与标点
+            
+            const pattern = /(".*?"|'.*?')|(#include\s*<.*?>|\/\/.*)|(\b\d+(?:\.\d+)?\b)|(\b(?:return|if|else|while|for|do|break|continue|using|namespace|true|false)\b)|(\b(?:int|float|double|char|string|bool|void|std)\b)|(\b(?:main|cout|cin|endl)\b)|(<<|>>|::|\+\+|--|\+=|-=|==|!=|<=|>=|<|>|=|\+|-|\*|\/|\[|\]|\{|\}|\(|\)|:|;|\|\||&&|!|,|\.)/g;
+
+            let lastIndex = 0;
+            let html = "";
+            let match;
+
+            while ((match = pattern.exec(code)) !== null) {
+                // 转义并添加前面的普通文本
+                const plainText = code.slice(lastIndex, match.index);
+                html += escapeHtml(plainText);
+
+                let content = match[0];
+                let cls = "";
+
+                if (match[1]) cls = "str";       // 字符串
+                else if (match[2]) cls = "cmt";  // 注释或预处理(此处预处理统一用绿色)
+                else if (match[3]) cls = "num";  // 数字
+                else if (match[4]) cls = "kw";   // 关键字
+                else if (match[5]) cls = "type"; // 类型
+                else if (match[6]) cls = "fn";   // 函数/对象
+                else if (match[7]) cls = "op";   // 运算符
+
+                // 特殊处理：如果是#include，给预处理颜色
+                if (content.startsWith("#")) cls = "prep";
+
+                html += `<span class="${cls}">${escapeHtml(content)}</span>`;
+                lastIndex = pattern.lastIndex;
+            }
+
+            // 添加剩余文本
+            html += escapeHtml(code.slice(lastIndex));
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => allBtns[data.correct].classList.add('correct'), 400);
+                const chars = ["A", "B", "C", "D"];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${chars[data.correct]}`, data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none';
+            
+            let html = '';
+            const totalScore = quizData.length * 100;
+            if (score === totalScore) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 C++ 小神童！ 🎉</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">太棒了！你已经完全掌握了基础篇的所有知识点！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score} / ${totalScore}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">做得不错！继续加油，巩固基础是成为编程高手的关键！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; padding:15px 40px; margin-top:30px">🔄 再玩一次</button>`;
+            endScreen.innerHTML = html;
+        }
+
+        function createConfetti() {
+            const colors = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#fdcb6e'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.transform = `scale(${Math.random() * 0.6 + 0.4}) rotate(${Math.random()*360}deg)`;
+                c.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2500);
+            }
+        }
+
+        // 初始化加载第一题
+        loadQuestion();
+    </script>
+</body>
+</html>

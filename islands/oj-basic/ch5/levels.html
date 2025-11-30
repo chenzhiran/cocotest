@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J 编程题解 (选择结构-多分支)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 全局设置 */
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* 隐藏滚动条但保留功能 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* 幻灯片容器 */
+        .slide {
+            min-height: 100vh;
+            width: 100%;
+            padding: 2rem 4rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 1px solid #1e293b;
+            position: relative;
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 代码逻辑行 - 核心布局 */
+        .logic-row {
+            display: grid;
+            grid-template-columns: 1fr 140px 1fr; /* Python - Explain - C++ */
+            gap: 15px;
+            margin-bottom: 8px;
+            align-items: stretch;
+            transition: transform 0.2s;
+        }
+
+        .logic-row:hover {
+            transform: scale(1.01);
+            background: rgba(255,255,255,0.02);
+            border-radius: 6px;
+        }
+
+        .code-box {
+            font-family: 'JetBrains Mono', monospace;
+            padding: 10px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            white-space: pre-wrap;
+            border-radius: 6px;
+            overflow-x: auto;
+            color: #e2e8f0;
+        }
+
+        .explain-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #0f172a;
+            border-radius: 6px;
+            padding: 4px;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 主题色系 */
+        /* 输入 */
+        .theme-input .code-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; }
+        .theme-input .explain-box { background: linear-gradient(135deg, #7dd3fc, #38bdf8); }
+        
+        /* 逻辑/计算 */
+        .theme-logic .code-box { background: rgba(167, 139, 250, 0.1); border-left: 3px solid #a78bfa; }
+        .theme-logic .explain-box { background: linear-gradient(135deg, #c4b5fd, #a78bfa); }
+
+        /* 分支/条件 */
+        .theme-branch .code-box { background: rgba(251, 146, 60, 0.1); border-left: 3px solid #fb923c; }
+        .theme-branch .explain-box { background: linear-gradient(135deg, #fdba74, #fb923c); }
+
+        /* 输出 */
+        .theme-output .code-box { background: rgba(74, 222, 128, 0.1); border-left: 3px solid #4ade80; }
+        .theme-output .explain-box { background: linear-gradient(135deg, #86efac, #4ade80); }
+
+        /* 基础结构 */
+        .theme-base .code-box { color: #64748b; font-size: 0.8rem; }
+        .theme-base .explain-box { background: #94a3b8; color: #334155; }
+
+        /* 侧边导航 */
+        .nav-dots {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 50;
+        }
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            background: #475569;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .nav-dot:hover {
+            background: #38bdf8;
+            transform: scale(1.3);
+            box-shadow: 0 0 10px #38bdf8;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 导航 -->
+    <div class="nav-dots">
+        <a href="#p1501" class="nav-dot" title="算术计算器"></a>
+        <a href="#p1502" class="nav-dot" title="春夏秋冬"></a>
+        <a href="#p1503" class="nav-dot" title="数字成语"></a>
+        <a href="#p1505" class="nav-dot" title="农场税金"></a>
+        <a href="#p1506" class="nav-dot" title="三角花园"></a>
+    </div>
+
+    <!-- 1501 算术计算器 -->
+    <section id="p1501" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1501</span>
+            <h1 class="text-3xl font-bold text-blue-400">算术计算器 (基础分支)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-calculator mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们要根据输入的符号（+, -, *, /）来决定做什么数学题。</p>
+                    <p class="mt-2">这就好比一个四岔路口：</p>
+                    <ul class="space-y-2 mt-2 ml-2">
+                        <li class="flex items-center"><span class="bg-slate-700 px-2 rounded mr-2">+</span> 往左走做加法</li>
+                        <li class="flex items-center"><span class="bg-slate-700 px-2 rounded mr-2">-</span> 往右走做减法</li>
+                        <li class="flex items-center"><span class="bg-slate-700 px-2 rounded mr-2">*</span> 往前走做乘法</li>
+                    </ul>
+                    <p class="mt-4 text-xs text-gray-400">注意：Python没有switch语句，通常用if-elif；C++可以用switch。</p>
+                </div>
+                <div class="mt-auto flex justify-center text-6xl text-slate-600">
+                    <i class="fas fa-plus-circle hover:text-blue-500 transition"></i>
+                    <i class="fas fa-minus-circle hover:text-red-500 transition ml-4"></i>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-input">
+                    <div class="code-box">a, b = map(int, input().split())<br>op = input()</div>
+                    <div class="explain-box">输入数字和符号</div>
+                    <div class="code-box">int a, b; char op;<br>cin >> a >> b >> op;</div>
+                </div>
+                <div class="logic-row theme-branch">
+                    <div class="code-box">if op == '+':<br>&nbsp;&nbsp;print(a + b)</div>
+                    <div class="explain-box">如果是加号</div>
+                    <div class="code-box">if(op == '+')<br>&nbsp;&nbsp;cout << a + b;</div>
+                </div>
+                <div class="logic-row theme-branch">
+                    <div class="code-box">elif op == '-':<br>&nbsp;&nbsp;print(a - b)</div>
+                    <div class="explain-box">如果是减号</div>
+                    <div class="code-box">else if(op == '-')<br>&nbsp;&nbsp;cout << a - b;</div>
+                </div>
+                <div class="logic-row theme-branch">
+                    <div class="code-box">elif op == '*':<br>&nbsp;&nbsp;print(a * b)</div>
+                    <div class="explain-box">如果是乘号</div>
+                    <div class="code-box">else if(op == '*')<br>&nbsp;&nbsp;cout << a * b;</div>
+                </div>
+                <div class="logic-row theme-branch">
+                    <div class="code-box">elif op == '/':<br>&nbsp;&nbsp;print(a // b)</div>
+                    <div class="explain-box">如果是除号<br><span class="text-[0.6rem] font-normal">Python用//整除</span></div>
+                    <div class="code-box">else if(op == '/')<br>&nbsp;&nbsp;cout << a / b;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1502 春夏秋冬 -->
+    <section id="p1502" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-green-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1502</span>
+            <h1 class="text-3xl font-bold text-green-400">春夏秋冬 (范围判断)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-tree mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>给月份分类：</p>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <div class="bg-green-900/40 p-2 rounded border border-green-700">Spring: 3,4,5</div>
+                        <div class="bg-red-900/40 p-2 rounded border border-red-700">Summer: 6,7,8</div>
+                        <div class="bg-yellow-900/40 p-2 rounded border border-yellow-700">Autumn: 9,10,11</div>
+                        <div class="bg-blue-900/40 p-2 rounded border border-blue-700">Winter: 12,1,2</div>
+                    </div>
+                    <p class="mt-4">
+                        <span class="text-blue-300 font-bold">技巧：</span><br>
+                        判断冬天的条件比较特殊 (12, 1, 2)，可以写成：<br>
+                        <code>if m <= 2 or m == 12:</code>
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">m = int(input())</div>
+                    <div class="explain-box">输入月份</div>
+                    <div class="code-box">int m; cin >> m;</div>
+                </div>
+                <div class="logic-row theme-branch">
+                    <div class="code-box">if 3 <= m <= 5:<br>&nbsp;&nbsp;print("春")</div>
+                    <div class="explain-box">
+                        春天<br>
+                        <span class="text-[0.6rem] font-normal">Python可连写</span>
+                    </div>
+                    <div class="code-box">if(m>=3 && m<=5)<br>&nbsp;&nbsp;cout << "春";</div>
+                </div>
+                <div class="logic-row theme-branch">
+                    <div class="code-box">elif 6 <= m <= 8:<br>&nbsp;&nbsp;print("夏")</div>
+                    <div class="explain-box">夏天</div>
+                    <div class="code-box">else if(m>=6 && m<=8)<br>&nbsp;&nbsp;cout << "夏";</div>
+                </div>
+                <div class="logic-row theme-branch">
+                    <div class="code-box">elif 9 <= m <= 11:<br>&nbsp;&nbsp;print("秋")</div>
+                    <div class="explain-box">秋天</div>
+                    <div class="code-box">else if(m>=9 && m<=11)<br>&nbsp;&nbsp;cout << "秋";</div>
+                </div>
+                <div class="logic-row theme-branch">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print("冬")</div>
+                    <div class="explain-box">剩下的都是冬天</div>
+                    <div class="code-box">else cout << "冬";</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1503 数字成语 -->
+    <section id="p1503" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-purple-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1503</span>
+            <h1 class="text-3xl font-bold text-purple-400">数字成语 (字典 vs Switch)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-book mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>这道题是典型的“查表”问题。</p>
+                    <p class="mt-2 text-purple-300 font-bold">Python方法 (字典):</p>
+                    <p>就像查字典一样，1对应一帆风顺，2对应二龙腾飞... 把它们存到一个 `{key: value}` 的结构里，直接拿出来。</p>
+                    <p class="mt-2 text-blue-300 font-bold">C++方法 (Switch):</p>
+                    <p>像多路开关，如果 case 是 1，就输出一帆风顺，如果是 2...</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-input">
+                    <div class="code-box">n = int(input())</div>
+                    <div class="explain-box">输入数字</div>
+                    <div class="code-box">int n; cin >> n;</div>
+                </div>
+                <div class="logic-row theme-logic">
+                    <div class="code-box text-xs">
+data = {<br>
+&nbsp;1: "一帆风顺",<br>
+&nbsp;2: "二龙腾飞",<br>
+&nbsp;3: "三阳开泰",<br>
+&nbsp;...<br>
+}
+                    </div>
+                    <div class="explain-box">
+                        核心逻辑<br>
+                        <span class="text-[0.6rem] font-normal">左：定义字典<br>右：Switch结构</span>
+                    </div>
+                    <div class="code-box text-xs">
+switch(n) {<br>
+&nbsp;case 1: cout<<"一帆风顺"; break;<br>
+&nbsp;case 2: cout<<"二龙腾飞"; break;<br>
+&nbsp;case 3: cout<<"三阳开泰"; break;<br>
+&nbsp;...<br>
+}
+                    </div>
+                </div>
+                <div class="logic-row theme-output">
+                    <div class="code-box">print(data.get(n))</div>
+                    <div class="explain-box">输出结果</div>
+                    <div class="code-box text-[0.6rem] text-gray-500">// C++在case中已输出</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1505 农场税金 -->
+    <section id="p1505" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1505</span>
+            <h1 class="text-3xl font-bold text-amber-400">农场税金 (字符串匹配)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-tractor mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>1. 判断农产品种类（字符串比较）。</p>
+                    <p>2. 根据种类乘以不同的税率。</p>
+                    <ul class="ml-4 list-disc mt-2 text-xs">
+                        <li>wheat/corn: 5% (0.05)</li>
+                        <li>vegetable/fruit: 3% (0.03)</li>
+                        <li>livestock: 7% (0.07)</li>
+                        <li>其他: 2% (0.02)</li>
+                    </ul>
+                    <p class="mt-2 text-amber-300">保留小数：</p>
+                    <p class="text-xs">Python用 <code>"%.1f"</code> 或 f-string。</p>
+                    <p class="text-xs">C++用 <code>fixed setprecision(1)</code>。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">kind, val = input().split()<br>val = int(val)</div>
+                    <div class="explain-box">输入种类和数值</div>
+                    <div class="code-box">string kind; double val;<br>cin >> kind >> val;</div>
+                </div>
+                <div class="logic-row theme-base">
+                    <div class="code-box">rate = 0.02</div>
+                    <div class="explain-box">默认税率(其他)</div>
+                    <div class="code-box">double rate = 0.02;</div>
+                </div>
+                <div class="logic-row theme-branch">
+                    <div class="code-box">if kind in ["wheat","corn"]:</div>
+                    <div class="explain-box">小麦或玉米</div>
+                    <div class="code-box">if(kind=="wheat"||kind=="corn")</div>
+                </div>
+                <div class="logic-row theme-logic">
+                    <div class="code-box">&nbsp;&nbsp;rate = 0.05</div>
+                    <div class="explain-box">设为 5%</div>
+                    <div class="code-box">&nbsp;&nbsp;rate = 0.05;</div>
+                </div>
+                <div class="logic-row theme-branch">
+                    <div class="code-box">elif kind in ["vegetable","fruit"]:</div>
+                    <div class="explain-box">蔬菜或水果</div>
+                    <div class="code-box">else if(kind=="vegetable"||...)</div>
+                </div>
+                <div class="logic-row theme-logic">
+                    <div class="code-box">&nbsp;&nbsp;rate = 0.03</div>
+                    <div class="explain-box">设为 3%</div>
+                    <div class="code-box">&nbsp;&nbsp;rate = 0.03;</div>
+                </div>
+                <div class="logic-row theme-branch">
+                    <div class="code-box">elif kind == "livestock":<br>&nbsp;&nbsp;rate = 0.07</div>
+                    <div class="explain-box">牲畜 7%</div>
+                    <div class="code-box">else if(kind=="livestock")<br>&nbsp;&nbsp;rate = 0.07;</div>
+                </div>
+                <div class="logic-row theme-output">
+                    <div class="code-box">print("{:.1f}".format(val*rate))</div>
+                    <div class="explain-box">计算并输出<br><span class="text-[0.6rem] font-normal">保留一位小数</span></div>
+                    <div class="code-box text-[0.6rem]">printf("%.1f", val*rate); <br>// 或 cout<<fixed...</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1506 三角花园 -->
+    <section id="p1506" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-red-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1506</span>
+            <h1 class="text-3xl font-bold text-red-400">三角花园 (海伦公式)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-draw-polygon mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>1. <strong class="text-red-300">验真伪：</strong> 三角形任意两边之和必须大于第三边。</p>
+                    <p class="bg-slate-800 p-2 rounded text-xs font-mono mt-1 mb-2">
+                        a+b>c 且 a+c>b 且 b+c>a
+                    </p>
+                    <p>2. <strong class="text-green-300">算面积：</strong> 使用海伦公式。</p>
+                    <p class="text-xs">半周长 p = (a+b+c)/2</p>
+                    <p class="text-xs">面积 S = √[p(p-a)(p-b)(p-c)]</p>
+                    <div class="mt-4 p-2 bg-blue-900/30 rounded border border-blue-500/30 text-xs">
+                        <i class="fas fa-info-circle"></i> 需要引入数学库:<br>Python: <code>import math</code><br>C++: <code>#include &lt;cmath&gt;</code>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-base">
+                    <div class="code-box">import math</div>
+                    <div class="explain-box">引入数学库</div>
+                    <div class="code-box">#include &lt;cmath&gt;</div>
+                </div>
+                <div class="logic-row theme-input">
+                    <div class="code-box">a,b,c = map(float,input().split())</div>
+                    <div class="explain-box">输入三边(实数)</div>
+                    <div class="code-box">double a,b,c; cin>>a>>b>>c;</div>
+                </div>
+                <div class="logic-row theme-branch">
+                    <div class="code-box">if a+b>c and a+c>b and b+c>a:</div>
+                    <div class="explain-box">判断是否为真地图</div>
+                    <div class="code-box">if(a+b>c && a+c>b && b+c>a)</div>
+                </div>
+                <div class="logic-row theme-logic">
+                    <div class="code-box">&nbsp;&nbsp;p = (a+b+c) / 2</div>
+                    <div class="explain-box">计算半周长 p</div>
+                    <div class="code-box">&nbsp;&nbsp;double p = (a+b+c)/2;</div>
+                </div>
+                <div class="logic-row theme-logic">
+                    <div class="code-box">&nbsp;&nbsp;s = math.sqrt(p*(p-a)*(p-b)*(p-c))</div>
+                    <div class="explain-box">
+                        海伦公式<br>
+                        <span class="text-[0.6rem] font-normal">sqrt是开根号</span>
+                    </div>
+                    <div class="code-box">&nbsp;&nbsp;double s = sqrt(p*(p-a)...);</div>
+                </div>
+                <div class="logic-row theme-output">
+                    <div class="code-box">&nbsp;&nbsp;print(s)</div>
+                    <div class="explain-box">输出面积</div>
+                    <div class="code-box">&nbsp;&nbsp;cout << s;</div>
+                </div>
+                <div class="logic-row theme-output">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print("地图是假的。")</div>
+                    <div class="explain-box">否则是假的</div>
+                    <div class="code-box">else cout << "地图是假的。";</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

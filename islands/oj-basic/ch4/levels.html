@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J 选择结构(嵌套) - 题解展示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 全局样式 */
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* 滚动条隐藏 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* 幻灯片容器 */
+        .slide {
+            min-height: 100vh;
+            width: 100%;
+            padding: 2rem 4rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 1px solid #1e293b;
+            position: relative;
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        /* 代码逻辑行 - 核心布局 */
+        .logic-row {
+            display: grid;
+            grid-template-columns: 1fr 160px 1fr; /* Python - Explanation - C++ */
+            gap: 15px;
+            margin-bottom: 8px;
+            align-items: stretch; /* 拉伸高度一致 */
+            transition: transform 0.2s;
+        }
+
+        .logic-row:hover {
+            background: rgba(255,255,255,0.03);
+            transform: scale(1.005);
+        }
+
+        .code-box {
+            font-family: 'JetBrains Mono', monospace;
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            white-space: pre-wrap;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+
+        .explain-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #0f172a;
+            border-radius: 6px;
+            padding: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        /* 颜色主题系统 */
+        .theme-input .code-box { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-left: 3px solid #38bdf8; }
+        .theme-input .explain-box { background: linear-gradient(135deg, #7dd3fc, #38bdf8); }
+
+        .theme-cond .code-box { background: rgba(250, 204, 21, 0.1); color: #facc15; border-left: 3px solid #facc15; }
+        .theme-cond .explain-box { background: linear-gradient(135deg, #fde047, #facc15); }
+
+        .theme-action .code-box { background: rgba(74, 222, 128, 0.1); color: #4ade80; border-left: 3px solid #4ade80; }
+        .theme-action .explain-box { background: linear-gradient(135deg, #86efac, #4ade80); }
+
+        .theme-else .code-box { background: rgba(248, 113, 113, 0.1); color: #f87171; border-left: 3px solid #f87171; }
+        .theme-else .explain-box { background: linear-gradient(135deg, #fca5a5, #f87171); }
+        
+        .theme-base .code-box { color: #64748b; font-size: 0.8rem; }
+        .theme-base .explain-box { background: #cbd5e1; color: #64748b; }
+
+        /* 侧边导航点 */
+        .nav-dots {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 50;
+        }
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            background: #475569;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .nav-dot:hover, .nav-dot.active {
+            background: #38bdf8;
+            transform: scale(1.4);
+            box-shadow: 0 0 10px #38bdf8;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 导航系统 -->
+    <div class="nav-dots">
+        <a href="#p1401" class="nav-dot" title="1401 三个宝箱"></a>
+        <a href="#p1402" class="nav-dot" title="1402 食人魔看电影"></a>
+        <a href="#p1403" class="nav-dot" title="1403 小药水"></a>
+        <a href="#p1404" class="nav-dot" title="1404 偶数座位2"></a>
+        <a href="#p1405" class="nav-dot" title="1405 魔法分数"></a>
+        <a href="#p1406" class="nav-dot" title="1406 切西瓜"></a>
+        <a href="#p1407" class="nav-dot" title="1407 南瓜向前冲"></a>
+        <a href="#p1408" class="nav-dot" title="1408 结婚纪念日"></a>
+        <a href="#p1409" class="nav-dot" title="1409 光石记忆"></a>
+        <a href="#p1410" class="nav-dot" title="1410 晚会舞蹈"></a>
+        <a href="#p1411" class="nav-dot" title="1411 真假硬币"></a>
+        <a href="#p1412" class="nav-dot" title="1412 小药水2"></a>
+        <a href="#p1413" class="nav-dot" title="1413 食人魔看电影2"></a>
+        <a href="#p1414" class="nav-dot" title="1414 订购装备"></a>
+        <a href="#p1415" class="nav-dot" title="1415 沙漠买牛"></a>
+    </div>
+
+    <!-- 1401 三个宝箱 -->
+    <section id="p1401" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1401</span>
+            <h1 class="text-3xl font-bold text-blue-400">三个宝箱 (求最大值)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-lightbulb mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们要找出三个数 a, b, c 中谁最重。</p>
+                    <p class="mt-2">想象成打擂台：</p>
+                    <ul class="list-disc ml-5 mt-2 space-y-2">
+                        <li>如果 a 比 b 重，且 a 比 c 重，那 a 就是冠军。</li>
+                        <li>否则，如果 b 比 a 重，且 b 比 c 重，那 b 就是冠军。</li>
+                        <li>剩下情况 c 就是冠军。</li>
+                    </ul>
+                </div>
+                <div class="mt-auto flex justify-center">
+                    <i class="fas fa-trophy text-6xl text-yellow-500"></i>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-input">
+                    <div class="code-box">a,b,c = map(int,input().split())</div>
+                    <div class="explain-box">输入三个重量</div>
+                    <div class="code-box">int a,b,c; cin>>a>>b>>c;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if a>=b and a>=c:</div>
+                    <div class="explain-box">a是最大的吗？</div>
+                    <div class="code-box">if(a>=b && a>=c){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print(a)</div>
+                    <div class="explain-box">输出 a</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<< a; }</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">elif b>=a and b>=c:</div>
+                    <div class="explain-box">否则 b是最大的吗？</div>
+                    <div class="code-box">else if(b>=a && b>=c){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print(b)</div>
+                    <div class="explain-box">输出 b</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<< b; }</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print(c)</div>
+                    <div class="explain-box">否则 c最大</div>
+                    <div class="code-box">else { cout<< c; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1402 食人魔看电影 -->
+    <section id="p1402" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-purple-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1402</span>
+            <h1 class="text-3xl font-bold text-purple-400">食人魔看电影 (有序判断)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-sort-amount-up mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>为了不挡视线，必须要“前低后高”。</p>
+                    <p class="mt-2">条件：</p>
+                    <div class="bg-slate-800 p-3 rounded mt-2 font-mono text-center">
+                        a < b 且 b < c
+                    </div>
+                    <p class="mt-2">只有同时满足这两个条件，才是YES。</p>
+                </div>
+                <div class="mt-auto flex justify-center gap-2 items-end h-20">
+                    <div class="w-4 h-8 bg-purple-400 rounded"></div>
+                    <div class="w-4 h-12 bg-purple-500 rounded"></div>
+                    <div class="w-4 h-16 bg-purple-600 rounded"></div>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">a,b,c = map(int,input().split())</div>
+                    <div class="explain-box">输入身高</div>
+                    <div class="code-box">int a,b,c; cin>>a>>b>>c;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if a < b and b < c:</div>
+                    <div class="explain-box">判断是否递增</div>
+                    <div class="code-box">if(a < b && b < c){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print("YES")</div>
+                    <div class="explain-box">符合</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<<"YES"; }</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print("NO")</div>
+                    <div class="explain-box">不符合</div>
+                    <div class="code-box">else { cout<<"NO"; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1403 小药水 -->
+    <section id="p1403" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-green-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1403</span>
+            <h1 class="text-3xl font-bold text-green-400">小药水 (求最小值)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-flask mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>这道题和“三个宝箱”正好相反，我们要找最小的。</p>
+                    <p class="mt-2">可以使用简单的逻辑运算符：</p>
+                    <ul class="list-disc ml-5 mt-2">
+                        <li>如果 a 最小 (a&lt;b 且 a&lt;c)...</li>
+                        <li>否则看 b 是不是最小...</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">a,b,c = map(int,input().split())</div>
+                    <div class="explain-box">输入药瓶大小</div>
+                    <div class="code-box">int a,b,c; cin>>a>>b>>c;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if a<=b and a<=c:</div>
+                    <div class="explain-box">a最小吗？</div>
+                    <div class="code-box">if(a<=b && a<=c){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print(a)</div>
+                    <div class="explain-box">输出 a</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<< a; }</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">elif b<=a and b<=c:</div>
+                    <div class="explain-box">b最小吗？</div>
+                    <div class="code-box">else if(b<=a && b<=c){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print(b)</div>
+                    <div class="explain-box">输出 b</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<< b; }</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print(c)</div>
+                    <div class="explain-box">c最小</div>
+                    <div class="code-box">else { cout<< c; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1404 偶数座位2 -->
+    <section id="p1404" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1404</span>
+            <h1 class="text-3xl font-bold text-indigo-400">偶数座位2 (复合条件)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-bus mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>这次大巴车有个硬性要求：</p>
+                    <ol class="list-decimal ml-5 mt-2 space-y-2">
+                        <li>人数必须是 <strong class="text-pink-400">偶数</strong> (n % 2 == 0)</li>
+                        <li>人数必须 <strong class="text-pink-400">大于 10</strong> (n > 10)</li>
+                    </ol>
+                    <p class="mt-2">两个条件必须同时满足，使用 <code>and</code> (&&) 连接。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">n = int(input())</div>
+                    <div class="explain-box">输入人数</div>
+                    <div class="code-box">int n; cin>>n;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if n > 10 and n % 2 == 0:</div>
+                    <div class="explain-box">
+                        大于10 且 为偶数<br>
+                        <i class="fas fa-link text-xs"></i>
+                    </div>
+                    <div class="code-box">if(n > 10 && n % 2 == 0){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print("Yes")</div>
+                    <div class="explain-box">满足</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<<"Yes"; }</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print("No")</div>
+                    <div class="explain-box">不满足</div>
+                    <div class="code-box">else { cout<<"No"; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1405 魔法分数 -->
+    <section id="p1405" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-pink-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1405</span>
+            <h1 class="text-3xl font-bold text-pink-400">魔法分数 (奇数判断)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-magic mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>安雅的分数有两个特征：</p>
+                    <ul class="list-disc ml-5 mt-2 space-y-2">
+                        <li>小于 100 分 (n < 100)</li>
+                        <li>是奇数 (n % 2 != 0)</li>
+                    </ul>
+                    <p class="mt-2">例如：97 (Yes), 101 (No - 太大), 88 (No - 偶数)</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">n = int(input())</div>
+                    <div class="explain-box">输入分数</div>
+                    <div class="code-box">int n; cin>>n;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if n < 100 and n % 2 != 0:</div>
+                    <div class="explain-box">小于100 且 奇数</div>
+                    <div class="code-box">if(n < 100 && n % 2 != 0){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print("Yes")</div>
+                    <div class="explain-box">满足</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<<"Yes"; }</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print("No")</div>
+                    <div class="explain-box">不满足</div>
+                    <div class="code-box">else { cout<<"No"; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1406 切西瓜 -->
+    <section id="p1406" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-red-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1406</span>
+            <h1 class="text-3xl font-bold text-red-400">切西瓜 (数学逻辑)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-lemon mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>要把西瓜分成两个偶数部分：</p>
+                    <p>偶数 + 偶数 = 偶数。</p>
+                    <p class="mt-2">所以只要西瓜重量 n 是偶数就可以了吗？</p>
+                    <p class="text-red-400 font-bold mt-2">小心陷阱！</p>
+                    <p>如果是 2 斤呢？只能切成 1 + 1 (两个奇数)。</p>
+                    <p>所以条件是：<br>1. 是偶数<br>2. 大于 2</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">n = int(input())</div>
+                    <div class="explain-box">输入重量</div>
+                    <div class="code-box">int n; cin>>n;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if n > 2 and n % 2 == 0:</div>
+                    <div class="explain-box">大于2 且 偶数</div>
+                    <div class="code-box">if(n > 2 && n % 2 == 0){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print("Yes")</div>
+                    <div class="explain-box">可以切分</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<<"Yes"; }</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print("No")</div>
+                    <div class="explain-box">不可切分</div>
+                    <div class="code-box">else { cout<<"No"; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1407 南瓜向前冲 -->
+    <section id="p1407" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-orange-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1407</span>
+            <h1 class="text-3xl font-bold text-orange-400">南瓜向前冲 (多分支)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-gamepad mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>这是一个典型的多级判断：</p>
+                    <div class="space-y-2 mt-2">
+                        <div class="bg-red-500/20 p-2 rounded border border-red-500/50">
+                            分数 < 60 : 没通关
+                        </div>
+                        <div class="bg-green-500/20 p-2 rounded border border-green-500/50">
+                            60 <= 分数 < 100 : 恭喜通关
+                        </div>
+                        <div class="bg-yellow-500/20 p-2 rounded border border-yellow-500/50">
+                            分数 == 100 : 满分通关
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if s < 60:</div>
+                    <div class="explain-box">不及格区间</div>
+                    <div class="code-box">if(s < 60){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print("很遗憾...")</div>
+                    <div class="explain-box">没通关</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<<"很遗憾..."; }</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">elif s < 100:</div>
+                    <div class="explain-box">60到99分</div>
+                    <div class="code-box">else if(s < 100){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print("恭喜通关！")</div>
+                    <div class="explain-box">普通通关</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<<"恭喜通关！"; }</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print("恭喜满分...")</div>
+                    <div class="explain-box">100分</div>
+                    <div class="code-box">else { cout<<"恭喜满分..."; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1408 结婚纪念日 -->
+    <section id="p1408" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-cyan-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1408</span>
+            <h1 class="text-3xl font-bold text-cyan-400">结婚纪念日 (闰年判定)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-calendar-check mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>闰年的经典口诀：</p>
+                    <p class="font-bold text-cyan-300 mt-2">“四年一闰，百年不闰，四百年又闰”</p>
+                    <hr class="border-slate-600 my-3">
+                    <p>翻译成代码逻辑（满足其一即可）：</p>
+                    <ol class="list-decimal ml-5 mt-2 space-y-2">
+                        <li>能被4整除 且 不能被100整除</li>
+                        <li>能被400整除</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">y = int(input())</div>
+                    <div class="explain-box">输入年份</div>
+                    <div class="code-box">int y; cin>>y;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if (y%4==0 and y%100!=0)<br>or (y%400==0):</div>
+                    <div class="explain-box">
+                        判断闰年条件<br>
+                        <span class="text-xs">逻辑与/逻辑或</span>
+                    </div>
+                    <div class="code-box">if((y%4==0 && y%100!=0)<br>|| (y%400==0)){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print("是闰年")</div>
+                    <div class="explain-box">是</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<<"是闰年"; }</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print("不是闰年")</div>
+                    <div class="explain-box">否</div>
+                    <div class="code-box">else { cout<<"不是闰年"; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1409 光石记忆 -->
+    <section id="p1409" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-teal-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1409</span>
+            <h1 class="text-3xl font-bold text-teal-400">光石记忆 (月份天数)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-sun mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>大月(31天): 1,3,5,7,8,10,12</p>
+                    <p>小月(30天): 4,6,9,11</p>
+                    <p class="text-teal-300 font-bold mt-2">特殊月(2月):</p>
+                    <p>闰年 29天，平年 28天。</p>
+                    <p class="mt-2">程序需要先判断月份，如果是2月再判断年份。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">y, m = map(int, input().split())</div>
+                    <div class="explain-box">年份和月份</div>
+                    <div class="code-box">int y,m; cin>>y>>m;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if m==2:</div>
+                    <div class="explain-box">处理2月</div>
+                    <div class="code-box">if(m==2){</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">&nbsp;&nbsp;if (y%4==0 and y%100!=0)<br>&nbsp;&nbsp;or y%400==0:</div>
+                    <div class="explain-box">是否闰年</div>
+                    <div class="code-box">&nbsp;&nbsp;if((y%4==0&&y%100!=0)<br>&nbsp;&nbsp;||y%400==0){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;&nbsp;&nbsp;print(29)</div>
+                    <div class="explain-box">闰年2月</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<<29; } else cout<<28;}</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">elif m in [4,6,9,11]:<br>&nbsp;&nbsp;print(30)</div>
+                    <div class="explain-box">小月</div>
+                    <div class="code-box">else if(m==4||m==6...){<br>&nbsp;&nbsp;cout<<30; }</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print(31)</div>
+                    <div class="explain-box">大月</div>
+                    <div class="code-box">else { cout<<31; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1410 晚会舞蹈 -->
+    <section id="p1410" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-fuchsia-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1410</span>
+            <h1 class="text-3xl font-bold text-fuchsia-400">晚会舞蹈 (公倍数)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-users mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>舞蹈队形要能分成 3人组、5人组、7人组。</p>
+                    <p>也就是说人数 n 必须同时是 3、5、7 的倍数。</p>
+                    <p class="mt-2 font-mono bg-slate-800 p-2">n % 3 == 0<br>n % 5 == 0<br>n % 7 == 0</p>
+                    <p class="mt-2">也可以理解为 n 是 LCM(3,5,7)=105 的倍数。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">n = int(input())</div>
+                    <div class="explain-box">输入人数</div>
+                    <div class="code-box">int n; cin>>n;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if n%3==0 and n%5==0<br>and n%7==0:</div>
+                    <div class="explain-box">同时整除3,5,7</div>
+                    <div class="code-box">if(n%3==0 && n%5==0<br>&& n%7==0){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print("Yes")</div>
+                    <div class="explain-box">满足条件</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<<"Yes"; }</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print("No")</div>
+                    <div class="explain-box">不满足</div>
+                    <div class="code-box">else { cout<<"No"; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1411 真假硬币 -->
+    <section id="p1411" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-gray-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1411</span>
+            <h1 class="text-3xl font-bold text-gray-400">真假硬币 (区间判断)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-coins mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>真币的重量范围是：1 到 10 (包含)。</p>
+                    <p>数学写法：<span class="font-mono">1 <= n <= 10</span></p>
+                    <p class="mt-2 text-red-400">编程注意：</p>
+                    <p>大多数语言不支持 <code class="bg-slate-800 px-1">1<=n<=10</code> 这种连写。</p>
+                    <p>必须拆解为：<code class="bg-slate-800 px-1">n >= 1 && n <= 10</code>。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">n = int(input())</div>
+                    <div class="explain-box">输入重量</div>
+                    <div class="code-box">int n; cin>>n;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if n >= 1 and n <= 10:</div>
+                    <div class="explain-box">在1到10之间</div>
+                    <div class="code-box">if(n >= 1 && n <= 10){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print("Yes")</div>
+                    <div class="explain-box">是真币</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<<"Yes"; }</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print("No")</div>
+                    <div class="explain-box">是假币</div>
+                    <div class="code-box">else { cout<<"No"; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1412 小药水2 -->
+    <section id="p1412" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-emerald-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1412</span>
+            <h1 class="text-3xl font-bold text-emerald-400">小药水2 (擂台法求最小)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-chess-king mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>擂台法是编程中求最值的经典算法。</p>
+                    <p class="mt-2 font-bold">步骤：</p>
+                    <ol class="list-decimal ml-5 space-y-2">
+                        <li>假设第一个瓶子(a)是最小的，让它站在擂台上。</li>
+                        <li>让 b 上来挑战：如果 b 比擂主还小，b 成为新擂主。</li>
+                        <li>让 c 上来挑战：如果 c 比擂主还小，c 成为新擂主。</li>
+                        <li>最后留在擂台上的就是最小的。</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">a,b,c = map(int,input().split())</div>
+                    <div class="explain-box">输入三个数</div>
+                    <div class="code-box">int a,b,c; cin>>a>>b>>c;</div>
+                </div>
+                <div class="logic-row theme-base">
+                    <div class="code-box">ans = a</div>
+                    <div class="explain-box">假设a是最小</div>
+                    <div class="code-box">int ans = a;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if b < ans:</div>
+                    <div class="explain-box">b更小吗？</div>
+                    <div class="code-box">if(b < ans){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;ans = b</div>
+                    <div class="explain-box">更新最小值</div>
+                    <div class="code-box">&nbsp;&nbsp;ans = b; }</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if c < ans:</div>
+                    <div class="explain-box">c更小吗？</div>
+                    <div class="code-box">if(c < ans){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;ans = c</div>
+                    <div class="explain-box">更新最小值</div>
+                    <div class="code-box">&nbsp;&nbsp;ans = c; }</div>
+                </div>
+                <div class="logic-row theme-base">
+                    <div class="code-box">print(ans)</div>
+                    <div class="explain-box">输出结果</div>
+                    <div class="code-box">cout<< ans;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1413 食人魔看电影2 -->
+    <section id="p1413" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-violet-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1413</span>
+            <h1 class="text-3xl font-bold text-violet-400">食人魔看电影2 (三数排序)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-sort-numeric-down mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们要把 a, b, c 从小到大排好。</p>
+                    <p class="mt-2">使用<strong class="text-violet-300">交换法</strong>：</p>
+                    <ol class="list-decimal ml-5 mt-2 space-y-2">
+                        <li>比较 a 和 b：如果 a > b，交换它们（保证 a 比 b 小）。</li>
+                        <li>比较 a 和 c：如果 a > c，交换它们（保证 a 比 c 小）。此时 a 是最小的。</li>
+                        <li>比较 b 和 c：如果 b > c，交换它们（保证 b 比 c 小）。</li>
+                        <li>输出 a, b, c。</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">a,b,c = map(int,input().split())</div>
+                    <div class="explain-box">输入</div>
+                    <div class="code-box">int a,b,c; cin>>a>>b>>c;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if a > b:<br>&nbsp;&nbsp;a, b = b, a</div>
+                    <div class="explain-box">确保 a < b</div>
+                    <div class="code-box">if(a>b) swap(a,b);</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if a > c:<br>&nbsp;&nbsp;a, c = c, a</div>
+                    <div class="explain-box">确保 a < c<br><span class="text-xs">此时a最小</span></div>
+                    <div class="code-box">if(a>c) swap(a,c);</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if b > c:<br>&nbsp;&nbsp;b, c = c, b</div>
+                    <div class="explain-box">确保 b < c</div>
+                    <div class="code-box">if(b>c) swap(b,c);</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">print(a, b, c)</div>
+                    <div class="explain-box">顺序输出</div>
+                    <div class="code-box">cout<<a<<" "<<b<<" "<<c;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1414 订购装备 -->
+    <section id="p1414" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-blue-800 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1414</span>
+            <h1 class="text-3xl font-bold text-blue-400">订购装备 (价格分段)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-tag mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>批发规则很简单：</p>
+                    <ul class="list-disc ml-5 mt-2 space-y-2">
+                        <li>买得多 (x > 100)：单价 50</li>
+                        <li>买得少 (x <= 100)：单价 80</li>
+                    </ul>
+                    <p class="mt-2">总价 = 数量 * 单价。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6">
+                <div class="logic-row theme-input">
+                    <div class="code-box">x = int(input())</div>
+                    <div class="explain-box">输入数量</div>
+                    <div class="code-box">int x; cin >> x;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if x > 100:</div>
+                    <div class="explain-box">批发价条件</div>
+                    <div class="code-box">if(x > 100){</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">&nbsp;&nbsp;print(x * 50)</div>
+                    <div class="explain-box">单价50</div>
+                    <div class="code-box">&nbsp;&nbsp;cout<< x * 50; }</div>
+                </div>
+                <div class="logic-row theme-else">
+                    <div class="code-box">else:<br>&nbsp;&nbsp;print(x * 80)</div>
+                    <div class="explain-box">单价80</div>
+                    <div class="code-box">else { cout<< x * 80; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1415 沙漠买牛 -->
+    <section id="p1415" class="slide">
+        <header class="mb-6 flex items-center gap-4">
+            <span class="bg-amber-700 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1415</span>
+            <h1 class="text-3xl font-bold text-amber-400">沙漠买牛 (复杂分段折扣)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 flex flex-col gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-percent mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>这是一个多级折扣问题，需要使用 if-elif-else 结构。</p>
+                    <table class="w-full text-left text-xs mt-2 border-collapse">
+                        <tr class="border-b border-slate-600"><th class="py-1">数量</th><th>折扣</th></tr>
+                        <tr><td class="py-1">< 5</td><td>1.0 (原价)</td></tr>
+                        <tr><td class="py-1">5-10</td><td>0.9 (九折)</td></tr>
+                        <tr><td class="py-1">11-20</td><td>0.8 (八折)</td></tr>
+                        <tr><td class="py-1">21-30</td><td>0.6 (六折)</td></tr>
+                        <tr><td class="py-1">> 30</td><td>0.4 (四折)</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-input">
+                    <div class="code-box"># Python输入<br>price, n = input().split()<br>price = float(price)<br>n = int(n)</div>
+                    <div class="explain-box">
+                        输入单价和数量<br>
+                        <span class="text-xs">注意类型转换</span>
+                    </div>
+                    <div class="code-box">double price; int n;<br>cin >> price >> n;</div>
+                </div>
+                <div class="logic-row theme-base">
+                    <div class="code-box">rate = 1.0</div>
+                    <div class="explain-box">默认折扣</div>
+                    <div class="code-box">double rate = 1.0;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">if n > 30:<br>&nbsp;&nbsp;rate = 0.4</div>
+                    <div class="explain-box">超过30头</div>
+                    <div class="code-box">if(n > 30) rate=0.4;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">elif n >= 21:<br>&nbsp;&nbsp;rate = 0.6</div>
+                    <div class="explain-box">21-30头</div>
+                    <div class="code-box">else if(n >= 21) rate=0.6;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">elif n >= 11:<br>&nbsp;&nbsp;rate = 0.8</div>
+                    <div class="explain-box">11-20头</div>
+                    <div class="code-box">else if(n >= 11) rate=0.8;</div>
+                </div>
+                <div class="logic-row theme-cond">
+                    <div class="code-box">elif n >= 5:<br>&nbsp;&nbsp;rate = 0.9</div>
+                    <div class="explain-box">5-10头</div>
+                    <div class="code-box">else if(n >= 5) rate=0.9;</div>
+                </div>
+                <div class="logic-row theme-action">
+                    <div class="code-box">print(price * n * rate)</div>
+                    <div class="explain-box">总价 = 单价×数量×折扣</div>
+                    <div class="code-box">cout << price * n * rate;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

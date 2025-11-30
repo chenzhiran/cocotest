@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扣哒秘籍C++：数组与数据批量存储</title>
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #00cec9;
+            --accent-color: #fdcb6e;
+            --text-color: #2d3436;
+            --bg-color: #f4f7f6;
+            --code-bg: #2d2d2d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 5px solid var(--primary-color);
+        }
+
+        /* 标题 */
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 2.5em;
+            text-shadow: 2px 2px 0 #dfe6e9;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #636e72;
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            color: #d63031;
+            border-bottom: 3px dashed var(--secondary-color);
+            padding-bottom: 10px;
+            margin-top: 50px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        h3 {
+            background-color: #e3f2fd;
+            padding: 10px 15px;
+            border-left: 5px solid var(--primary-color);
+            border-radius: 0 10px 10px 0;
+            color: #2c3e50;
+            margin-top: 30px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* 目录 */
+        .toc {
+            background-color: #fff8e1;
+            border: 2px dashed var(--accent-color);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .toc h3 {
+            margin-top: 0;
+            background: none;
+            padding: 0;
+            border: none;
+            text-align: center;
+        }
+        .toc ul {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            padding: 0;
+            list-style: none;
+        }
+        .toc a {
+            text-decoration: none;
+            color: white;
+            background-color: var(--primary-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: transform 0.2s;
+            font-weight: bold;
+        }
+        .toc a:hover {
+            transform: scale(1.1);
+            background-color: var(--secondary-color);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background-color: var(--code-bg);
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            overflow-x: auto;
+            margin: 20px 0;
+            position: relative;
+            font-size: 15px;
+            white-space: pre; /* 确保代码正确换行 */
+        }
+        
+        /* 语法高亮 */
+        .kw { color: #ff79c6; font-weight: bold; } /* 关键字 int, return */
+        .func { color: #8be9fd; } /* 函数 main, cin, cout */
+        .num { color: #bd93f9; } /* 数字 */
+        .str { color: #f1fa8c; } /* 字符串 */
+        .com { color: #6272a4; font-style: italic; } /* 注释 */
+        .type { color: #ffb86c; } /* 类型 */
+        .structure { color: #50fa7b; font-weight: bold; border-bottom: 1px dashed #50fa7b; } /* 程序结构 */
+
+        /* 可视化盒子 */
+        .visual-array {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .array-item {
+            width: 60px;
+            height: 60px;
+            background-color: var(--accent-color);
+            border: 3px solid #e17055;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            position: relative;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .index-label {
+            position: absolute;
+            bottom: -25px;
+            font-size: 0.7em;
+            color: #636e72;
+        }
+        .value-label {
+            color: #2d3436;
+        }
+
+        /* 提示框 */
+        .coco-tip {
+            background-color: #e0f7fa;
+            border-left: 5px solid #00bcd4;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .coco-avatar {
+            font-size: 2.5em;
+        }
+
+        /* 流程图样式 */
+        .flow-box {
+            background-color: #e1f5fe;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #4fc3f7;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .flow-number {
+            background-color: #4fc3f7;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        .flow-arrow {
+            text-align: center;
+            font-size: 1.5em;
+            color: #4fc3f7;
+        }
+
+        /* 比较表格样式 */
+        .comparison {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .comparison-col {
+            flex: 1;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .comparison-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .comparison-content {
+            padding: 15px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* 二维数组可视化 */
+        .two-d-array {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 25px 0;
+        }
+        .two-d-row {
+            display: flex;
+            gap: 10px;
+        }
+        .two-d-item {
+            width: 50px;
+            height: 50px;
+            background-color: #74b9ff;
+            border: 2px solid #0984e3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            position: relative;
+            font-weight: bold;
+        }
+        .row-label {
+            position: absolute;
+            left: -25px;
+            font-size: 0.7em;
+            color: #636e72;
+        }
+        .col-label {
+            position: absolute;
+            bottom: -20px;
+            font-size: 0.7em;
+            color: #636e72;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📦 扣哒秘籍 C++：<br>数组与数据批量存储</h1>
+    <div class="subtitle">第九课</div>
+
+    <div class="toc">
+        <h3>🗺️ 魔法藏宝图</h3>
+        <ul>
+            <li><a href="#part1">1. 什么是数组？</a></li>
+            <li><a href="#part2">2. While循环：重复的魔法</a></li>
+            <li><a href="#part3">3. 数组的魔法规则</a></li>
+            <li><a href="#part4">4. 必学咒语：遍历与输入输出</a></li>
+            <li><a href="#part5">5. 实战演练：交换与最值</a></li>
+            <li><a href="#part6">6. 进阶魔法：二维数组</a></li>
+            <li><a href="#part7">7. 高级挑战：杨辉三角与蛇形填数</a></li>
+        </ul>
+    </div>
+
+    <h2 id="part1">📦 一、什么是数组？</h2>
+    
+    <p>想象一下，我们以前定义的<b>变量</b>就像是一个个单独的箱子，一次只能装一个东西。</p>
+    <div class="code-box">
+<span class="kw">int</span> a = <span class="num">2</span>; <span class="com">// 一个箱子，里面装了数字2</span>
+    </div>
+
+    <p>但是，如果我们要存全班同学的成绩，或者一堆宝藏，几百个变量太麻烦了！<br>
+    这时候，我们需要<b>数组</b>。数组就像是一个<b>大箱子，里面整整齐齐地包着好多小箱子</b>。</p>
+
+    <div class="visual-array">
+        <div class="array-item"><span class="value-label">1</span><span class="index-label">a[0]</span></div>
+        <div class="array-item"><span class="value-label">2</span><span class="index-label">a[1]</span></div>
+        <div class="array-item"><span class="value-label">3</span><span class="index-label">a[2]</span></div>
+        <div class="array-item"><span class="value-label">4</span><span class="index-label">a[3]</span></div>
+    </div>
+    <p style="text-align: center;">比如 <code>int a[4] = {1, 2, 3, 4};</code></p>
+
+    <h2 id="part2">🔄 二、While循环：重复的魔法</h2>
+
+    <p>在深入学习数组之前，我们先来学习一个非常重要的魔法——<span class="structure">while循环</span>！</p>
+
+    <h3>1. 什么是While循环？</h3>
+    <p><span class="structure">while</span>循环就像一个<b>会重复做事情的机器人</b>，只要条件满足，它就会一直工作！</p>
+
+    <div class="code-box">
+<span class="structure">while</span> (条件) {
+    <span class="com">// 只要条件满足，这里的代码就会重复执行</span>
+}
+    </div>
+
+    <h3>2. While循环的执行流程</h3>
+    <div class="flow-box">
+        <div class="flow-step">
+            <div class="flow-number">1</div>
+            <div>检查循环条件是否为真</div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+            <div class="flow-number">2</div>
+            <div>如果条件为真，执行循环体内的语句</div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+            <div class="flow-number">3</div>
+            <div>循环体执行完毕后，再次检查条件</div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+            <div class="flow-number">4</div>
+            <div>如果条件仍为真，重复步骤2-3</div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step">
+            <div class="flow-number">5</div>
+            <div>如果条件为假，跳出循环，执行后续代码</div>
+        </div>
+    </div>
+
+    <h3>3. While循环的简单例子</h3>
+    <div class="code-box">
+<span class="com">// 数数游戏：从1数到5</span>
+<span class="kw">int</span> i = <span class="num">1</span>;
+<span class="structure">while</span> (i <= <span class="num">5</span>) {
+    <span class="func">cout</span> << i << <span class="str">" "</span>;
+    i++; <span class="com">// 重要：每次循环后i增加1</span>
+}
+<span class="com">// 输出：1 2 3 4 5</span>
+    </div>
+
+    <h3>4. While循环 vs For循环</h3>
+    <div class="comparison">
+        <div class="comparison-col">
+            <div class="comparison-header">🔄 While循环</div>
+            <div class="comparison-content">
+                <ul>
+                    <li>适合<b>不知道具体循环次数</b>的情况</li>
+                    <li>条件检查在前</li>
+                    <li>需要手动更新循环变量</li>
+                    <li>例子：等待用户输入正确密码</li>
+                </ul>
+                <div class="code-box" style="font-size: 0.8em;">
+<span class="kw">int</span> password;
+<span class="func">cin</span> >> password;
+<span class="structure">while</span> (password != <span class="num">123456</span>) {
+    <span class="func">cout</span> << <span class="str">"密码错误，请重新输入："</span>;
+    <span class="func">cin</span> >> password;
+}
+                </div>
+            </div>
+        </div>
+        
+        <div class="comparison-col">
+            <div class="comparison-header">🔁 For循环</div>
+            <div class="comparison-content">
+                <ul>
+                    <li>适合<b>知道具体循环次数</b>的情况</li>
+                    <li>初始化、条件、更新都在一行</li>
+                    <li>自动更新循环变量</li>
+                    <li>例子：遍历数组元素</li>
+                </ul>
+                <div class="code-box" style="font-size: 0.8em;">
+<span class="structure">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i < <span class="num">10</span>; i++) {
+    <span class="func">cout</span> << a[i] << <span class="str">" "</span>;
+}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>5. 小心！避免死循环</h3>
+    <div class="coco-tip">
+        <span class="coco-avatar">⚠️</span>
+        <div>
+            <b>CoCo提醒：</b> 如果循环条件永远为真，程序就会陷入<b>死循环</b>！<br>
+            记得在循环体内改变条件相关的变量。
+        </div>
+    </div>
+    <div class="code-box">
+<span class="com">// 错误示例：死循环！</span>
+<span class="kw">int</span> i = <span class="num">1</span>;
+<span class="structure">while</span> (i <= <span class="num">5</span>) {
+    <span class="func">cout</span> << <span class="str">"Hello!"</span>;
+    <span class="com">// 忘记写 i++，i永远小于等于5</span>
+}
+    </div>
+
+    <h2 id="part3">📏 三、数组的魔法规则</h2>
+
+    <h3>1. 声明数组（制造箱子）</h3>
+    <p>我们要告诉电脑这个大箱子里有多少个小格子。<b>注意：数组长度必须是确定的数字，不能用变量哦！</b></p>
+    <div class="code-box">
+<span class="kw">int</span> a[<span class="num">10</span>];       <span class="com">// 声明一个能装10个整数的数组</span>
+<span class="kw">double</span> b[<span class="num">100</span>];   <span class="com">// 声明一个能装100个小数的数组</span>
+<span class="kw">char</span> c[<span class="num">5</span>];       <span class="com">// 声明一个能装5个字符的数组</span>
+    </div>
+    <div class="coco-tip">
+        <span class="coco-avatar">💡</span>
+        <div><b>CoCo提示：</b> 声明数组时宁长勿短。如果题目说最多100个数，你可以声明 <code>int a[105];</code>，这样更安全！</div>
+    </div>
+
+    <h3>2. 数组的索引（门牌号）</h3>
+    <p>这是新手最容易犯错的地方！数组的门牌号（索引）是<b>从 0 开始</b>的！</p>
+    <ul>
+        <li>第 1 个格子的名字是 <code>a[0]</code></li>
+        <li>第 2 个格子的名字是 <code>a[1]</code></li>
+        <li>第 10 个格子的名字是 <code>a[9]</code></li>
+    </ul>
+    <p style="color: red; font-weight: bold;">⚠️ 警告：如果你访问 a[10]，电脑会报错，因为没有第11个格子！</p>
+
+    <h2 id="part4">🔄 四、必学咒语：遍历与输入输出</h2>
+
+    <p>因为数组很长，我们通常使用循环来一个一个地处理里面的数据，这叫<b>遍历</b>。</p>
+
+    <h3>咒语演示：倒序输出大法</h3>
+    <p>输入 n 个数字，然后把它们反过来输出。</p>
+
+    <div class="code-box">
+<span class="kw">#include</span> &lt;iostream&gt;
+<span class="kw">using namespace</span> <span class="func">std</span>;
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="kw">int</span> n, a[<span class="num">101</span>];  <span class="com">// 定义足够大的数组</span>
+    <span class="func">cin</span> >> n;       <span class="com">// 输入要存多少个数</span>
+
+    <span class="com">// 1. 正向循环输入</span>
+    <span class="kw">for</span>(<span class="kw">int</span> i = <span class="num">0</span>; i < n; i++) {
+        <span class="func">cin</span> >> a[i];
+    }
+
+    <span class="com">// 2. 逆向循环输出</span>
+    <span class="kw">for</span>(<span class="kw">int</span> i = n-<span class="num">1</span>; i >= <span class="num">0</span>; i--) {
+        <span class="func">cout</span> << a[i] << <span class="str">" "</span>;
+    }
+    
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+    </div>
+
+    <h3>使用While循环遍历数组</h3>
+    <p>我们也可以用while循环来遍历数组：</p>
+    <div class="code-box">
+<span class="kw">int</span> i = <span class="num">0</span>;
+<span class="structure">while</span> (i < n) {
+    <span class="func">cout</span> << a[i] << <span class="str">" "</span>;
+    i++;
+}
+    </div>
+
+    <h2 id="part5">⚔️ 五、实战演练：交换与最值</h2>
+
+    <h3>1. 酱油换醋（交换变量）</h3>
+    <p>如果我们要交换 <code>a[0]</code> 和 <code>a[pos]</code> 里的东西，直接赋值会覆盖掉原来的数据。怎么办？</p>
+    <div style="text-align: center; font-size: 3em; margin: 10px;">
+        🧴 🍾 🫙
+    </div>
+    <p><b>CoCo提示：</b> 就像交换酱油瓶和醋瓶里的液体，我们需要一个<b>空瓶子（temp）</b>！</p>
+
+    <div class="code-box">
+<span class="kw">int</span> temp = a[pos]; <span class="com">// 1. 先把醋倒进空瓶</span>
+a[pos] = a[<span class="num">0</span>];     <span class="com">// 2. 把酱油倒进醋瓶</span>
+a[<span class="num">0</span>] = temp;       <span class="com">// 3. 把空瓶里的醋倒进酱油瓶</span>
+    </div>
+
+    <h3>2. 寻找最大值（山顶旗帜）</h3>
+    <p>怎么在一堆数字里找到最大的那个？</p>
+    <ol>
+        <li>先假设第一个人是最高的（<code>max = a[0]</code>）。</li>
+        <li>然后和后面的人一个一个比。</li>
+        <li>如果发现比 <code>max</span> 还大的，就更新 <code>max</code>。</li>
+    </ol>
+
+    <div class="code-box">
+<span class="kw">int</span> maxVal = -<span class="num">99999</span>; <span class="com">// 先定一个很小的数</span>
+<span class="kw">int</span> pos = -<span class="num">1</span>;
+
+<span class="kw">for</span>(<span class="kw">int</span> i = <span class="num">0</span>; i < n; i++) {
+    <span class="kw">if</span>(maxVal < a[i]) { <span class="com">// 发现更大的了！</span>
+        maxVal = a[i];
+        pos = i;      <span class="com">// 记住它的位置</span>
+    }
+}
+    </div>
+
+    <h2 id="part6">🧊 六、进阶魔法：二维数组</h2>
+
+    <p>如果一维数组是一行小箱子，那么<b>二维数组就是一面墙的箱子</b>（或者说大箱子套着多行小箱子）。</p>
+
+    <div class="two-d-array">
+        <div class="two-d-row">
+            <span class="row-label">第0行</span>
+            <div class="two-d-item"><span class="value-label">1</span><span class="col-label">[0][0]</span></div>
+            <div class="two-d-item"><span class="value-label">2</span><span class="col-label">[0][1]</span></div>
+            <div class="two-d-item"><span class="value-label">3</span><span class="col-label">[0][2]</span></div>
+        </div>
+        <div class="two-d-row">
+            <span class="row-label">第1行</span>
+            <div class="two-d-item"><span class="value-label">4</span><span class="col-label">[1][0]</span></div>
+            <div class="two-d-item"><span class="value-label">5</span><span class="col-label">[1][1]</span></div>
+            <div class="two-d-item"><span class="value-label">6</span><span class="col-label">[1][2]</span></div>
+        </div>
+    </div>
+
+    <h3>1. 定义与索引</h3>
+    <p>定义格式：<code>int a[行数][列数];</code>，例如 <code>int a[2][3];</code> 表示2行3列。</p>
+    <p>索引也是从0开始：<code>a[0][0]</code> 是第1行第1列，<code>a[1][2]</code> 是第2行第3列。</p>
+
+    <h3>2. 双重循环遍历</h3>
+    <p>处理二维数组，我们需要<b>双重循环</b>：外层管行，内层管列。</p>
+
+    <div class="code-box">
+<span class="kw">int</span> a[<span class="num">3</span>][<span class="num">7</span>];
+<span class="kw">for</span>(<span class="kw">int</span> i = <span class="num">0</span>; i < <span class="num">3</span>; i++) {       <span class="com">// 遍历行</span>
+    <span class="kw">for</span>(<span class="kw">int</span> j = <span class="num">0</span>; j < <span class="num">7</span>; j++) {   <span class="com">// 遍历列</span>
+        <span class="func">cin</span> >> a[i][j];
+    }
+}
+    </div>
+
+    <h2 id="part7">🏆 七、高级挑战：杨辉三角与蛇形填数</h2>
+
+    <h3>1. 杨辉三角</h3>
+    <p>这是一个神奇的数字三角形。规律是：<b>每个数等于它上方两数之和</b>。</p>
+    <p><code>a[i][j] = a[i-1][j-1] + a[i-1][j];</code></p>
+    <div class="code-box">
+<span class="kw">for</span>(<span class="kw">int</span> i = <span class="num">0</span>; i < n; i++) {
+    a[i][<span class="num">0</span>] = <span class="num">1</span>;  <span class="com">// 第一列都是1</span>
+    a[i][i] = <span class="num">1</span>;  <span class="com">// 对角线都是1</span>
+    <span class="kw">for</span>(<span class="kw">int</span> j = <span class="num">1</span>; j < i; j++) {
+        a[i][j] = a[i-<span class="num">1</span>][j-<span class="num">1</span>] + a[i-<span class="num">1</span>][j]; <span class="com">// 魔法公式</span>
+    }
+}
+    </div>
+
+    <h3>2. 蛇形填数（贪吃蛇移动）</h3>
+    <p>任务：在 n*n 的方阵里，像贪吃蛇一样，从右上角出发，按照<b>下 -> 左 -> 上 -> 右</b>的顺序填入数字。</p>
+    
+    <p><b>思路解析：</b></p>
+    <ul>
+        <li>设定边界条件，不能撞墙，也不能走到填过的地方。</li>
+        <li><code>i</code> 代表行，<code>j</code> 代表列。</li>
+        <li>向下：<code>i++</code></li>
+        <li>向左：<code>j--</code></li>
+        <li>向上：<code>i--</code></li>
+        <li>向右：<code>j++</code></li>
+    </ul>
+
+    <div class="code-box">
+<span class="kw">while</span> (t < n*n) {
+    <span class="com">// 向下走</span>
+    <span class="kw">while</span> (i+<span class="num">1</span><n && !a[i+<span class="num">1</span>][j]) a[++i][j] = ++t;
+    <span class="com">// 向左走</span>
+    <span class="kw">while</span> (j-<span class="num">1</span>>=<span class="num">0</span> && !a[i][j-<span class="num">1</span>]) a[i][--j] = ++t;
+    <span class="com">// 向上走</span>
+    <span class="kw">while</span> (i-<span class="num">1</span>>=<span class="num">0</span> && !a[i-<span class="num">1</span>][j]) a[--i][j] = ++t;
+    <span class="com">// 向右走</span>
+    <span class="kw">while</span> (j+<span class="num">1</span><n && !a[i][j+<span class="num">1</span>]) a[i][++j] = ++t;
+}
+    </div>
+
+    <hr>
+    <div class="coco-tip">
+        <span class="coco-avatar">🎯</span>
+        <div>
+            <b>今日任务：</b><br>
+            登录 OJ 网站 (oj.koudashijie.com)<br>
+            挑战题目：<b>CSP-J2705 扫雷游戏</b> 和 <b>CSP-J2706 杨辉三角</b>！
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
