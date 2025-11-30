@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J 第二章：字符串与文件操作 - 题解展示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 全局设置 */
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* 滚动条隐藏 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* 幻灯片容器 */
+        .slide {
+            min-height: 100vh;
+            width: 100%;
+            padding: 2rem 4rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 1px solid #1e293b;
+            position: relative;
+        }
+
+        /* 卡片样式 */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 代码逻辑行 */
+        .logic-row {
+            display: grid;
+            grid-template-columns: 1fr 150px 1fr; /* Python - Explain - C++ */
+            gap: 15px;
+            margin-bottom: 8px;
+            align-items: stretch;
+            transition: transform 0.2s;
+        }
+
+        .logic-row:hover {
+            transform: scale(1.005);
+            background: rgba(255,255,255,0.02);
+        }
+
+        .code-box {
+            font-family: 'JetBrains Mono', monospace;
+            padding: 12px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            white-space: pre-wrap;
+            border-radius: 6px;
+            overflow-x: auto;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+
+        .explain-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #0f172a;
+            border-radius: 6px;
+            padding: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 颜色主题 */
+        .theme-in .code-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; }
+        .theme-in .explain-box { background: linear-gradient(135deg, #7dd3fc, #38bdf8); }
+        
+        .theme-logic .code-box { background: rgba(167, 139, 250, 0.1); border-left: 3px solid #a78bfa; }
+        .theme-logic .explain-box { background: linear-gradient(135deg, #c4b5fd, #a78bfa); }
+
+        .theme-calc .code-box { background: rgba(251, 146, 60, 0.1); border-left: 3px solid #fb923c; }
+        .theme-calc .explain-box { background: linear-gradient(135deg, #fdba74, #fb923c); }
+
+        .theme-out .code-box { background: rgba(74, 222, 128, 0.1); border-left: 3px solid #4ade80; }
+        .theme-out .explain-box { background: linear-gradient(135deg, #86efac, #4ade80); }
+
+        /* 侧边导航 */
+        .nav-dots {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 50;
+        }
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            background: #475569;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .nav-dot:hover {
+            background: #38bdf8;
+            transform: scale(1.4);
+            box-shadow: 0 0 10px #38bdf8;
+        }
+
+        .section-title {
+            background: linear-gradient(to right, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .badge {
+            background: #334155;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 导航 -->
+    <div class="nav-dots">
+        <a href="#p2501" class="nav-dot" title="花朵字符"></a>
+        <a href="#p2502" class="nav-dot" title="南瓜宣传语"></a>
+        <a href="#p2504" class="nav-dot" title="回文四叶草1"></a>
+        <a href="#p2505" class="nav-dot" title="回文四叶草2"></a>
+        <a href="#p2506" class="nav-dot" title="ISBN号码"></a>
+        <a href="#p2507" class="nav-dot" title="传递情报"></a>
+        <a href="#p2508" class="nav-dot" title="鹦鹉说话"></a>
+    </div>
+
+    <!-- 2501 花朵字符 -->
+    <section id="p2501" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J2501</span>
+            <h1 class="text-3xl font-bold section-title">花朵字符 (字符分类)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-filter mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们需要把一串字符里的“居民”分类：大写字母、小写字母、数字和空格。</p>
+                    <p class="mt-2 text-white font-bold">ASCII码与函数：</p>
+                    <ul class="list-disc ml-4 space-y-1">
+                        <li><code class="text-blue-300">A-Z</code>: isupper() / 'A'~'Z'</li>
+                        <li><code class="text-blue-300">a-z</code>: islower() / 'a'~'z'</li>
+                        <li><code class="text-blue-300">0-9</code>: isdigit() / '0'~'9'</li>
+                        <li><code class="text-blue-300">Space</code>: ' '</li>
+                    </ul>
+                    <p class="mt-4 text-xs text-gray-400">注意：输入包含空格，Python用 <code>input()</code>，C++需要用 <code>getline(cin, s)</code>。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-in">
+                    <div class="code-box">s = input()</div>
+                    <div class="explain-box">输入带空格字符串</div>
+                    <div class="code-box">string s; getline(cin, s);</div>
+                </div>
+                <div class="logic-row theme-logic">
+                    <div class="code-box">big=small=num=sp=0</div>
+                    <div class="explain-box">初始化计数器</div>
+                    <div class="code-box">int big=0, small=0, num=0, sp=0;</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">for c in s:<br>&nbsp;&nbsp;if 'A'<=c<='Z': big+=1<br>&nbsp;&nbsp;elif 'a'<=c<='z': small+=1</div>
+                    <div class="explain-box">遍历并判断<br><span class="text-[0.6rem] font-normal">字符范围比较</span></div>
+                    <div class="code-box">for(int i=0; i&lt;s.size(); i++) {<br>&nbsp;&nbsp;if(s[i]>='A' && s[i]<='Z') big++;<br>&nbsp;&nbsp;else if(s[i]>='a' && s[i]<='z') small++;</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;elif '0'<=c<='9': num+=1<br>&nbsp;&nbsp;elif c==' ': sp+=1</div>
+                    <div class="explain-box">数字与空格</div>
+                    <div class="code-box">&nbsp;&nbsp;else if(s[i]>='0' && s[i]<='9') num++;<br>&nbsp;&nbsp;else if(s[i]==' ') sp++; }</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">print(big, small, num, sp)</div>
+                    <div class="explain-box">输出结果</div>
+                    <div class="code-box">cout << big << " " << small << " " << num << " " << sp;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2502 南瓜宣传语 -->
+    <section id="p2502" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-orange-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J2502</span>
+            <h1 class="text-3xl font-bold section-title">南瓜宣传语 (单词统计)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-pumpkin mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>句子中有很多多余的空格，我们要数单词的个数。</p>
+                    <p class="mt-2 text-white font-bold">方法对比：</p>
+                    <ul class="list-disc ml-4 space-y-2">
+                        <li><strong class="text-blue-300">Python:</strong> 非常简单，<code>split()</code> 默认会把连续空格当做一个分隔符处理，直接求列表长度即可。</li>
+                        <li><strong class="text-purple-300">C++:</strong> 需要遍历。核心逻辑是：如果当前字符不是空格，且“前一个字符是空格”或者“是第一个字符”，那么它就是一个新单词的开始。</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-in">
+                    <div class="code-box">s = input()</div>
+                    <div class="explain-box">输入整行</div>
+                    <div class="code-box">string s; getline(cin, s);</div>
+                </div>
+                <div class="logic-row theme-logic">
+                    <div class="code-box"># split默认处理多空格<br>words = s.split()</div>
+                    <div class="explain-box">核心逻辑<br><span class="text-[0.6rem] font-normal">左：分割列表<br>右：状态遍历</span></div>
+                    <div class="code-box">int cnt = 0;<br>for(int i=0; i&lt;s.size(); i++) {<br>&nbsp;&nbsp;if(s[i]!=' ' && (i==0 || s[i-1]==' '))<br>&nbsp;&nbsp;&nbsp;&nbsp;cnt++;<br>}</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">print(len(words))</div>
+                    <div class="explain-box">输出数量</div>
+                    <div class="code-box">cout << cnt;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2504/2505 回文四叶草 -->
+    <section id="p2504" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-green-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J2504/05</span>
+            <h1 class="text-3xl font-bold section-title">回文四叶草 (回文判断)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-sync mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>回文串就是正着读和反着读一样的字符串 (如 "121", "abba")。</p>
+                    <p class="mt-2 text-white font-bold">双指针法：</p>
+                    <p>设定两个哨兵：<br>Left 指向头，Right 指向尾。<br>
+                    如果 Left 的字和 Right 的字一样，两人往中间走一步。<br>
+                    只要有一对不一样，就不是回文。</p>
+                    <div class="flex justify-center items-center gap-4 mt-4 text-2xl">
+                        <span class="text-blue-400">L&rarr;</span>
+                        <span class="bg-slate-800 px-2 rounded">abcba</span>
+                        <span class="text-blue-400">&larr;R</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-in">
+                    <div class="code-box"># 2504有n，2505没有<br>try: n=input()<br>except: pass<br>s = input()</div>
+                    <div class="explain-box">兼容输入<br><span class="text-[0.6rem] font-normal">Python读入所有</span></div>
+                    <div class="code-box">// 假设2505无长度输入<br>string s; cin >> s;</div>
+                </div>
+                <div class="logic-row theme-logic">
+                    <div class="code-box"># Python切片倒序<br>if s == s[::-1]:</div>
+                    <div class="explain-box">判断回文<br><span class="text-[0.6rem] font-normal">左：直接倒序比对<br>右：双指针遍历</span></div>
+                    <div class="code-box">bool flag = true;<br>int i=0, j=s.size()-1;<br>while(i < j) {<br>&nbsp;&nbsp;if(s[i] != s[j]) { flag=false; break; }<br>&nbsp;&nbsp;i++; j--;<br>}</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">&nbsp;&nbsp;print("YES")<br>else:<br>&nbsp;&nbsp;print("NO")</div>
+                    <div class="explain-box">输出结果</div>
+                    <div class="code-box">if(flag) cout << "YES";<br>else cout << "NO";</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2506 ISBN号码 -->
+    <section id="p2506" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-purple-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J2506</span>
+            <h1 class="text-3xl font-bold section-title">ISBN号码 (模拟验证)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-barcode mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>这是一道经典的模拟题。</p>
+                    <ol class="list-decimal ml-4 space-y-2 mt-2">
+                        <li><strong class="text-purple-300">提取数字：</strong> 忽略分隔符 '-'，取出前9位数字。</li>
+                        <li><strong class="text-purple-300">加权求和：</strong> 第1位*1 + 第2位*2 + ... + 第9位*9。</li>
+                        <li><strong class="text-purple-300">取模：</strong> 结果 % 11。</li>
+                        <li><strong class="text-purple-300">比对：</strong> 如果余数是10，对应识别码 'X'，否则对应数字。和输入的最后一位比较。</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-in">
+                    <div class="code-box">s = input()</div>
+                    <div class="explain-box">输入ISBN</div>
+                    <div class="code-box">string s; cin >> s;</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">nums = s.replace("-", "")<br>total = 0<br>for i in range(9):<br>&nbsp;&nbsp;total += int(nums[i]) * (i+1)</div>
+                    <div class="explain-box">加权求和<br><span class="text-[0.6rem] font-normal">C++需手动跳过'-'</span></div>
+                    <div class="code-box">int total=0, k=1;<br>for(int i=0; i&lt;s.size()-1; i++) {<br>&nbsp;&nbsp;if(s[i] == '-') continue;<br>&nbsp;&nbsp;total += (s[i]-'0') * k++;<br>}</div>
+                </div>
+                <div class="logic-row theme-logic">
+                    <div class="code-box">code = total % 11<br>last = 'X' if code==10 else str(code)</div>
+                    <div class="explain-box">计算识别码</div>
+                    <div class="code-box">char last;<br>if(total%11 == 10) last = 'X';<br>else last = (total%11) + '0';</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">if last == s[-1]: print("Right")<br>else: print(s[:-1] + last)</div>
+                    <div class="explain-box">比对与修正</div>
+                    <div class="code-box">if(last == s.back()) cout << "Right";<br>else { s.back()=last; cout << s; }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2507 传递情报 -->
+    <section id="p2507" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-red-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J2507</span>
+            <h1 class="text-3xl font-bold section-title">传递情报 (行程长度压缩)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-compress-arrows-alt mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>把连续相同的字符压缩。例如 "AAAB" -> (A,3)(B,1)。</p>
+                    <p class="mt-2 text-white font-bold">步骤：</p>
+                    <ul class="list-disc ml-4 space-y-1">
+                        <li>先统一转大写 (upper/toupper)。</li>
+                        <li>遍历字符串，记录当前字符 <code>cur</code> 和数量 <code>cnt</code>。</li>
+                        <li>如果下一个字符相同，<code>cnt++</code>。</li>
+                        <li>如果不相同，输出 <code>(cur, cnt)</code>，重置计数器。</li>
+                        <li><strong class="text-red-400">注意：</strong> 别忘了最后一段！</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-in">
+                    <div class="code-box">s = input().upper()</div>
+                    <div class="explain-box">输入转大写</div>
+                    <div class="code-box">string s; cin >> s;<br>for(auto &c:s) c=toupper(c);</div>
+                </div>
+                <div class="logic-row theme-logic">
+                    <div class="code-box">cnt = 1<br>for i in range(len(s)-1):<br>&nbsp;&nbsp;if s[i] == s[i+1]: cnt+=1</div>
+                    <div class="explain-box">计数逻辑<br><span class="text-[0.6rem] font-normal">相同累加，不同输出</span></div>
+                    <div class="code-box">int cnt = 1;<br>for(int i=0; i&lt;s.size()-1; i++) {<br>&nbsp;&nbsp;if(s[i]==s[i+1]) cnt++;</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">&nbsp;&nbsp;else:<br>&nbsp;&nbsp;&nbsp;&nbsp;print(f"({s[i]},{cnt})", end="")<br>&nbsp;&nbsp;&nbsp;&nbsp;cnt = 1</div>
+                    <div class="explain-box">分段输出</div>
+                    <div class="code-box">&nbsp;&nbsp;else {<br>&nbsp;&nbsp;&nbsp;&nbsp;cout<<"("<<s[i]<<","<<cnt<<")";<br>&nbsp;&nbsp;&nbsp;&nbsp;cnt=1; } }</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box"># 输出最后一段<br>print(f"({s[-1]},{cnt})", end="")</div>
+                    <div class="explain-box">收尾</div>
+                    <div class="code-box">cout<<"("<<s.back()<<","<<cnt<<")";</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2508 鹦鹉说话 -->
+    <section id="p2508" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-teal-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J2508</span>
+            <h1 class="text-3xl font-bold section-title">鹦鹉说话 (忽略大小写比较)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-not-equal mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>比较两个字符串，但是要忽略大小写。</p>
+                    <p class="mt-2">比如 "Hello" 和 "hello" 应该是一样的。</p>
+                    <p class="mt-2 text-white font-bold">策略：</p>
+                    <p>把两个字符串全部变成小写（或全部大写），然后再进行常规的字典序比较。</p>
+                    <div class="bg-slate-800 p-2 rounded mt-2 text-xs">
+                        Hello -> hello<br>
+                        Parrot -> parrot<br>
+                        hello < parrot ('h' < 'p')
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-in">
+                    <div class="code-box">s1 = input().lower()<br>s2 = input().lower()</div>
+                    <div class="explain-box">输入并转小写</div>
+                    <div class="code-box">string s1, s2;<br>getline(cin, s1); getline(cin, s2);<br>for(auto &c:s1) c=tolower(c);<br>for(auto &c:s2) c=tolower(c);</div>
+                </div>
+                <div class="logic-row theme-logic">
+                    <div class="code-box">if s1 == s2: print("=")</div>
+                    <div class="explain-box">相等判断</div>
+                    <div class="code-box">if(s1 == s2) cout << "=";</div>
+                </div>
+                <div class="logic-row theme-logic">
+                    <div class="code-box">elif s1 < s2: print("<")</div>
+                    <div class="explain-box">小于判断</div>
+                    <div class="code-box">else if(s1 < s2) cout << "<";</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">else: print(">")</div>
+                    <div class="explain-box">大于判断</div>
+                    <div class="code-box">else cout << ">";</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

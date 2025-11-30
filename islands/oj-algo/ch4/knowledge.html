@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 魔法课堂：第四章 暴力枚举</title>
+    <style>
+        /* 全局字体与配色 */
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Fredoka', 'Noto Sans SC', sans-serif;
+            background-color: #FFF8E1; /* 暖黄色背景，护眼且明快 */
+            background-image: radial-gradient(#FFD54F 15%, transparent 16%), radial-gradient(#FFD54F 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            margin: 0;
+            padding: 20px;
+            color: #424242;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            box-shadow: 0 10px 0px #FFA000;
+            padding: 40px;
+            border: 4px solid #FFECB3;
+        }
+
+        /* 标题设计 */
+        h1 {
+            color: #FF6F00;
+            text-align: center;
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px #FFF;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #8D6E63;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+
+        h2 {
+            color: #0277BD; /* 活泼的蓝色 */
+            background-color: #E1F5FE;
+            padding: 10px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 40px;
+            border: 3px solid #81D4FA;
+            box-shadow: 4px 4px 0 #81D4FA;
+        }
+
+        h3 {
+            color: #2E7D32;
+            border-bottom: 3px dashed #A5D6A7;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+
+        /* 重点文字 */
+        strong {
+            color: #D84315;
+            background-color: #FFCCBC;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+
+        /* 提示框 */
+        .tip-box {
+            background-color: #F1F8E9;
+            border: 2px solid #AED581;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+        }
+        .tip-box::before {
+            content: "💡";
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            font-size: 24px;
+            background: #F1F8E9;
+            padding: 0 5px;
+            border-radius: 5px;
+        }
+
+        /* 错误警告框 */
+        .danger-box {
+            background-color: #FFEBEE;
+            border: 2px solid #EF9A9A;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .danger-box h4 { margin: 0 0 10px 0; color: #C62828; }
+
+        /* 代码块样式 - 模拟编辑器 */
+        pre {
+            background-color: #282C34; /* 深色背景 */
+            color: #ABB2BF;
+            padding: 20px;
+            border-radius: 15px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 15px;
+            border: 4px solid #CFD8DC;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            margin-top: 10px;
+        }
+
+        /* 语法高亮类 */
+        .cpp-keyword { color: #C678DD; font-weight: bold; } /* int, return, if, for */
+        .cpp-type { color: #56B6C2; } /* void, bool, long long */
+        .cpp-string { color: #98C379; } /* "string" */
+        .cpp-comment { color: #7F848E; font-style: italic; } /* // comment */
+        .cpp-number { color: #D19A66; } /* 123 */
+        .cpp-lib { color: #E06C75; } /* <bits/stdc++.h> */
+        .cpp-func { color: #61AFEF; } /* main, cout, cin */
+
+        /* 题目卡片 */
+        .problem-card {
+            background: white;
+            border: 3px solid #FFAB91;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 6px 6px 0px #FFCCBC;
+            transition: transform 0.2s;
+        }
+        .problem-card:hover {
+            transform: translateY(-5px);
+        }
+        .problem-title {
+            color: #BF360C;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+        .problem-title::before {
+            content: "🏆";
+            margin-right: 10px;
+            font-size: 1.5em;
+        }
+
+        /* 插图容器 */
+        .img-container {
+            text-align: center;
+            margin: 25px 0;
+        }
+        svg {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(3px 3px 2px rgba(0,0,0,0.1));
+        }
+
+        /* 底部 */
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            background-color: #4DB6AC;
+            color: white;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 2em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- 头部 -->
+    <h1>第四章：暴力枚举</h1>
+    <p class="subtitle">🚀 各位未来的编程大师们，准备好变身“大力士”了吗？</p>
+
+    <!-- 1. 趣味开场 -->
+    <h2>1. 趣味开场：当密码锁遇上“笨小孩”</h2>
+    
+    <div class="img-container">
+        <!-- SVG插图：密码锁与思考的小人 -->
+        <svg width="400" height="200" viewBox="0 0 400 200">
+            <!-- 密码锁 -->
+            <rect x="130" y="50" width="140" height="100" rx="10" fill="#ECEFF1" stroke="#546E7A" stroke-width="3"/>
+            <path d="M150 50 V30 A50 50 0 0 1 250 30 V50" fill="none" stroke="#546E7A" stroke-width="8"/>
+            <!-- 滚轮 -->
+            <rect x="150" y="80" width="30" height="40" fill="#FFF" stroke="#CFD8DC" stroke-width="2"/>
+            <text x="165" y="105" text-anchor="middle" font-family="monospace" font-size="20">0</text>
+            <rect x="185" y="80" width="30" height="40" fill="#FFF" stroke="#CFD8DC" stroke-width="2"/>
+            <text x="200" y="105" text-anchor="middle" font-family="monospace" font-size="20">0</text>
+            <rect x="220" y="80" width="30" height="40" fill="#FFF" stroke="#CFD8DC" stroke-width="2"/>
+            <text x="235" y="105" text-anchor="middle" font-family="monospace" font-size="20">7</text>
+            
+            <!-- 思考的小人 -->
+            <circle cx="60" cy="100" r="25" fill="#FFCC80" stroke="#EF6C00" stroke-width="2"/>
+            <line x1="60" y1="125" x2="60" y2="170" stroke="#EF6C00" stroke-width="2"/>
+            <line x1="60" y1="140" x2="30" y2="160" stroke="#EF6C00" stroke-width="2"/> <!-- 手臂 -->
+            <line x1="60" y1="140" x2="90" y2="130" stroke="#EF6C00" stroke-width="2"/> <!-- 手臂指锁 -->
+            
+            <!-- 汗珠 -->
+            <path d="M85 90 Q90 80 95 90" fill="none" stroke="#29B6F6" stroke-width="2"/>
+            
+            <!-- 气泡文字 -->
+            <path d="M90 70 L110 50 L120 70 Z" fill="#FFF" stroke="#333"/>
+            <rect x="110" y="30" width="180" height="30" rx="5" fill="#FFF" stroke="#333"/>
+            <text x="120" y="50" font-size="12" fill="#333">试试 001? 002?...</text>
+        </svg>
+    </div>
+
+    <p>同学们，想象一下，你不小心忘记了你的三位数自行车密码锁密码。密码是 000 到 999 之间的某个数字。你会怎么办？</p>
+    <p>你可以去求助“开锁大神”，或者——你可以做一个“笨小孩”，从 <strong>000, 001, 002... 一直试到 999</strong>。虽然听起来很累，但只要你有足够的时间，绝对能把锁打开！这就是<strong>枚举（Enumeration）</strong>，俗称<strong>“暴力破解”</strong>。</p>
+    <p>这就像在沙滩上筛沙子找硬币，虽然简单粗暴，但绝对不会漏掉任何一种可能！</p>
+
+    <!-- 2. 核心知识点 -->
+    <h2>2. 核心知识点讲解</h2>
+
+    <h3>🐝 知识点一：循环枚举 —— 勤劳的小蜜蜂</h3>
+    <div class="tip-box">
+        <p><strong>简单定义：</strong> 就是用 <code>for</code> 循环，把所有可能的情况一个一个试一遍。就像小蜜蜂采蜜，一朵花都不放过。</p>
+        <p><strong>生活类比：</strong> 妈妈让你找一件衣服，你把衣柜里的每一件衣服都拿出来看一眼，直到找到为止。</p>
+    </div>
+
+    <pre>
+<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-type">int</span> <span class="cpp-func">main</span>() {
+    <span class="cpp-comment">// 示例：找出 1 到 100 之间所有能被 7 整除的数</span>
+    <span class="cpp-comment">// 从 1 数到 100，一个都不漏</span>
+    <span class="cpp-keyword">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-number">1</span>; i &lt;= <span class="cpp-number">100</span>; i++) {
+        <span class="cpp-keyword">if</span> (i % <span class="cpp-number">7</span> == <span class="cpp-number">0</span>) { <span class="cpp-comment">// 如果能被 7 整除</span>
+            cout &lt;&lt; i &lt;&lt; <span class="cpp-string">" "</span>; <span class="cpp-comment">// 就把它揪出来</span>
+        }
+    }
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+
+    <h3>🪆 知识点二：多重循环枚举 —— 嵌套的俄罗斯套娃</h3>
+    
+    <div class="img-container">
+        <!-- SVG插图：循环嵌套 -->
+        <svg width="300" height="150" viewBox="0 0 300 150">
+            <!-- 外层盒子 -->
+            <rect x="20" y="20" width="260" height="110" rx="10" fill="#E1F5FE" stroke="#0288D1" stroke-width="2"/>
+            <text x="35" y="45" font-size="14" fill="#0277BD" font-weight="bold">外层循环 (选上衣)</text>
+            
+            <!-- 内层盒子 -->
+            <rect x="60" y="60" width="180" height="60" rx="10" fill="#E8F5E9" stroke="#43A047" stroke-width="2"/>
+            <text x="75" y="85" font-size="14" fill="#2E7D32" font-weight="bold">内层循环 (选裤子)</text>
+            
+            <circle cx="200" cy="90" r="15" fill="#FFF" stroke="#333"/>
+            <text x="195" y="95" font-size="12">搭配</text>
+        </svg>
+    </div>
+
+    <div class="tip-box">
+        <p><strong>简单定义：</strong> 当你需要确定的东西不止一个时（比如又要选裤子又要选上衣），就需要用好几层 <code>for</code> 循环套在一起。</p>
+    </div>
+
+    <pre>
+<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-type">int</span> <span class="cpp-func">main</span>() {
+    <span class="cpp-comment">// 找出两个数 x, y，使得 x+y=10，且 x, y 都在 1 到 9 之间</span>
+    <span class="cpp-keyword">for</span> (<span class="cpp-type">int</span> x = <span class="cpp-number">1</span>; x &lt;= <span class="cpp-number">9</span>; x++) { <span class="cpp-comment">// 第一层：试 x 的所有可能</span>
+        <span class="cpp-keyword">for</span> (<span class="cpp-type">int</span> y = <span class="cpp-number">1</span>; y &lt;= <span class="cpp-number">9</span>; y++) { <span class="cpp-comment">// 第二层：试 y 的所有可能</span>
+            <span class="cpp-keyword">if</span> (x + y == <span class="cpp-number">10</span>) { <span class="cpp-comment">// 找到符合条件的一对！</span>
+                cout &lt;&lt; <span class="cpp-string">"x="</span> &lt;&lt; x &lt;&lt; <span class="cpp-string">", y="</span> &lt;&lt; y &lt;&lt; endl;
+            }
+        }
+    }
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+
+    <h3>📸 知识点三：全排列枚举 —— 排排坐，吃果果</h3>
+    <p><strong>简单定义：</strong> 给你几个数字或小朋友，让你把他们换着顺序排队，看看一共有多少种排法。</p>
+    <p><strong>极简示例：</strong> 使用 C++ 的神器 <code>next_permutation</code> 来生成 1, 2, 3 的所有排列。</p>
+
+    <pre>
+<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-type">int</span> <span class="cpp-func">main</span>() {
+    <span class="cpp-type">int</span> a[] = {<span class="cpp-number">1</span>, <span class="cpp-number">2</span>, <span class="cpp-number">3</span>}; <span class="cpp-comment">// 初始必须是从小到大的顺序</span>
+    
+    <span class="cpp-keyword">do</span> {
+        cout &lt;&lt; a[<span class="cpp-number">0</span>] &lt;&lt; a[<span class="cpp-number">1</span>] &lt;&lt; a[<span class="cpp-number">2</span>] &lt;&lt; endl; <span class="cpp-comment">// 输出当前这种排法</span>
+    } <span class="cpp-keyword">while</span> (next_permutation(a, a + <span class="cpp-number">3</span>)); <span class="cpp-comment">// 自动变出下一种排法，直到结束</span>
+    
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+
+    <!-- 3. CSP-J 题型总结 -->
+    <h2>3. CSP-J 常见题型总结</h2>
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between;">
+        <div class="danger-box" style="width: 30%; min-width: 200px;">
+            <h4>🔍 “找数字”类</h4>
+            <p><strong>考什么：</strong> 凑数、满足条件的组合。</p>
+            <p><strong>常犯错误：</strong> 循环范围写错（漏了边界），或者嵌套太多超时。</p>
+        </div>
+        <div class="danger-box" style="width: 30%; min-width: 200px;">
+            <h4>⬛ “图形统计”类</h4>
+            <p><strong>考什么：</strong> 数正方形、长方形。</p>
+            <p><strong>常犯错误：</strong> 长方形正方形搞混，重复计算。</p>
+        </div>
+        <div class="danger-box" style="width: 30%; min-width: 200px;">
+            <h4>🎲 “排列组合”类</h4>
+            <p><strong>考什么：</strong> 选数、排队。</p>
+            <p><strong>常犯错误：</strong> <code>next_permutation</code> 前忘了排序。</p>
+        </div>
+    </div>
+
+    <!-- 4. 课堂练习题 -->
+    <h2>4. 课堂练习题（挑战开始！）</h2>
+
+    <!-- 题目 1 -->
+    <div class="problem-card">
+        <div class="problem-title">练习题 1：美味的烤鸡（循环枚举）</div>
+        <p><strong>题目描述：</strong> 猪猪大厨要做一只烤鸡，放 10 种配料，每种 1-3 克。知道总重量 N，求多少种放法？</p>
+        <p><strong>思路提示：</strong> 10 种配料就是 10 层循环！就像俄罗斯套娃，把所有可能都试一遍。</p>
+        
+        <pre>
+<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-type">int</span> ans[<span class="cpp-number">10000</span>][<span class="cpp-number">10</span>]; <span class="cpp-comment">// 存答案</span>
+<span class="cpp-type">int</span> cnt = <span class="cpp-number">0</span>; <span class="cpp-comment">// 记录总数</span>
+
+<span class="cpp-type">int</span> <span class="cpp-func">main</span>() {
+    <span class="cpp-type">int</span> n;
+    cin &gt;&gt; n; 
+
+    <span class="cpp-comment">// 十层循环，电脑跑得飞快！</span>
+    <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> a=<span class="cpp-number">1</span>; a&lt;=<span class="cpp-number">3</span>; a++)
+     <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> b=<span class="cpp-number">1</span>; b&lt;=<span class="cpp-number">3</span>; b++)
+      <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> c=<span class="cpp-number">1</span>; c&lt;=<span class="cpp-number">3</span>; c++)
+       <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> d=<span class="cpp-number">1</span>; d&lt;=<span class="cpp-number">3</span>; d++)
+        <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> e=<span class="cpp-number">1</span>; e&lt;=<span class="cpp-number">3</span>; e++)
+         <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> f=<span class="cpp-number">1</span>; f&lt;=<span class="cpp-number">3</span>; f++)
+          <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> g=<span class="cpp-number">1</span>; g&lt;=<span class="cpp-number">3</span>; g++)
+           <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> h=<span class="cpp-number">1</span>; h&lt;=<span class="cpp-number">3</span>; h++)
+            <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> i=<span class="cpp-number">1</span>; i&lt;=<span class="cpp-number">3</span>; i++)
+             <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> j=<span class="cpp-number">1</span>; j&lt;=<span class="cpp-number">3</span>; j++) {
+                <span class="cpp-keyword">if</span>(a+b+c+d+e+f+g+h+i+j == n) {
+                    <span class="cpp-comment">// 存下这种方案</span>
+                    ans[cnt][<span class="cpp-number">0</span>]=a; ans[cnt][<span class="cpp-number">1</span>]=b; ans[cnt][<span class="cpp-number">2</span>]=c; ans[cnt][<span class="cpp-number">3</span>]=d;
+                    ans[cnt][<span class="cpp-number">4</span>]=e; ans[cnt][<span class="cpp-number">5</span>]=f; ans[cnt][<span class="cpp-number">6</span>]=g; ans[cnt][<span class="cpp-number">7</span>]=h;
+                    ans[cnt][<span class="cpp-number">8</span>]=i; ans[cnt][<span class="cpp-number">9</span>]=j;
+                    cnt++; 
+                }
+             }
+
+    cout &lt;&lt; cnt &lt;&lt; endl;
+    <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> i=<span class="cpp-number">0</span>; i&lt;cnt; i++) {
+        <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> j=<span class="cpp-number">0</span>; j&lt;<span class="cpp-number">10</span>; j++) {
+            cout &lt;&lt; ans[i][j] &lt;&lt; <span class="cpp-string">" "</span>;
+        }
+        cout &lt;&lt; endl;
+    }
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+    </div>
+
+    <!-- 题目 2 -->
+    <div class="problem-card">
+        <div class="problem-title">练习题 2：统计正方形与长方形</div>
+        <p><strong>题目描述：</strong> 在 N x M 的棋盘上，有多少个正方形？多少个长方形（不含正方形）？</p>
+        <p><strong>思路提示：</strong> 枚举边长 a (宽) 和 b (高)。大小为 a*b 的矩形在 N*M 里有 <code>(N-a+1)*(M-b+1)</code> 个。</p>
+        
+        <pre>
+<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-type">int</span> <span class="cpp-func">main</span>() {
+    <span class="cpp-type">long long</span> n, m; <span class="cpp-comment">// 数量很大，用 long long 防爆！</span>
+    cin &gt;&gt; n &gt;&gt; m;
+    
+    <span class="cpp-type">long long</span> squ = <span class="cpp-number">0</span>; <span class="cpp-comment">// 正方形</span>
+    <span class="cpp-type">long long</span> rec = <span class="cpp-number">0</span>; <span class="cpp-comment">// 长方形</span>
+    
+    <span class="cpp-comment">// 枚举边长</span>
+    <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> a=<span class="cpp-number">1</span>; a&lt;=n; a++) {
+        <span class="cpp-keyword">for</span>(<span class="cpp-type">int</span> b=<span class="cpp-number">1</span>; b&lt;=m; b++) {
+            <span class="cpp-comment">// 计算有多少个 a*b 的矩形</span>
+            <span class="cpp-type">long long</span> count = (n - a + <span class="cpp-number">1</span>) * (m - b + <span class="cpp-number">1</span>);
+            
+            <span class="cpp-keyword">if</span>(a == b) {
+                squ += count; <span class="cpp-comment">// 边长相等，是正方形</span>
+            } <span class="cpp-keyword">else</span> {
+                rec += count; <span class="cpp-comment">// 边长不等，是长方形</span>
+            }
+        }
+    }
+    
+    cout &lt;&lt; squ &lt;&lt; <span class="cpp-string">" "</span> &lt;&lt; rec &lt;&lt; endl;
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+    </div>
+
+    <!-- 题目 3 -->
+    <div class="problem-card">
+        <div class="problem-title">练习题 3：三连击升级版（全排列）</div>
+        <p><strong>题目描述：</strong> 1-9 分成三组组成三个三位数，满足比例 A:B:C。</p>
+        <p><strong>思路提示：</strong> 别硬凑数字！直接用 <code>next_permutation</code> 把 1-9 打乱，前3个组成数1，中间3个数2，最后3个数3，然后检查比例。</p>
+        
+        <pre>
+<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-type">int</span> a[<span class="cpp-number">10</span>] = {<span class="cpp-number">0</span>, <span class="cpp-number">1</span>, <span class="cpp-number">2</span>, <span class="cpp-number">3</span>, <span class="cpp-number">4</span>, <span class="cpp-number">5</span>, <span class="cpp-number">6</span>, <span class="cpp-number">7</span>, <span class="cpp-number">8</span>, <span class="cpp-number">9</span>}; <span class="cpp-comment">// 初始 1-9</span>
+
+<span class="cpp-type">int</span> <span class="cpp-func">main</span>() {
+    <span class="cpp-type">int</span> A, B, C;
+    cin &gt;&gt; A &gt;&gt; B &gt;&gt; C;
+    <span class="cpp-type">bool</span> found = <span class="cpp-keyword">false</span>;
+    
+    <span class="cpp-keyword">do</span> {
+        <span class="cpp-comment">// 组装三个三位数</span>
+        <span class="cpp-type">int</span> x = a[<span class="cpp-number">1</span>]*<span class="cpp-number">100</span> + a[<span class="cpp-number">2</span>]*<span class="cpp-number">10</span> + a[<span class="cpp-number">3</span>];
+        <span class="cpp-type">int</span> y = a[<span class="cpp-number">4</span>]*<span class="cpp-number">100</span> + a[<span class="cpp-number">5</span>]*<span class="cpp-number">10</span> + a[<span class="cpp-number">6</span>];
+        <span class="cpp-type">int</span> z = a[<span class="cpp-number">7</span>]*<span class="cpp-number">100</span> + a[<span class="cpp-number">8</span>]*<span class="cpp-number">10</span> + a[<span class="cpp-number">9</span>];
+        
+        <span class="cpp-comment">// 交叉相乘检查比例：x*B == y*A 且 y*C == z*B</span>
+        <span class="cpp-keyword">if</span> (x * B == y * A && y * C == z * B) {
+            cout &lt;&lt; x &lt;&lt; <span class="cpp-string">" "</span> &lt;&lt; y &lt;&lt; <span class="cpp-string">" "</span> &lt;&lt; z &lt;&lt; endl;
+            found = <span class="cpp-keyword">true</span>;
+        }
+        
+    } <span class="cpp-keyword">while</span> (next_permutation(a + <span class="cpp-number">1</span>, a + <span class="cpp-number">10</span>)); <span class="cpp-comment">// 下一个排列</span>
+    
+    <span class="cpp-keyword">if</span> (!found) cout &lt;&lt; <span class="cpp-string">"No!!!"</span> &lt;&lt; endl;
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+    </div>
+
+    <!-- 题目 4 -->
+    <div class="problem-card">
+        <div class="problem-title">练习题 4：选数（二进制枚举）</div>
+        <p><strong>题目描述：</strong> 从 n 个数中任选 k 个，和为质数的选法有多少？</p>
+        <p><strong>思路提示：</strong> <strong>神奇的二进制法！</strong> 用一个 n 位的二进制数代表选法（1选0不选）。遍历 0 到 2^n，检查里面是不是刚好有 k 个 1。</p>
+        
+        <pre>
+<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-type">int</span> nums[<span class="cpp-number">25</span>];
+
+<span class="cpp-comment">// 判断质数</span>
+<span class="cpp-type">bool</span> <span class="cpp-func">isPrime</span>(<span class="cpp-type">int</span> x) {
+    <span class="cpp-keyword">if</span> (x &lt; <span class="cpp-number">2</span>) <span class="cpp-keyword">return</span> <span class="cpp-keyword">false</span>;
+    <span class="cpp-keyword">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-number">2</span>; i * i &lt;= x; i++) {
+        <span class="cpp-keyword">if</span> (x % i == <span class="cpp-number">0</span>) <span class="cpp-keyword">return</span> <span class="cpp-keyword">false</span>;
+    }
+    <span class="cpp-keyword">return</span> <span class="cpp-keyword">true</span>;
+}
+
+<span class="cpp-type">int</span> <span class="cpp-func">main</span>() {
+    <span class="cpp-type">int</span> n, k;
+    cin &gt;&gt; n &gt;&gt; k;
+    <span class="cpp-keyword">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-number">0</span>; i &lt; n; i++) cin &gt;&gt; nums[i];
+
+    <span class="cpp-type">int</span> ans = <span class="cpp-number">0</span>;
+    <span class="cpp-comment">// (1 &lt;&lt; n) 就是 2 的 n 次方</span>
+    <span class="cpp-keyword">for</span> (<span class="cpp-type">int</span> s = <span class="cpp-number">0</span>; s &lt; (<span class="cpp-number">1</span> &lt;&lt; n); s++) {
+        <span class="cpp-comment">// __builtin_popcount(s) 快速数出二进制有几个 1</span>
+        <span class="cpp-keyword">if</span> (__builtin_popcount(s) == k) {
+            <span class="cpp-type">int</span> sum = <span class="cpp-number">0</span>;
+            <span class="cpp-comment">// 检查每一位</span>
+            <span class="cpp-keyword">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-number">0</span>; i &lt; n; i++) {
+                <span class="cpp-keyword">if</span> (s & (<span class="cpp-number">1</span> &lt;&lt; i)) { <span class="cpp-comment">// 如果第 i 位是 1</span>
+                    sum += nums[i];
+                }
+            }
+            <span class="cpp-keyword">if</span> (isPrime(sum)) ans++;
+        }
+    }
+
+    cout &lt;&lt; ans &lt;&lt; endl;
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+    </div>
+
+    <!-- 5. 课堂小结 -->
+    <h2>5. 课堂小结与提问</h2>
+    <div style="background-color: #E0F7FA; padding: 20px; border-radius: 10px; border-left: 5px solid #00BCD4;">
+        <p>同学们，今天我们变身成了“大力士”，用最简单粗暴的方法解决了很多难题！</p>
+        <ul>
+            <li><strong>循环枚举：</strong> 万能钥匙，for 循环试遍所有可能。</li>
+            <li><strong>全排列：</strong> <code>next_permutation</code> 是排队神技。</li>
+        </ul>
+        <p><strong>⚠️ 最容易掉的坑：</strong></p>
+        <ul>
+            <li><strong>超时：</strong> 暴力虽然好，但别超过 10<sup>8</sup> 次运算。</li>
+            <li><strong>边界：</strong> 从 0 开始还是 1？<code>&lt;</code> 还是 <code>&lt;=</code>？看清楚！</li>
+        </ul>
+    </div>
+
+    <p style="margin-top: 20px;"><strong>🧐 课后思考题：</strong></p>
+    <ol>
+        <li>如果练习题 1 里的配料总重量 N 很大（比如 10000），10 层循环还会跑得动吗？是不是需要“剪枝”？</li>
+        <li>在做“选数”那道题时，除了二进制，你能试着用<strong>递归 (DFS)</strong> 写出来吗？</li>
+    </ol>
+
+    <div class="footer">
+        今天的课就到这里，快去 OJ 上把这几道题 AC 掉吧！做个快乐的“暴力枚举”大师！加油！🌟
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 魔法课堂：第七章 二分</title>
+    <style>
+        /* 全局字体与配色 */
+        @import url('https://fonts.googleapis.com/css2?family=Zcool+KuaiLe&family=Nunito:wght@400;700&display=swap');
+
+        body {
+            font-family: "Microsoft YaHei", "Nunito", sans-serif;
+            background-color: #E3F2FD; /* 清新的浅蓝色背景 */
+            background-image: radial-gradient(#BBDEFB 15%, transparent 16%), radial-gradient(#BBDEFB 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            margin: 0;
+            padding: 20px;
+            color: #424242;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            box-shadow: 0 10px 25px rgba(33, 150, 243, 0.3);
+            padding: 40px;
+            border: 4px solid #64B5F6;
+        }
+
+        /* 标题设计 */
+        h1 {
+            color: #1565C0;
+            text-align: center;
+            font-family: 'Zcool KuaiLe', cursive;
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px #E1F5FE;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #0288D1;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        h2 {
+            color: #FF6F00; /* 活泼的橙色 */
+            background-color: #FFF3E0;
+            padding: 10px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 40px;
+            border-left: 8px solid #FF9800;
+            box-shadow: 3px 3px 0 #FFE0B2;
+        }
+
+        h3 {
+            color: #00695C;
+            border-bottom: 3px dashed #80CBC4;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+
+        /* 重点强调 */
+        strong {
+            color: #D84315;
+            background-color: #FFCCBC;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* 提示框 */
+        .tip-box {
+            background-color: #F1F8E9;
+            border: 2px solid #AED581;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+        }
+        .tip-box::before {
+            content: "💡";
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            font-size: 24px;
+            background: white;
+            padding: 0 5px;
+            border-radius: 50%;
+        }
+
+        /* 坑点警告框 */
+        .danger-box {
+            background-color: #FFEBEE;
+            border: 2px solid #EF9A9A;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .danger-box h4 {
+            color: #C62828;
+            margin-top: 0;
+        }
+
+        /* 代码块样式 */
+        pre {
+            background-color: #282C34; /* 深色背景护眼 */
+            color: #ABB2BF;
+            padding: 20px;
+            border-radius: 15px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 15px;
+            border: 4px solid #90A4AE;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* 语法高亮 */
+        .cpp-keyword { color: #C678DD; font-weight: bold; } /* int, return, if, else, while */
+        .cpp-type { color: #56B6C2; } /* long long, bool */
+        .cpp-string { color: #98C379; } /* "string" */
+        .cpp-comment { color: #7F848E; font-style: italic; } /* // comment */
+        .cpp-number { color: #D19A66; } /* 123 */
+        .cpp-lib { color: #E06C75; } /* <iostream>, <algorithm> */
+        .cpp-func { color: #61AFEF; } /* main, solve */
+
+        /* 题目卡片 */
+        .problem-card {
+            background: white;
+            border: 2px solid #4FC3F7;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 5px 5px 0px #B3E5FC;
+            transition: transform 0.2s;
+        }
+        .problem-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 插图容器 */
+        .img-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        svg {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(4px 4px 5px rgba(0,0,0,0.1));
+        }
+
+        /* 底部 */
+        .footer-note {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            background-color: #03A9F4;
+            color: white;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- 头部 -->
+    <div style="text-align: center;">
+        <h1>第七章：二分</h1>
+        <p class="subtitle">👋 各位未来的编程小达人，大家好！我是你们的 AI 教练。</p>
+    </div>
+
+    <p>今天我们要学习一个非常“聪明”的魔法，它能帮你在茫茫大海中迅速找到你想要的那根针！这个魔法的名字叫——<strong>二分</strong>！</p>
+
+    <!-- 1. 趣味开场 -->
+    <h2>1. 趣味开场：猜数字的秘密</h2>
+    
+    <div class="img-container">
+        <!-- SVG插图：猜数字游戏 -->
+        <svg width="400" height="150" viewBox="0 0 400 150">
+            <!-- 思考泡泡 -->
+            <path d="M50 100 Q30 80 50 60 Q70 40 100 50 Q130 40 150 60 Q170 80 150 100 Q130 120 100 110 Q70 120 50 100 Z" fill="#E1F5FE" stroke="#0288D1" stroke-width="2"/>
+            <text x="100" y="85" text-anchor="middle" font-size="20" fill="#0277BD" font-weight="bold">1-1000?</text>
+            
+            <!-- 尝试路径 -->
+            <g transform="translate(180, 50)">
+                <text x="0" y="0" font-size="14" fill="#666">笨办法：1? 2? 3? ... 👎</text>
+                <text x="0" y="30" font-size="14" fill="#2E7D32" font-weight="bold">聪明办法：500? 👍</text>
+            </g>
+
+            <!-- 二分图示 -->
+            <rect x="180" y="90" width="200" height="20" fill="#E0E0E0" rx="5"/>
+            <rect x="180" y="90" width="100" height="20" fill="#FFCCBC" rx="5"/> <!-- 排除的一半 -->
+            <text x="230" y="105" text-anchor="middle" font-size="12" fill="#D84315">排除!</text>
+            <line x1="280" y1="85" x2="280" y2="115" stroke="#2E7D32" stroke-width="3"/>
+            <text x="280" y="80" text-anchor="middle" font-size="12" fill="#2E7D32">mid</text>
+        </svg>
+    </div>
+
+    <p>同学们，想象一下我们在玩一个“猜数字”的游戏。我在心里想了一个 1 到 1000 之间的数字，让你来猜。每次你猜完，我会告诉你是“大了”还是“小了”。</p>
+    <p>如果你从 1 开始猜：“是 1 吗？” “小了。” “是 2 吗？” “小了。” …… 哇，那你可能要猜到天黑才能猜中！这就像在一本厚厚的字典里一页一页翻去找一个单词，太慢啦！</p>
+    <p>但是，聪明的你肯定会先猜 <strong>500</strong>！如果我说“大了”，你就知道那个数字肯定在 1 到 499 之间，一下排除了 500 个错误答案！这就是我们今天要学的二分思想——<strong>每次只看一半，把不可能的那一半扔掉！</strong></p>
+
+    <!-- 2. 核心知识点 -->
+    <h2>2. 核心知识点讲解</h2>
+
+    <h3>🔍 知识点一：二分查找 (Binary Search)</h3>
+    <div class="tip-box">
+        <p><strong>简单定义：</strong> 当一堆数据已经排好队（有序）了，我们想找某个数，不用从头一个个看。我们直接看中间那个数，比它大就去右边找，比它小就去左边找。</p>
+        <p><strong>生活类比：</strong> 翻字典查单词。单词是按字母排好序的。你想找 "pan"，翻到中间是 "pancake"，你知道 "pan" 在 "pancake" 前面，所以你就往前翻。</p>
+    </div>
+
+    <pre>
+<span class="cpp-lib">#include &lt;iostream&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-comment">// 在数组 a 中找数字 x，找到了返回位置，没找到返回 -1</span>
+<span class="cpp-keyword">int</span> <span class="cpp-func">binarySearch</span>(<span class="cpp-keyword">int</span> a[], <span class="cpp-keyword">int</span> n, <span class="cpp-keyword">int</span> x) {
+    <span class="cpp-keyword">int</span> l = <span class="cpp-number">1</span>, r = n; <span class="cpp-comment">// 左边界和右边界</span>
+    <span class="cpp-keyword">while</span> (l &lt;= r) {  <span class="cpp-comment">// 只要还有范围就继续找</span>
+        <span class="cpp-keyword">int</span> mid = (l + r) / <span class="cpp-number">2</span>; <span class="cpp-comment">// 找中间位置</span>
+        <span class="cpp-keyword">if</span> (a[mid] == x) <span class="cpp-keyword">return</span> mid; <span class="cpp-comment">// 运气真好，直接找到了！</span>
+        <span class="cpp-keyword">else</span> <span class="cpp-keyword">if</span> (a[mid] &gt; x) r = mid - <span class="cpp-number">1</span>; <span class="cpp-comment">// 中间那个太大了，去左边找</span>
+        <span class="cpp-keyword">else</span> l = mid + <span class="cpp-number">1</span>; <span class="cpp-comment">// 中间那个太小了，去右边找</span>
+    }
+    <span class="cpp-keyword">return</span> -<span class="cpp-number">1</span>; <span class="cpp-comment">// 找遍了也没找到</span>
+}</pre>
+
+    <h3>🪄 知识点二：STL 的魔法棒 —— lower_bound 和 upper_bound</h3>
+    
+    <div class="img-container">
+        <!-- SVG插图：排队与起立 -->
+        <svg width="350" height="120" viewBox="0 0 350 120">
+            <!-- 学生 -->
+            <g transform="translate(20, 60)">
+                <circle cx="15" cy="15" r="10" fill="#CFD8DC"/>
+                <text x="15" y="40" text-anchor="middle" font-size="10">50分</text>
+            </g>
+            <g transform="translate(60, 60)">
+                <circle cx="15" cy="15" r="10" fill="#CFD8DC"/>
+                <text x="15" y="40" text-anchor="middle" font-size="10">55分</text>
+            </g>
+            
+            <!-- lower_bound 目标 -->
+            <g transform="translate(100, 60)">
+                <circle cx="15" cy="15" r="12" fill="#FFF9C4" stroke="#FBC02D" stroke-width="2"/>
+                <text x="15" y="40" text-anchor="middle" font-size="10" font-weight="bold">60分</text>
+                <text x="15" y="-10" text-anchor="middle" font-size="10" fill="#FBC02D">>=60 起立!</text>
+                <path d="M15,-5 L15,0" stroke="#FBC02D" marker-end="url(#arrow_y)"/>
+            </g>
+            
+            <g transform="translate(140, 60)">
+                <circle cx="15" cy="15" r="10" fill="#CFD8DC"/>
+                <text x="15" y="40" text-anchor="middle" font-size="10">60分</text>
+            </g>
+            
+            <!-- upper_bound 目标 -->
+            <g transform="translate(180, 60)">
+                <circle cx="15" cy="15" r="12" fill="#E1BEE7" stroke="#8E24AA" stroke-width="2"/>
+                <text x="15" y="40" text-anchor="middle" font-size="10" font-weight="bold">65分</text>
+                <text x="15" y="-25" text-anchor="middle" font-size="10" fill="#8E24AA">>60 起立!</text>
+                 <path d="M15,-20 L15,0" stroke="#8E24AA" marker-end="url(#arrow_p)"/>
+            </g>
+
+            <defs>
+                 <marker id="arrow_y" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#FBC02D" /></marker>
+                 <marker id="arrow_p" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#8E24AA" /></marker>
+            </defs>
+        </svg>
+    </div>
+
+    <div class="tip-box">
+        <p><strong>lower_bound：</strong> 找第一个<strong>大于等于</strong>某数的数字的位置。（>=）</p>
+        <p><strong>upper_bound：</strong> 找第一个<strong>大于</strong>某数的数字的位置。（>）</p>
+    </div>
+
+    <pre>
+<span class="cpp-lib">#include &lt;algorithm&gt;</span> <span class="cpp-comment">// 必须加这个头文件</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-keyword">int</span> <span class="cpp-func">main</span>() {
+    <span class="cpp-keyword">int</span> a[<span class="cpp-number">6</span>] = {<span class="cpp-number">1</span>, <span class="cpp-number">2</span>, <span class="cpp-number">4</span>, <span class="cpp-number">4</span>, <span class="cpp-number">6</span>};
+    <span class="cpp-comment">// lower_bound 返回的是一个地址，减去数组首地址 a 就是下标</span>
+    <span class="cpp-keyword">int</span> pos1 = lower_bound(a, a + <span class="cpp-number">5</span>, <span class="cpp-number">4</span>) - a; 
+    <span class="cpp-comment">// pos1 是 2，因为第一个 >= 4 的数是 a[2]</span>
+    
+    <span class="cpp-keyword">int</span> pos2 = upper_bound(a, a + <span class="cpp-number">5</span>, <span class="cpp-number">4</span>) - a;
+    <span class="cpp-comment">// pos2 是 4，因为第一个 > 4 的数是 a[4] (也就是6)</span>
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+
+    <h3>🎯 知识点三：二分答案 —— 猜一个最好的结果</h3>
+    <p><strong>简单定义：</strong> 有时候题目不是让你找数，而是让你求一个“最大值”或者“最小值”。如果我们发现，答案要是猜小了就一定行，猜大了就一定不行，那我们就可以用二分的方法来“猜”这个答案。</p>
+    <p><strong>生活类比：</strong> <strong>砍树！</strong>你想得到至少 20 米长的木材。锯子设得太高，木头就少；锯子设得低，木头就多。我们可以二分这个锯子的高度，找到一个最高的、刚好能凑够木材的高度。</p>
+
+    <pre>
+<span class="cpp-comment">// 检查猜的答案 x 行不行</span>
+<span class="cpp-keyword">bool</span> <span class="cpp-func">check</span>(<span class="cpp-keyword">int</span> x) {
+    <span class="cpp-comment">// 这里写验证逻辑，比如算算木材够不够</span>
+    <span class="cpp-keyword">return</span> <span class="cpp-keyword">true</span>; 
+}
+
+<span class="cpp-keyword">int</span> <span class="cpp-func">solve</span>(<span class="cpp-keyword">int</span> l, <span class="cpp-keyword">int</span> r) {
+    <span class="cpp-keyword">int</span> ans = -<span class="cpp-number">1</span>;
+    <span class="cpp-keyword">while</span> (l &lt;= r) {
+        <span class="cpp-keyword">int</span> mid = (l + r) / <span class="cpp-number">2</span>;
+        <span class="cpp-keyword">if</span> (check(mid)) { <span class="cpp-comment">// 如果猜 mid 行</span>
+            ans = mid;    <span class="cpp-comment">// 记下来</span>
+            l = mid + <span class="cpp-number">1</span>;  <span class="cpp-comment">// 试试更大的行不行（贪心一点）</span>
+        } <span class="cpp-keyword">else</span> {
+            r = mid - <span class="cpp-number">1</span>;  <span class="cpp-comment">// 不行，说明猜大了，往小了猜</span>
+        }
+    }
+    <span class="cpp-keyword">return</span> ans;
+}</pre>
+
+    <!-- 3. CSP-J 常见题型 -->
+    <h2>3. CSP-J 常见题型总结</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 15px;">
+        <div style="flex: 1; background-color: #E0F2F1; padding: 15px; border-radius: 10px; min-width: 250px;">
+            <h4>📍 “在哪里”查找类</h4>
+            <p><strong>考什么：</strong> 找某个数的位置。</p>
+            <div class="danger-box">
+                <h4>⚠️ 常见错误：</h4>
+                <p>1. <strong>数组没排序！</strong><br>2. 边界搞错 (l<=r vs l<r)。</p>
+            </div>
+        </div>
+        <div style="flex: 1; background-color: #FFF3E0; padding: 15px; border-radius: 10px; min-width: 250px;">
+            <h4>📏 “最值”类（二分答案）</h4>
+            <p><strong>考什么：</strong> “最短跳跃距离的最大值”、“分成的段和的最大值最小”。</p>
+            <div class="danger-box">
+                <h4>⚠️ 常见错误：</h4>
+                <p>check 函数写错。这是最难的部分。</p>
+            </div>
+        </div>
+        <div style="flex: 1; background-color: #F3E5F5; padding: 15px; border-radius: 10px; min-width: 250px;">
+            <h4>➗ “数学方程求解”类</h4>
+            <p><strong>考什么：</strong> 解复杂方程求 x。</p>
+            <div class="danger-box">
+                <h4>⚠️ 常见错误：</h4>
+                <p>实数二分不用 l<=r，用 <code>r-l > 1e-5</code>。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 课堂练习题 -->
+    <h2>4. 课堂练习题（含答案与讲解）</h2>
+
+    <!-- 练习题 1 -->
+    <div class="problem-card">
+        <h3>🔢 练习题 1：数字去哪了？（基础二分查找）</h3>
+        <p><strong>题目描述：</strong> 给一串排好队的数字。请快速告诉老师它是第几个数字（输出下标，从1开始）。如果找不到输出 -1。</p>
+        <p><strong>思路提示：</strong> 这就是最标准的二分查找！直接套用模板。题目说从 1 开始编号。</p>
+        <pre>
+<span class="cpp-lib">#include &lt;iostream&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-keyword">int</span> a[<span class="cpp-number">1000005</span>];
+
+<span class="cpp-keyword">int</span> <span class="cpp-func">main</span>() {
+    <span class="cpp-keyword">int</span> n, m, x;
+    cin &gt;&gt; n &gt;&gt; m;
+    <span class="cpp-comment">// 读入有序数组</span>
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">1</span>; i &lt;= n; i++) cin &gt;&gt; a[i];
+
+    <span class="cpp-comment">// 处理 m 次询问</span>
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">0</span>; i &lt; m; i++) {
+        cin &gt;&gt; x;
+        <span class="cpp-comment">// 手写二分查找</span>
+        <span class="cpp-keyword">int</span> l = <span class="cpp-number">1</span>, r = n, ans = -<span class="cpp-number">1</span>;
+        <span class="cpp-keyword">while</span> (l &lt;= r) {
+            <span class="cpp-keyword">int</span> mid = (l + r) / <span class="cpp-number">2</span>;
+            <span class="cpp-keyword">if</span> (a[mid] == x) {
+                ans = mid; <span class="cpp-comment">// 找到了，先记下来</span>
+                <span class="cpp-keyword">break</span>;     
+            } <span class="cpp-keyword">else</span> <span class="cpp-keyword">if</span> (a[mid] &gt; x) {
+                r = mid - <span class="cpp-number">1</span>; <span class="cpp-comment">// 去左边</span>
+            } <span class="cpp-keyword">else</span> {
+                l = mid + <span class="cpp-number">1</span>; <span class="cpp-comment">// 去右边</span>
+            }
+        }
+        cout &lt;&lt; ans &lt;&lt; <span class="cpp-string">" "</span>;
+    }
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+    </div>
+
+    <!-- 练习题 2 -->
+    <div class="problem-card">
+        <h3>🪚 练习题 2：光头强的锯子（基础二分答案）</h3>
+        <p><strong>题目描述：</strong> 有 N 棵树。要把锯子定在一个高度 H，所有高于 H 的树顶都会被锯下来。至少需要 M 米木材。为了保护环境，锯子最高能定多少？</p>
+        <p><strong>思路提示：</strong> 
+            如果锯子定得太高，木头不够 -> 往低了猜。<br>
+            如果锯子定得太低，木头太多 -> 往高了猜。<br>
+            <code>check</code> 函数：算一下当前高度能砍多少木头。
+        </p>
+        <pre>
+<span class="cpp-lib">#include &lt;iostream&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-type">long long</span> n, m; <span class="cpp-comment">// 注意：木材总和可能会很大，要用 long long</span>
+<span class="cpp-keyword">int</span> h[<span class="cpp-number">1000005</span>];
+
+<span class="cpp-comment">// 检查锯子高度设为 H 时，砍下来的木头够不够 m</span>
+<span class="cpp-keyword">bool</span> <span class="cpp-func">check</span>(<span class="cpp-keyword">int</span> H) {
+    <span class="cpp-type">long long</span> sum = <span class="cpp-number">0</span>;
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">1</span>; i &lt;= n; i++) {
+        <span class="cpp-keyword">if</span> (h[i] &gt; H) { <span class="cpp-comment">// 只有比锯子高的树才能砍到</span>
+            sum += (h[i] - H);
+        }
+    }
+    <span class="cpp-keyword">return</span> sum &gt;= m; <span class="cpp-comment">// 如果够 m，就返回真</span>
+}
+
+<span class="cpp-keyword">int</span> <span class="cpp-func">main</span>() {
+    cin &gt;&gt; n &gt;&gt; m;
+    <span class="cpp-keyword">int</span> max_h = <span class="cpp-number">0</span>;
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">1</span>; i &lt;= n; i++) {
+        cin &gt;&gt; h[i];
+        <span class="cpp-keyword">if</span> (h[i] &gt; max_h) max_h = h[i]; 
+    }
+
+    <span class="cpp-keyword">int</span> l = <span class="cpp-number">0</span>, r = max_h, ans = <span class="cpp-number">0</span>;
+    <span class="cpp-keyword">while</span> (l &lt;= r) {
+        <span class="cpp-keyword">int</span> mid = (l + r) / <span class="cpp-number">2</span>;
+        <span class="cpp-keyword">if</span> (check(mid)) { <span class="cpp-comment">// 如果高度 mid 够砍</span>
+            ans = mid;    <span class="cpp-comment">// 记下来</span>
+            l = mid + <span class="cpp-number">1</span>;  <span class="cpp-comment">// 试试能不能再高一点？</span>
+        } <span class="cpp-keyword">else</span> {
+            r = mid - <span class="cpp-number">1</span>;  <span class="cpp-comment">// 不够砍，必须降低高度</span>
+        }
+    }
+    cout &lt;&lt; ans &lt;&lt; endl;
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+    </div>
+
+    <!-- 练习题 3 -->
+    <div class="problem-card">
+        <h3>🐄 练习题 3：进击的奶牛（最大值最小化）</h3>
+        <p><strong>题目描述：</strong> 农夫约翰有 N 个隔间，放 C 头牛。希望任意两头牛之间的距离尽可能大。求最大的“最小距离”。</p>
+        <p><strong>思路提示：</strong> 我们猜一个“最小距离” D。
+            check函数：第一头牛放第一个隔间，下一头牛放在距离它至少 D 的最近的隔间……看最后能放几头。</p>
+        <pre>
+<span class="cpp-lib">#include &lt;iostream&gt;</span>
+<span class="cpp-lib">#include &lt;algorithm&gt;</span> <span class="cpp-comment">// 用 sort</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-keyword">int</span> n, c;
+<span class="cpp-keyword">int</span> x[<span class="cpp-number">100005</span>];
+
+<span class="cpp-comment">// 检查：如果要求最小距离是 d，能不能放下 c 头牛</span>
+<span class="cpp-keyword">bool</span> <span class="cpp-func">check</span>(<span class="cpp-keyword">int</span> d) {
+    <span class="cpp-keyword">int</span> cows = <span class="cpp-number">1</span>; <span class="cpp-comment">// 第一头牛肯定放在第一个隔间</span>
+    <span class="cpp-keyword">int</span> last_pos = x[<span class="cpp-number">1</span>]; <span class="cpp-comment">// 上一头牛的位置</span>
+    
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">2</span>; i &lt;= n; i++) {
+        <span class="cpp-keyword">if</span> (x[i] - last_pos &gt;= d) { <span class="cpp-comment">// 如果当前隔间离上一头牛足够远</span>
+            cows++; <span class="cpp-comment">// 放一头牛</span>
+            last_pos = x[i]; <span class="cpp-comment">// 更新位置</span>
+        }
+    }
+    <span class="cpp-keyword">return</span> cows &gt;= c; 
+}
+
+<span class="cpp-keyword">int</span> <span class="cpp-func">main</span>() {
+    cin &gt;&gt; n &gt;&gt; c;
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">1</span>; i &lt;= n; i++) cin &gt;&gt; x[i];
+    sort(x + <span class="cpp-number">1</span>, x + n + <span class="cpp-number">1</span>); <span class="cpp-comment">// 隔间坐标必须先排序！</span>
+
+    <span class="cpp-keyword">int</span> l = <span class="cpp-number">1</span>, r = <span class="cpp-number">1000000000</span>; <span class="cpp-comment">// 距离范围</span>
+    <span class="cpp-keyword">int</span> ans = <span class="cpp-number">0</span>;
+    
+    <span class="cpp-keyword">while</span> (l &lt;= r) {
+        <span class="cpp-keyword">int</span> mid = (l + r) / <span class="cpp-number">2</span>;
+        <span class="cpp-keyword">if</span> (check(mid)) {
+            ans = mid;    <span class="cpp-comment">// 可行，记下来</span>
+            l = mid + <span class="cpp-number">1</span>;  <span class="cpp-comment">// 试试能不能让距离更大一点</span>
+        } <span class="cpp-keyword">else</span> {
+            r = mid - <span class="cpp-number">1</span>;  <span class="cpp-comment">// 放不下，缩小距离</span>
+        }
+    }
+    cout &lt;&lt; ans &lt;&lt; endl;
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+    </div>
+
+    <!-- 练习题 4 -->
+    <div class="problem-card">
+        <h3>📈 练习题 4：一元三次方程求解（实数二分）</h3>
+        <p><strong>题目描述：</strong> 求方程 ax^3 + bx^2 + cx + d = 0 的 3 个根。根在 -100 到 100 之间。</p>
+        <p><strong>思路提示：</strong> 枚举每一个长度为 1 的小区间 [i, i+1]。如果左右端点函数值异号（一个正一个负），说明中间有根，开始二分。注意实数二分精度。</p>
+        <pre>
+<span class="cpp-lib">#include &lt;iostream&gt;</span>
+<span class="cpp-lib">#include &lt;cstdio&gt;</span> 
+<span class="cpp-lib">#include &lt;cmath&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-type">double</span> a, b, c, d;
+
+<span class="cpp-comment">// 计算 f(x) 的值</span>
+<span class="cpp-type">double</span> <span class="cpp-func">f</span>(<span class="cpp-type">double</span> x) {
+    <span class="cpp-keyword">return</span> a*x*x*x + b*x*x + c*x + d;
+}
+
+<span class="cpp-keyword">int</span> <span class="cpp-func">main</span>() {
+    cin &gt;&gt; a &gt;&gt; b &gt;&gt; c &gt;&gt; d;
+    <span class="cpp-keyword">int</span> roots_count = <span class="cpp-number">0</span>;
+    
+    <span class="cpp-comment">// 枚举每一个长度为 1 的小区间</span>
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = -<span class="cpp-number">100</span>; i &lt; <span class="cpp-number">100</span>; i++) {
+        <span class="cpp-type">double</span> l = i, r = i + <span class="cpp-number">1</span>;
+        <span class="cpp-type">double</span> fl = f(l), fr = f(r);
+        
+        <span class="cpp-comment">// 如果端点就是根，直接输出</span>
+        <span class="cpp-keyword">if</span> (fabs(fl) &lt; <span class="cpp-number">1e-4</span>) {
+            printf(<span class="cpp-string">"%.2f "</span>, l);
+            roots_count++;
+            <span class="cpp-keyword">continue</span>; 
+        }
+        
+        <span class="cpp-comment">// 如果左右异号，说明中间有根，开始二分</span>
+        <span class="cpp-keyword">if</span> (fl * fr &lt; <span class="cpp-number">0</span>) {
+            <span class="cpp-keyword">while</span> (r - l &gt; <span class="cpp-number">1e-4</span>) { <span class="cpp-comment">// 精度控制</span>
+                <span class="cpp-type">double</span> mid = (l + r) / <span class="cpp-number">2</span>;
+                <span class="cpp-keyword">if</span> (f(mid) * f(r) &lt;= <span class="cpp-number">0</span>) l = mid; <span class="cpp-comment">// 根在右半边</span>
+                <span class="cpp-keyword">else</span> r = mid;            <span class="cpp-comment">// 根在左半边</span>
+            }
+            printf(<span class="cpp-string">"%.2f "</span>, r); 
+            roots_count++;
+        }
+        
+        <span class="cpp-keyword">if</span> (roots_count == <span class="cpp-number">3</span>) <span class="cpp-keyword">break</span>; <span class="cpp-comment">// 找齐了</span>
+    }
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+    </div>
+
+    <!-- 5. 课堂小结 -->
+    <h2>5. 课堂小结与提问</h2>
+    <div style="background-color: #E8EAF6; padding: 20px; border-radius: 15px; border-left: 6px solid #3F51B5;">
+        <p>同学们，今天我们学会了“折半查找”的绝技！</p>
+        <ul>
+            <li><strong>二分查找：</strong> 在有序队伍里找人，每次排除一半，快如闪电！</li>
+            <li><strong>二分答案：</strong> 遇到“求最大的最小值”这种绕口令，记得先猜一个答案，然后验证。</li>
+        </ul>
+        <p><strong>掉坑预警：</strong> 一定要排序！死循环要检查边界。</p>
+    </div>
+
+    <div class="footer-note">
+        今天的课就到这里，快去 OJ 上把这几道题 AC 掉吧！祝大家早日成为算法大神！加油！
+    </div>
+
+</div>
+
+</body>
+</html>

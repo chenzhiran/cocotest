@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J 循环结构 (For) - 编程题解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 全局样式 */
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* 隐藏滚动条 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* 幻灯片容器 */
+        .slide {
+            min-height: 100vh;
+            width: 100%;
+            padding: 2rem 4rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 2px solid #1e293b;
+            position: relative;
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 代码逻辑行 - 核心布局 */
+        .logic-row {
+            display: grid;
+            grid-template-columns: 1fr 160px 1fr; /* Python - Explain - C++ */
+            gap: 15px;
+            margin-bottom: 8px;
+            align-items: stretch;
+            transition: transform 0.2s;
+        }
+
+        .logic-row:hover {
+            transform: scale(1.01);
+            background: rgba(255,255,255,0.02);
+            border-radius: 6px;
+        }
+
+        .code-box {
+            font-family: 'JetBrains Mono', monospace;
+            padding: 12px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            white-space: pre-wrap;
+            border-radius: 6px;
+            overflow-x: auto;
+            color: #e2e8f0;
+            position: relative;
+            line-height: 1.4;
+        }
+
+        .explain-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #0f172a;
+            border-radius: 6px;
+            padding: 4px;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 颜色主题系统 */
+        /* 输入/初始化 (蓝色) */
+        .theme-init .code-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; }
+        .theme-init .explain-box { background: linear-gradient(135deg, #7dd3fc, #38bdf8); }
+        
+        /* 循环控制 (紫色) */
+        .theme-loop .code-box { background: rgba(167, 139, 250, 0.1); border-left: 3px solid #a78bfa; }
+        .theme-loop .explain-box { background: linear-gradient(135deg, #c4b5fd, #a78bfa); }
+
+        /* 核心计算/判断 (橙色) */
+        .theme-calc .code-box { background: rgba(251, 146, 60, 0.1); border-left: 3px solid #fb923c; }
+        .theme-calc .explain-box { background: linear-gradient(135deg, #fdba74, #fb923c); }
+
+        /* 输出/结果 (绿色) */
+        .theme-out .code-box { background: rgba(74, 222, 128, 0.1); border-left: 3px solid #4ade80; }
+        .theme-out .explain-box { background: linear-gradient(135deg, #86efac, #4ade80); }
+
+        /* 基础结构 (灰色) */
+        .theme-base .code-box { color: #64748b; font-size: 0.8rem; }
+        .theme-base .explain-box { background: #94a3b8; color: #334155; }
+
+        /* 侧边导航 */
+        .nav-dots {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 50;
+        }
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            background: #475569;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .nav-dot:hover {
+            background: #38bdf8;
+            transform: scale(1.4);
+            box-shadow: 0 0 10px #38bdf8;
+        }
+
+        .section-title {
+            background: linear-gradient(to right, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 侧边导航 -->
+    <div class="nav-dots">
+        <a href="#p1801" class="nav-dot" title="和与积"></a>
+        <a href="#p1802" class="nav-dot" title="被3整除不被5整除"></a>
+        <a href="#p1803" class="nav-dot" title="被3整除不被5整除偶数"></a>
+        <a href="#p1804" class="nav-dot" title="水仙花数"></a>
+        <a href="#p1805" class="nav-dot" title="特殊的四位数"></a>
+        <a href="#p1806" class="nav-dot" title="奇数和"></a>
+        <a href="#p1807" class="nav-dot" title="弹跳气球"></a>
+    </div>
+
+    <!-- 1801 和与积 -->
+    <section id="p1801" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1801</span>
+            <h1 class="text-3xl font-bold section-title">和与积 (累加累乘)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-calculator mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们需要两个“篮子”：</p>
+                    <ul class="list-disc ml-4 space-y-2 mt-2">
+                        <li>
+                            <strong class="text-blue-400">求和篮子 (sum)</strong><br>
+                            初始必须是 <code class="bg-slate-700 px-1 rounded">0</code>。<br>
+                            就像捡苹果，空篮子开始捡。
+                        </li>
+                        <li>
+                            <strong class="text-purple-400">求积篮子 (fac)</strong><br>
+                            初始必须是 <code class="bg-slate-700 px-1 rounded">1</code>。<br>
+                            因为任何数乘0都变0了，所以要从1开始乘。
+                        </li>
+                    </ul>
+                    <p class="mt-4">
+                        <i class="fas fa-sync-alt text-green-400"></i> 循环 1 到 n，每次把当前的数加到sum里，乘到fac里。
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">n = int(input())<br>s = 0; f = 1</div>
+                    <div class="explain-box">1. 初始化<br><span class="text-[0.6rem] font-normal">积从1开始</span></div>
+                    <div class="code-box">long long n; cin>>n;<br>long long s=0, f=1;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">for i in range(1, n+1):</div>
+                    <div class="explain-box">2. 循环 1~n<br><span class="text-[0.6rem] font-normal">Python范围左闭右开</span></div>
+                    <div class="code-box">for(int i=1; i<=n; i++) {</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;s += i<br>&nbsp;&nbsp;f *= i</div>
+                    <div class="explain-box">3. 累加与累乘</div>
+                    <div class="code-box">&nbsp;&nbsp;s += i;<br>&nbsp;&nbsp;f *= i;<br>}</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">print(s)<br>print(f)</div>
+                    <div class="explain-box">4. 输出结果</div>
+                    <div class="code-box">cout << s << endl;<br>cout << f << endl;</div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400 text-center">
+                    C++ 提示：乘积可能很大，记得用 long long 哦！
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1802 被3整除不被5整除 -->
+    <section id="p1802" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-green-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1802</span>
+            <h1 class="text-3xl font-bold section-title">整除筛选 (筛选法)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-filter mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们要从 1 到 100 挑出符合条件的数字。</p>
+                    <p class="mt-2 text-white font-bold">筛选条件：</p>
+                    <div class="bg-slate-800 p-3 rounded mt-2 border-l-4 border-green-500">
+                        1. 能被3整除：<code class="text-green-300">i % 3 == 0</code><br>
+                        2. 不能被5整除：<code class="text-red-300">i % 5 != 0</code>
+                    </div>
+                    <p class="mt-4">把这两个条件用 <strong class="text-blue-300">且 (and/&&)</strong> 连接起来，满足了就打印出来。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-loop">
+                    <div class="code-box">for i in range(1, 101):</div>
+                    <div class="explain-box">1. 遍历 1~100</div>
+                    <div class="code-box">for(int i=1; i<=100; i++) {</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;if i % 3 == 0 and i % 5 != 0:</div>
+                    <div class="explain-box">2. 判断条件</div>
+                    <div class="code-box">&nbsp;&nbsp;if(i%3==0 && i%5!=0)</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">&nbsp;&nbsp;&nbsp;&nbsp;print(i, end=" ")</div>
+                    <div class="explain-box">3. 输出<br><span class="text-[0.6rem] font-normal">空格隔开</span></div>
+                    <div class="code-box">&nbsp;&nbsp;&nbsp;&nbsp;cout << i << " ";<br>}</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1803 被3整除不被5整除偶数 -->
+    <section id="p1803" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-purple-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1803</span>
+            <h1 class="text-3xl font-bold section-title">多重筛选 (逻辑与)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-layer-group mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>这道题比上一题多了一个条件：必须是 <strong class="text-purple-300">偶数</strong>。</p>
+                    <p class="mt-2 text-white font-bold">三个关卡：</p>
+                    <ol class="list-decimal ml-4 space-y-1">
+                        <li>被3整除 <code class="text-gray-400">(i%3==0)</code></li>
+                        <li>不被5整除 <code class="text-gray-400">(i%5!=0)</code></li>
+                        <li>是偶数 <code class="text-gray-400">(i%2==0)</code></li>
+                    </ol>
+                    <p class="mt-4">虽然条件多了，但逻辑是一样的，用 <strong class="text-blue-300">&&</strong> 把它们串起来！</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-loop">
+                    <div class="code-box">for i in range(1, 101):</div>
+                    <div class="explain-box">1. 遍历 1~100</div>
+                    <div class="code-box">for(int i=1; i<=100; i++) {</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;if i%3==0 and i%5!=0 and i%2==0:</div>
+                    <div class="explain-box">2. 三重条件</div>
+                    <div class="code-box">&nbsp;&nbsp;if(i%3==0 && i%5!=0 && i%2==0)</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">&nbsp;&nbsp;&nbsp;&nbsp;print(i, end=" ")</div>
+                    <div class="explain-box">3. 输出</div>
+                    <div class="code-box">&nbsp;&nbsp;&nbsp;&nbsp;cout << i << " ";<br>}</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1804 水仙花数 -->
+    <section id="p1804" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1804</span>
+            <h1 class="text-3xl font-bold section-title">水仙花数 (位值分离)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-fan mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>水仙花数是一个3位数 (100-999)。</p>
+                    <p class="mt-2 text-white font-bold">规则：</p>
+                    <div class="text-center bg-slate-800 p-2 rounded my-2 font-mono">
+                        153 = 1³ + 5³ + 3³<br>
+                        153 = 1 + 125 + 27
+                    </div>
+                    <p class="mt-2">关键在于把 <strong class="text-amber-300">个、十、百</strong> 位拆出来。</p>
+                    <ul class="list-none text-xs ml-2 space-y-1">
+                        <li>个位 (g): <code class="bg-slate-700 px-1">n % 10</code></li>
+                        <li>十位 (s): <code class="bg-slate-700 px-1">(n // 10) % 10</code></li>
+                        <li>百位 (b): <code class="bg-slate-700 px-1">n // 100</code></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-loop">
+                    <div class="code-box">for n in range(100, 1000):</div>
+                    <div class="explain-box">1. 遍历三位数</div>
+                    <div class="code-box">for(int n=100; n<=999; n++) {</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;b = n // 100<br>&nbsp;&nbsp;s = (n // 10) % 10<br>&nbsp;&nbsp;g = n % 10</div>
+                    <div class="explain-box">2. 拆分各位</div>
+                    <div class="code-box">&nbsp;&nbsp;int b = n/100;<br>&nbsp;&nbsp;int s = n/10%10;<br>&nbsp;&nbsp;int g = n%10;</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;if b**3 + s**3 + g**3 == n:</div>
+                    <div class="explain-box">3. 立方和判断</div>
+                    <div class="code-box">&nbsp;&nbsp;if(b*b*b + s*s*s + g*g*g == n)</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">&nbsp;&nbsp;&nbsp;&nbsp;print(n, end=" ")</div>
+                    <div class="explain-box">4. 输出</div>
+                    <div class="code-box">&nbsp;&nbsp;&nbsp;&nbsp;cout << n << " ";<br>}</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1805 特殊的四位数 -->
+    <section id="p1805" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-red-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1805</span>
+            <h1 class="text-3xl font-bold section-title">特殊的四位数 (循环输入)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-search mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们要处理 <code class="text-red-300">n</code> 个四位数。</p>
+                    <p>对每一个数，都要拆分它的千、百、十、个位。</p>
+                    <p class="mt-2 text-white font-bold">判断条件：</p>
+                    <p class="bg-slate-800 p-2 rounded font-mono text-center text-xs">
+                        个位 - 千位 - 百位 - 十位 > 0
+                    </p>
+                    <p class="mt-2">需要一个计数器 <code class="text-green-300">cnt</code>，每发现一个符合条件的数，就 +1。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">n = int(input())<br>arr = list(map(int, input().split()))<br>cnt = 0</div>
+                    <div class="explain-box">1. 输入与初始化<br><span class="text-[0.6rem] font-normal">C++在循环中读入</span></div>
+                    <div class="code-box">int n; cin >> n;<br>int x, cnt = 0;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">for x in arr:</div>
+                    <div class="explain-box">2. 遍历每个数</div>
+                    <div class="code-box">for(int i=0; i&lt;n; i++) {<br>&nbsp;&nbsp;cin >> x;</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;q = x // 1000<br>&nbsp;&nbsp;b = (x // 100) % 10<br>&nbsp;&nbsp;s = (x // 10) % 10<br>&nbsp;&nbsp;g = x % 10</div>
+                    <div class="explain-box">3. 拆解四位数</div>
+                    <div class="code-box">&nbsp;&nbsp;int q = x/1000;<br>&nbsp;&nbsp;int b = x/100%10;<br>&nbsp;&nbsp;int s = x/10%10;<br>&nbsp;&nbsp;int g = x%10;</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;if g - q - b - s > 0:<br>&nbsp;&nbsp;&nbsp;&nbsp;cnt += 1</div>
+                    <div class="explain-box">4. 条件判断计数</div>
+                    <div class="code-box">&nbsp;&nbsp;if(g-q-b-s > 0) cnt++;<br>}</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">print(cnt)</div>
+                    <div class="explain-box">5. 输出总数</div>
+                    <div class="code-box">cout << cnt;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1806 奇数和 -->
+    <section id="p1806" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1806</span>
+            <h1 class="text-3xl font-bold section-title">奇数和 (区间求和)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-plus-circle mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>计算 m 到 n 之间所有 <strong class="text-indigo-300">奇数</strong> 的和。</p>
+                    <p class="mt-2 text-white font-bold">步骤：</p>
+                    <ol class="list-decimal ml-4 space-y-1">
+                        <li>准备一个空篮子 <code class="bg-slate-700 px-1">sum = 0</code>。</li>
+                        <li>从 m 走到 n (包括 n)。</li>
+                        <li>如果是奇数 <code class="text-gray-400">(i % 2 != 0)</code>，就扔进篮子里。</li>
+                    </ol>
+                    <p class="mt-4 text-xs text-gray-400">比如 3 到 7：<br>3是奇数(加)，4不是，5是(加)，6不是，7是(加)。<br>Sum = 3 + 5 + 7 = 15。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">m, n = map(int, input().split())<br>s = 0</div>
+                    <div class="explain-box">1. 输入与初始化</div>
+                    <div class="code-box">int m, n; cin >> m >> n;<br>int s = 0;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">for i in range(m, n+1):</div>
+                    <div class="explain-box">2. 遍历 m~n</div>
+                    <div class="code-box">for(int i=m; i<=n; i++) {</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;if i % 2 != 0:<br>&nbsp;&nbsp;&nbsp;&nbsp;s += i</div>
+                    <div class="explain-box">3. 如果是奇数则累加</div>
+                    <div class="code-box">&nbsp;&nbsp;if(i % 2 != 0)<br>&nbsp;&nbsp;&nbsp;&nbsp;s += i;<br>}</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">print(s)</div>
+                    <div class="explain-box">4. 输出</div>
+                    <div class="code-box">cout << s;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1807 弹跳气球 -->
+    <section id="p1807" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-pink-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1807</span>
+            <h1 class="text-3xl font-bold section-title">弹跳气球 (物理模拟)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-baseball-ball mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>这是一个物理模拟过程。</p>
+                    <p class="mt-2 text-white font-bold">过程拆解 (以 h=2 为例)：</p>
+                    <ul class="list-disc ml-4 space-y-1 text-xs">
+                        <li>第1次落地：经过 2米。反弹 1米。</li>
+                        <li>第2次落地：经过 2 + 1(上) + 1(下) = 4米。反弹 0.5米。</li>
+                        <li>...</li>
+                    </ul>
+                    <p class="mt-4">
+                        <strong class="text-pink-300">规律：</strong><br>
+                        每次落地，先加上落下的距离。<br>
+                        然后高度减半。<br>
+                        下次循环时，落下的距离其实就是“反弹高度”的2倍(一上一下)，但这里题目问的是第10次落地时。
+                        <br>我们分开算：初始高度h算一次落下。之后9次反弹，每次经过 2 * 反弹高度。
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">h = int(input())<br>total = h<br>cur_h = h / 2</div>
+                    <div class="explain-box">1. 第一次落地<br><span class="text-[0.6rem] font-normal">total=初始高度<br>反弹高度减半</span></div>
+                    <div class="code-box">double h; cin >> h;<br>double total = h;<br>double cur_h = h / 2.0;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">for i in range(2, 11):</div>
+                    <div class="explain-box">2. 第2到10次落地</div>
+                    <div class="code-box">for(int i=2; i<=10; i++) {</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;total += cur_h * 2<br>&nbsp;&nbsp;cur_h /= 2</div>
+                    <div class="explain-box">3. 累加路程并减半<br><span class="text-[0.6rem] font-normal">往返路程 = 高度*2</span></div>
+                    <div class="code-box">&nbsp;&nbsp;total += cur_h * 2;<br>&nbsp;&nbsp;cur_h /= 2;<br>}</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">print(f"{total:.4f}")<br>print(f"{cur_h:.4f}")</div>
+                    <div class="explain-box">4. 输出保留4位小数</div>
+                    <div class="code-box">printf("%.4f\n", total);<br>printf("%.4f", cur_h);</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

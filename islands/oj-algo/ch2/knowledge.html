@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 魔法课堂：模拟与高精度</title>
+    <style>
+        /* 全局字体与配色设置 */
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Zcool+KuaiLe&display=swap');
+        
+        body {
+            font-family: "Microsft YaHei", "Nunito", sans-serif;
+            background-color: #E0F7FA; /* 清新蓝背景 */
+            background-image: radial-gradient(#B2EBF2 15%, transparent 16%), radial-gradient(#B2EBF2 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 40px;
+            border: 3px solid #4DD0E1;
+        }
+
+        /* 标题样式 */
+        h1 {
+            color: #0097A7;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px #E0F7FA;
+        }
+        
+        h2 {
+            color: #FF7043; /* 活泼的橙色 */
+            background-color: #FFF3E0;
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 30px;
+            border-left: 8px solid #FF7043;
+        }
+
+        h3 {
+            color: #00838F;
+            border-bottom: 2px dashed #B2EBF2;
+            padding-bottom: 5px;
+            margin-top: 25px;
+        }
+
+        /* 重点文字 */
+        strong {
+            color: #D84315;
+            background-color: #FFCCBC;
+            padding: 0 4px;
+            border-radius: 4px;
+        }
+
+        /* 提示框 */
+        .tip-box {
+            background-color: #F1F8E9;
+            border: 2px solid #AED581;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+        }
+        .tip-box::before {
+            content: "💡";
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            font-size: 24px;
+            background: white;
+            padding: 0 5px;
+        }
+
+        /* 坑点警告框 */
+        .danger-box {
+            background-color: #FFEBEE;
+            border: 2px solid #EF9A9A;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        /* 代码块样式 */
+        pre {
+            background-color: #282C34; /* 深色背景护眼且专业 */
+            color: #ABB2BF;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 15px;
+            border: 4px solid #CFD8DC;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* 语法高亮 */
+        .cpp-keyword { color: #C678DD; font-weight: bold; } /* int, return, etc. */
+        .cpp-type { color: #56B6C2; } /* char, void */
+        .cpp-string { color: #98C379; } /* "text" */
+        .cpp-comment { color: #7F848E; font-style: italic; } /* // comment */
+        .cpp-number { color: #D19A66; } /* 123 */
+        .cpp-lib { color: #E06C75; } /* <bits/stdc++.h> */
+
+        /* 题目样式 */
+        .problem-card {
+            background: white;
+            border: 2px solid #4DD0E1;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 5px 5px 0px #B2EBF2;
+            transition: transform 0.2s;
+        }
+        .problem-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 图片容器 */
+        .img-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        svg {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(3px 3px 2px rgba(0,0,0,0.1));
+        }
+
+        /* 按钮/链接风格 */
+        .next-step {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #00BCD4;
+            color: white;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div style="text-align: center;">
+        <h1>🚀 第一章：模拟与高精度</h1>
+        <p style="font-size: 1.2em; color: #666;">像玩游戏一样学算法！</p>
+    </div>
+
+    <hr style="border: 0; border-top: 2px dashed #B2EBF2;">
+
+    <h2>1. 趣味开场：当计算器“冒烟”的时候</h2>
+    
+    <div class="img-container">
+        <svg width="300" height="200" viewBox="0 0 300 200">
+            <rect x="80" y="40" width="140" height="150" rx="10" fill="#ECEFF1" stroke="#455A64" stroke-width="3"/>
+            <rect x="95" y="60" width="110" height="40" fill="#263238" stroke="#455A64" stroke-width="2"/>
+            <text x="150" y="88" font-family="monospace" font-size="20" fill="#FF5252" text-anchor="middle">ERROR EEE</text>
+            <circle cx="110" cy="120" r="10" fill="#90A4AE"/>
+            <circle cx="150" cy="120" r="10" fill="#90A4AE"/>
+            <circle cx="190" cy="120" r="10" fill="#90A4AE"/>
+            <circle cx="110" cy="150" r="10" fill="#90A4AE"/>
+            <circle cx="150" cy="150" r="10" fill="#90A4AE"/>
+            <circle cx="190" cy="150" r="10" fill="#90A4AE"/>
+            <path d="M70 40 Q50 10 70 0" stroke="#CFD8DC" stroke-width="4" fill="none"/>
+            <path d="M230 40 Q250 10 230 0" stroke="#CFD8DC" stroke-width="4" fill="none"/>
+            <text x="60" y="100" font-size="30">💥</text>
+            <text x="220" y="80" font-size="30">💨</text>
+        </svg>
+    </div>
+
+    <p>同学们，你们有没有试过拿家里的计算器，一直按“999999999 * 999999999”？如果你按得够多，计算器屏幕最后会显示“E”或者直接死机，因为它“脑容量”不够了，数字太大，它装不下！</p>
+    
+    <p>但在信息学奥赛（CSP-J）里，出题老师经常会给我们出这种难题：“请计算两个 <strong>500位</strong> 整数的和”。500位啊！写在纸上都要写好几行。这时候，普通的 <code>int</code> 甚至 <code>long long</code> 都会瞬间“爆掉”。怎么办？我们需要学会<strong>“高精度算法”</strong>，把数字拆开来存。</p>
+    
+    <p>还有一种题，不考什么复杂的数学公式，就考你能不能听话。题目怎么说，你就怎么做，一步一步让计算机模仿现实生活的过程。这就像你在玩“过家家”或者“我的世界”，按照规则去模拟每一步操作。这就是我们今天要学的<strong>“模拟”</strong>。</p>
+
+    <h2>2. 核心知识点讲解</h2>
+
+    <h3>🧩 知识点一：模拟 (Simulation) —— 做一个听话的机器人</h3>
+    <div class="tip-box">
+        <p><strong>简单定义：</strong> 模拟题不需要你发明新公式，只需要你把题目描述的过程，用代码翻译一遍。题目让你往左你就往左，让你加分你就加分。</p>
+        <p><strong>生活类比：</strong> 想象你在读乐高拼装说明书。说明书说“把红色积木放在蓝色积木上”，你就照做。如果你跳过一步，或者颜色搞错，最后拼出来的东西就不对。</p>
+        <p><strong>关键点：</strong> <span style="color:red;">读题要超级仔细！</span></p>
+    </div>
+
+    <pre>
+<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-comment">// 示例：模拟一只青蛙跳，每次跳 distance 米，看跳几次能超过 target 米</span>
+<span class="cpp-keyword">int</span> main() {
+    <span class="cpp-keyword">int</span> target = <span class="cpp-number">100</span>; <span class="cpp-comment">// 目标距离</span>
+    <span class="cpp-keyword">int</span> current = <span class="cpp-number">0</span>;  <span class="cpp-comment">// 当前距离</span>
+    <span class="cpp-keyword">int</span> jumps = <span class="cpp-number">0</span>;    <span class="cpp-comment">// 跳跃次数</span>
+    <span class="cpp-keyword">int</span> distance = <span class="cpp-number">3</span>; <span class="cpp-comment">// 每次跳3米</span>
+    
+    <span class="cpp-comment">// 只要没到目标，就继续跳（模拟过程）</span>
+    <span class="cpp-keyword">while</span> (current &lt; target) {
+        current = current + distance; <span class="cpp-comment">// 动作：跳一下</span>
+        jumps++;                      <span class="cpp-comment">// 记录：次数加1</span>
+    }
+    
+    cout &lt;&lt; <span class="cpp-string">"跳了 "</span> &lt;&lt; jumps &lt;&lt; <span class="cpp-string">" 次"</span> &lt;&lt; endl;
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+
+    <h3>🧭 知识点二：坐标系与方向数组 —— 走迷宫神器</h3>
+    
+    <div class="img-container">
+        <svg width="350" height="200" viewBox="0 0 350 200">
+            <text x="175" y="20" text-anchor="middle" fill="#00838F" font-weight="bold">计算机里的坐标系</text>
+            <defs>
+                <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                    <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#E0E0E0" stroke-width="1"/>
+                </pattern>
+            </defs>
+            <rect x="50" y="40" width="120" height="120" fill="url(#grid)" stroke="#90A4AE" stroke-width="2"/>
+            
+            <circle cx="50" cy="40" r="5" fill="#FF5722"/>
+            <text x="35" y="30" font-size="12" fill="#FF5722">(0,0)</text>
+            
+            <line x1="50" y1="40" x2="180" y2="40" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+            <text x="185" y="45" font-size="12">y (列)</text>
+            
+            <line x1="50" y1="40" x2="50" y2="170" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+            <text x="30" y="175" font-size="12">x (行)</text>
+            
+            <g transform="translate(200, 50)">
+                <text x="0" y="10" font-size="14" font-weight="bold">dx (行变化):</text>
+                <text x="10" y="30" font-size="12">上: -1</text>
+                <text x="10" y="50" font-size="12">下: +1</text>
+                <text x="0" y="80" font-size="14" font-weight="bold">dy (列变化):</text>
+                <text x="10" y="100" font-size="12">左: -1</text>
+                <text x="10" y="120" font-size="12">右: +1</text>
+            </g>
+        </svg>
+    </div>
+
+    <div class="tip-box">
+        <p><strong>简单定义：</strong> 在做像“扫雷”或“走迷宫”这种题时，我们经常要检查上下左右的格子。为了不写 8 个 if 语句，我们用两个小数组来控制方向。</p>
+        <p><strong>注意：</strong> 电脑里的坐标系通常原点 (0,0) 在<strong>左上角</strong>，x轴（行）向下，y轴（列）向右，这和数学课上不一样哦！</p>
+    </div>
+
+    <pre>
+<span class="cpp-comment">// 检查 (x, y) 周围的格子</span>
+<span class="cpp-comment">// 这里的方向顺序：上、下、左、右</span>
+<span class="cpp-keyword">int</span> dx[<span class="cpp-number">4</span>] = {-<span class="cpp-number">1</span>, <span class="cpp-number">1</span>, <span class="cpp-number">0</span>, <span class="cpp-number">0</span>}; <span class="cpp-comment">// 行的变化</span>
+<span class="cpp-keyword">int</span> dy[<span class="cpp-number">4</span>] = {<span class="cpp-number">0</span>, <span class="cpp-number">0</span>, -<span class="cpp-number">1</span>, <span class="cpp-number">1</span>}; <span class="cpp-comment">// 列的变化</span>
+
+<span class="cpp-comment">// x, y 是当前位置</span>
+<span class="cpp-keyword">for</span>(<span class="cpp-keyword">int</span> i = <span class="cpp-number">0</span>; i &lt; <span class="cpp-number">4</span>; i++) {
+    <span class="cpp-keyword">int</span> new_x = x + dx[i];
+    <span class="cpp-keyword">int</span> new_y = y + dy[i];
+    <span class="cpp-comment">// 接下来就可以判断 new_x, new_y 这个格子是不是雷</span>
+}</pre>
+
+    <h3>🍡 知识点三：高精度运算 —— 把数字当成糖葫芦串</h3>
+    
+    <div class="img-container">
+        <svg width="400" height="120" viewBox="0 0 400 120">
+            <line x1="20" y1="60" x2="380" y2="60" stroke="#8D6E63" stroke-width="6" stroke-linecap="round"/>
+            <circle cx="60" cy="60" r="25" fill="#FF5252" stroke="#D32F2F" stroke-width="2"/>
+            <text x="60" y="68" text-anchor="middle" fill="white" font-weight="bold" font-size="20">1</text>
+            <text x="60" y="100" text-anchor="middle" font-size="12" fill="#555">a[3]</text>
+
+            <circle cx="120" cy="60" r="25" fill="#FF5252" stroke="#D32F2F" stroke-width="2"/>
+            <text x="120" y="68" text-anchor="middle" fill="white" font-weight="bold" font-size="20">2</text>
+            <text x="120" y="100" text-anchor="middle" font-size="12" fill="#555">a[2]</text>
+
+            <circle cx="180" cy="60" r="25" fill="#FF5252" stroke="#D32F2F" stroke-width="2"/>
+            <text x="180" y="68" text-anchor="middle" fill="white" font-weight="bold" font-size="20">3</text>
+            <text x="180" y="100" text-anchor="middle" font-size="12" fill="#555">a[1]</text>
+
+            <text x="280" y="65" font-size="16" fill="#333">数字 "123"</text>
+            <text x="280" y="85" font-size="12" fill="#666">倒序存储在数组里</text>
+        </svg>
+    </div>
+
+    <div class="tip-box">
+        <p><strong>简单定义：</strong> 当数字大到 long long 都存不下时，我们用数组把每一位数字单独存起来。做加法时，就像小学列竖式一样，一位一位对齐相加。</p>
+        <p><strong>生活类比：</strong> 一个超长的数字就像一串糖葫芦，我们不能一口吃掉，只能一颗山楂（一位数字）一颗山楂地处理。</p>
+    </div>
+    
+    <pre>
+<span class="cpp-comment">// 假设 a 和 b 是两个存了数字的数组（倒序存储，个位在下标1）</span>
+<span class="cpp-comment">// c 是结果数组</span>
+<span class="cpp-keyword">int</span> c[<span class="cpp-number">505</span>]; 
+<span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">1</span>; i &lt;= len; i++) {
+    c[i] += a[i] + b[i]; <span class="cpp-comment">// 当前位数值相加</span>
+    c[i+1] = c[i] / <span class="cpp-number">10</span>;  <span class="cpp-comment">// 进位给下一位（比如 15/10 = 1）</span>
+    c[i] %= <span class="cpp-number">10</span>;          <span class="cpp-comment">// 当前位只留个位数（比如 15%10 = 5）</span>
+}</pre>
+
+    <h2>3. CSP-J 常见题型与大坑</h2>
+    
+    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+        <div style="flex: 1; background: #FFF; padding: 15px; border-radius: 10px; border-top: 5px solid #4CAF50;">
+            <h3>🤖 纯逻辑模拟题</h3>
+            <p><strong>考什么：</strong> 《乒乓球》、《石头剪刀布》。只要逻辑对就能过。</p>
+            <p class="danger-box"><strong>大坑：</strong> 规则理解偏差！比如乒乓球规则是“11分制且<strong>领先2分</strong>”才算赢，忘了判断领先2分就只有0分。</p>
+        </div>
+
+        <div style="flex: 1; background: #FFF; padding: 15px; border-radius: 10px; border-top: 5px solid #2196F3;">
+            <h3>🗺️ 网格地图类</h3>
+            <p><strong>考什么：</strong> 《扫雷》、《迷宫》。二维数组操作。</p>
+            <p class="danger-box"><strong>大坑：</strong> <strong>数组越界！</strong> 在第1行往上看，坐标变成0或-1，程序直接崩溃。记得给地图加一圈“空气墙”或判断边界。</p>
+        </div>
+
+        <div style="flex: 1; background: #FFF; padding: 15px; border-radius: 10px; border-top: 5px solid #FF9800;">
+            <h3>🔢 高精度计算类</h3>
+            <p><strong>考什么：</strong> 大整数加减乘。</p>
+            <p class="danger-box"><strong>大坑：</strong> <br>1. 忘记处理<strong>前导0</strong>。<br>2. 最高位进位没处理。<br>3. 数组开小了。</p>
+        </div>
+    </div>
+
+    <h2>4. 课堂练习题（挑战开始！）</h2>
+
+    <div class="problem-card">
+        <h3>🏓 练习题 1：华华的乒乓球课（基础模拟）</h3>
+        <p><strong>题目描述：</strong> 华华记录了一串乒乓球比赛的胜负情况（W赢，L输，E结束）。请在 <strong>11分制</strong> 下，统计每一局的比分。（规则：先得11分且比对方多至少2分才算赢）。</p>
+        <p><strong>输入样例：</strong> <code>WWWWWWWWWWWWWWWWWWWWWWLWE</code></p>
+        <p><strong>输出样例：</strong> <br><code>11:0</code><br><code>11:0</code><br><code>1:1</code></p>
+        <p><strong>思路提示：</strong> 就像拿着记分牌，读到一个字符就加分。每次加完分，立刻检查：(分数>=11) 并且 (分差>=2)？如果是，输出并清零。</p>
+        
+        <h4>参考代码：</h4>
+        <pre>
+<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-keyword">char</span> s[<span class="cpp-number">100000</span>]; 
+
+<span class="cpp-keyword">int</span> main() {
+    <span class="cpp-keyword">char</span> temp;
+    <span class="cpp-keyword">int</span> idx = <span class="cpp-number">0</span>;
+    <span class="cpp-comment">// 1. 读入数据，直到遇到 'E'</span>
+    <span class="cpp-keyword">while</span> (cin &gt;&gt; temp && temp != <span class="cpp-string">'E'</span>) {
+        <span class="cpp-keyword">if</span> (temp == <span class="cpp-string">'W'</span> || temp == <span class="cpp-string">'L'</span>) {
+            s[idx++] = temp;
+        }
+    }
+
+    <span class="cpp-keyword">int</span> w = <span class="cpp-number">0</span>, l = <span class="cpp-number">0</span>; <span class="cpp-comment">// w是华华得分，l是对手得分</span>
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">0</span>; i &lt; idx; i++) {
+        <span class="cpp-keyword">if</span> (s[i] == <span class="cpp-string">'W'</span>) w++;
+        <span class="cpp-keyword">else</span> l++;
+
+        <span class="cpp-comment">// 判断 11 分制结束条件</span>
+        <span class="cpp-comment">// 条件：有人>=11分 且 分差>=2</span>
+        <span class="cpp-keyword">if</span> ((w &gt;= <span class="cpp-number">11</span> || l &gt;= <span class="cpp-number">11</span>) && abs(w - l) &gt;= <span class="cpp-number">2</span>) {
+            cout &lt;&lt; w &lt;&lt; <span class="cpp-string">":"</span> &lt;&lt; l &lt;&lt; endl;
+            w = <span class="cpp-number">0</span>; <span class="cpp-comment">// 清零，开始下一局</span>
+            l = <span class="cpp-number">0</span>;
+        }
+    }
+    <span class="cpp-comment">// 最后如果不满一局，也要输出当前的得分</span>
+    cout &lt;&lt; w &lt;&lt; <span class="cpp-string">":"</span> &lt;&lt; l &lt;&lt; endl;
+
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+    </div>
+
+    <div class="problem-card">
+        <h3>💣 练习题 2：小明的扫雷作业（网格模拟）</h3>
+        <p><strong>题目描述：</strong> 给出一个 n * m 的方格，* 代表地雷，? 代表安全。请把所有的 ? 换成一个数字，表示它周围 8 个格子里有多少个地雷。</p>
+        <p><strong>思路提示：</strong> 遍历每一个格子。如果这个格子是 ?，就利用方向数组检查周围 8 个邻居。</p>
+        
+        <h4>参考代码：</h4>
+        <pre>
+<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-keyword">char</span> mp[<span class="cpp-number">105</span>][<span class="cpp-number">105</span>]; <span class="cpp-comment">// 地图数组</span>
+<span class="cpp-keyword">int</span> n, m;
+
+<span class="cpp-comment">// 8个方向的偏移量：上、下、左、右、左上、左下、右上、右下</span>
+<span class="cpp-keyword">int</span> dx[] = {-<span class="cpp-number">1</span>, <span class="cpp-number">1</span>, <span class="cpp-number">0</span>, <span class="cpp-number">0</span>, -<span class="cpp-number">1</span>, <span class="cpp-number">1</span>, -<span class="cpp-number">1</span>, <span class="cpp-number">1</span>};
+<span class="cpp-keyword">int</span> dy[] = {<span class="cpp-number">0</span>, <span class="cpp-number">0</span>, -<span class="cpp-number">1</span>, <span class="cpp-number">1</span>, -<span class="cpp-number">1</span>, -<span class="cpp-number">1</span>, <span class="cpp-number">1</span>, <span class="cpp-number">1</span>};
+
+<span class="cpp-keyword">int</span> main() {
+    cin &gt;&gt; n &gt;&gt; m;
+    <span class="cpp-comment">// 读入地图，建议下标从1开始，方便处理</span>
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">1</span>; i &lt;= n; i++) {
+        <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> j = <span class="cpp-number">1</span>; j &lt;= m; j++) {
+            cin &gt;&gt; mp[i][j];
+        }
+    }
+
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">1</span>; i &lt;= n; i++) {
+        <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> j = <span class="cpp-number">1</span>; j &lt;= m; j++) {
+            <span class="cpp-keyword">if</span> (mp[i][j] == <span class="cpp-string">'*'</span>) {
+                cout &lt;&lt; <span class="cpp-string">'*'</span>; <span class="cpp-comment">// 如果是雷，直接输出</span>
+            } <span class="cpp-keyword">else</span> {
+                <span class="cpp-keyword">int</span> cnt = <span class="cpp-number">0</span>; <span class="cpp-comment">// 计数器</span>
+                <span class="cpp-comment">// 遍历8个方向</span>
+                <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> k = <span class="cpp-number">0</span>; k &lt; <span class="cpp-number">8</span>; k++) {
+                    <span class="cpp-keyword">int</span> ni = i + dx[k];
+                    <span class="cpp-keyword">int</span> nj = j + dy[k];
+                    <span class="cpp-comment">// 检查边界：只要 ni, nj 不越界</span>
+                    <span class="cpp-keyword">if</span> (ni &gt;= <span class="cpp-number">1</span> && ni &lt;= n && nj &gt;= <span class="cpp-number">1</span> && nj &lt;= m) {
+                        <span class="cpp-keyword">if</span> (mp[ni][nj] == <span class="cpp-string">'*'</span>) cnt++;
+                    }
+                }
+                cout &lt;&lt; cnt; <span class="cpp-comment">// 输出雷的数量</span>
+            }
+        }
+        cout &lt;&lt; endl; <span class="cpp-comment">// 记得换行</span>
+    }
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+    </div>
+
+    <div class="problem-card">
+        <h3>📈 练习题 3：巨人的加法（高精度加法）</h3>
+        <p><strong>题目描述：</strong> 不管多大的两个整数（长度不超过 500 位），请计算它们的和。</p>
+        <p><strong>思路提示：</strong> 
+            <ol>
+                <li>用 <code>string</code> 读入。</li>
+                <li>倒着存入 int 数组。</li>
+                <li>循环相加，注意 <code>sum = a[i] + b[i] + 进位</code>。</li>
+            </ol>
+        </p>
+        
+        <h4>参考代码：</h4>
+        <pre>
+<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-keyword">int</span> a[<span class="cpp-number">505</span>], b[<span class="cpp-number">505</span>], c[<span class="cpp-number">505</span>]; <span class="cpp-comment">// 全局数组自动初始化为0</span>
+
+<span class="cpp-keyword">int</span> main() {
+    string s1, s2;
+    cin &gt;&gt; s1 &gt;&gt; s2;
+
+    <span class="cpp-comment">// 1. 字符串转数组（倒序）</span>
+    <span class="cpp-keyword">int</span> lenA = s1.length();
+    <span class="cpp-keyword">int</span> lenB = s2.length();
+    
+    <span class="cpp-comment">// s1[lenA-1] 是最后一位，存到 a[1]</span>
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">0</span>; i &lt; lenA; i++) {
+        a[lenA - i] = s1[i] - <span class="cpp-string">'0'</span>; <span class="cpp-comment">// 字符变数字，记得减 '0'</span>
+    }
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">0</span>; i &lt; lenB; i++) {
+        b[lenB - i] = s2[i] - <span class="cpp-string">'0'</span>;
+    }
+
+    <span class="cpp-comment">// 2. 模拟竖式加法</span>
+    <span class="cpp-keyword">int</span> len = max(lenA, lenB);
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">1</span>; i &lt;= len; i++) {
+        c[i] += a[i] + b[i]; <span class="cpp-comment">// 当前位相加</span>
+        c[i+1] = c[i] / <span class="cpp-number">10</span>;  <span class="cpp-comment">// 进位给下一位</span>
+        c[i] %= <span class="cpp-number">10</span>;          <span class="cpp-comment">// 本位保留个位</span>
+    }
+
+    <span class="cpp-comment">// 3. 检查最高位是否有进位</span>
+    <span class="cpp-keyword">if</span> (c[len + <span class="cpp-number">1</span>] &gt; <span class="cpp-number">0</span>) len++;
+
+    <span class="cpp-comment">// 4. 倒序输出</span>
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = len; i &gt;= <span class="cpp-number">1</span>; i--) {
+        cout &lt;&lt; c[i];
+    }
+    cout &lt;&lt; endl;
+    
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+    </div>
+
+    <div class="problem-card">
+        <h3>🧸 练习题 4：玩具小人的秘密（环形模拟）</h3>
+        <p><strong>题目描述：</strong> n 个玩具小人围成一个圈，每个小人有一个朝向（0朝圈内，1朝圈外）。根据指令左右移动，问最后停在谁手里？</p>
+        <p><strong>思路提示：</strong> 这题的核心是处理圆圈。</p>
+        <ul>
+            <li>核心公式：<code>now = (now +/- s) % n</code></li>
+            <li><strong>异或小技巧：</strong> 如果 (小人朝向 == 指令方向)，实际上是做减法（逆时针）；否则是加法（顺时针）。</li>
+        </ul>
+        
+        <h4>参考代码：</h4>
+        <pre>
+<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
+<span class="cpp-keyword">using</span> <span class="cpp-keyword">namespace</span> std;
+
+<span class="cpp-keyword">struct</span> Toy {
+    <span class="cpp-keyword">int</span> dir; <span class="cpp-comment">// 0内 1外</span>
+    string name;
+} toys[<span class="cpp-number">100005</span>];
+
+<span class="cpp-keyword">int</span> main() {
+    <span class="cpp-keyword">int</span> n, m;
+    cin &gt;&gt; n &gt;&gt; m;
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">0</span>; i &lt; n; i++) {
+        cin &gt;&gt; toys[i].dir &gt;&gt; toys[i].name;
+    }
+
+    <span class="cpp-keyword">int</span> now = <span class="cpp-number">0</span>; <span class="cpp-comment">// 当前在第0号小人</span>
+    <span class="cpp-keyword">for</span> (<span class="cpp-keyword">int</span> i = <span class="cpp-number">0</span>; i &lt; m; i++) {
+        <span class="cpp-keyword">int</span> a, s; <span class="cpp-comment">// a是指令方向(0左1右), s是步数</span>
+        cin &gt;&gt; a &gt;&gt; s;
+        
+        <span class="cpp-comment">// 异或技巧：如果朝向和指令方向相同，就是逆时针(减法)</span>
+        <span class="cpp-keyword">if</span> (toys[now].dir == a) {
+            now = (now - s) % n;
+            <span class="cpp-keyword">if</span> (now &lt; <span class="cpp-number">0</span>) now += n; <span class="cpp-comment">// 处理负数，转回正数圈</span>
+        } <span class="cpp-keyword">else</span> {
+            <span class="cpp-comment">// 否则是加法</span>
+            now = (now + s) % n;
+        }
+    }
+    cout &lt;&lt; toys[now].name &lt;&lt; endl;
+    <span class="cpp-keyword">return</span> <span class="cpp-number">0</span>;
+}</pre>
+    </div>
+
+    <h2>5. 课堂小结与思考</h2>
+    <div style="background-color: #E1F5FE; padding: 20px; border-radius: 10px;">
+        <p>同学们，今天我们把电脑变成了“听话的机器人”和“超级计算器”。</p>
+        <ul>
+            <li><strong>模拟题：</strong> 就是考耐心。题目每一个字都是线索，漏看一个条件（比如乒乓球的“分差>=2”）就会错。</li>
+            <li><strong>高精度：</strong> 就是列竖式。把数字拆进数组里，记得处理进位。</li>
+        </ul>
+        
+        <p><strong>🤔 课后思考题（想拿金牌的同学看这里）：</strong></p>
+        <ol>
+            <li>在高精度乘法里，两个数相乘，结果的位数最多是多少？（提示：想一想 99 * 99 是几位数？）</li>
+            <li>如果扫雷地图特别大，大到内存都装不下，但是雷很少，我们还能用二维数组 <code>map[10000][10000]</code> 吗？有没有别的方法存雷的位置？（提示：只把有雷的坐标记在本子上？）</li>
+        </ol>
+    </div>
+
+    <div class="next-step">
+        今天的课就到这里，快去 OJ 上把这几道题 AC 掉吧！加油！🌟
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python 魔法课堂：模拟与高精度原理</title>
+    <style>
+        /* 全局字体与配色设置 */
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Zcool+KuaiLe&display=swap');
+        
+        body {
+            font-family: "Microsft YaHei", "Nunito", sans-serif;
+            background-color: #E0F7FA; /* 清新蓝背景 */
+            background-image: radial-gradient(#B2EBF2 15%, transparent 16%), radial-gradient(#B2EBF2 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 40px;
+            border: 3px solid #4DD0E1;
+        }
+
+        /* 标题样式 */
+        h1 {
+            color: #0097A7;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px #E0F7FA;
+        }
+        
+        h2 {
+            color: #FF7043; /* 活泼的橙色 */
+            background-color: #FFF3E0;
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 30px;
+            border-left: 8px solid #FF7043;
+        }
+
+        h3 {
+            color: #00838F;
+            border-bottom: 2px dashed #B2EBF2;
+            padding-bottom: 5px;
+            margin-top: 25px;
+        }
+
+        /* 重点文字 */
+        strong {
+            color: #D84315;
+            background-color: #FFCCBC;
+            padding: 0 4px;
+            border-radius: 4px;
+        }
+
+        /* 提示框 */
+        .tip-box {
+            background-color: #F1F8E9;
+            border: 2px solid #AED581;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+        }
+        .tip-box::before {
+            content: "💡";
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            font-size: 24px;
+            background: white;
+            padding: 0 5px;
+        }
+
+        /* 坑点警告框 */
+        .danger-box {
+            background-color: #FFEBEE;
+            border: 2px solid #EF9A9A;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        /* 代码块样式 */
+        pre {
+            background-color: #282C34; /* 深色背景护眼且专业 */
+            color: #ABB2BF;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 15px;
+            border: 4px solid #CFD8DC;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* 语法高亮 (Python 风格) */
+        .py-keyword { color: #C678DD; font-weight: bold; } /* def, return, import */
+        .py-builtin { color: #56B6C2; } /* print, int, len */
+        .py-string { color: #98C379; } /* "text" */
+        .py-comment { color: #7F848E; font-style: italic; } /* # comment */
+        .py-number { color: #D19A66; } /* 123 */
+        .py-op { color: #E06C75; } /* +, =, < */
+
+        /* 题目样式 */
+        .problem-card {
+            background: white;
+            border: 2px solid #4DD0E1;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 5px 5px 0px #B2EBF2;
+            transition: transform 0.2s;
+        }
+        .problem-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 图片容器 */
+        .img-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        svg {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(3px 3px 2px rgba(0,0,0,0.1));
+        }
+
+        /* 按钮/链接风格 */
+        .next-step {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #00BCD4;
+            color: white;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div style="text-align: center;">
+        <h1>🚀 第一章：模拟与高精度原理</h1>
+        <p style="font-size: 1.2em; color: #666;">用 Python 玩转逻辑与大数！</p>
+    </div>
+
+    <hr style="border: 0; border-top: 2px dashed #B2EBF2;">
+
+    <h2>1. 趣味开场：Python 的“超能力”</h2>
+    
+    <div class="img-container">
+        <svg width="300" height="200" viewBox="0 0 300 200">
+            <rect x="80" y="40" width="140" height="150" rx="10" fill="#ECEFF1" stroke="#455A64" stroke-width="3"/>
+            <rect x="95" y="60" width="110" height="40" fill="#263238" stroke="#455A64" stroke-width="2"/>
+            <text x="150" y="88" font-family="monospace" font-size="20" fill="#66BB6A" text-anchor="middle">MAGIC!</text>
+            <circle cx="110" cy="120" r="10" fill="#90A4AE"/>
+            <circle cx="150" cy="120" r="10" fill="#90A4AE"/>
+            <circle cx="190" cy="120" r="10" fill="#90A4AE"/>
+            <circle cx="110" cy="150" r="10" fill="#90A4AE"/>
+            <circle cx="150" cy="150" r="10" fill="#90A4AE"/>
+            <circle cx="190" cy="150" r="10" fill="#90A4AE"/>
+            <path d="M70 40 Q50 10 70 0" stroke="#FFD54F" stroke-width="4" fill="none"/>
+            <path d="M230 40 Q250 10 230 0" stroke="#FFD54F" stroke-width="4" fill="none"/>
+            <text x="60" y="100" font-size="30">✨</text>
+            <text x="220" y="80" font-size="30">🐍</text>
+        </svg>
+    </div>
+
+    <p>同学们，在 C++ 的世界里，如果你一直按计算器的“999999999 * 999999999”，程序可能会崩溃或报错，因为普通的变量“脑容量”不够，装不下那么大的数。</p>
+    
+    <p>但是！在 <strong>Python</strong> 的世界里，你自带魔法！Python 的整数（int）就像橡胶一样，数字多大它就能变多大，永远不会“爆掉”。</p>
+    
+    <p><strong>那我们为什么还要学“高精度”算法呢？</strong> </p>
+    
+    <p>为了锻炼<strong>算法思维</strong>！如果有一天题目强制要求你用“字符串”来处理数字，或者我们要深入理解计算机底层是如何做加法的，这种“把数字拆开来算”的逻辑就非常重要。这节课，我们既要学习如何做一个听话的“模拟机器人”，也要探究大数运算背后的秘密。</p>
+
+    <h2>2. 核心知识点讲解</h2>
+
+    <h3>🧩 知识点一：模拟 (Simulation) —— 做一个听话的机器人</h3>
+    <div class="tip-box">
+        <p><strong>简单定义：</strong> 模拟题不需要你发明新公式，只需要你把题目描述的过程，用代码翻译一遍。题目让你往左你就往左，让你加分你就加分。</p>
+        <p><strong>生活类比：</strong> 想象你在读乐高拼装说明书。说明书说“把红色积木放在蓝色积木上”，你就照做。如果你跳过一步，或者颜色搞错，最后拼出来的东西就不对。</p>
+        <p><strong>关键点：</strong> <span style="color:red;">读题要超级仔细！</span></p>
+    </div>
+
+    <pre>
+<span class="py-comment"># 示例：模拟一只青蛙跳，每次跳 distance 米，看跳几次能超过 target 米</span>
+
+target <span class="py-op">=</span> <span class="py-number">100</span>   <span class="py-comment"># 目标距离</span>
+current <span class="py-op">=</span> <span class="py-number">0</span>    <span class="py-comment"># 当前距离</span>
+jumps <span class="py-op">=</span> <span class="py-number">0</span>      <span class="py-comment"># 跳跃次数</span>
+distance <span class="py-op">=</span> <span class="py-number">3</span>   <span class="py-comment"># 每次跳3米</span>
+
+<span class="py-comment"># 只要没到目标，就继续跳（模拟过程）</span>
+<span class="py-keyword">while</span> current <span class="py-op">&lt;</span> target:
+    current <span class="py-op">=</span> current <span class="py-op">+</span> distance  <span class="py-comment"># 动作：跳一下</span>
+    jumps <span class="py-op">+=</span> <span class="py-number">1</span>                    <span class="py-comment"># 记录：次数加1</span>
+
+<span class="py-builtin">print</span>(<span class="py-string">f"跳了 {jumps} 次"</span>)</pre>
+
+    <h3>🧭 知识点二：坐标系与方向数组 —— 走迷宫神器</h3>
+    
+    <div class="img-container">
+        <svg width="350" height="200" viewBox="0 0 350 200">
+            <text x="175" y="20" text-anchor="middle" fill="#00838F" font-weight="bold">计算机里的坐标系</text>
+            <defs>
+                <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                    <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#E0E0E0" stroke-width="1"/>
+                </pattern>
+            </defs>
+            <rect x="50" y="40" width="120" height="120" fill="url(#grid)" stroke="#90A4AE" stroke-width="2"/>
+            
+            <circle cx="50" cy="40" r="5" fill="#FF5722"/>
+            <text x="35" y="30" font-size="12" fill="#FF5722">(0,0)</text>
+            
+            <line x1="50" y1="40" x2="180" y2="40" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+            <text x="185" y="45" font-size="12">y (列)</text>
+            
+            <line x1="50" y1="40" x2="50" y2="170" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+            <text x="30" y="175" font-size="12">x (行)</text>
+            
+            <g transform="translate(200, 50)">
+                <text x="0" y="10" font-size="14" font-weight="bold">dx (行变化):</text>
+                <text x="10" y="30" font-size="12">上: -1</text>
+                <text x="10" y="50" font-size="12">下: +1</text>
+                <text x="0" y="80" font-size="14" font-weight="bold">dy (列变化):</text>
+                <text x="10" y="100" font-size="12">左: -1</text>
+                <text x="10" y="120" font-size="12">右: +1</text>
+            </g>
+        </svg>
+    </div>
+
+    <div class="tip-box">
+        <p><strong>简单定义：</strong> 在做像“扫雷”或“走迷宫”这种题时，我们经常要检查上下左右的格子。为了不写 8 个 if 语句，我们用两个小列表（List）来控制方向。</p>
+        <p><strong>注意：</strong> 电脑里的坐标系通常原点 (0,0) 在<strong>左上角</strong>，x轴（行）向下，y轴（列）向右，这和数学课上不一样哦！</p>
+    </div>
+
+    <pre>
+<span class="py-comment"># 检查 (x, y) 周围的格子</span>
+<span class="py-comment"># 这里的方向顺序：上、下、左、右</span>
+dx <span class="py-op">=</span> [<span class="py-op">-</span><span class="py-number">1</span>, <span class="py-number">1</span>, <span class="py-number">0</span>, <span class="py-number">0</span>]  <span class="py-comment"># 行的变化</span>
+dy <span class="py-op">=</span> [<span class="py-number">0</span>, <span class="py-number">0</span>, <span class="py-op">-</span><span class="py-number">1</span>, <span class="py-number">1</span>]  <span class="py-comment"># 列的变化</span>
+
+<span class="py-comment"># x, y 是当前位置</span>
+<span class="py-keyword">for</span> i <span class="py-keyword">in</span> <span class="py-builtin">range</span>(<span class="py-number">4</span>):
+    new_x <span class="py-op">=</span> x <span class="py-op">+</span> dx[i]
+    new_y <span class="py-op">=</span> y <span class="py-op">+</span> dy[i]
+    <span class="py-comment"># 接下来就可以判断 new_x, new_y 这个格子是不是雷</span>
+    <span class="py-comment"># if 0 <= new_x < 行数 and 0 <= new_y < 列数...</span></pre>
+
+    <h3>🍡 知识点三：高精度运算 —— 把数字当成糖葫芦串</h3>
+    
+    <div class="img-container">
+        <svg width="400" height="120" viewBox="0 0 400 120">
+            <line x1="20" y1="60" x2="380" y2="60" stroke="#8D6E63" stroke-width="6" stroke-linecap="round"/>
+            <circle cx="60" cy="60" r="25" fill="#FF5252" stroke="#D32F2F" stroke-width="2"/>
+            <text x="60" y="68" text-anchor="middle" fill="white" font-weight="bold" font-size="20">1</text>
+            <text x="60" y="100" text-anchor="middle" font-size="12" fill="#555">a[2]</text>
+
+            <circle cx="120" cy="60" r="25" fill="#FF5252" stroke="#D32F2F" stroke-width="2"/>
+            <text x="120" y="68" text-anchor="middle" fill="white" font-weight="bold" font-size="20">2</text>
+            <text x="120" y="100" text-anchor="middle" font-size="12" fill="#555">a[1]</text>
+
+            <circle cx="180" cy="60" r="25" fill="#FF5252" stroke="#D32F2F" stroke-width="2"/>
+            <text x="180" y="68" text-anchor="middle" fill="white" font-weight="bold" font-size="20">3</text>
+            <text x="180" y="100" text-anchor="middle" font-size="12" fill="#555">a[0]</text>
+
+            <text x="280" y="65" font-size="16" fill="#333">数字 "123"</text>
+            <text x="280" y="85" font-size="12" fill="#666">列表倒序存储</text>
+        </svg>
+    </div>
+
+    <div class="tip-box">
+        <p><strong>算法原理：</strong> 虽然 Python 可以直接算 `a + b`，但我们模拟一下 C++ 选手的痛苦：把数字看成字符串，拆分每一位存到列表里。做加法时，就像小学列竖式一样，一位一位对齐相加。</p>
+        <p><strong>生活类比：</strong> 一个超长的数字就像一串糖葫芦，我们一颗山楂（一位数字）一颗山楂地处理。</p>
+    </div>
+    
+    <pre>
+<span class="py-comment"># 模拟竖式加法的核心逻辑</span>
+<span class="py-comment"># 假设 a 和 b 是两个倒序存了数字的列表（个位在下标0）</span>
+c <span class="py-op">=</span> []
+carry <span class="py-op">=</span> <span class="py-number">0</span>  <span class="py-comment"># 进位</span>
+length <span class="py-op">=</span> <span class="py-builtin">max</span>(<span class="py-builtin">len</span>(a), <span class="py-builtin">len</span>(b))
+
+<span class="py-keyword">for</span> i <span class="py-keyword">in</span> <span class="py-builtin">range</span>(length):
+    <span class="py-comment"># 取出当前位的数字，如果不够长就当0处理</span>
+    val_a <span class="py-op">=</span> a[i] <span class="py-keyword">if</span> i <span class="py-op">&lt;</span> <span class="py-builtin">len</span>(a) <span class="py-keyword">else</span> <span class="py-number">0</span>
+    val_b <span class="py-op">=</span> b[i] <span class="py-keyword">if</span> i <span class="py-op">&lt;</span> <span class="py-builtin">len</span>(b) <span class="py-keyword">else</span> <span class="py-number">0</span>
+    
+    total <span class="py-op">=</span> val_a <span class="py-op">+</span> val_b <span class="py-op">+</span> carry
+    c.<span class="py-builtin">append</span>(total <span class="py-op">%</span> <span class="py-number">10</span>)  <span class="py-comment"># 当前位只留个位数</span>
+    carry <span class="py-op">=</span> total <span class="py-op">//</span> <span class="py-number">10</span>   <span class="py-comment"># 进位给下一位</span>
+</pre>
+
+    <h2>3. CSP-J 常见题型与大坑</h2>
+    
+    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+        <div style="flex: 1; background: #FFF; padding: 15px; border-radius: 10px; border-top: 5px solid #4CAF50;">
+            <h3>🤖 纯逻辑模拟题</h3>
+            <p><strong>考什么：</strong> 《乒乓球》、《石头剪刀布》。只要逻辑对就能过。</p>
+            <p class="danger-box"><strong>大坑：</strong> 规则理解偏差！比如乒乓球规则是“11分制且<strong>领先2分</strong>”才算赢，忘了判断领先2分就只有0分。</p>
+        </div>
+
+        <div style="flex: 1; background: #FFF; padding: 15px; border-radius: 10px; border-top: 5px solid #2196F3;">
+            <h3>🗺️ 网格地图类</h3>
+            <p><strong>考什么：</strong> 《扫雷》、《迷宫》。二维列表操作。</p>
+            <p class="danger-box"><strong>大坑：</strong> <strong>IndexError: list index out of range！</strong> 在第0行往上看，索引变成-1（在Python里代表最后一行！），这会导致逻辑错误。记得判断边界。</p>
+        </div>
+
+        <div style="flex: 1; background: #FFF; padding: 15px; border-radius: 10px; border-top: 5px solid #FF9800;">
+            <h3>🔢 高精度计算类</h3>
+            <p><strong>考什么：</strong> 大整数加减乘。</p>
+            <p class="danger-box"><strong>大坑：</strong> <br>1. 虽然 Python 自带高精度，但做题时一定要看清是考<strong>数值计算</strong>还是考<strong>字符串处理</strong>。<br>2. 输入输出可能非常巨大，<code>input()</code> 可能会慢。</p>
+        </div>
+    </div>
+
+    <h2>4. 课堂练习题（挑战开始！）</h2>
+
+    <div class="problem-card">
+        <h3>🏓 练习题 1：华华的乒乓球课（基础模拟）</h3>
+        <p><strong>题目描述：</strong> 华华记录了一串乒乓球比赛的胜负情况（W赢，L输，E结束）。请在 <strong>11分制</strong> 下，统计每一局的比分。（规则：先得11分且比对方多至少2分才算赢）。</p>
+        <p><strong>输入样例：</strong> <code>WWWWWWWWWWWWWWWWWWWWWWLWE</code></p>
+        <p><strong>输出样例：</strong> <br><code>11:0</code><br><code>11:0</code><br><code>1:1</code></p>
+        <p><strong>思路提示：</strong> 就像拿着记分牌，读到一个字符就加分。每次加完分，立刻检查：(分数>=11) 并且 (分差>=2)？如果是，输出并清零。</p>
+        
+        <h4>参考代码：</h4>
+        <pre>
+<span class="py-keyword">import</span> sys
+
+<span class="py-comment"># 一次性读入所有字符，处理跨行输入的情况</span>
+raw_input <span class="py-op">=</span> sys.stdin.read()
+matches <span class="py-op">=</span> []
+<span class="py-keyword">for</span> char <span class="py-keyword">in</span> raw_input:
+    <span class="py-keyword">if</span> char <span class="py-op">==</span> <span class="py-string">'E'</span>:
+        <span class="py-keyword">break</span>
+    <span class="py-keyword">if</span> char <span class="py-keyword">in</span> <span class="py-string">"WL"</span>:
+        matches.append(char)
+
+w <span class="py-op">=</span> <span class="py-number">0</span>  <span class="py-comment"># 华华得分</span>
+l <span class="py-op">=</span> <span class="py-number">0</span>  <span class="py-comment"># 对手得分</span>
+
+<span class="py-keyword">for</span> char <span class="py-keyword">in</span> matches:
+    <span class="py-keyword">if</span> char <span class="py-op">==</span> <span class="py-string">'W'</span>:
+        w <span class="py-op">+=</span> <span class="py-number">1</span>
+    <span class="py-keyword">else</span>:
+        l <span class="py-op">+=</span> <span class="py-number">1</span>
+    
+    <span class="py-comment"># 判断 11 分制结束条件</span>
+    <span class="py-comment"># 条件：有人>=11分 且 分差>=2</span>
+    <span class="py-keyword">if</span> (w <span class="py-op">&gt;=</span> <span class="py-number">11</span> <span class="py-keyword">or</span> l <span class="py-op">&gt;=</span> <span class="py-number">11</span>) <span class="py-keyword">and</span> <span class="py-builtin">abs</span>(w <span class="py-op">-</span> l) <span class="py-op">&gt;=</span> <span class="py-number">2</span>:
+        <span class="py-builtin">print</span>(<span class="py-string">f"{w}:{l}"</span>)
+        w <span class="py-op">=</span> <span class="py-number">0</span> <span class="py-comment"># 清零，开始下一局</span>
+        l <span class="py-op">=</span> <span class="py-number">0</span>
+
+<span class="py-comment"># 最后如果不满一局，也要输出当前的得分</span>
+<span class="py-builtin">print</span>(<span class="py-string">f"{w}:{l}"</span>)</pre>
+    </div>
+
+    <div class="problem-card">
+        <h3>💣 练习题 2：小明的扫雷作业（网格模拟）</h3>
+        <p><strong>题目描述：</strong> 给出一个 n * m 的方格，* 代表地雷，? 代表安全。请把所有的 ? 换成一个数字，表示它周围 8 个格子里有多少个地雷。</p>
+        <p><strong>思路提示：</strong> 遍历每一个格子。如果这个格子是 ?，就利用方向数组检查周围 8 个邻居。</p>
+        
+        <h4>参考代码：</h4>
+        <pre>
+<span class="py-comment"># 读入 n 行 m 列</span>
+n, m <span class="py-op">=</span> <span class="py-builtin">map</span>(<span class="py-builtin">int</span>, <span class="py-builtin">input</span>().split())
+
+<span class="py-comment"># 读入地图，grid 是一个包含字符串的列表</span>
+grid <span class="py-op">=</span> []
+<span class="py-keyword">for</span> _ <span class="py-keyword">in</span> <span class="py-builtin">range</span>(n):
+    grid.append(<span class="py-builtin">input</span>())
+
+<span class="py-comment"># 8个方向的偏移量：上、下、左、右、左上、左下、右上、右下</span>
+dx <span class="py-op">=</span> [<span class="py-op">-</span><span class="py-number">1</span>, <span class="py-number">1</span>, <span class="py-number">0</span>, <span class="py-number">0</span>, <span class="py-op">-</span><span class="py-number">1</span>, <span class="py-number">1</span>, <span class="py-op">-</span><span class="py-number">1</span>, <span class="py-number">1</span>]
+dy <span class="py-op">=</span> [<span class="py-number">0</span>, <span class="py-number">0</span>, <span class="py-op">-</span><span class="py-number">1</span>, <span class="py-number">1</span>, <span class="py-op">-</span><span class="py-number">1</span>, <span class="py-op">-</span><span class="py-number">1</span>, <span class="py-number">1</span>, <span class="py-number">1</span>]
+
+<span class="py-keyword">for</span> i <span class="py-keyword">in</span> <span class="py-builtin">range</span>(n):
+    <span class="py-keyword">for</span> j <span class="py-keyword">in</span> <span class="py-builtin">range</span>(m):
+        <span class="py-keyword">if</span> grid[i][j] <span class="py-op">==</span> <span class="py-string">'*'</span>:
+            <span class="py-builtin">print</span>(<span class="py-string">'*'</span>, end<span class="py-op">=</span><span class="py-string">""</span>)  <span class="py-comment"># 如果是雷，直接输出</span>
+        <span class="py-keyword">else</span>:
+            cnt <span class="py-op">=</span> <span class="py-number">0</span>  <span class="py-comment"># 计数器</span>
+            <span class="py-comment"># 遍历8个方向</span>
+            <span class="py-keyword">for</span> k <span class="py-keyword">in</span> <span class="py-builtin">range</span>(<span class="py-number">8</span>):
+                ni <span class="py-op">=</span> i <span class="py-op">+</span> dx[k]
+                nj <span class="py-op">=</span> j <span class="py-op">+</span> dy[k]
+                <span class="py-comment"># 检查边界：只要 ni, nj 不越界</span>
+                <span class="py-keyword">if</span> <span class="py-number">0</span> <span class="py-op">&lt;=</span> ni <span class="py-op">&lt;</span> n <span class="py-keyword">and</span> <span class="py-number">0</span> <span class="py-op">&lt;=</span> nj <span class="py-op">&lt;</span> m:
+                    <span class="py-keyword">if</span> grid[ni][nj] <span class="py-op">==</span> <span class="py-string">'*'</span>:
+                        cnt <span class="py-op">+=</span> <span class="py-number">1</span>
+            <span class="py-builtin">print</span>(cnt, end<span class="py-op">=</span><span class="py-string">""</span>)  <span class="py-comment"># 输出雷的数量，不换行</span>
+    <span class="py-builtin">print</span>()  <span class="py-comment"># 一行结束后换行</span>
+</pre>
+    </div>
+
+    <div class="problem-card">
+        <h3>📈 练习题 3：巨人的加法（高精度加法原理）</h3>
+        <p><strong>题目描述：</strong> 不管多大的两个整数（长度不超过 500 位），请计算它们的和。</p>
+        <p><strong>思路提示：</strong> 在 Python 中，你可以直接用方法1（魔法）。但为了训练算法，请尝试阅读方法2（手动实现）。</p>
+        
+        <h4>参考代码：</h4>
+        <pre>
+<span class="py-comment"># 方法 1：Python 魔法版 (比赛时推荐)</span>
+s1 <span class="py-op">=</span> <span class="py-builtin">input</span>()
+s2 <span class="py-op">=</span> <span class="py-builtin">input</span>()
+<span class="py-builtin">print</span>(<span class="py-builtin">int</span>(s1) <span class="py-op">+</span> <span class="py-builtin">int</span>(s2))
+
+<span class="py-comment"># ----------------------------------</span>
+
+<span class="py-comment"># 方法 2：算法原理版 (训练逻辑用)</span>
+s1 <span class="py-op">=</span> <span class="py-builtin">input</span>()
+s2 <span class="py-op">=</span> <span class="py-builtin">input</span>()
+
+<span class="py-comment"># 倒序转为数字列表: "123" -> [3, 2, 1]</span>
+a <span class="py-op">=</span> [<span class="py-builtin">int</span>(x) <span class="py-keyword">for</span> x <span class="py-keyword">in</span> s1[::<span class="py-op">-</span><span class="py-number">1</span>]]
+b <span class="py-op">=</span> [<span class="py-builtin">int</span>(x) <span class="py-keyword">for</span> x <span class="py-keyword">in</span> s2[::<span class="py-op">-</span><span class="py-number">1</span>]]
+c <span class="py-op">=</span> []
+
+length <span class="py-op">=</span> <span class="py-builtin">max</span>(<span class="py-builtin">len</span>(a), <span class="py-builtin">len</span>(b))
+carry <span class="py-op">=</span> <span class="py-number">0</span>
+
+<span class="py-keyword">for</span> i <span class="py-keyword">in</span> <span class="py-builtin">range</span>(length):
+    val_a <span class="py-op">=</span> a[i] <span class="py-keyword">if</span> i <span class="py-op">&lt;</span> <span class="py-builtin">len</span>(a) <span class="py-keyword">else</span> <span class="py-number">0</span>
+    val_b <span class="py-op">=</span> b[i] <span class="py-keyword">if</span> i <span class="py-op">&lt;</span> <span class="py-builtin">len</span>(b) <span class="py-keyword">else</span> <span class="py-number">0</span>
+    
+    total <span class="py-op">=</span> val_a <span class="py-op">+</span> val_b <span class="py-op">+</span> carry
+    c.append(total <span class="py-op">%</span> <span class="py-number">10</span>)
+    carry <span class="py-op">=</span> total <span class="py-op">//</span> <span class="py-number">10</span>
+
+<span class="py-keyword">if</span> carry:
+    c.append(carry)
+
+<span class="py-comment"># 倒序打印出来</span>
+<span class="py-keyword">for</span> num <span class="py-keyword">in</span> c[::<span class="py-op">-</span><span class="py-number">1</span>]:
+    <span class="py-builtin">print</span>(num, end<span class="py-op">=</span><span class="py-string">""</span>)
+<span class="py-builtin">print</span>()</pre>
+    </div>
+
+    <div class="problem-card">
+        <h3>🧸 练习题 4：玩具小人的秘密（环形模拟）</h3>
+        <p><strong>题目描述：</strong> n 个玩具小人围成一个圈，每个小人有一个朝向（0朝圈内，1朝圈外）。根据指令左右移动，问最后停在谁手里？</p>
+        <p><strong>思路提示：</strong> Python 的 <code>%</code> 运算非常智能！在 C++ 里 <code>-1 % 5</code> 结果是 <code>-1</code>，但在 Python 里 <code>-1 % 5</code> 结果是 <code>4</code>。这意味着我们不需要特殊处理负数，直接减即可！</p>
+        
+        <h4>参考代码：</h4>
+        <pre>
+<span class="py-comment"># 使用字典或元组来存储小人信息</span>
+n, m <span class="py-op">=</span> <span class="py-builtin">map</span>(<span class="py-builtin">int</span>, <span class="py-builtin">input</span>().split())
+toys <span class="py-op">=</span> []
+
+<span class="py-keyword">for</span> _ <span class="py-keyword">in</span> <span class="py-builtin">range</span>(n):
+    <span class="py-comment"># 输入: "0 name1"</span>
+    parts <span class="py-op">=</span> <span class="py-builtin">input</span>().split()
+    direction <span class="py-op">=</span> <span class="py-builtin">int</span>(parts[<span class="py-number">0</span>]) <span class="py-comment"># 0内 1外</span>
+    name <span class="py-op">=</span> parts[<span class="py-number">1</span>]
+    toys.append({<span class="py-string">'dir'</span>: direction, <span class="py-string">'name'</span>: name})
+
+now <span class="py-op">=</span> <span class="py-number">0</span> <span class="py-comment"># 当前在第0号小人</span>
+
+<span class="py-keyword">for</span> _ <span class="py-keyword">in</span> <span class="py-builtin">range</span>(m):
+    a, s <span class="py-op">=</span> <span class="py-builtin">map</span>(<span class="py-builtin">int</span>, <span class="py-builtin">input</span>().split())
+    <span class="py-comment"># a是指令方向(0左1右), s是步数</span>
+    
+    <span class="py-comment"># 异或逻辑：如果朝向和指令方向相同，就是逆时针(减法)</span>
+    <span class="py-comment"># 例如：朝内(0)且向左(0) -> 逆时针，索引减小</span>
+    <span class="py-keyword">if</span> toys[now][<span class="py-string">'dir'</span>] <span class="py-op">==</span> a:
+        now <span class="py-op">=</span> (now <span class="py-op">-</span> s) <span class="py-op">%</span> n
+        <span class="py-comment"># Python 的 % 自动处理负数，无需额外加 n</span>
+    <span class="py-keyword">else</span>:
+        <span class="py-comment"># 否则是加法（顺时针）</span>
+        now <span class="py-op">=</span> (now <span class="py-op">+</span> s) <span class="py-op">%</span> n
+
+<span class="py-builtin">print</span>(toys[now][<span class="py-string">'name'</span>])</pre>
+    </div>
+
+    <h2>5. 课堂小结与思考</h2>
+    <div style="background-color: #E1F5FE; padding: 20px; border-radius: 10px;">
+        <p>同学们，今天我们用 Python 把电脑变成了“听话的机器人”和“超级计算器”。</p>
+        <ul>
+            <li><strong>模拟题：</strong> 就是考耐心。题目每一个字都是线索，漏看一个条件（比如乒乓球的“分差>=2”）就会错。Python 处理字符串和列表非常方便，要善用这些工具。</li>
+            <li><strong>高精度：</strong> 虽然 Python 原生支持大数计算，但在比赛中理解“按位处理”的算法思想，能帮我们解决更多复杂的字符串变种问题。</li>
+        </ul>
+        
+        <p><strong>🤔 课后思考题（想拿金牌的同学看这里）：</strong></p>
+        <ol>
+            <li>Python 的 <code>int</code> 是怎么实现无限大的？它底层是不是也像我们写的代码一样，用了一个“列表”来存数字呢？</li>
+            <li>如果扫雷地图特别大，大到内存都装不下，但是雷很少，我们还能用二维列表 <code>grid[10000][10000]</code> 吗？有没有别的方法存雷的位置？（提示：Python 的 <code>set</code> 或者 <code>dict</code>？）</li>
+        </ol>
+    </div>
+
+    <div class="next-step">
+        今天的课就到这里，快去 OJ 上把这几道题 AC 掉吧！加油！🌟
+    </div>
+
+</div>
+
+</body>
+</html>

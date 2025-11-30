@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python 算法魔法课堂：第六章 贪心</title>
+    <style>
+        /* 全局设置：适合中学生的明快风格 */
+        @import url('https://fonts.googleapis.com/css2?family=Zcool+KuaiLe&family=Nunito:wght@400;700&display=swap');
+
+        body {
+            background-color: #FFF3E0; /* 柔和的暖黄色背景 */
+            font-family: 'Nunito', "Microsoft YaHei", sans-serif;
+            color: #424242;
+            margin: 0;
+            padding: 20px;
+            background-image: radial-gradient(#FFCC80 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 40px;
+            border: 4px solid #FFB74D;
+        }
+
+        /* 标题样式 */
+        h1 {
+            color: #EF6C00;
+            text-align: center;
+            font-family: 'Zcool KuaiLe', cursive, sans-serif;
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px #FFE0B2;
+        }
+
+        h2 {
+            color: #0277BD;
+            border-left: 6px solid #29B6F6;
+            padding-left: 15px;
+            margin-top: 40px;
+            font-size: 1.8em;
+            background: #E1F5FE;
+            padding: 10px 15px;
+            border-radius: 0 15px 15px 0;
+        }
+
+        h3 {
+            color: #2E7D32;
+            margin-top: 30px;
+            border-bottom: 2px dashed #A5D6A7;
+            padding-bottom: 5px;
+        }
+
+        p {
+            line-height: 1.8;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        /* 强调文字 */
+        .highlight-text {
+            background-color: #FFECB3;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #E65100;
+        }
+
+        /* 知识点卡片 */
+        .card {
+            background: #FAFAFA;
+            border: 2px solid #EEEEEE;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #FFB74D;
+            box-shadow: 0 5px 15px rgba(255, 183, 77, 0.2);
+        }
+
+        /* 坑点警告框 */
+        .pitfall {
+            background-color: #FFEBEE;
+            border: 2px solid #FFCDD2;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #C62828;
+        }
+        .pitfall strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        /* 代码块样式 - 模拟IDE */
+        .code-box {
+            background-color: #282c34;
+            color: #abb2bf;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            overflow-x: auto;
+            margin: 15px 0;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        /* Python 语法高亮 */
+        .keyword { color: #c678dd; font-weight: bold; } /* def, return, if, for, in */
+        .builtin { color: #56b6c2; } /* print, len, range, input */
+        .string { color: #98c379; } /* "string" */
+        .number { color: #d19a66; } /* 123 */
+        .comment { color: #7f848e; font-style: italic; } /* # comment */
+        .function { color: #61afef; } /* functions */
+        .class-name { color: #e5c07b; } /* class names */
+
+        /* 插图容器 */
+        .illustration {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        /* 练习题样式 */
+        .problem {
+            border: 3px solid #81D4FA;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            background: white;
+            position: relative;
+        }
+        .problem-badge {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: #0288D1;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        /* 按钮/链接 */
+        .btn {
+            display: inline-block;
+            background-color: #FF9800;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 头部 -->
+    <div style="text-align: center;">
+        <h1>✨ 第六章：贪心算法 ✨</h1>
+        <p style="font-size: 1.2em; color: #757575;">Greedy Algorithm - 聪明的“短视”策略 (Python 版)</p>
+    </div>
+
+    <!-- 1. 趣味开场 -->
+    <h2>1. 趣味开场：贪心的智慧</h2>
+    <p>大家好，我是你们的 AI 编程教练！欢迎来到今天的课堂。👋</p>
+    
+    <div class="illustration">
+        <!-- SVG 插图：阿里巴巴选宝藏 -->
+        <svg width="400" height="200" viewBox="0 0 400 200">
+            <!-- 背景山洞 -->
+            <path d="M20,180 Q200,10 380,180" fill="#EFEBE9" stroke="#5D4037" stroke-width="3"/>
+            
+            <!-- 金币堆 - 纯金 -->
+            <g transform="translate(100, 140)">
+                <circle cx="0" cy="0" r="25" fill="#FFD700" stroke="#FBC02D" stroke-width="2"/>
+                <text x="-15" y="5" font-size="12" fill="#E65100">纯金</text>
+                <text x="-15" y="25" font-size="10" fill="#333">$999</text>
+            </g>
+            
+            <!-- 金币堆 - 掺铜 -->
+            <g transform="translate(300, 140)">
+                <circle cx="0" cy="0" r="35" fill="#CD7F32" stroke="#8D6E63" stroke-width="2"/>
+                <text x="-15" y="5" font-size="12" fill="#3E2723">掺铜</text>
+                <text x="-15" y="25" font-size="10" fill="#333">$50</text>
+            </g>
+
+            <!-- 小人阿里巴巴 -->
+            <g transform="translate(200, 150)">
+                <circle cx="0" cy="-40" r="15" fill="#FFCCBC"/> <!-- 头 -->
+                <path d="M0,-25 L0,20" stroke="#333" stroke-width="3"/> <!-- 身体 -->
+                <path d="M0,-10 L-20,10 M0,-10 L20,-30" stroke="#333" stroke-width="3"/> <!-- 手，指向纯金 -->
+                <path d="M0,20 L-10,40 M0,20 L10,40" stroke="#333" stroke-width="3"/> <!-- 腿 -->
+                <rect x="-25" y="-55" width="80" height="30" rx="10" fill="white" stroke="#333"/>
+                <text x="-15" y="-35" font-size="12">肯定拿贵的呀！</text>
+            </g>
+        </svg>
+    </div>
+
+    <p>同学们，想象一下，如果阿里巴巴把你带进了一个装满金币的宝藏洞。你的背包只能装 50 斤的东西。洞里有好多堆金币，有的堆全是纯金的，特别贵；有的堆是掺了铜的，比较便宜。你会怎么装？</p>
+    <p>你肯定会说：“教练你傻呀？我当然是先把最贵的纯金往包里塞啊！塞不下了再塞便宜的！” 对！这就是<span class="highlight-text">贪心</span>。</p>
+    <p>在算法世界里，“贪心”意味着：<strong>只顾眼前的利益，每次都选当前看起来最好的那个，不考虑以后。</strong> 神奇的是，在很多问题里，这样简单粗暴的方法，最后竟然能得到最好的结果！</p>
+
+    <!-- 2. 核心知识点 -->
+    <h2>2. 核心知识点讲解</h2>
+
+    <div class="card">
+        <h3>💡 知识点一：贪心的基本思想 —— “只选最贵的”</h3>
+        <p><strong>简单定义：</strong> 把一个大问题拆成一步一步的小选择。每一步我都不管将来，只选当前这一步里最好的那个选项。</p>
+        <p><strong>生活类比：</strong> 捡钱！地上有 100 元、50 元、10 元各一张，老师让你只能捡一张，你捡哪张？肯定捡 100 元对不对？</p>
+        
+        <p><strong>极简代码（捡钱）：</strong></p>
+<div class="code-box">
+<pre>
+money = [<span class="number">10</span>, <span class="number">50</span>, <span class="number">100</span>]
+max_money = <span class="number">0</span>
+
+<span class="comment"># 贪心策略：遍历一遍，每次都跟当前手里最大的比</span>
+<span class="keyword">for</span> m <span class="keyword">in</span> money:
+    <span class="keyword">if</span> m > max_money:
+        max_money = m <span class="comment"># 只要比我现在的大，我就要它！</span>
+
+<span class="builtin">print</span>(f<span class="string">"我捡到了：{max_money}元"</span>)
+</pre>
+</div>
+    </div>
+
+    <div class="card">
+        <h3>📊 知识点二：贪心与排序 —— “排好队再选”</h3>
+        <p><strong>简单定义：</strong> 很多贪心题，只要把东西按大小、性价比或者时间排个序，然后从头选到尾，问题就解决了。</p>
+        <p><strong>生活类比：</strong> <strong>部分背包问题</strong>。就像刚才说的装金币，我们算出每堆金币的“单价”，按单价从高到低排队，先装贵的。</p>
+        <p><strong>Python 神技：</strong> 使用 <code>sort</code> 方法的 <code>key</code> 参数，一行代码搞定复杂排序！</p>
+        
+<div class="code-box">
+<pre>
+<span class="keyword">class</span> <span class="class-name">Coin</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, weight, value):
+        self.weight = weight
+        self.value = value
+
+<span class="comment"># 假设我们有一个 coins 列表</span>
+<span class="comment"># 排序规则：谁的单价高（价值/重量），谁排前面</span>
+<span class="comment"># reverse=True 表示降序（从大到小）</span>
+coins.sort(key=<span class="keyword">lambda</span> x: x.value / x.weight, reverse=<span class="keyword">True</span>)
+
+<span class="comment"># ... 然后从头开始装</span>
+</pre>
+</div>
+    </div>
+
+    <div class="card">
+        <h3>🤔 知识点三：反证法证明 —— “不管怎么换，都没我这个好”</h3>
+        <p><strong>简单定义：</strong> 怎么确定贪心是对的呢？我们可以假设如果不这么做（比如不选最贵的），结果会不会变差？如果变差了，说明贪心是对的。</p>
+        <p><strong>生活类比：</strong> <strong>排队接水</strong>。假设让接水慢的人排在前面，后面所有人都得多等他一会儿，总等待时间肯定变长了。所以，让快的人先接水（贪心）肯定是对的。</p>
+    </div>
+
+    <!-- 3. CSP-J 常见题型 -->
+    <h2>3. CSP-J 常见题型总结</h2>
+    
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 250px; background:#E0F7FA; padding: 15px; border-radius: 10px;">
+            <h4>🎒 “背包/装载”类</h4>
+            <p><strong>考什么：</strong> 给背包容量，给一堆物品，问怎么装价值最大。</p>
+            <div class="pitfall">
+                <strong>⚠️ 大坑：</strong>
+                1. 整数除法：在 Python 3 中 <code>/</code> 自动得到浮点数，这很好！但如果要地板除（取整）记得用 <code>//</code>。<br>
+                2. 精度：性价比可能无限循环小数，但通常 Python 的 float 精度够用。
+            </div>
+        </div>
+
+        <div style="flex: 1; min-width: 250px; background:#FFF8E1; padding: 15px; border-radius: 10px;">
+            <h4>📅 “区间/活动安排”类</h4>
+            <p><strong>考什么：</strong> 给很多个活动（有开始和结束时间），问最多能参加几个？</p>
+            <p><strong>策略：</strong> 优先选<strong>结束时间最早</strong>的活动！</p>
+            <div class="pitfall">
+                <strong>⚠️ 大坑：</strong>
+                排序时要是按开始时间排就错了，一定要按结束时间排。
+            </div>
+        </div>
+
+        <div style="flex: 1; min-width: 250px; background:#F3E5F5; padding: 15px; border-radius: 10px;">
+            <h4>🌲 “合并/哈夫曼树”类</h4>
+            <p><strong>考什么：</strong> 有几堆果子要合并，每次合并消耗体力等于两堆重量之和。问最少消耗？</p>
+            <p><strong>策略：</strong> 每次挑最小的两堆合并。</p>
+            <div class="pitfall">
+                <strong>⚠️ 大坑：</strong>
+                合并后的新堆要放回去！必须用 <strong>优先队列 (heapq)</strong>，否则每次重排会超时。
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 课堂练习题 -->
+    <h2>4. 课堂练习题（挑战开始！）</h2>
+
+    <div class="problem">
+        <div class="problem-badge">练习题 1</div>
+        <h3>💰 阿里巴巴与金币（部分背包）</h3>
+        <p><strong>题目描述：</strong> 阿里巴巴进了藏宝洞，有 N 堆金币，背包能装 T 重量。金币可以随意分割（比如拿半堆）。问最多能拿走多少价值的金币？</p>
+        <p><strong>思路提示：</strong> 这就是典型的“谁贵拿谁”。算出每堆金币的单价（价值/重量），按单价从高到低排序。能装完一堆就装一堆，装不完就把背包填满为止。</p>
+        
+<div class="code-box">
+<pre>
+<span class="keyword">class</span> <span class="class-name">Coin</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, m, v):
+        self.m = m  <span class="comment"># 重量</span>
+        self.v = v  <span class="comment"># 价值</span>
+
+<span class="keyword">def</span> <span class="function">solve</span>():
+    <span class="comment"># 读入一行：N堆金币，背包容量 T</span>
+    line1 = <span class="builtin">input</span>().split()
+    n = <span class="builtin">int</span>(line1[<span class="number">0</span>])
+    t = <span class="builtin">int</span>(line1[<span class="number">1</span>])
+    
+    coins = []
+    <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="builtin">range</span>(n):
+        m, v = <span class="builtin">map</span>(<span class="builtin">int</span>, <span class="builtin">input</span>().split())
+        coins.append(Coin(m, v))
+
+    <span class="comment"># 关键步骤：按单价 (v/m) 降序排序</span>
+    coins.sort(key=<span class="keyword">lambda</span> x: x.v / x.m, reverse=<span class="keyword">True</span>)
+
+    total_value = <span class="number">0.0</span>
+    
+    <span class="keyword">for</span> c <span class="keyword">in</span> coins:
+        <span class="keyword">if</span> t >= c.m: <span class="comment"># 如果背包装得下这一整堆</span>
+            total_value += c.v
+            t -= c.m
+        <span class="keyword">else</span>: <span class="comment"># 装不下了一整堆了，只装剩下的一点点</span>
+            total_value += (c.v / c.m) * t
+            <span class="keyword">break</span> <span class="comment"># 背包满了，收工</span>
+
+    <span class="comment"># 保留两位小数输出</span>
+    <span class="builtin">print</span>(f<span class="string">"{total_value:.2f}"</span>)
+
+<span class="comment"># solve() # 实际运行时取消注释</span>
+</pre>
+</div>
+    </div>
+
+    <!-- 排队插图 -->
+    <div class="illustration">
+        <svg width="400" height="150" viewBox="0 0 400 150">
+             <text x="200" y="20" text-anchor="middle" font-size="14" fill="#555">排队打水：让快的人先来！</text>
+             <!-- 慢的人 -->
+             <g transform="translate(300, 100)">
+                 <rect x="-15" y="-40" width="30" height="40" fill="#B0BEC5"/>
+                 <circle cx="0" cy="-50" r="10" fill="#B0BEC5"/>
+                 <text x="-10" y="15" font-size="10">慢(99)</text>
+             </g>
+             <!-- 箭头交换 -->
+             <path d="M250,70 L150,70" stroke="#FF5722" stroke-width="3" marker-end="url(#arrow)"/>
+             <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L9,3 z" fill="#FF5722" />
+                </marker>
+             </defs>
+             <!-- 快的人 -->
+             <g transform="translate(100, 100)">
+                 <rect x="-10" y="-30" width="20" height="30" fill="#81C784"/>
+                 <circle cx="0" cy="-40" r="10" fill="#81C784"/>
+                 <text x="-10" y="15" font-size="10">快(1)</text>
+             </g>
+             <!-- 水龙头 -->
+             <rect x="20" y="60" width="40" height="60" fill="#4FC3F7"/>
+             <rect x="40" y="50" width="30" height="10" fill="#aaa"/>
+             <path d="M60,60 L60,80" stroke="#0277BD" stroke-width="2" stroke-dasharray="2,2"/>
+        </svg>
+    </div>
+
+    <div class="problem">
+        <div class="problem-badge">练习题 2</div>
+        <h3>🚰 排队接水（排序不等式）</h3>
+        <p><strong>题目描述：</strong> 有 n 个人排队打水，第 i 个人打水要 t_i 分钟。请安排排队顺序，让所有人的平均等待时间最小。</p>
+        <p><strong>思路提示：</strong> 如果一个打水很慢的人排在第一个，后面 n-1 个人都要等他。所以，我们要让快的人先打！直接把打水时间从小到大排序即可。</p>
+
+<div class="code-box">
+<pre>
+<span class="keyword">def</span> <span class="function">solve</span>():
+    n = <span class="builtin">int</span>(<span class="builtin">input</span>())
+    <span class="comment"># 读取一行时间，转为列表</span>
+    times = <span class="builtin">list</span>(<span class="builtin">map</span>(<span class="builtin">int</span>, <span class="builtin">input</span>().split()))
+    
+    <span class="comment"># 构造带编号的人：(id, time)</span>
+    <span class="comment"># 比如第1个人，编号是1，时间是 times[0]</span>
+    people = []
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="builtin">range</span>(n):
+        people.append((i + <span class="number">1</span>, times[i]))
+
+    <span class="comment"># 按打水时间从小到大排序 (x[1] 是 time)</span>
+    people.sort(key=<span class="keyword">lambda</span> x: x[<span class="number">1</span>])
+
+    total_wait = <span class="number">0</span>
+    
+    <span class="comment"># 输出顺序</span>
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="builtin">range</span>(n):
+        <span class="builtin">print</span>(people[i][<span class="number">0</span>], end=<span class="string">" "</span>)
+        <span class="comment"># 计算这个人的耗时贡献给了后面多少人</span>
+        <span class="comment"># 当前这个人打水 people[i][1] 分钟，后面还有 n-1-i 个人在等他</span>
+        total_wait += people[i][<span class="number">1</span>] * (n - <span class="number">1</span> - i)
+        
+    <span class="builtin">print</span>() <span class="comment"># 换行</span>
+    <span class="builtin">print</span>(f<span class="string">"{total_wait / n:.2f}"</span>)
+
+<span class="comment"># solve()</span>
+</pre>
+</div>
+    </div>
+
+    <div class="problem">
+        <div class="problem-badge">练习题 3</div>
+        <h3>🍎 合并果子（优先队列/哈夫曼树）</h3>
+        <p><strong>题目描述：</strong> n 堆果子，每次选两堆合并，消耗体力为两堆重量之和。求合并成一堆的最少体力。</p>
+        <p><strong>思路提示：</strong> 这题不能只排序一次！因为合并出的新堆可能比原来的某些堆还要小。所以每次合并完，新堆要放回去重新找最小的。我们可以用 Python 的神器：<code>heapq</code> 模块（它是小根堆，刚好适合找最小值）。</p>
+
+<div class="code-box">
+<pre>
+<span class="keyword">import</span> heapq
+
+<span class="keyword">def</span> <span class="function">solve</span>():
+    n = <span class="builtin">int</span>(<span class="builtin">input</span>())
+    fruits = <span class="builtin">list</span>(<span class="builtin">map</span>(<span class="builtin">int</span>, <span class="builtin">input</span>().split()))
+
+    <span class="comment"># 将列表转换为堆（小根堆）</span>
+    heapq.heapify(fruits)
+
+    ans = <span class="number">0</span>
+    <span class="comment"># 只要堆里还有多于 1 堆果子，就继续合并</span>
+    <span class="keyword">while</span> <span class="builtin">len</span>(fruits) > <span class="number">1</span>:
+        <span class="comment"># 取出最小的两堆</span>
+        a = heapq.heappop(fruits)
+        b = heapq.heappop(fruits)
+        
+        current_sum = a + b
+        ans += current_sum  <span class="comment"># 记录体力消耗</span>
+        
+        <span class="comment"># 把新堆放回去，它会自动排好序</span>
+        heapq.heappush(fruits, current_sum)
+
+    <span class="builtin">print</span>(ans)
+
+<span class="comment"># solve()</span>
+</pre>
+</div>
+    </div>
+
+    <div class="problem">
+        <div class="problem-badge">练习题 4</div>
+        <h3>🏃 凌乱的 yyy（区间调度）</h3>
+        <p><strong>题目描述：</strong> 有很多比赛，每个比赛有开始时间和结束时间。同一时间只能参加一个。问最多能参加几个？</p>
+        <p><strong>思路提示：</strong> 记住口诀：<strong>谁先结束选谁！</strong>因为结束得越早，留给后面的时间就越多。</p>
+
+<div class="code-box">
+<pre>
+<span class="keyword">class</span> <span class="class-name">Contest</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, start, end):
+        self.start = start
+        self.end = end
+
+<span class="keyword">def</span> <span class="function">solve</span>():
+    n = <span class="builtin">int</span>(<span class="builtin">input</span>())
+    contests = []
+    <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="builtin">range</span>(n):
+        s, e = <span class="builtin">map</span>(<span class="builtin">int</span>, <span class="builtin">input</span>().split())
+        contests.append(Contest(s, e))
+
+    <span class="comment"># 关键：按结束时间从小到大排序</span>
+    contests.sort(key=<span class="keyword">lambda</span> x: x.end)
+
+    count = <span class="number">0</span>
+    last_end_time = <span class="number">0</span> <span class="comment"># 上一个参加的比赛结束时间</span>
+
+    <span class="keyword">for</span> c <span class="keyword">in</span> contests:
+        <span class="comment"># 如果这个比赛的开始时间 >= 上一个比赛的结束时间，就可以参加</span>
+        <span class="keyword">if</span> c.start >= last_end_time:
+            count += <span class="number">1</span>
+            last_end_time = c.end <span class="comment"># 更新结束时间</span>
+
+    <span class="builtin">print</span>(count)
+
+<span class="comment"># solve()</span>
+</pre>
+</div>
+    </div>
+
+    <!-- 5. 课堂小结 -->
+    <h2>5. 课堂小结与提问</h2>
+    <p>同学们，今天我们学会了用“贪心”的眼光看问题：</p>
+    <ul>
+        <li><strong>核心思想：</strong> 每一步都选当前最好的，不用管以后。</li>
+        <li><strong>两大神器：</strong> <code>sort()</code> 排序和 <code>heapq</code> 堆。</li>
+    </ul>
+
+    <div class="pitfall" style="background-color: #E1F5FE; border-color: #81D4FA; color: #0277BD;">
+        <strong>🧠 课后思考：</strong>
+        <ol>
+            <li>在“排队接水”题里，如果有<strong>两个水龙头</strong>，策略还是一样吗？该怎么安排？（提示：还是让快的人先打，但是要动态分配给空闲的水龙头）</li>
+            <li>在“合并果子”题里，如果我们手动模拟数组排序而不使用 <code>heapq</code>，每次合并完都重新 sort 一遍，数据大了会超时吗？（提示：Sort 是 O(NlogN)，重排 N 次就是 O(N²logN)，肯定会超时！）</li>
+        </ol>
+    </div>
+
+    <p style="text-align: center; margin-top: 30px;">今天的课就到这里，快去 OJ 上把这几道贪心题“吃”掉吧！加油！🌟</p>
+
+</div>
+
+</body>
+</html>
