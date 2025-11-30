@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏开发1：知识点全攻略</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-color: #2c3e50;
+            --screen-bg: #f5f6fa;
+            --primary: #8e44ad;
+            --secondary: #2980b9;
+            --accent: #f1c40f;
+            --danger: #e74c3c;
+            --success: #27ae60;
+            
+            /* 代码高亮 */
+            --code-bg: #2d3436;
+            --code-fg: #dfe6e9;
+            --tok-kw: #e17055;
+            --tok-func: #74b9ff;
+            --tok-str: #55efc4;
+            --tok-num: #fab1a0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 50px;
+            width: 100vw;
+            max-width: 1400px;
+        }
+
+        /* --- 3. 可爱按钮 (外部) --- */
+        .nav-btn {
+            width: 80px;
+            height: 80px;
+            background: #ff7675;
+            border: none;
+            border-radius: 50%; /* 圆形 */
+            box-shadow: 0 8px 0 #d63031, 0 15px 20px rgba(0,0,0,0.4);
+            cursor: pointer;
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: white;
+            z-index: 100;
+            position: relative;
+        }
+
+        /* 十字键造型装饰 */
+        .nav-btn::after {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 60%;
+            border-radius: 50%;
+            border: 4px solid rgba(255,255,255,0.3);
+        }
+
+        .nav-btn:hover { transform: translateY(4px); box-shadow: 0 4px 0 #d63031; background: #ff9f9e; }
+        .nav-btn:active { transform: translateY(8px); box-shadow: none; }
+        
+        .nav-btn.prev { background: #74b9ff; box-shadow: 0 8px 0 #0984e3, 0 15px 20px rgba(0,0,0,0.4); }
+        .nav-btn.prev:hover { box-shadow: 0 4px 0 #0984e3; background: #81ecec; }
+
+        .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(100%); }
+
+        /* --- 4. 屏幕容器 --- */
+        .screen-container {
+            width: 900px;
+            height: 550px; /* 增加高度以容纳更多内容 */
+            background: var(--screen-bg);
+            border-radius: 20px;
+            border: 10px solid #34495e;
+            box-shadow: 
+                inset 0 0 20px rgba(0,0,0,0.1),
+                0 0 0 15px #2c3e50,
+                0 30px 60px rgba(0,0,0,0.6);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部状态栏 */
+        .status-bar {
+            height: 40px;
+            background: #34495e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            color: #ecf0f1;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px;
+            flex-direction: column;
+            animation: slideIn 0.5s ease;
+            overflow-y: auto;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* 内容样式 */
+        h1 { margin: 0 0 20px 0; color: #2c3e50; font-size: 32px; border-bottom: 3px dashed #bdc3c7; padding-bottom: 10px; }
+        .desc { font-size: 18px; color: #7f8c8d; line-height: 1.6; margin-bottom: 20px; }
+        
+        /* 布局网格 */
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 30px;
+            height: 100%;
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 20px;
+            border-left: 5px solid var(--accent);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .k { color: var(--tok-kw); font-weight: bold; }
+        .f { color: var(--tok-func); }
+        .s { color: var(--tok-str); }
+        .n { color: var(--tok-num); }
+
+        /* 视觉演示区 */
+        .visual-demo {
+            background: #fff;
+            border: 2px solid #bdc3c7;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: radial-gradient(#dfe6e9 2px, transparent 2px);
+            background-size: 20px 20px;
+        }
+        
+        /* 标签 */
+        .tag {
+            display: inline-block;
+            background: #dfe6e9;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #636e72;
+            font-weight: bold;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #bdc3c7;
+            width: 100%;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f1c40f, #e67e22);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* --- 动画元素 --- */
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0; } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        .char { font-size: 50px; animation: bounce 2s infinite; }
+        .marker { width: 20px; height: 20px; background: red; border-radius: 50%; position: absolute; }
+        .marker::after { content:''; position: absolute; width:100%; height:100%; border:2px solid red; border-radius:50%; animation: pulse 1s infinite; }
+    
+    </style>
+</head>
+<body>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn prev" id="btnPrev" onclick="moveSlide(-1)">◀</button>
+
+    <!-- 屏幕 -->
+    <div class="screen-container">
+        <div class="status-bar">
+            <span>LEVEL: <span id="slideNum">1</span>/20</span>
+            <span>❤️ CODECOMBAT</span>
+            <span>⭐ SCORE: 999</span>
+        </div>
+
+        <!-- 0. 封面 -->
+        <div class="slide active" style="text-align: center; justify-content: center;">
+            <div style="font-size: 100px; margin-bottom: 20px;">🎮</div>
+            <h1 style="border: none; font-size: 48px; color: #2c3e50;">游戏开发1：知识点全攻略</h1>
+            <p style="font-size: 24px; color: #7f8c8d;">准备好构建你的世界了吗？</p>
+            <div style="margin-top: 40px; display: flex; justify-content: center; gap: 20px;">
+                <span class="tag" style="background: #a29bfe; color: white;">19个核心概念</span>
+                <span class="tag" style="background: #ff7675; color: white;">离线可看</span>
+                <span class="tag" style="background: #fdcb6e; color: white;">超好懂</span>
+            </div>
+        </div>
+
+        <!-- 1. 笛卡尔坐标 -->
+        <div class="slide">
+            <h1>📍 1. 笛卡尔坐标 (Coordinates)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">想象地图是一张大网格。每一个点都有地址 (x, y)。<br><b>X</b> 是横着走，<b>Y</b> 是竖着走。</p>
+                    <div class="code-box">
+                        <span class="f">game.spawnPlayerXY</span>(<span class="s">"captain"</span>, <span class="n">10</span>, <span class="n">10</span>)
+                    </div>
+                    <p style="font-size:14px; color:#95a5a6; margin-top:10px;">💡 小贴士：坐标 (0,0) 通常在左下角哦！</p>
+                </div>
+                <div class="visual-demo" style="flex-direction: column; justify-content: flex-end; align-items: flex-start; padding: 20px;">
+                    <div class="marker" style="left: 40px; bottom: 40px;"></div>
+                    <div style="position:absolute; left: 45px; bottom: 45px; font-weight:bold;">(10, 10)</div>
+                    <div style="border-left: 2px solid black; border-bottom: 2px solid black; width: 100%; height: 100%; position: absolute; left: 10px; bottom: 10px; pointer-events: none;"></div>
+                    <div style="position: absolute; bottom: 15px; right: 10px;">X ➡</div>
+                    <div style="position: absolute; top: 10px; left: 15px;">⬆ Y</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 玩家元素 -->
+        <div class="slide">
+            <h1>🦸‍♂️ 2. 玩家元素 (Player)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">你就是主角！生成后，你可以设置各种属性。</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        player = <span class="f">game.spawnPlayerXY</span>(<span class="s">"captain"</span>, <span class="n">10</span>, <span class="n">10</span>)<br>
+                        player.maxHealth = <span class="n">350</span> <span style="color:#7f8c8d"># 血条</span><br>
+                        player.maxSpeed = <span class="n">10</span> <span style="color:#7f8c8d"># 跑得快</span>
+                    </div>
+                </div>
+                <div class="visual-demo">
+                    <div style="text-align: center;">
+                        <div class="char">🤠</div>
+                        <div style="width: 100px; height: 10px; background: #ddd; margin: 5px auto; border-radius: 5px;">
+                            <div style="width: 100%; height: 100%; background: #e74c3c; border-radius: 5px;"></div>
+                        </div>
+                        <div style="font-size: 12px; font-weight: bold;">HP: 350</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 移动目标 -->
+        <div class="slide">
+            <h1>🏃 3. 移动目标 (Move Goal)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">给玩家指路！这是一个像“去那边！”的命令。地图上会出现一个红色的 X。</p>
+                    <div class="code-box">
+                        <span class="f">game.addMoveGoalXY</span>(<span class="n">20</span>, <span class="n">30</span>)
+                    </div>
+                </div>
+                <div class="visual-demo">
+                    <div style="font-size: 60px; color: #e74c3c; animation: pulse 1s infinite;">❌</div>
+                    <div style="position: absolute; bottom: 10px;">目的地</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 收集目标 -->
+        <div class="slide">
+            <h1>💎 4. 收集目标 (Collect Goal)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">设置玩家需要收集多少个东西才能过关。比如宝石、金币或箱子。</p>
+                    <div class="code-box">
+                        <span class="f">game.addCollectGoal</span>(<span class="n">3</span>)
+                    </div>
+                    <p style="font-size:14px; color:#95a5a6; margin-top:10px;">💡 记得要在地图上生成足够的东西让玩家捡哦！</p>
+                </div>
+                <div class="visual-demo">
+                    <div style="font-size: 40px; display: flex; gap: 10px;">
+                        <span style="animation: bounce 1s infinite;">💎</span>
+                        <span style="animation: bounce 1s infinite 0.2s;">💎</span>
+                        <span style="opacity: 0.3;">💎</span>
+                    </div>
+                    <div style="position: absolute; bottom: 10px; font-weight: bold;">进度: 2/3</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. 宝石 -->
+        <div class="slide">
+            <h1>✨ 5. 宝石 (Gem)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">这就是奖励点！BlingBling 的✨。它可以配合收集目标使用。</p>
+                    <div class="code-box">
+                        <span class="f">game.spawnXY</span>(<span class="s">"gem"</span>, <span class="n">30</span>, <span class="n">30</span>)
+                    </div>
+                </div>
+                <div class="visual-demo" style="background: #2d3436;">
+                    <div style="font-size: 60px; filter: drop-shadow(0 0 10px white); animation: spin 3s linear infinite;">💎</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. 击败目标 -->
+        <div class="slide">
+            <h1>⚔️ 6. 击败目标 (Defeat Goal)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">这是战斗游戏的标配！设置玩家必须打败多少敌人才能获胜。</p>
+                    <div class="code-box">
+                        <span class="f">game.addDefeatGoal</span>(<span class="n">5</span>)
+                    </div>
+                    <p style="font-size:14px; color:#e74c3c; margin-top:10px;">💡 小心别设置太多，玩家会打不过的！</p>
+                </div>
+                <div class="visual-demo">
+                    <div style="font-size: 50px;">💀 x 5</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. 食人魔 -->
+        <div class="slide">
+            <h1>👹 7. 食人魔 (Ogre)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">你的基本敌人。用 <code>"munchkin"</code> 可以生成小怪兽。</p>
+                    <div class="code-box">
+                        <span class="f">game.spawnXY</span>(<span class="s">"munchkin"</span>, <span class="n">20</span>, <span class="n">25</span>)
+                    </div>
+                </div>
+                <div class="visual-demo">
+                    <div style="font-size: 60px; animation: bounce 0.5s infinite alternate;">👾</div>
+                    <div style="position: absolute; bottom: 10px; color: #e74c3c; font-weight: bold;">"来打我呀!"</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. 火焰陷阱 -->
+        <div class="slide">
+            <h1>🔥 8. 火焰陷阱 (Traps)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">增加难度的利器！<br><b>fire-trap</b>: 踩上去会炸。<br><b>fire-spewer</b>: 定时喷火球。</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        <span class="f">game.spawnXY</span>(<span class="s">"fire-trap"</span>, <span class="n">20</span>, <span class="n">20</span>)<br>
+                        trap = <span class="f">game.spawnXY</span>(<span class="s">"fire-spewer"</span>, <span class="n">40</span>, <span class="n">10</span>)
+                    </div>
+                </div>
+                <div class="visual-demo">
+                    <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                        <div style="font-size: 50px;">💣</div>
+                        <div style="position: absolute; right: 20px; font-size: 40px; animation: bounce 0.2s infinite;">🔥</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. 士兵与盟友 -->
+        <div class="slide">
+            <h1>🛡️ 9. 士兵与弓箭手 (Allies)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">你可以召唤帮手！记得设置 <code>team = "humans"</code> 让他们和你一伙。</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        s = <span class="f">game.spawnXY</span>(<span class="s">"soldier"</span>, <span class="n">20</span>, <span class="n">20</span>)<br>
+                        s.team = <span class="s">"humans"</span>
+                    </div>
+                </div>
+                <div class="visual-demo">
+                    <div style="font-size: 50px;">👮‍♂️ 🏹</div>
+                    <div style="position: absolute; bottom: 10px; color: #2980b9; font-weight: bold;">Team Humans</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 10. 迷宫 -->
+        <div class="slide">
+            <h1>🌲 10. 迷宫 (Maze)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">不用一个个摆墙壁！用这个命令自动生成迷宫。数字代表“种子”，换个数字就换个迷宫。</p>
+                    <div class="code-box">
+                        <span class="f">game.spawnMaze</span>(<span class="s">"forest"</span>, <span class="n">5</span>)
+                    </div>
+                </div>
+                <div class="visual-demo" style="background-image: linear-gradient(45deg, #2ecc71 25%, transparent 25%), linear-gradient(-45deg, #2ecc71 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2ecc71 75%), linear-gradient(-45deg, transparent 75%, #2ecc71 75%); background-size: 20px 20px; background-color: #27ae60;">
+                    <div style="background: white; padding: 10px; border-radius: 5px; font-weight: bold;">迷宫生成中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11. 属性追踪 -->
+        <div class="slide">
+            <h1>📊 11. 属性追踪 (UI Track)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">让玩家看到重要信息。在屏幕右侧显示血量、时间或金币。</p>
+                    <div class="code-box">
+                        <span class="f">ui.track</span>(player, <span class="s">"health"</span>)<br>
+                        <span class="f">ui.track</span>(game, <span class="s">"time"</span>)
+                    </div>
+                </div>
+                <div class="visual-demo" style="justify-content: flex-end; padding-right: 20px;">
+                    <div style="background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; font-family: monospace;">
+                        <div>Health: 100</div>
+                        <div>Time: 12s</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 12. 数据库 -->
+        <div class="slide">
+            <h1>💾 12. 数据库 (Database)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">像一个记分板！用来记录永久的数据。比如这个游戏被玩了多少次。</p>
+                    <div class="code-box">
+                        <span class="f">game.db.add</span>(<span class="s">"plays"</span>, <span class="n">1</span>)
+                    </div>
+                    <p style="font-size:14px; color:#95a5a6; margin-top:10px;">💡 每次运行游戏，数字都会增加。</p>
+                </div>
+                <div class="visual-demo">
+                    <div style="font-size: 60px;">📈</div>
+                    <div style="position: absolute; bottom: 10px;">Total Plays: 1024</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 13. UI 文本 -->
+        <div class="slide">
+            <h1>📝 13. 界面文本 (UI Text)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">给玩家显示说明书。你可以改标题、操作说明或者胜利语。</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        <span class="f">ui.setText</span>(<span class="s">"directions"</span>, <span class="s">"按空格跳跃"</span>)<br>
+                        <span class="f">ui.setText</span>(<span class="s">"victoryMessage"</span>, <span class="s">"你赢啦！"</span>)
+                    </div>
+                </div>
+                <div class="visual-demo">
+                    <div style="border: 2px solid #2c3e50; padding: 20px; border-radius: 5px; background: #ecf0f1;">
+                        <h3 style="margin:0;">方向指南</h3>
+                        <p style="margin:0;">按空格跳跃</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 14. 生成器 -->
+        <div class="slide">
+            <h1>🏭 14. 生成器 (Generator)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">一个不断制造敌人的机器！你可以设置它生成什么怪物，以及生成的快慢。</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        gen = <span class="f">game.spawnXY</span>(<span class="s">"generator"</span>, <span class="n">20</span>, <span class="n">20</span>)<br>
+                        gen.spawnType = <span class="s">"skeleton"</span> <span class="k"># 骷髅</span><br>
+                        gen.spawnDelay = <span class="n">5</span> <span class="k"># 5秒一个</span>
+                    </div>
+                </div>
+                <div class="visual-demo">
+                    <div style="font-size: 50px;">⚙️</div>
+                    <div style="font-size: 30px; position: absolute; right: 40px; animation: slideIn 2s infinite;">💀</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 15. 生存目标 -->
+        <div class="slide">
+            <h1>⏳ 15. 生存目标 (Survival)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">这表示玩家只需要活下来！倒计时结束还没死就算赢。</p>
+                    <div class="code-box">
+                        <span class="f">game.addSurviveGoal</span>(<span class="n">20</span>)
+                    </div>
+                </div>
+                <div class="visual-demo">
+                    <div style="font-size: 60px; font-family: monospace; font-weight: bold; color: #e67e22;">00:19</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 16. 道具 -->
+        <div class="slide">
+            <h1>🧪 16. 强力道具 (Items)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">给玩家一些帮助！<br><b>potion-small</b>: 小血瓶，回血。<br><b>lightstone</b>: 光石，照亮黑暗区域。</p>
+                    <div class="code-box">
+                        <span class="f">game.spawnXY</span>(<span class="s">"potion-small"</span>, <span class="n">10</span>, <span class="n">10</span>)
+                    </div>
+                </div>
+                <div class="visual-demo">
+                    <div style="font-size: 50px; display: flex; gap: 30px;">
+                        <span>🍷</span>
+                        <span style="filter: drop-shadow(0 0 10px yellow);">💡</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 17. AI -->
+        <div class="slide">
+            <h1>🧠 17. 敌人AI</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">让怪物变聪明！<br><code>"AttacksNearest"</code> 表示这个怪物会自动追击最近的单位。</p>
+                    <div class="code-box">
+                        generator.spawnAI = <span class="s">"AttacksNearest"</span>
+                    </div>
+                </div>
+                <div class="visual-demo">
+                    <div style="position: absolute; left: 30px; font-size: 40px;">👾</div>
+                    <div style="position: absolute; right: 30px; font-size: 40px;">🤠</div>
+                    <div style="color: red; font-weight: bold;">👀 发现目标! ➡➡➡</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 18. 障碍物 -->
+        <div class="slide">
+            <h1>🚧 18. 障碍物 (Obstacles)</h1>
+            <div class="layout-grid">
+                <div>
+                    <p class="desc">丰富地图的元素。<br><b>fence</b>: 栅栏<br><b>forest</b>: 树木<br><b>chest</b>: 宝箱 (可以打碎)</p>
+                    <div class="code-box">
+                        <span class="f">game.spawnXY</span>(<span class="s">"fence"</span>, <span class="n">18</span>, <span class="n">15</span>)<br>
+                        <span class="f">game.spawnXY</span>(<span class="s">"chest"</span>, <span class="n">20</span>, <span class="n">20</span>)
+                    </div>
+                </div>
+                <div class="visual-demo">
+                    <div style="font-size: 50px;">🌲 🚧 🎁</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 19. 游戏设计 -->
+        <div class="slide">
+            <h1>🎨 19. 游戏设计 (Game Design)</h1>
+            <div class="layout-grid">
+                <div style="grid-column: span 2; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                    <div style="font-size: 80px;">🤔</div>
+                    <p class="desc" style="font-size: 24px; color: #2c3e50;"><b>编程不只是写代码，更要设计好玩法！</b></p>
+                    <div style="background: #ecf0f1; padding: 20px; border-radius: 10px; width: 80%;">
+                        <ul style="text-align: left; font-size: 20px; line-height: 1.8; color: #7f8c8d;">
+                            <li>不要把敌人放得离玩家太近。</li>
+                            <li>给玩家足够的药水和帮助。</li>
+                            <li>游戏要<b>有挑战</b>，但不能<b>太难</b>。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+    </div>
+    
+    <!-- 右按钮 -->
+    <button class="nav-btn next" id="btnNext" onclick="moveSlide(1)">▶</button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const slideNumDisplay = document.getElementById('slideNum');
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        // 更新幻灯片
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        // 更新页码
+        slideNumDisplay.textContent = currentSlide + 1;
+
+        // 更新进度条
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+
+        // 更新按钮状态
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+    }
+
+    function moveSlide(dir) {
+        const next = currentSlide + dir;
+        if (next >= 0 && next < totalSlides) {
+            currentSlide = next;
+            updateUI();
+        }
+    }
+
+    // 键盘支持
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') moveSlide(1);
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+    });
+
+    // 初始化
+    updateUI();
+</script>
+
+</body>
+</html>

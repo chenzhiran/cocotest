@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第31-35关 函数的定义与调用</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-dark: #240046;        /* 深紫夜空 */
+            --book-bg: #fdf6e3;        /* 羊皮纸色 */
+            --primary: #7b2cbf;        /* 魔法紫 */
+            --secondary: #ff9e00;      /* 魔法金 */
+            --accent: #00b4d8;         /* 能量蓝 */
+            --text-main: #3c096c;      /* 深紫文字 */
+            --text-sub: #5a189a;
+            
+            /* 代码高亮 */
+            --code-bg: #10002b;
+            --code-fg: #e0aaff;
+            --tok-def: #ff9e00;        /* def */
+            --tok-func: #9d4edd;       /* 函数名 */
+            --tok-kw: #ff006e;         /* 关键字 */
+            --tok-cm: #99d98c;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(white 1px, transparent 1px),
+                radial-gradient(white 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 星星闪烁动画背景 */
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite ease-in-out;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 魔法水晶按钮 (外部) --- */
+        .nav-btn {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), var(--primary));
+            cursor: pointer;
+            font-size: 40px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 0 20px var(--primary),
+                inset 0 0 20px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.4), transparent);
+            transform: rotate(45deg);
+            transition: all 0.5s;
+        }
+
+        .nav-btn:hover { 
+            transform: scale(1.1); 
+            box-shadow: 0 0 30px var(--accent);
+            border-color: white;
+        }
+        .nav-btn:hover::after { left: 100%; }
+        .nav-btn:active { transform: scale(0.95); }
+        
+        .disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 魔法书屏幕容器 --- */
+        .book-container {
+            width: 960px;
+            height: 600px;
+            background: var(--book-bg);
+            border-radius: 20px 40px 40px 20px;
+            box-shadow: 
+                inset 40px 0 60px rgba(0,0,0,0.1), /* 书脊阴影 */
+                10px 10px 0 #3c096c, /* 书的厚度 */
+                20px 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 8px solid #5a189a;
+        }
+
+        /* 地图徽章 */
+        .map-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(45deg, #ff9e00, #ff6d00);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-family: monospace;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 20;
+            font-size: 16px;
+            border: 2px solid white;
+        }
+
+        /* 页码 */
+        .page-num {
+            position: absolute;
+            bottom: 15px;
+            right: 30px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--text-sub);
+            font-size: 18px;
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 60px 80px 40px 80px; /* Top padding for badge */
+            flex-direction: column;
+            animation: turnPage 0.6s ease-in-out;
+            overflow-y: auto;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes turnPage { 
+            0% { opacity: 0; transform: rotateY(10deg) translateX(20px); } 
+            100% { opacity: 1; transform: rotateY(0) translateX(0); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px dashed var(--primary);
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(0 4px 0 rgba(0,0,0,0.2)); animation: float 3s infinite ease-in-out; }
+        h1 { margin: 0; color: var(--text-main); font-size: 36px; letter-spacing: 1px; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 20px; line-height: 1.7; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.9; 
+            background: white;
+            border-radius: 15px; 
+            border: 2px solid #e0c3fc; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(123, 44, 191, 0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 19px;
+            margin-top: 15px;
+            border-left: 5px solid var(--secondary);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .k { color: var(--tok-def); font-weight: bold; } /* def */
+        .f { color: var(--tok-func); } /* function name */
+        .kw { color: var(--tok-kw); } /* if/else/while */
+        .c { color: var(--tok-cm); font-style: italic; } /* comment */
+
+        /* 卡片 */
+        .card {
+            background: #e0aaff;
+            background: linear-gradient(135deg, #e0aaff 0%, #c77dff 100%);
+            color: #240046;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 15px;
+            font-size: 18px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            font-weight: bold;
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 魔法卷轴 */
+        .scroll {
+            width: 200px;
+            background: #fff8e1;
+            border: 2px solid #d4af37;
+            border-radius: 5px;
+            padding: 10px;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .scroll::before, .scroll::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px;
+            height: 20px;
+            background: #8b4513;
+            border-radius: 10px;
+        }
+        .scroll::before { top: -10px; }
+        .scroll::after { bottom: -10px; }
+
+        /* 魔法棒 */
+        .wand {
+            font-size: 60px;
+            position: absolute;
+            transform-origin: bottom left;
+            animation: castSpell 2s infinite;
+        }
+
+        @keyframes castSpell {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(20deg) translateY(-10px); }
+            100% { transform: rotate(0deg); }
+        }
+        
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        /* 流程图节点 */
+        .flow-node {
+            padding: 8px 15px; border-radius: 8px; color: white; font-weight: bold; text-align: center; margin: 10px 0; width: 180px; position: relative; font-size: 16px;
+        }
+        .bg-def { background: #ff9e00; }
+        .bg-call { background: #00b4d8; }
+        .bg-exec { background: #7b2cbf; }
+        .arrow-down { font-size: 20px; color: #999; margin: 2px 0; text-align: center; width: 100%;}
+
+        /* 进度条 */
+        .progress-bar {
+            height: 6px;
+            background: rgba(0,0,0,0.1);
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 对比表格 */
+        .compare-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+        .compare-table td { padding: 10px; border: 1px solid #e0c3fc; vertical-align: top; }
+        .compare-table th { padding: 10px; background: #f3e5f5; color: var(--text-main); }
+
+    </style>
+</head>
+<body>
+
+<!-- 星星背景 -->
+<script>
+    for(let i=0; i<30; i++) {
+        let star = document.createElement('div');
+        star.className = 'star';
+        star.style.left = Math.random() * 100 + 'vw';
+        star.style.top = Math.random() * 100 + 'vh';
+        star.style.width = Math.random() * 3 + 'px';
+        star.style.height = star.style.width;
+        star.style.animationDelay = Math.random() * 2 + 's';
+        document.body.appendChild(star);
+    }
+</script>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn prev" id="btnPrev" onclick="moveSlide(-1)">❮</button>
+
+    <!-- 书本容器 -->
+    <div class="book-container">
+        <div class="map-badge">🗺️ 计算机科学 2</div>
+        <div class="page-num">第 <span id="pageNum">1</span> 页</div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 120px; animation: pulse 2s infinite;">🧙‍♂️</div>
+            <h1 style="font-size: 50px; margin: 20px 0; color: var(--text-main); text-shadow: 2px 2px 0 rgba(0,0,0,0.1);">函数的定义与调用</h1>
+            <h2 style="font-size: 30px; color: var(--primary); font-weight: normal; margin-top: 0;">创造你的专属魔法咒语</h2>
+            <div style="margin-top: 50px; display: flex; gap: 40px;">
+                <div style="padding: 15px 30px; background: var(--secondary); color: white; border-radius: 30px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #e68a00;">📜 定义咒语</div>
+                <div style="padding: 15px 30px; background: var(--accent); color: white; border-radius: 30px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #0096c7;">✨ 念出咒语</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 什么是函数 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔮</div>
+                <h1>什么是函数 (Function)？</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>想象你是一个小小魔法师，每次战斗都要念一长串咒语：<br>
+                    <span style="color: #999; font-style: italic;">"找敌人...判断...攻击...移动..."</span></p>
+                    <p>太麻烦了！不如把这一长串动作<b>打包</b>成一个新咒语，起名叫<b>“超级攻击”</b>。</p>
+                    <div class="card">
+                        "函数就像自定义的魔法咒语：把多个步骤打包成一个简单命令，想用的时候念一句名字就行了！"
+                    </div>
+                </div>
+                <div class="col-visual" style="background: #f8f0fc;">
+                    <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
+                        <!-- 散乱的步骤 -->
+                        <div style="position: absolute; left: 20px; top: 40px; font-size: 14px; color: #666;">步骤1<br>步骤2<br>步骤3</div>
+                        <div style="font-size: 30px; color: var(--primary);">➡️ 📦 ➡️</div>
+                        <!-- 打包后的包裹 -->
+                        <div style="width: 100px; height: 120px; background: var(--primary); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; box-shadow: 0 10px 20px rgba(123, 44, 191, 0.3);">
+                            <div style="font-size: 40px;">✨</div>
+                            <div style="font-weight: bold;">我的魔法</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 函数的组成 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧬</div>
+                <h1>函数的解剖图</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>定义一个函数就像写菜谱，格式非常严格：</p>
+                    <ol style="font-size: 18px; line-height: 1.8;">
+                        <li><span class="k">def</span>：告诉电脑"我要创造新咒语了！"</li>
+                        <li><span class="f">函数名</span>：给咒语起个名字。</li>
+                        <li><span class="k">()</span>：放参数的地方（现在是空的）。</li>
+                        <li><span class="k">:</span>：冒号表示"下面是咒语内容"。</li>
+                        <li><b>缩进代码</b>：真正的魔法步骤。</li>
+                    </ol>
+                </div>
+                <div class="col-visual" style="background: #2d3436;">
+                    <div style="font-family: 'Consolas', monospace; font-size: 24px; color: white;">
+                        <span style="color: #ff9e00;">def</span> <span style="color: #9d4edd;">myMagic</span><span style="color: #ff006e;">():</span><br>
+                        &nbsp;&nbsp;<span style="color: #a29bfe;">步骤1</span><br>
+                        &nbsp;&nbsp;<span style="color: #a29bfe;">步骤2</span>
+                    </div>
+                    <!-- 标注箭头 -->
+                    <div style="position: absolute; top: 30px; left: 20px; color: #ff9e00; font-size: 12px;">关键字</div>
+                    <div style="position: absolute; top: 30px; left: 80px; color: #9d4edd; font-size: 12px;">名字</div>
+                    <div style="position: absolute; top: 30px; right: 40px; color: #ff006e; font-size: 12px;">冒号不能忘!</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 定义 vs 调用 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🗣️</div>
+                <h1>定义 (Define) vs 调用 (Call)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>这是初学者最容易搞混的地方！</p>
+                    <table class="compare-table">
+                        <tr>
+                            <th style="width: 50%;">定义函数 (def)</th>
+                            <th>调用函数</th>
+                        </tr>
+                        <tr>
+                            <td>📝 <b>写进魔法书</b></td>
+                            <td>🪄 <b>挥舞魔杖</b></td>
+                        </tr>
+                        <tr>
+                            <td>告诉电脑怎么做，但<b>不立即执行</b>。</td>
+                            <td>让电脑<b>立刻执行</b>刚才定义的动作。</td>
+                        </tr>
+                        <tr>
+                            <td><code>def attack(): ...</code></td>
+                            <td><code>attack()</code></td>
+                        </tr>
+                    </table>
+                    <div class="card" style="margin-top: 20px; background: #fff3cd; color: #856404;">
+                        口诀："定义像写菜谱，调用像做菜！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="position: relative; width: 100%; height: 100%;">
+                        <div style="position: absolute; top: 20px; left: 20px;" class="scroll">
+                            <div style="font-size: 10px;">def magic():<br>  fire()</div>
+                        </div>
+                        <div style="position: absolute; bottom: 20px; right: 20px; text-align: center;">
+                            <div class="wand">🪄</div>
+                            <div style="font-weight: bold; color: var(--primary);">magic()</div>
+                        </div>
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 30px;">➡️</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 关卡程序分析 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">⚔️</div>
+                <h1>实战：战斗函数</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>看看我们在关卡里是怎么用的：</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        <span class="c"># 1. 创造咒语</span><br>
+                        <span class="k">def</span> <span class="f">checkAndAttack</span>():<br>
+                        &nbsp;&nbsp;enemy = hero.findNearestEnemy()<br>
+                        &nbsp;&nbsp;<span class="kw">if</span> enemy:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;hero.attack(enemy)<br>
+                        &nbsp;&nbsp;<span class="kw">else</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;hero.moveXY(30, 26)<br>
+                        <br>
+                        <span class="c"># 2. 疯狂使用咒语</span><br>
+                        <span class="kw">while</span> True:<br>
+                        &nbsp;&nbsp;<span class="f">checkAndAttack</span>() <span class="c"># 念咒!</span>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                        <div class="flow-node bg-def">定义 checkAndAttack</div>
+                        <div class="arrow-down">⬇️ (电脑记住了)</div>
+                        <div class="flow-node" style="border: 2px dashed #333; width: 200px;">
+                            While True 循环
+                            <div class="flow-node bg-call" style="margin: 10px auto; width: 150px;">调用 checkAndAttack()</div>
+                        </div>
+                        <div class="arrow-down">🔄 (无限循环)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 为什么要用函数？ -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">♻️</div>
+                <h1>为什么要用函数？</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <h3>代码复用 (Code Reuse)</h3>
+                    <p><b>❌ 没有函数：</b><br>
+                    如果在3个地方都要打怪，你就得把打怪的几行代码复制粘贴3次。代码又长又乱！</p>
+                    <p><b>✅ 使用函数：</b><br>
+                    写一次 <code>def</code>，然后在需要的地方写 <code>checkAndAttack()</code> 就行了。代码整洁又漂亮！</p>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px;">🍝 vs 🍱</div>
+                    <div style="position: absolute; bottom: 20px; text-align: center; width: 100%; color: #666;">
+                        一团乱麻的代码 vs 整齐打包的代码
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 程序执行流程 (难点) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🚦</div>
+                <h1>程序是怎么跑的？</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>电脑执行代码像玩跳房子：</p>
+                    <ol style="font-size: 18px;">
+                        <li>看到 <code>def</code>，知道有个新函数，但<b>不进去执行</b>，直接跳过。</li>
+                        <li>进入 <code>while True</code> 循环。</li>
+                        <li>看到 <code>checkAndAttack()</code> 调用。</li>
+                        <li><b>咻！</b>跳回到上面的 <code>def</code> 里面去执行代码。</li>
+                        <li>执行完，<b>咻！</b>跳回到底下，继续循环。</li>
+                    </ol>
+                </div>
+                <div class="col-visual" style="background: #f0f0f0;">
+                    <!-- 简单的路径动画示意 -->
+                    <svg width="300" height="300" viewBox="0 0 300 300">
+                        <!-- 定义区 -->
+                        <rect x="50" y="20" width="200" height="80" fill="#ffeaa7" stroke="#fdcb6e" stroke-width="3" rx="10"/>
+                        <text x="150" y="65" text-anchor="middle" font-weight="bold" fill="#d35400">DEF (定义区)</text>
+                        
+                        <!-- 调用区 -->
+                        <rect x="50" y="200" width="200" height="80" fill="#74b9ff" stroke="#0984e3" stroke-width="3" rx="10"/>
+                        <text x="150" y="245" text-anchor="middle" font-weight="bold" fill="#2980b9">CALL (调用区)</text>
+
+                        <!-- 路径 -->
+                        <path d="M 150 200 Q 100 150 150 100" fill="none" stroke="#ff7675" stroke-width="4" stroke-dasharray="10 5">
+                            <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2s" repeatCount="indefinite" />
+                        </path>
+                        <path d="M 150 100 Q 200 150 150 200" fill="none" stroke="#55efc4" stroke-width="4" stroke-dasharray="10 5">
+                            <animate attributeName="stroke-dashoffset" from="0" to="100" dur="2s" repeatCount="indefinite" />
+                        </path>
+                        
+                        <text x="40" y="150" font-size="12" fill="#ff7675">1. 调用进入</text>
+                        <text x="200" y="150" font-size="12" fill="#00b894">2. 执行完毕返回</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 起个好名字 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🏷️</div>
+                <h1>名字就是魔法</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>函数名要清晰，让人一看就知道它是干什么的。</p>
+                    <div class="card" style="background: #d4edda; color: #155724; border-left-color: #28a745;">
+                        ✅ <b>好名字：</b><br>
+                        checkAndAttack (检查并攻击)<br>
+                        findNearestEnemy (找最近敌人)<br>
+                        moveToSafety (移到安全区)
+                    </div>
+                    <div class="card" style="background: #f8d7da; color: #721c24; border-left-color: #dc3545;">
+                        ❌ <b>坏名字：</b><br>
+                        abc (这是啥?)<br>
+                        function1 (没什么意义)<br>
+                        doIt (做什么?)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px;">🔖</div>
+                        <p>"名不正则言不顺"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 扩展思考 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🚀</div>
+                <h1>更高级的魔法 (预告)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>函数还可以更厉害！</p>
+                    <p><b>1. 参数 (Parameters)：</b><br>
+                    给咒语传纸条，比如 <code>attack("Orc")</code>，告诉函数去打谁。</p>
+                    <p><b>2. 返回值 (Return)：</b><br>
+                    咒语念完变出一个东西给你，比如 <code>findEnemy()</code> 变出一个敌人给你。</p>
+                    <div class="code-box" style="font-size: 16px;">
+                        <span class="k">def</span> <span class="f">add</span>(a, b): <span class="c"># 参数</span><br>
+                        &nbsp;&nbsp;<span class="kw">return</span> a + b <span class="c"># 返回结果</span>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 80px;">📬</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎓</div>
+                <h1>大法师结业口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="background: #fff0f6; padding: 30px; border-radius: 20px; border: 3px dashed #f06595; transform: rotate(-2deg); margin-bottom: 20px;">
+                        <h2 style="color: #a61e4d; margin: 0;">"定义函数 def 开头，<br>函数名字描述功能，<br>缩进代码是主体！"</h2>
+                    </div>
+                    <div style="background: #e7f5ff; padding: 30px; border-radius: 20px; border: 3px dashed #339af0; transform: rotate(2deg);">
+                        <h3 style="color: #1864ab; margin: 0;">"调用函数写名字，<br>加上括号就执行！"</h3>
+                    </div>
+                </div>
+                <div class="col-visual" style="border:none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; animation: pulse 2s infinite;">🏆</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn next" id="btnNext" onclick="moveSlide(1)">❯</button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const pageNum = document.getElementById('pageNum');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+        pageNum.innerText = currentSlide + 1;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    // 键盘支持
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    // 初始化
+    updateUI();
+</script>
+
+</body>
+</html>

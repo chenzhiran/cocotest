@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 进阶战术手册 - 物理碰撞</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-red: #e53e3e;   /* 狂战士红 */
+            --accent-blue: #3182ce;  /* 冰冻蓝 */
+            --accent-orange: #dd6b20;
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else, elif */
+            --code-func: #8be9fd;    /* spawnXY, destroy, scale */
+            --code-string: #f1fa8c;  /* "fence" */
+            --code-num: #bd93f9;     /* 42 */
+            --code-comment: #6272a4;
+            --code-prop: #f8f8f2;    /* item.type */
+            --code-var: #ffb86c;     /* unit, other */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(229, 62, 62, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(49, 130, 206, 0.1) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 1px solid #444;
+            transition: transform 0.3s ease;
+        }
+        
+        .level-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row {
+            display: flex;
+            min-height: 24px;
+        }
+        
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* 注释列 */
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-orange);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+
+        /* 动画效果 */
+        @keyframes rumble {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(5deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .icon-rumble:hover { animation: rumble 0.5s infinite; }
+
+        @keyframes freeze {
+            0% { color: #3182ce; }
+            50% { color: #63b3ed; text-shadow: 0 0 10px #63b3ed; }
+            100% { color: #3182ce; }
+        }
+        .icon-freeze { animation: freeze 3s infinite; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-burst text-orange-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-orange-500">物理实验室</span></h1>
+                    <p class="text-xs text-gray-500">Event: "collide" (碰撞检测)</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-expand text-red-500 mr-1"></i>unit.scale</span>
+                <span><i class="fa-solid fa-handshake text-blue-500 mr-1"></i>event.other</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 17 -->
+        <section id="level-17" class="level-card" style="border-top: 4px solid var(--accent-red);">
+            <div class="level-header bg-gradient-to-r from-red-900/20 to-transparent">
+                <div>
+                    <span class="bg-red-900 text-red-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">LEVEL 17</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">狂战士 (Berserker)</h2>
+                </div>
+                <div class="text-yellow-500 text-sm"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-red-400 mb-3"><i class="fa-solid fa-dumbbell mr-2"></i>变身巨人的逻辑</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                想一想《超级马里奥》，当他吃了蘑菇会发生什么？变大！变大后就能撞碎砖块。
+                                这一关我们就要实现这个机制。
+                            </p>
+                            <div class="space-y-4">
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-orange-500">
+                                    <h4 class="font-bold text-white text-sm mb-1"><i class="fa-solid fa-arrow-up-right-dots mr-1"></i> 状态变化 (Collect)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        吃到蘑菇 -> <code>unit.scale = 2</code> (体型变大两倍)。
+                                        <br>
+                                        同时设置一个倒计时，时间到了变回原形。
+                                    </p>
+                                </div>
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-red-500">
+                                    <h4 class="font-bold text-white text-sm mb-1"><i class="fa-solid fa-burst mr-1"></i> 碰撞检测 (Collide)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        当英雄碰到东西时：
+                                        <br>
+                                        1. 对方是墙(Fence)吗？
+                                        <br>
+                                        2. 我现在是巨人(scale == 2)吗？
+                                        <br>
+                                        如果<strong>两个条件都满足</strong>，那就把墙撞碎(destroy)！
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 视觉化图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="flex items-center gap-4 mb-4">
+                            <i class="fa-solid fa-user text-gray-500 text-2xl"></i>
+                            <i class="fa-solid fa-arrow-right text-gray-600"></i>
+                            <i class="fa-solid fa-bars text-gray-400 text-4xl"></i>
+                            <span class="text-xs text-red-400 font-bold">Bang! (Ouch)</span>
+                        </div>
+                        <div class="w-full h-px bg-gray-700 my-2"></div>
+                        <div class="flex items-center gap-4 mt-2">
+                            <i class="fa-solid fa-user-graduate text-red-500 text-5xl icon-rumble"></i>
+                            <i class="fa-solid fa-arrow-right text-red-600 font-bold"></i>
+                            <i class="fa-solid fa-bars-staggered text-gray-600 text-4xl opacity-50"></i>
+                            <span class="text-xs text-green-400 font-bold">CRUSH!</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 代码部分 -->
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">hulk_smash.py</div>
+                    </div>
+
+                    <div class="code-body">
+                        <!-- Setup -->
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="comment"># 蘑菇允许player在一段时间内摧毁围栏。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content"><span class="var">player</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">'captain'</span>, <span class="num">12</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="num">15</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">addMoveGoalXY</span>(<span class="num">76</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation">目标：移动到终点</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"time"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- PowerUp Config -->
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">powerDuration</span> <span class="op">=</span> <span class="num">3</span></div>
+                            <div class="code-annotation">变身持续3秒</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">8</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">powerEndTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">9</div>
+                            <div class="code-content"><span class="comment"># "mushroom"（蘑菇）是没有默认效果的可收集物品。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">10</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"mushroom"</span>, <span class="num">12</span>, <span class="num">52</span>)</div>
+                            <div class="code-annotation">生成一堆蘑菇...</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">11</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"mushroom"</span>, <span class="num">12</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">12</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"mushroom"</span>, <span class="num">36</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">13</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"mushroom"</span>, <span class="num">36</span>, <span class="num">52</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">14</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"mushroom"</span>, <span class="num">56</span>, <span class="num">12</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">15</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"mushroom"</span>, <span class="num">56</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">16</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"mushroom"</span>, <span class="num">56</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- OnCollect (Get Big) -->
+                        <div class="code-row">
+                            <div class="line-num">18</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onCollect</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">19</div>
+                            <div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">20</div>
+                            <div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">other</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">21</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"mushroom"</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">22</div>
+                            <div class="code-content">        <span class="comment"># "scale" 改变单位的视觉尺寸。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">23</div>
+                            <div class="code-content">        <span class="var">unit</span>.<span class="prop">scale</span> <span class="op">=</span> <span class="num">2</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-expand text-red-500 mr-1"></i>变大两倍！</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">24</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">powerEndTime</span> <span class="op">=</span> <span class="var">game</span>.<span class="prop">time</span> <span class="op">+</span> <span class="var">game</span>.<span class="var">powerDuration</span></div>
+                            <div class="code-annotation">设置变身结束时间</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">25</div>
+                            <div class="code-content">        <span class="var">unit</span>.<span class="func">say</span>(<span class="str">"ARRRGH!!!"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">26</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- OnCollide (Smash) -->
+                        <div class="code-row">
+                            <div class="line-num">27</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onCollide</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"><i class="fa-solid fa-hand-fist mr-1"></i>碰撞处理器</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">28</div>
+                            <div class="code-content">    <span class="comment"># 与某物发生碰撞的事件所有者。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">29</div>
+                            <div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation">我（英雄）</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">30</div>
+                            <div class="code-content">    <span class="comment"># 单位碰撞的对象。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">31</div>
+                            <div class="code-content">    <span class="var">collidedObject</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">other</span></div>
+                            <div class="code-annotation">我撞到了谁？</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">32</div>
+                            <div class="code-content">    <span class="comment"># 如果它是围栏。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">33</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">collidedObject</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"fence"</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">34</div>
+                            <div class="code-content">        <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">scale</span> <span class="op">==</span> <span class="num">2</span>:</div>
+                            <div class="code-annotation">只有变大时才能撞</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">35</div>
+                            <div class="code-content">            <span class="comment"># collidedObject对象调用摧毁（`destroy` ）方法</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">36</div>
+                            <div class="code-content">            <span class="var">collidedObject</span>.<span class="func">destroy</span>()</div>
+                            <div class="code-annotation"><i class="fa-solid fa-burst text-orange-500 mr-1"></i>粉碎围栏！</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">37</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">38</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="func">on</span>(<span class="str">"collide"</span>, <span class="var">onCollide</span>)</div>
+                            <div class="code-annotation">绑定碰撞事件</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">39</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="func">on</span>(<span class="str">"collect"</span>, <span class="var">onCollect</span>)</div>
+                            <div class="code-annotation">绑定收集事件</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">40</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Reset Timer -->
+                        <div class="code-row">
+                            <div class="line-num">41</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">checkTimers</span>():</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">42</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="prop">time</span> <span class="op">></span> <span class="var">game</span>.<span class="var">powerEndTime</span>:</div>
+                            <div class="code-annotation">时间到了吗？</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">43</div>
+                            <div class="code-content">        <span class="kwd">if </span><span class="var">player</span>.<span class="prop">scale</span> <span class="op">==</span> <span class="num">2</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">44</div>
+                            <div class="code-content">            <span class="comment"># 将玩家角色的尺寸设置为1。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">45</div>
+                            <div class="code-content">            <span class="var">player</span>.<span class="prop">scale</span> <span class="op">=</span> <span class="num">1</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-compress text-blue-300 mr-1"></i>变回小个子</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">46</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">47</div>
+                            <div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">48</div>
+                            <div class="code-content">    <span class="func">checkTimers</span>()</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- LEVEL 18 -->
+        <section id="level-18" class="level-card" style="border-top: 4px solid var(--accent-blue);">
+            <div class="level-header bg-gradient-to-r from-blue-900/20 to-transparent">
+                <div>
+                    <span class="bg-blue-900 text-blue-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">LEVEL 18</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white icon-freeze">冻结标签 (Frozen Tag)</h2>
+                </div>
+                <div class="text-yellow-500 text-sm"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-blue-400 mb-3"><i class="fa-solid fa-snowflake mr-2"></i>冰冻人游戏规则</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这是一个经典的捉迷藏游戏！你是“鬼”，弓箭手是“人”。
+                                <br>
+                                我们用 <code>behavior</code> 属性来标记它们的状态。
+                            </p>
+                            <div class="space-y-4">
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-green-500">
+                                    <h4 class="font-bold text-white text-sm mb-1">奔跑状态 (Scampers)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        弓箭手到处乱跑。如果这时被你(Player)碰到 -> <strong>变成冰冻状态</strong>。
+                                        <br>
+                                        <code class="text-blue-300">behavior = "Defends"</code> (站着不动)
+                                    </p>
+                                </div>
+                                <div class="bg-gray-800 p-3 rounded border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-white text-sm mb-1">冰冻状态 (Defends)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        弓箭手站着不动。如果这时被其他弓箭手(Archer)碰到 -> <strong>解冻！</strong>
+                                        <br>
+                                        <code class="text-green-300">behavior = "Scampers"</code> (又开始跑了)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="text-center">
+                            <div class="mb-4">
+                                <span class="bg-blue-900 text-blue-200 px-2 py-1 rounded text-xs">Frozen Count: 0</span>
+                            </div>
+                            <div class="flex justify-center gap-6">
+                                <div class="text-center">
+                                    <i class="fa-solid fa-person-running text-green-500 text-3xl"></i>
+                                    <p class="text-xs mt-1 text-gray-500">Scampers</p>
+                                </div>
+                                <i class="fa-solid fa-arrow-right-arrow-left text-gray-600 mt-2"></i>
+                                <div class="text-center">
+                                    <i class="fa-solid fa-person text-blue-300 text-3xl icon-freeze"></i>
+                                    <p class="text-xs mt-1 text-gray-500">Defends</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">tag_game.py</div>
+                    </div>
+
+                    <div class="code-body">
+                        <!-- Setup -->
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="comment"># 让我们制作一个冻结标签的游戏！</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">tagged</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">初始化被冻结的人数</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"tagged"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content"><span class="var">goal</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">addManualGoal</span>(<span class="str">"标记所有弓箭手。"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">6</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"archer"</span>, <span class="num">12</span>, <span class="num">52</span>)</div>
+                            <div class="code-annotation">生成弓箭手们</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"archer"</span>, <span class="num">12</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">8</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"archer"</span>, <span class="num">24</span>, <span class="num">52</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">9</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"archer"</span>, <span class="num">24</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">11</div>
+                            <div class="code-content"><span class="var">player</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">'captain'</span>, <span class="num">68</span>, <span class="num">24</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">12</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="num">20</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">13</div>
+                            <div class="code-content"><span class="comment"># 让player变大一些，这样标记弓箭手就更容易了。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">14</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">scale</span> <span class="op">=</span> <span class="num">2</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Spawn Behavior -->
+                        <div class="code-row">
+                            <div class="line-num">16</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onSpawn</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">17</div>
+                            <div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">18</div>
+                            <div class="code-content">    <span class="var">unit</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"Scampers"</span></div>
+                            <div class="code-annotation">初始状态：乱跑</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">19</div>
+                            <div class="code-content">    <span class="var">unit</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="num">8</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">20</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"archer"</span>, <span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">21</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Collision Logic (Core) -->
+                        <div class="code-row">
+                            <div class="line-num">22</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">onCollide</span>(<span class="var">event</span>):</div>
+                            <div class="code-annotation"><i class="fa-solid fa-hand-pointer mr-1"></i>碰撞逻辑</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">23</div>
+                            <div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div>
+                            <div class="code-annotation">弓箭手</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">24</div>
+                            <div class="code-content">    <span class="var">other</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">other</span></div>
+                            <div class="code-annotation">撞到的对象</div>
+                        </div>
+                        
+                        <!-- Case 1: Tagged by Player -->
+                        <div class="code-row">
+                            <div class="line-num">25</div>
+                            <div class="code-content">    <span class="comment"># "Scampers"意味着弓箭手尚未被标记。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">26</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">behavior</span> <span class="op">==</span> <span class="str">"Scampers"</span>:</div>
+                            <div class="code-annotation">如果是乱跑状态</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">27</div>
+                            <div class="code-content">        <span class="kwd">if </span><span class="var">other</span> <span class="op">==</span> <span class="var">player</span>:</div>
+                            <div class="code-annotation">被玩家抓住了</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">28</div>
+                            <div class="code-content">            <span class="var">other</span>.<span class="func">say</span>(<span class="str">"Freeze!"</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">29</div>
+                            <div class="code-content">            <span class="comment"># 将unit.behavior设置为"Defends"：</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">30</div>
+                            <div class="code-content">            <span class="var">unit</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"Defends"</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-snowflake text-blue-300 mr-1"></i>冻结！</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">31</div>
+                            <div class="code-content">            <span class="comment"># 将game.tagged增加1：</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">32</div>
+                            <div class="code-content">            <span class="var">game</span>.<span class="var">tagged</span> <span class="op">+=</span> <span class="num">1</span></div>
+                            <div class="code-annotation">冻结数 +1</div>
+                        </div>
+                        
+                        <!-- Case 2: Rescued by Friend -->
+                        <div class="code-row">
+                            <div class="line-num">33</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">behavior</span> <span class="op">==</span> <span class="str">"Defends"</span>:</div>
+                            <div class="code-annotation">如果是冻结状态</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">34</div>
+                            <div class="code-content">        <span class="comment"># 如果other的类型是"archer"：</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">35</div>
+                            <div class="code-content">        <span class="kwd">if </span><span class="var">other</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"archer"</span>:</div>
+                            <div class="code-annotation">被队友碰到了</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">36</div>
+                            <div class="code-content">            <span class="comment"># 将unit.behavior设置为"Scampers"：</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">37</div>
+                            <div class="code-content">            <span class="var">unit</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"Scampers"</span></div>
+                            <div class="code-annotation"><i class="fa-solid fa-person-running text-green-500 mr-1"></i>解冻！</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">38</div>
+                            <div class="code-content">            <span class="comment"># 将game.tagged减少1。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">39</div>
+                            <div class="code-content">            <span class="var">game</span>.<span class="var">tagged</span> <span class="op">-=</span> <span class="num">1</span></div>
+                            <div class="code-annotation">冻结数 -1</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">40</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">41</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"archer"</span>, <span class="str">"collide"</span>, <span class="var">onCollide</span>)</div>
+                            <div class="code-annotation">绑定碰撞事件</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">42</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Check Win -->
+                        <div class="code-row">
+                            <div class="line-num">43</div>
+                            <div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">44</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="var">tagged</span> <span class="op">>=</span> <span class="num">4</span>:</div>
+                            <div class="code-annotation">如果4个都被冻住</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">45</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="func">setGoalState</span>(<span class="var">goal</span>, <span class="kwd">True</span>)</div>
+                            <div class="code-annotation">胜利！</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Strategy Dept. | Physics & Interactions</p>
+    </footer>
+
+</body>
+</html>

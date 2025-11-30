@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 第1-6关 基础结构 对象 方法 参数</title>
+    <style>
+        /* --- 1. 基础样式 (无需联网) --- */
+        :root {
+            --primary: #4F46E5;
+            --bg-dark: #111827;
+            --text-light: #F3F4F6;
+            --transition-speed: 0.5s;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden; /* 防止滚动 */
+        }
+
+        /* --- 2. PPT 容器样式 --- */
+        .ppt-container {
+            width: 90%;
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            border: 8px solid #374151;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 每一页幻灯片 */
+        .slide {
+            display: none; /* 默认隐藏 */
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            animation: fadeIn 0.5s ease-out;
+            color: #1F2937; /* 内容文字颜色 */
+        }
+        .slide.active {
+            display: flex; /* 激活时显示 */
+        }
+
+        /* 顶部标题栏 */
+        .slide-header {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #E5E7EB;
+            background-color: #F9FAFB;
+        }
+        .slide-title h1 { margin: 0; font-size: 32px; font-weight: 800; }
+        .slide-title p { margin: 5px 0 0; font-size: 14px; color: #9CA3AF; letter-spacing: 2px; text-transform: uppercase; }
+        .page-number {
+            background: #E5E7EB;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-family: monospace;
+            color: #4B5563;
+        }
+
+        /* 内容区域 */
+        .slide-content {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(to bottom, #ffffff, #f3f4f6);
+            position: relative;
+        }
+
+        /* --- 3. 按钮与交互 --- */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.9);
+            border: 2px solid #E5E7EB;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            z-index: 100;
+        }
+        .nav-btn:hover { transform: translateY(-50%) scale(1.1); background: white; }
+        .nav-btn:active { transform: translateY(-50%) scale(0.95); }
+        .prev-btn { left: 20px; }
+        .next-btn { right: 20px; }
+        .btn-disabled { opacity: 0; pointer-events: none; }
+
+        /* 底部进度点 */
+        .dots {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            background: #4B5563;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .dot.active {
+            background: #F59E0B;
+            width: 30px;
+            border-radius: 10px;
+        }
+
+        /* --- 4. 动画与特效 --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        
+        .anim-bounce { animation: bounce 2s infinite; }
+        .anim-pulse { animation: pulse 2s infinite; }
+
+        /* 代码块样式 */
+        .code-block {
+            background: #1F2937;
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 20px;
+            margin: 20px 0;
+            border: 4px solid #374151;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.1s;
+            text-align: left;
+            line-height: 1.5;
+        }
+        .code-block:active { transform: scale(0.98); }
+        .keyword { color: #F87171; font-weight: bold; } 
+        .object { color: #93C5FD; font-weight: bold; } 
+        .param { color: #34D399; font-weight: bold; } 
+        .semicolon { color: #FCD34D; font-weight: bold; } 
+        .comment { color: #9CA3AF; font-size: 0.8em; margin-left: 10px; font-style: italic; }
+        .structure { color: #C084FC; font-weight: bold; } /* int main, return */
+
+        /* 英雄 SVG 样式 */
+        .hero-svg {
+            width: 150px;
+            height: 150px;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.2));
+        }
+        /* 交互动画类 */
+        .move-right { transform: translateX(100px); }
+        .move-left { transform: translateX(-100px); }
+        
+        /* 布局辅助 */
+        .flex-row { display: flex; align-items: center; gap: 40px; width: 100%; justify-content: center; }
+        .flex-col { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); border: 2px solid #E5E7EB; text-align: center; }
+        .highlight-text { font-size: 1.2em; line-height: 1.6; max-width: 600px; text-align: center; color: #4B5563; }
+        .big-icon { font-size: 60px; margin-bottom: 10px; display: block; }
+        
+        /* 颜色主题 */
+        .theme-indigo .slide-header { background: #EEF2FF; border-color: #C7D2FE; color: #4F46E5; }
+        .theme-gray .slide-header { background: #F3F4F6; border-color: #D1D5DB; color: #374151; } /* 新增灰色主题 */
+        .theme-blue .slide-header { background: #EFF6FF; border-color: #BFDBFE; color: #2563EB; }
+        .theme-red .slide-header { background: #FEF2F2; border-color: #FECACA; color: #DC2626; }
+        .theme-green .slide-header { background: #ECFDF5; border-color: #A7F3D0; color: #059669; }
+        .theme-orange .slide-header { background: #FFF7ED; border-color: #FED7AA; color: #EA580C; }
+        .theme-pink .slide-header { background: #FDF2F8; border-color: #FBCFE8; color: #DB2777; }
+        .theme-cyan .slide-header { background: #ECFEFF; border-color: #A5F3FC; color: #0891B2; }
+        .theme-purple .slide-header { background: #F5F3FF; border-color: #DDD6FE; color: #7C3AED; }
+        .theme-yellow .slide-header { background: #FFFBEB; border-color: #FDE68A; color: #D97706; }
+
+    </style>
+</head>
+<body>
+
+    <div class="ppt-container" id="pptBox">
+        <button class="nav-btn prev-btn" onclick="changeSlide(-1)" id="prevBtn">←</button>
+        <button class="nav-btn next-btn" onclick="changeSlide(1)" id="nextBtn">→</button>
+
+        <div class="slide active theme-indigo">
+            <div class="slide-header">
+                <div class="slide-title"><h1>C++ 英雄冒险书</h1><p>WELCOME TO CODECOMBAT C++</p></div>
+                <div class="page-number">1 / 10</div>
+            </div>
+            <div class="slide-content">
+                <div class="hero-svg anim-bounce" id="hero-0">
+                    <svg viewBox="0 0 100 100">
+                        <path d="M 50 5 Q 65 5 75 25 Q 60 20 50 30 Q 40 20 25 25 Q 35 5 50 5 Z" fill="#EF4444" stroke="#991B1B" stroke-width="2"/>
+                        <path d="M 25 35 Q 50 25 75 35 L 82 55 Q 85 75 75 90 L 50 95 L 25 90 Q 15 75 18 55 L 25 35 Z" fill="url(#grad1)" stroke="#B45309" stroke-width="3"/>
+                        <defs><linearGradient id="grad1"><stop offset="0%" stop-color="#FCD34D"/><stop offset="100%" stop-color="#F59E0B"/></linearGradient></defs>
+                        <path d="M 30 50 H 70 V 65 H 30 V 50 Z" fill="#1F2937" stroke="#B45309" stroke-width="2"/>
+                        <line x1="43" y1="50" x2="43" y2="65" stroke="#FCD34D" stroke-width="3"/>
+                        <line x1="57" y1="50" x2="57" y2="65" stroke="#FCD34D" stroke-width="3"/>
+                    </svg>
+                </div>
+                <h2 style="font-size: 3em; color: #4F46E5; margin: 20px 0;">准备好学习 C++ 魔法了吗？</h2>
+                <p class="highlight-text">我们将进入 CodeCombat 的世界，和 <b>Hero (英雄)</b> 一起掌握 8 个关键的 C++ 知识点！</p>
+                <button onclick="changeSlide(1)" style="margin-top: 30px; padding: 15px 40px; font-size: 24px; background: #4F46E5; color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);">开始冒险 →</button>
+            </div>
+        </div>
+
+        <div class="slide theme-gray">
+            <div class="slide-header">
+                <div class="slide-title"><h1>0. 魔法框架 (Structure)</h1><p>MAIN FUNCTION & RETURN</p></div>
+                <div class="page-number">2 / 10</div>
+            </div>
+            <div class="slide-content">
+                <div class="flex-row" style="align-items: flex-start;">
+                    <div class="flex-col" style="width: 45%; align-items: flex-start;">
+                        <h2 style="color: #374151;">所有魔法的起源</h2>
+                        <div class="card" style="text-align: left; border-left: 8px solid #6B7280; width: 100%; box-sizing: border-box;">
+                            <p style="margin: 10px 0;"><b>int main()</b> 就像是魔法书的封面。</p>
+                            <p style="margin: 10px 0;">大括号 <b style="color: #C084FC; font-size:1.4em;">{ }</b> 是<b>"魔法结界"</b>。所有的指令都必须写在结界里面，否则不会生效！</p>
+                            <p style="margin: 10px 0;"><b>return 0;</b> 代表<b>"任务完成"</b>。它通常放在代码的最后一行。</p>
+                        </div>
+                    </div>
+                    <div class="flex-col" style="width: 50%;">
+                        <div class="code-block" style="position: relative; padding-top: 20px;">
+                            <span class="structure">int</span> <span class="keyword">main</span>() <span style="color: #C084FC;">{</span>
+                            <br>
+                            <br>
+                            &nbsp;&nbsp;<span class="comment">// 你的代码写在这里！</span><br>
+                            &nbsp;&nbsp;<span class="object">hero</span>.moveRight()<span class="semicolon">;</span><br>
+                            <br>
+                            &nbsp;&nbsp;<span class="structure">return</span> <span class="param">0</span><span class="semicolon">;</span>
+                            <br>
+                            <span style="color: #C084FC;">}</span>
+                            
+                            <div style="position: absolute; right: 20px; top: 20px; color: #C084FC; font-size: 24px;">⬅ 入口</div>
+                            <div style="position: absolute; right: 20px; bottom: 20px; color: #C084FC; font-size: 24px;">⬅ 出口</div>
+                        </div>
+                        <p style="color: #EF4444; font-weight: bold; font-size: 0.9em;">⚠️ 永远不要删除这些框架代码哦！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-blue">
+            <div class="slide-header">
+                <div class="slide-title"><h1>1. 对象 (Object)</h1><p>THE HERO CHARACTER</p></div>
+                <div class="page-number">3 / 10</div>
+            </div>
+            <div class="slide-content">
+                <div class="flex-row">
+                    <div class="flex-col">
+                        <div class="hero-svg anim-pulse">
+                            <svg viewBox="0 0 100 100"><use href="#hero-def" /></svg>
+                        </div>
+                        <div style="background: #2563EB; color: white; padding: 5px 20px; border-radius: 20px; font-weight: bold;">hero</div>
+                        <p style="color: #2563EB; font-style: italic;">"我是 C++ 程序的主角！"</p>
+                    </div>
+                    <div class="flex-col" style="align-items: flex-start; max-width: 500px;">
+                        <div class="card" style="border-left: 8px solid #2563EB; text-align: left;">
+                            <h3>💡 生动解释</h3>
+                            <p><b>对象 (Object)</b> 就像故事里的<b>主角</b>！<br>在我们的游戏中，这个帅气的骑士 <code style="background:#DBEAFE; color:#1E40AF; padding:2px 5px; border-radius:4px;">hero</code> 就是一个对象。</p>
+                        </div>
+                        <div class="code-block">
+                            <span class="object">hero</span>.moveRight()<span class="semicolon">;</span>
+                            <br><span class="comment">// hero 就是对象</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-red">
+            <div class="slide-header">
+                <div class="slide-title"><h1>2. 方法 (Method)</h1><p>HERO SKILLS</p></div>
+                <div class="page-number">4 / 10</div>
+            </div>
+            <div class="slide-content">
+                <div class="flex-row">
+                    <div class="flex-col" style="align-items: flex-start; max-width: 500px;">
+                        <div class="card" style="border-left: 8px solid #DC2626; text-align: left;">
+                            <h3>⚡ 技能与分号</h3>
+                            <p><b>方法 (Method)</b> 就是主角会的<b>技能</b>！<br>小括号 <b style="color: #DC2626;">()</b> 代表“发招”。</p>
+                            <p style="background: #FEF2F2; padding: 10px; border-radius: 8px; border: 1px dashed #DC2626; font-size: 0.9em;">
+                                ⚠️ <b>C++ 重要规则：</b><br>
+                                每一句指令结束必须加上分号 <b style="color: #F59E0B; font-size:1.2em;">;</b> 
+                                就像写句子要加句号一样！
+                            </p>
+                        </div>
+                        <p style="font-size: 0.9em; color: #666;">↓ 点击代码试试看 ↓</p>
+                        <div class="code-block" onclick="animateHero('hero-2', 'move-right')">
+                            <span class="object">hero</span>.moveRight<span class="keyword">()</span><span class="semicolon">;</span>
+                        </div>
+                        <div class="code-block" onclick="animateHero('hero-2', 'move-left')">
+                            <span class="object">hero</span>.moveLeft<span class="keyword">()</span><span class="semicolon">;</span>
+                        </div>
+                    </div>
+                    <div class="flex-col" style="background: #FEF2F2; padding: 40px; border-radius: 30px; border: 4px solid #FECACA;">
+                        <div class="hero-svg" id="hero-2">
+                            <svg viewBox="0 0 100 100"><use href="#hero-def" /></svg>
+                        </div>
+                        <p style="color: #DC2626; font-weight: bold;">Hero 准备就绪!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-green">
+            <div class="slide-header">
+                <div class="slide-title"><h1>3. 参数 (Parameter)</h1><p>POWER LEVEL & DISTANCE</p></div>
+                <div class="page-number">5 / 10</div>
+            </div>
+            <div class="slide-content">
+                <p class="highlight-text" style="margin-bottom: 30px;"><b>参数</b>就像告诉技能要用<b>多大的力气</b>或<b>走多远</b>！<br>写在小括号 <b style="color: #059669;">()</b> 里面的数字就是参数。</p>
+                <div class="flex-row" style="align-items: stretch;">
+                    <div class="card" style="flex: 1;">
+                        <h4>情况 1: 没写参数</h4>
+                        <div class="code-block" style="font-size: 16px;">hero.moveRight()<span class="semicolon">;</span></div>
+                        <div style="background: #F3F4F6; height: 20px; border-radius: 10px; overflow: hidden; margin-top: 10px;">
+                            <div style="width: 25%; background: #10B981; height: 100%;"></div>
+                        </div>
+                        <p style="font-size: 0.8em; color: #6B7280;">默认只走 1 步</p>
+                    </div>
+                    <div class="card" style="flex: 1; border-color: #34D399; transform: scale(1.05); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);">
+                        <h4 style="color: #059669;">情况 2: 有参数!</h4>
+                        <div class="code-block" style="font-size: 18px;">hero.moveRight(<span class="param">3</span>)<span class="semicolon">;</span></div>
+                        <div style="background: #F3F4F6; height: 20px; border-radius: 10px; overflow: hidden; margin-top: 10px;">
+                            <div style="width: 75%; background: #059669; height: 100%;"></div>
+                        </div>
+                        <p style="font-weight: bold; color: #059669;">用力走 3 步！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-orange">
+            <div class="slide-header">
+                <div class="slide-title"><h1>4. 整数 (Integer)</h1><p>WHOLE STEPS ONLY</p></div>
+                <div class="page-number">6 / 10</div>
+            </div>
+            <div class="slide-content">
+                <span class="big-icon">👣</span>
+                <p class="highlight-text"><b>整数</b>就是完整的数字，<b>没有“小尾巴”（小数点）</b>！<br>就像走路，一步，两步，不能走半步。</p>
+                <div style="display: flex; gap: 20px; margin: 30px 0;">
+                    <div class="card" style="font-size: 40px; font-weight: bold; color: #EA580C; width: 100px;">1</div>
+                    <div class="card" style="font-size: 40px; font-weight: bold; color: #EA580C; width: 100px;">5</div>
+                    <div class="card" style="font-size: 40px; font-weight: bold; color: #EA580C; width: 100px;">100</div>
+                </div>
+                <div class="code-block">
+                    hero.moveRight(<span class="param">3</span>)<span class="semicolon">;</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-pink">
+            <div class="slide-header">
+                <div class="slide-title"><h1>5. 小数 (Decimal)</h1><p>TINY, PRECISE STEPS</p></div>
+                <div class="page-number">7 / 10</div>
+            </div>
+            <div class="slide-content">
+                <span class="big-icon">🎯</span>
+                <p class="highlight-text"><b>小数</b>就是带着<b>“小尾巴”（小数点）</b>的数字。<br>比如 <span style="background: #FCE7F3; color: #DB2777; padding: 0 5px; border-radius: 4px;">1.5</span>。如果 Hero 只想精准地往前挪动一点点，就要用小数啦！</p>
+                
+                <div style="width: 80%; background: #FFF; border: 4px solid #FBCFE8; padding: 20px; border-radius: 20px; margin-top: 30px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; font-family: monospace; color: #9CA3AF; margin-bottom: 10px;">
+                        <span>1.0</span><span>1.5</span><span>2.0</span>
+                    </div>
+                    <div style="height: 10px; background: #E5E7EB; position: relative;">
+                        <div style="position: absolute; left: 50%; top: -15px; transform: translateX(-50%);">
+                            <div class="hero-svg" style="width: 50px; height: 50px;">
+                                <svg viewBox="0 0 100 100"><use href="#hero-def" /></svg>
+                            </div>
+                        </div>
+                        <div style="position: absolute; left: 50%; top: 20px; transform: translateX(-50%); background: #DB2777; color: white; padding: 2px 10px; border-radius: 10px; font-size: 12px;">1.5 步</div>
+                    </div>
+                </div>
+                
+                <div class="code-block" style="margin-top: 40px;">
+                    hero.moveRight(<span class="param">1.5</span>)<span class="semicolon">;</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-cyan">
+            <div class="slide-header">
+                <div class="slide-title"><h1>6. 正数 (Positive)</h1><p>FORWARD!</p></div>
+                <div class="page-number">8 / 10</div>
+            </div>
+            <div class="slide-content">
+                <span class="big-icon">🚀</span>
+                <p class="highlight-text"><b>正数</b>是大于零的数，代表<b>增加</b>、<b>前进</b>！<br>只要没有减号，通常都是正数。</p>
+                <div style="width: 100%; height: 100px; background: #ECFEFF; border: 4px solid #A5F3FC; border-radius: 20px; display: flex; align-items: center; padding: 0 20px; margin-top: 30px; position: relative; overflow: hidden;">
+                    <div style="position: absolute; left: 0; width: 100%; height: 100%; display: flex; justify-content: space-around; opacity: 0.1; font-size: 50px; align-items: center;">
+                        <span>→</span><span>→</span><span>→</span>
+                    </div>
+                    <div class="hero-svg anim-pulse" style="margin-left: 50px;">
+                        <svg viewBox="0 0 100 100"><use href="#hero-def" /></svg>
+                    </div>
+                    <h2 style="margin-left: auto; color: #0891B2;">100 →</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-purple">
+            <div class="slide-header">
+                <div class="slide-title"><h1>7. 负数 (Negative)</h1><p>BACKWARD!</p></div>
+                <div class="page-number">9 / 10</div>
+            </div>
+            <div class="slide-content">
+                <span class="big-icon">👻</span>
+                <p class="highlight-text"><b>负数</b>是小于零的数，前面有个减号 <b style="color: #7C3AED; font-size: 1.5em;">-</b>。<br>它代表<b>后退</b>、<b>减少</b>。</p>
+                <div class="card" style="width: 80%; border-color: #DDD6FE; background: #F5F3FF;">
+                    <p style="font-weight: bold; color: #5B21B6;">💡 小窍门：如果在向右移动的技能里用负数...</p>
+                    <div class="code-block" style="background: #111827;">
+                        hero.moveRight(<span class="keyword" style="color: #C084FC;">-2</span>)<span class="semicolon">;</span>
+                    </div>
+                    <p style="color: #7C3AED; font-weight: bold;">= 向左移动 2 步！</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-yellow">
+            <div class="slide-header">
+                <div class="slide-title"><h1>冒险完成！</h1><p>LEVEL COMPLETE</p></div>
+                <div class="page-number">10 / 10</div>
+            </div>
+            <div class="slide-content">
+                <div style="font-size: 80px;">🏆</div>
+                <h1 style="font-size: 3em; color: #D97706; margin: 20px 0;">你太棒了！</h1>
+                <p class="highlight-text">你已经掌握了 C++ 所有的基础法宝。<br>现在的你，完全有能力去 CodeCombat 的世界里闯关啦！</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; text-align: left;">
+                    <div class="card" style="padding: 15px;">✅ int main()</div>
+                    <div class="card" style="padding: 15px;">✅ return 0;</div>
+                    <div class="card" style="padding: 15px;">✅ 对象与方法</div>
+                    <div class="card" style="padding: 15px;">✅ 参数 (正/负)</div>
+                </div>
+
+                <button onclick="changeSlide(-9)" style="margin-top: 30px; padding: 15px 40px; font-size: 20px; background: #D97706; color: white; border: none; border-radius: 50px; cursor: pointer;">再看一遍 🔄</button>
+            </div>
+        </div>
+
+        <div class="dots" id="dotsContainer"></div>
+
+        <svg style="display: none;">
+            <defs>
+                <g id="hero-def">
+                    <path d="M 50 5 Q 65 5 75 25 Q 60 20 50 30 Q 40 20 25 25 Q 35 5 50 5 Z" fill="#EF4444" stroke="#991B1B" stroke-width="2"/>
+                    <path d="M 25 35 Q 50 25 75 35 L 82 55 Q 85 75 75 90 L 50 95 L 25 90 Q 15 75 18 55 L 25 35 Z" fill="url(#grad1)" stroke="#B45309" stroke-width="3"/>
+                    <path d="M 30 50 H 70 V 65 H 30 V 50 Z" fill="#1F2937" stroke="#B45309" stroke-width="2"/>
+                    <line x1="43" y1="50" x2="43" y2="65" stroke="#FCD34D" stroke-width="3"/>
+                    <line x1="57" y1="50" x2="57" y2="65" stroke="#FCD34D" stroke-width="3"/>
+                    <ellipse cx="40" cy="40" rx="8" ry="3" fill="#FFFFFF" opacity="0.6" transform="rotate(-30 40 40)"/>
+                </g>
+            </defs>
+        </svg>
+
+    </div>
+
+    <script>
+        // --- 原生 JS 逻辑，绝对稳定 ---
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const dotsContainer = document.getElementById('dotsContainer');
+        const totalSlides = slides.length;
+
+        // 初始化进度点
+        slides.forEach((_, idx) => {
+            const dot = document.createElement('div');
+            dot.className = 'dot' + (idx === 0 ? ' active' : '');
+            dot.onclick = () => goToSlide(idx);
+            dotsContainer.appendChild(dot);
+        });
+
+        const dots = document.querySelectorAll('.dot');
+
+        function updateUI() {
+            // 更新幻灯片
+            slides.forEach((slide, idx) => {
+                slide.classList.remove('active');
+                if (idx === currentSlide) slide.classList.add('active');
+            });
+
+            // 更新点
+            dots.forEach((dot, idx) => {
+                dot.className = 'dot' + (idx === currentSlide ? ' active' : '');
+            });
+
+            // 更新按钮状态
+            document.getElementById('prevBtn').classList.toggle('btn-disabled', currentSlide === 0);
+            document.getElementById('nextBtn').classList.toggle('btn-disabled', currentSlide === totalSlides - 1);
+        }
+
+        function changeSlide(dir) {
+            const newIndex = currentSlide + dir;
+            if (newIndex >= 0 && newIndex < totalSlides) {
+                currentSlide = newIndex;
+                updateUI();
+            }
+        }
+
+        function goToSlide(idx) {
+            currentSlide = idx;
+            updateUI();
+        }
+
+        // 键盘控制
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+        });
+
+        // 简单的动画演示函数
+        function animateHero(elementId, animClass) {
+            const el = document.getElementById(elementId);
+            if(el) {
+                // 重置动画
+                el.classList.remove('move-right', 'move-left');
+                void el.offsetWidth; // 触发重绘
+                el.classList.add(animClass);
+                
+                // 1.5秒后自动复位
+                setTimeout(() => {
+                    el.classList.remove(animClass);
+                }, 1500);
+            }
+        }
+
+        // 初始化
+        updateUI();
+    </script>
+</body>
+</html>

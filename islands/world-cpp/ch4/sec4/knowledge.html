@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第7关 用户界面 UI</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-color: #2C3E50;       /* 深蓝灰背景 */
+            --screen-bg: #ECF0F1;      /* 屏幕亮色 */
+            --frame-color: #34495E;    /* 边框色 */
+            --primary: #3498DB;        /* 科技蓝 */
+            --secondary: #E74C3C;      /* 警示红 */
+            --accent: #F1C40F;         /* 能量黄 */
+            --success: #2ECC71;        /* 成功绿 */
+            --text-main: #2C3E50;
+            
+            /* 代码高亮 */
+            --code-bg: #2c3e50;
+            --code-fg: #ecf0f1;
+            --tok-kw: #e74c3c;         /* 关键字 */
+            --tok-func: #3498db;       /* 函数 */
+            --tok-var: #f1c40f;        /* 变量 */
+            --tok-str: #2ecc71;        /* 字符串 */
+            --tok-cm: #95a5a6;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-color);
+            /* 科技网格背景 */
+            background-image: 
+                linear-gradient(rgba(52, 152, 219, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(52, 152, 219, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 控制杆按钮 (外部) --- */
+        .nav-btn {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(145deg, #3a536b, #283848);
+            border: 4px solid #5D6D7E;
+            border-radius: 15px;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 
+                0 10px 20px rgba(0,0,0,0.4),
+                inset 0 2px 0 rgba(255,255,255,0.1);
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 40px;
+            font-weight: bold;
+        }
+        
+        /* 发光效果 */
+        .nav-btn::after {
+            content: '';
+            position: absolute;
+            width: 100%; height: 100%;
+            border-radius: 15px;
+            box-shadow: 0 0 15px var(--primary);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .nav-btn:hover { transform: translateY(-2px); color: #fff; border-color: var(--primary); }
+        .nav-btn:hover::after { opacity: 0.5; }
+        .nav-btn:active { transform: translateY(4px); box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
+        
+        .disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 控制台屏幕容器 --- */
+        .console-container {
+            width: 960px;
+            height: 600px;
+            background: var(--screen-bg);
+            border-radius: 20px;
+            /* 屏幕边框 */
+            border: 15px solid var(--frame-color);
+            box-shadow: 
+                inset 0 0 50px rgba(0,0,0,0.1),
+                0 0 0 5px #1a252f,
+                0 30px 60px rgba(0,0,0,0.6);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部 HUD (模拟游戏界面) */
+        .hud-bar {
+            height: 60px;
+            background: #2c3e50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 18px;
+            border-bottom: 4px solid var(--secondary);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            z-index: 20;
+        }
+        
+        .hud-left { display: flex; align-items: center; gap: 15px; }
+        .map-tag { background: var(--primary); padding: 2px 10px; border-radius: 4px; font-size: 14px; }
+        
+        /* 模拟右上角 UI */
+        .hud-stats { display: flex; gap: 20px; }
+        .stat-box { background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 5px; border: 1px solid #5D6D7E; display: flex; gap: 5px; }
+        .ui-highlight { color: var(--accent); animation: blink 2s infinite; }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 50px 70px;
+            flex-direction: column;
+            animation: screenOn 0.5s ease-out;
+            overflow-y: auto;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes screenOn { 
+            0% { opacity: 0; transform: scale(0.98); filter: brightness(1.5); } 
+            100% { opacity: 1; transform: scale(1); filter: brightness(1); } 
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px dashed #BDC3C7;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; }
+        h1 { margin: 0; color: var(--text-main); font-size: 34px; letter-spacing: 1px; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.2; font-size: 19px; line-height: 1.7; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.8; 
+            background: #fff;
+            border-radius: 15px; 
+            border: 2px solid #BDC3C7; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 17px;
+            margin-top: 15px;
+            border-left: 6px solid var(--primary);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .k { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .v { color: var(--tok-var); } 
+        .s { color: var(--tok-str); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #D6EAF8;
+            border-left: 5px solid var(--primary);
+            color: #2874A6;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 10px 10px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 双层世界演示 */
+        .layers-view {
+            position: relative; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            perspective: 1000px;
+        }
+        .layer-card {
+            width: 250px; height: 120px;
+            border-radius: 10px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            position: absolute;
+            transition: transform 0.5s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            font-weight: bold;
+        }
+        .layer-ui {
+            background: rgba(46, 204, 113, 0.9); border: 3px solid #27AE60; color: white;
+            transform: translateY(-40px) rotateX(20deg); z-index: 2;
+        }
+        .layer-logic {
+            background: rgba(52, 73, 94, 0.9); border: 3px solid #2C3E50; color: #BDC3C7;
+            transform: translateY(40px) rotateX(20deg) scale(0.9); z-index: 1;
+        }
+        .connect-line {
+            width: 2px; height: 80px; background: #95A5A6; border-left: 2px dashed #95A5A6;
+            position: absolute; z-index: 0;
+        }
+
+        /* 时间减法演示 */
+        .math-bar-container {
+            width: 80%; display: flex; flex-direction: column; gap: 5px;
+        }
+        .bar {
+            height: 30px; border-radius: 5px; display: flex; align-items: center; padding-left: 10px; color: white; font-weight: bold; font-size: 14px;
+            transition: width 0.5s; overflow: hidden; white-space: nowrap;
+        }
+        .bar-total { background: var(--secondary); width: 100%; position: relative; }
+        .bar-current { background: var(--primary); width: 60%; position: absolute; top:0; left:0; height: 100%; opacity: 0.8; z-index: 2;}
+        .bar-remain { background: var(--accent); width: 40%; position: absolute; top:0; right:0; height: 100%; animation: pulse 2s infinite; z-index: 1;}
+        
+        /* 计时器开关 */
+        .switch-box {
+            background: #333; padding: 20px; border-radius: 10px; display: flex; gap: 20px;
+        }
+        .timer-led {
+            width: 20px; height: 20px; border-radius: 50%; background: #555;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .timer-led.active { background: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
+        .timer-label { color: white; font-family: monospace; margin-left: 10px; }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #BDC3C7;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--success));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 动画 */
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    </style>
+</head>
+<body>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn" id="btnPrev" onclick="moveSlide(-1)">❮</button>
+
+    <!-- 屏幕容器 -->
+    <div class="console-container">
+        <!-- 顶部 HUD -->
+        <div class="hud-bar">
+            <div class="hud-left">
+                <span class="map-tag">游戏开发 2</span>
+                <span>第 7 关</span>
+            </div>
+            <!-- 模拟 UI -->
+            <div class="hud-stats">
+                <div class="stat-box">⏰ <span id="hudTime">12</span>s</div>
+                <div class="stat-box">🧪 剩 <span class="ui-highlight" id="hudPotion">3</span>s</div>
+            </div>
+        </div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">🖥️</div>
+            <h1 style="font-size: 50px; margin: 10px 0; color: var(--text-main);">用户界面 (UI)</h1>
+            <h2 style="font-size: 26px; color: var(--primary); font-weight: bold; margin-top: 0; background: #D6EAF8; padding: 5px 20px; border-radius: 20px;">User Interface</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: var(--secondary); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #C0392B;">🧠 内部数据</div>
+                <div style="padding: 15px 30px; background: var(--success); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #27AE60;">👀 外部显示</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 什么是 UI -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">👀</div>
+                <h1>什么是“用户界面” (UI)?</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>游戏其实分为两层：</p>
+                    <ol style="font-size: 18px; line-height: 1.8;">
+                        <li><b>内部世界 (Logic)</b>：<br>电脑偷偷记在小本子上的秘密数据（变量、时间）。</li>
+                        <li><b>用户界面 (UI)</b>：<br>玩家眼睛能看到的屏幕显示（血条、倒计时）。</li>
+                    </ol>
+                    <div class="card">
+                        "就像成绩单：数据库里是分数(内部)，发下来的纸是成绩单(UI)。"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="layers-view">
+                        <div class="layer-card layer-ui">
+                            <div>🖥️ UI 界面</div>
+                            <div style="font-size: 12px;">显示：倒计时 3秒</div>
+                        </div>
+                        <div class="connect-line"></div>
+                        <div class="layer-card layer-logic">
+                            <div>⚙️ 内部逻辑</div>
+                            <div style="font-size: 12px;">game.time = 9<br>spawnTime = 12</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 主角对象 game & ui -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🤝</div>
+                <h1>两个好搭档：game 和 ui</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>1. game (管理员)：</b><br>
+                    负责记录所有数据，比如 <code>game.time</code> (当前时间)。</p>
+                    <p><b>2. ui (小帮手)：</b><br>
+                    负责把数据贴到屏幕上。</p>
+                    <div class="code-box">
+                        <span class="v">ui</span>.<span class="f">track</span>(<span class="v">game</span>, <span class="s">"time"</span>)<br>
+                        <span class="c"># 嘿 ui，请一直盯着 game 的 time 属性，<br># 并把它显示出来！</span>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px; display: flex; gap: 20px; align-items: center;">
+                        <div style="display:flex; flex-direction:column; align-items:center;">
+                            👨‍💼<span style="font-size:16px;">game</span>
+                        </div>
+                        <div style="font-size: 30px;">➡️ 📄 ➡️</div>
+                        <div style="display:flex; flex-direction:column; align-items:center;">
+                            🤖<span style="font-size:16px;">ui</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 倒计时数学原理 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">➗</div>
+                <h1>计算剩余时间</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>玩家不想知道“第12秒生成药水”，他们想知道“<b>还剩几秒？</b>”</p>
+                    <div class="code-box">
+                        <span class="v">game</span>.nextPotionIn = <span class="v">game</span>.potionSpawnTime - <span class="v">game</span>.time
+                    </div>
+                    <p style="font-size: 20px; text-align: center; margin-top: 10px;">
+                        <b>终点 - 现在 = 剩余</b>
+                    </p>
+                    <div class="card">
+                        比如：<br>
+                        下课 (12秒) - 现在 (9秒) = 还剩 (3秒)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="width: 90%; display: flex; flex-direction: column; gap: 10px;">
+                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px;">
+                            <span>0s</span><span>9s</span><span>12s</span>
+                        </div>
+                        <div style="position: relative; height: 40px; background: #BDC3C7; border-radius: 5px; overflow: hidden;">
+                            <div style="position: absolute; left: 0; top: 0; height: 100%; width: 100%; background: var(--secondary); display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; color: white;">
+                                终点 Time: 12
+                            </div>
+                            <div style="position: absolute; left: 0; top: 0; height: 100%; width: 75%; background: var(--primary); display: flex; align-items: center; padding-left: 10px; color: white; box-shadow: 2px 0 5px rgba(0,0,0,0.2);">
+                                现在 Time: 9
+                            </div>
+                            <div style="position: absolute; right: 0; top: 0; height: 100%; width: 25%; background: transparent; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+                                剩 3s
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 逻辑与UI分离 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧠</div>
+                <h1>逻辑计时器 vs UI计时器</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>这关有4个计时器，分工明确：</p>
+                    <div class="card" style="background: #FDEDEC; border-color: var(--secondary); color: #C0392B;">
+                        <b>3个 逻辑计时器 (隐形):</b><br>
+                        munchkinTime, throwerTime, potionTime<br>
+                        <small>给电脑用的，决定什么时候刷怪。</small>
+                    </div>
+                    <div class="card" style="background: #E8F8F5; border-color: var(--success); color: #1E8449;">
+                        <b>1个 UI 计时器 (显示):</b><br>
+                        nextPotionIn<br>
+                        <small>专门算出来给玩家看的倒计时。</small>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 50px; display: flex; flex-direction: column; gap: 20px; align-items: center;">
+                        <div style="display: flex; gap: 20px;">
+                            <span style="opacity: 0.5;">👾</span>
+                            <span style="opacity: 0.5;">🏹</span>
+                            <span style="opacity: 0.5;">🧪</span>
+                        </div>
+                        <div style="font-size: 16px; color: #999;">(幕后工作)</div>
+                        <div style="width: 80%; height: 2px; background: #ccc;"></div>
+                        <div>📺</div>
+                        <div style="font-size: 16px; font-weight: bold; color: var(--success);">显示: 3s</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: updateTimers 函数 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">⚙️</div>
+                <h1>每一帧更新：updateTimers()</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>UI 数据不会自己变，我们需要<b>每一帧</b>都重新算一次。</p>
+                    <div class="code-box">
+                        <span class="k">def</span> <span class="f">updateTimers</span>():<br>
+                        &nbsp;&nbsp;<span class="c"># 逻辑更新...</span><br>
+                        &nbsp;&nbsp;<span class="c"># 重新计算剩余时间</span><br>
+                        &nbsp;&nbsp;<span class="v">game</span>.nextPotionIn = <span class="v">game</span>.potionTime - <span class="v">game</span>.time<br>
+                        <br>
+                        <span class="kw">while</span> True:<br>
+                        &nbsp;&nbsp;<span class="f">updateTimers</span>()
+                    </div>
+                    <p style="font-size: 16px; margin-top: 10px;">就像老师每秒钟都在黑板上擦掉旧数字，写上新数字。</p>
+                </div>
+                <div class="col-visual">
+                    <div class="switch-box" style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                        <div style="font-size: 40px; animation: float 2s infinite;">🔄</div>
+                        <div style="font-family: monospace; background: #333; color: #2ecc71; padding: 5px 10px; border-radius: 5px;">Running...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 语法复习 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📚</div>
+                <h1>语法点复习</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <ul style="list-style: none; padding: 0; font-size: 18px;">
+                        <li style="margin-bottom: 15px;">
+                            📦 <b>函数 (Function)</b>：<br>
+                            <code>def name(): ...</code> 定义操作步骤。
+                        </li>
+                        <li style="margin-bottom: 15px;">
+                            🏷️ <b>属性 (Property)</b>：<br>
+                            <code>game.time</code> 用点号访问对象的特征。
+                        </li>
+                        <li style="margin-bottom: 15px;">
+                            ⚖️ <b>比较 (Comparison)</b>：<br>
+                            <code>if time > spawnTime:</code> 判断时间到了没。
+                        </li>
+                        <li>
+                            ➗ <b>差值 (Difference)</b>：<br>
+                            <code>终点 - 现在</code> 用来算倒计时。
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px;">🧮</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎓</div>
+                <h1>UI 小故事</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: #E8F6F3; border-color: #16A085; color: #0E6251;">
+                        <b>Game</b> 是总管，记着所有秘密时间。<br>
+                        <b>UI</b> 是黑板，负责把秘密写出来。
+                    </div>
+                    <div class="card" style="background: #FDEDEC; border-color: #E74C3C; color: #C0392B; margin-top: 20px;">
+                        <b>倒计时公式：</b><br>
+                        "目标时间 - 当前时间 = 还要等多久"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 100px; animation: pulse 2s infinite;">🌟</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn" id="btnNext" onclick="moveSlide(1)">❯</button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    
+    // 模拟顶部 HUD 动态效果
+    let gameTime = 9;
+    let targetTime = 12;
+    const hudTime = document.getElementById('hudTime');
+    const hudPotion = document.getElementById('hudPotion');
+
+    setInterval(() => {
+        gameTime += 0.1;
+        if(gameTime > 15) gameTime = 9; // Loop loop
+        
+        let remaining = targetTime - gameTime;
+        if(remaining < 0) {
+            remaining = 3; // Reset visuals roughly
+            gameTime = 9;
+        }
+
+        hudTime.innerText = Math.floor(gameTime);
+        hudPotion.innerText = Math.floor(remaining);
+        
+        // Update math bar if on slide 4
+        if(currentSlide === 3) {
+             // Simple visual update logic could go here if needed
+        }
+    }, 100);
+
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 进阶战术手册 - 多重计时器</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-orange: #ed8936;
+            --accent-green: #48bb78;
+            --accent-red: #f56565;
+            --accent-blue: #4299e1;
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else */
+            --code-func: #8be9fd;    /* spawnXY, attack */
+            --code-string: #f1fa8c;  /* "munchkin" */
+            --code-num: #bd93f9;     /* 42 */
+            --code-comment: #6272a4;
+            --code-prop: #f8f8f2;    /* game.time */
+            --code-var: #ffb86c;     /* munchkinSpawnTime */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            border-top: 4px solid var(--accent-orange);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .level-header {
+            border-bottom: 1px solid #444;
+            background: linear-gradient(to bottom, rgba(237, 137, 54, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+        }
+
+        .code-row {
+            display: flex;
+            min-height: 24px;
+        }
+        
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* 注释列 */
+        .code-annotation {
+            width: 32%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-orange);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+
+        /* 计时器视觉效果 */
+        .timer-track {
+            position: relative;
+            height: 4px;
+            background: #444;
+            border-radius: 2px;
+            margin: 20px 0;
+        }
+        .timer-dot {
+            position: absolute;
+            top: -6px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-dark);
+        }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-mug-hot text-orange-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-orange-400">生存挑战</span></h1>
+                    <p class="text-xs text-gray-500">多线程计时管理系统</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-clock text-blue-500 mr-1"></i>UI Track</span>
+                <span><i class="fa-solid fa-layer-group text-green-500 mr-1"></i>Multiple Timers</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 7 -->
+        <section id="level-7" class="level-card">
+            <div class="level-header p-6 flex justify-between items-center">
+                <div>
+                    <span class="bg-orange-900 text-orange-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">LEVEL 7</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">茶点时间 (Refresher)</h2>
+                </div>
+                <div class="text-yellow-500 text-sm"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-orange-400 mb-3"><i class="fa-solid fa-timeline mr-2"></i>多轨时间管理</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                指挥官，这次的任务非常棘手！你不仅要面对普通的矮人，还有远程的投矛手，而且还得记得喝药水保命。
+                                <br>
+                                如果我们只用一个闹钟，肯定会乱套。我们需要<span class="text-orange-400 font-bold">三个独立的闹钟</span>并行工作：
+                            </p>
+                            <ul class="space-y-4">
+                                <li class="flex items-center gap-3 bg-gray-800 p-2 rounded border border-gray-700">
+                                    <div class="w-8 h-8 flex items-center justify-center bg-red-900 rounded-full text-red-300"><i class="fa-solid fa-skull"></i></div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                            <span>Munchkin Timer</span>
+                                            <span>每 6 秒</span>
+                                        </div>
+                                        <div class="h-1 bg-gray-700 rounded"><div class="h-1 bg-red-500 rounded" style="width: 40%"></div></div>
+                                    </div>
+                                </li>
+                                <li class="flex items-center gap-3 bg-gray-800 p-2 rounded border border-gray-700">
+                                    <div class="w-8 h-8 flex items-center justify-center bg-blue-900 rounded-full text-blue-300"><i class="fa-solid fa-bullseye"></i></div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                            <span>Thrower Timer</span>
+                                            <span>每 9 秒</span>
+                                        </div>
+                                        <div class="h-1 bg-gray-700 rounded"><div class="h-1 bg-blue-500 rounded" style="width: 20%"></div></div>
+                                    </div>
+                                </li>
+                                <li class="flex items-center gap-3 bg-gray-800 p-2 rounded border border-gray-700">
+                                    <div class="w-8 h-8 flex items-center justify-center bg-green-900 rounded-full text-green-300"><i class="fa-solid fa-flask"></i></div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                            <span>Potion Timer</span>
+                                            <span>每 6 秒</span>
+                                        </div>
+                                        <div class="h-1 bg-gray-700 rounded"><div class="h-1 bg-green-500 rounded" style="width: 80%"></div></div>
+                                    </div>
+                                </li>
+                            </ul>
+                            <div class="mt-4 p-3 bg-gray-900 rounded text-sm text-gray-400 border-l-4 border-orange-500">
+                                <strong>UI 小技巧：</strong>
+                                我们还需要告诉玩家下一次药水什么时候来。
+                                <br>
+                                公式：<code>剩余时间 = 药水生成时刻 - 当前时刻</code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 视觉化图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="text-center mb-6">
+                            <i class="fa-solid fa-gamepad text-5xl text-gray-600 mb-2"></i>
+                            <div class="font-code text-xs text-green-400">UPDATE()</div>
+                        </div>
+                        <div class="w-full space-y-2">
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span>Check 1</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                                <span class="text-red-400">Munchkin?</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span>Check 2</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                                <span class="text-green-400">Potion?</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span>Check 3</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                                <span class="text-blue-400">Thrower?</span>
+                            </div>
+                            <div class="border-t border-gray-600 pt-2 text-center text-xs text-orange-400">
+                                更新 UI 显示
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 代码部分 -->
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">multi_timer.py</div>
+                    </div>
+
+                    <!-- 代码行 -->
+                    <div class="code-body">
+                        <!-- Setup Functions -->
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="comment"># 使用计时器生成敌人和物品。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        
+                        <!-- Munchkins Helper -->
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">spawnMunchkins</span>():</div>
+                            <div class="code-annotation">辅助函数：生成2个矮人</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="code-content">    <span class="var">munchkin1</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"munchkin"</span>, <span class="num">2</span>, <span class="num">12</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content">    <span class="var">munchkin2</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"munchkin"</span>, <span class="num">2</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="code-content">    <span class="var">munchkin1</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"AttacksNearest"</span></div>
+                            <div class="code-annotation">设置行为：主动攻击</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">6</div>
+                            <div class="code-content">    <span class="var">munchkin2</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"AttacksNearest"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <!-- Throwers Helper -->
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">spawnThrowers</span>():</div>
+                            <div class="code-annotation">辅助函数：生成2个投矛手</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">8</div>
+                            <div class="code-content">    <span class="var">thrower1</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"thrower"</span>, <span class="num">2</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">9</div>
+                            <div class="code-content">    <span class="var">thrower1</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"AttacksNearest"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">10</div>
+                            <div class="code-content">    <span class="var">thrower2</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"thrower"</span>, <span class="num">2</span>, <span class="num">52</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">11</div>
+                            <div class="code-content">    <span class="var">thrower2</span>.<span class="prop">behavior</span> <span class="op">=</span> <span class="str">"AttacksNearest"</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <!-- Potion Helper -->
+                        <div class="code-row">
+                            <div class="line-num">12</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">spawnPotion</span>():</div>
+                            <div class="code-annotation">辅助函数：生成药水</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">13</div>
+                            <div class="code-content">    <span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"potion-large"</span>, <span class="num">46</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Init -->
+                        <div class="code-row">
+                            <div class="line-num">15</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">addSurviveGoal</span>(<span class="num">20</span>)</div>
+                            <div class="code-annotation">目标：存活20秒</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">16</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">munchkinSpawnTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">矮人闹钟：立刻生成</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">17</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">throwerSpawnTime</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">投矛手闹钟：立刻生成</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">18</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">potionSpawnTime</span> <span class="op">=</span> <span class="num">6</span></div>
+                            <div class="code-annotation">药水闹钟：6秒后生成</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">19</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="var">nextPotionIn</span> <span class="op">=</span> <span class="num">0</span></div>
+                            <div class="code-annotation">UI变量初始化</div>
+                        </div>
+
+                        <!-- UI -->
+                        <div class="code-row">
+                            <div class="line-num">20</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"time"</span>)</div>
+                            <div class="code-annotation">显示游戏总时间</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">21</div>
+                            <div class="code-content"><span class="comment"># 让我们显示到下一瓶药水生成要多长时间。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">22</div>
+                            <div class="code-content"><span class="var">ui</span>.<span class="func">track</span>(<span class="var">game</span>, <span class="str">"nextPotionIn"</span>)</div>
+                            <div class="code-annotation">显示药水倒计时</div>
+                        </div>
+
+                        <div class="code-row">
+                            <div class="line-num">23</div>
+                            <div class="code-content"><span class="var">player</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">"duelist"</span>, <span class="num">40</span>, <span class="num">34</span>)</div>
+                            <div class="code-annotation">生成玩家</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">24</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="num">15</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">25</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- UPDATE Logic (Core) -->
+                        <div class="code-row">
+                            <div class="line-num">26</div>
+                            <div class="code-content"><span class="kwd">def </span><span class="func">updateTimers</span>():</div>
+                            <div class="code-annotation"><i class="fa-solid fa-microchip mr-1"></i>核心管理函数</div>
+                        </div>
+
+                        <!-- Alarm 1 -->
+                        <div class="code-row">
+                            <div class="line-num">27</div>
+                            <div class="code-content">    <span class="comment"># 如果游戏时间大于munchkinSpawnTime（矮人生成时间）</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">28</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="prop">time</span> <span class="op">></span> <span class="var">game</span>.<span class="var">munchkinSpawnTime</span>:</div>
+                            <div class="code-annotation">检查矮人闹钟</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">29</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">munchkinSpawnTime</span> <span class="op">=</span> <span class="var">game</span>.<span class="var">munchkinSpawnTime</span> <span class="op">+</span> <span class="num">6</span></div>
+                            <div class="code-annotation">重设闹钟：+6秒</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">30</div>
+                            <div class="code-content">        <span class="func">spawnMunchkins</span>()</div>
+                            <div class="code-annotation">执行生成</div>
+                        </div>
+
+                        <!-- Alarm 2 -->
+                        <div class="code-row">
+                            <div class="line-num">31</div>
+                            <div class="code-content">    <span class="comment"># 如果游戏时间大于potionSpawnTime（药水生成时间）</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">32</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="prop">time</span> <span class="op">></span> <span class="var">game</span>.<span class="var">potionSpawnTime</span>:</div>
+                            <div class="code-annotation">检查药水闹钟</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">33</div>
+                            <div class="code-content">        <span class="var">player</span>.<span class="func">say</span>(<span class="str">"药水在这！"</span>)</div>
+                            <div class="code-annotation">提示玩家</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">34</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">potionSpawnTime</span> <span class="op">=</span> <span class="var">game</span>.<span class="var">potionSpawnTime</span> <span class="op">+</span> <span class="num">6</span></div>
+                            <div class="code-annotation">重设闹钟：+6秒</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">35</div>
+                            <div class="code-content">        <span class="func">spawnPotion</span>()</div>
+                            <div class="code-annotation">生成药水</div>
+                        </div>
+
+                        <!-- Alarm 3 -->
+                        <div class="code-row">
+                            <div class="line-num">36</div>
+                            <div class="code-content">    <span class="comment"># 如果游戏的时间（time）大于游戏的投矛手生成时间</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">37</div>
+                            <div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="prop">time</span> <span class="op">></span> <span class="var">game</span>.<span class="var">throwerSpawnTime</span>:</div>
+                            <div class="code-annotation">检查投矛手闹钟</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">38</div>
+                            <div class="code-content">        <span class="var">game</span>.<span class="var">throwerSpawnTime</span> <span class="op">=</span> <span class="var">game</span>.<span class="var">throwerSpawnTime</span> <span class="op">+</span> <span class="num">9</span></div>
+                            <div class="code-annotation">重设闹钟：+9秒</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">39</div>
+                            <div class="code-content">        <span class="func">spawnThrowers</span>()</div>
+                            <div class="code-annotation">生成投矛手</div>
+                        </div>
+
+                        <!-- UI Update -->
+                        <div class="code-row">
+                            <div class="line-num">40</div>
+                            <div class="code-content">    <span class="comment"># 更新UI计时器，直到下一瓶药水生成</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">41</div>
+                            <div class="code-content">    <span class="var">game</span>.<span class="var">nextPotionIn</span> <span class="op">=</span> <span class="var">game</span>.<span class="var">potionSpawnTime</span> <span class="op">-</span> <span class="var">game</span>.<span class="prop">time</span></div>
+                            <div class="code-annotation">计算倒计时数值</div>
+                        </div>
+                        
+                        <div class="code-row"><div class="line-num">42</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Main Loop -->
+                        <div class="code-row">
+                            <div class="line-num">43</div>
+                            <div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div>
+                            <div class="code-annotation">主循环</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">44</div>
+                            <div class="code-content">    <span class="func">updateTimers</span>()</div>
+                            <div class="code-annotation">不断检查更新所有闹钟</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Strategy Dept. | Multi-Threaded Tactics</p>
+    </footer>
+
+</body>
+</html>

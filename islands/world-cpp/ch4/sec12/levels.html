@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat 进阶战术手册 - 游戏开发</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0f0f1a; /* 深蓝夜空 */
+            --card-bg: #1a1a2e;
+            --code-bg: #16213e;
+            --accent-neon-pink: #ff00ff;
+            --accent-neon-blue: #00ffff;
+            --accent-neon-green: #0aff00;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            
+            /* Python 代码高亮配色 - 霓虹风格 */
+            --code-keyword: #ff79c6; 
+            --code-func: #8be9fd;    
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-var: #ffb86c;     
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            /* 像素网格背景 */
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+        .font-arcade { font-family: 'Press Start 2P', cursive; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 2px solid #333;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .level-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.2);
+            border-color: var(--accent-neon-pink);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #333;
+            background: linear-gradient(90deg, rgba(255,0,255,0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row {
+            display: flex;
+            min-height: 24px;
+        }
+        
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #0f0f1a;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* 注释列 */
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-neon-green);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+
+        /* 街机元素动画 */
+        @keyframes pixel-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .pixel-icon { animation: pixel-bounce 1s infinite steps(2); }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-ghost text-pink-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white font-arcade text-xs md:text-xl">COIN GAME <span class="text-green-400">PROJECT</span></h1>
+                    <p class="text-xs text-gray-500">Level Design & Coordinate Systems</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-border-all text-blue-500 mr-1"></i>Grid System</span>
+                <span><i class="fa-solid fa-tree text-green-500 mr-1"></i>spawnXY</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 21 -->
+        <section id="level-21" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block font-arcade">LEVEL 21</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">硬币游戏第1步：布局 (Layout)</h2>
+                </div>
+                <div class="text-yellow-500 text-sm flex gap-1">
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                </div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-3 font-arcade"><i class="fa-solid fa-map mr-2"></i>设计师蓝图</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                欢迎来到游戏开发工作室！我们要制作一个经典的“吃豆人”风格游戏。
+                                <br>
+                                第一步是<strong>搭建舞台</strong>。虽然一行行写坐标很枯燥，但这是关卡设计师的基本功。
+                            </p>
+                            <div class="space-y-4">
+                                <div class="bg-gray-900 p-3 rounded border-l-4 border-blue-500">
+                                    <h4 class="font-bold text-white text-sm mb-1"><i class="fa-solid fa-ruler-combined mr-1"></i> 网格系统 (The Grid)</h4>
+                                    <p class="text-xs text-gray-400">
+                                        为了美观，我们按照严格的数学规律放置物体：
+                                        <br>
+                                        <span class="text-green-400">🌲 森林 (墙壁)</span>: 间隔 <strong>16米</strong> (16, 32, 48, 64...)
+                                        <br>
+                                        <span class="text-yellow-400">🪙 硬币 (积分)</span>: 间隔 <strong>8米</strong> (8, 16, 24, 32...)
+                                    </p>
+                                </div>
+                                <div class="bg-gray-900 p-3 rounded border-l-4 border-pink-500">
+                                    <h4 class="font-bold text-white text-sm mb-1"><i class="fa-solid fa-circle-plus mr-1"></i> 填补空缺</h4>
+                                    <p class="text-xs text-gray-400">
+                                        代码中留了一些空白。你需要观察坐标的规律（比如每次加16或8），把缺失的森林和硬币补上，构建完整的迷宫。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 视觉化图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-900 rounded-lg p-4 border border-gray-700">
+                        <div class="grid grid-cols-4 gap-2 w-full max-w-[200px]">
+                            <!-- Row 1 -->
+                            <div class="w-8 h-8 bg-green-900 flex items-center justify-center text-green-500 border border-green-700"><i class="fa-solid fa-tree"></i></div>
+                            <div class="w-8 h-8 bg-black flex items-center justify-center text-yellow-500"><i class="fa-solid fa-coins text-xs"></i></div>
+                            <div class="w-8 h-8 bg-green-900 flex items-center justify-center text-green-500 border border-green-700"><i class="fa-solid fa-tree"></i></div>
+                            <div class="w-8 h-8 bg-black flex items-center justify-center text-yellow-500"><i class="fa-solid fa-coins text-xs"></i></div>
+                            <!-- Row 2 -->
+                            <div class="w-8 h-8 bg-black flex items-center justify-center text-yellow-500"><i class="fa-solid fa-coins text-xs"></i></div>
+                            <div class="w-8 h-8 bg-black flex items-center justify-center text-red-500"><i class="fa-solid fa-ghost pixel-icon"></i></div>
+                            <div class="w-8 h-8 bg-black flex items-center justify-center text-yellow-500"><i class="fa-solid fa-coins text-xs"></i></div>
+                            <div class="w-8 h-8 bg-black flex items-center justify-center text-pink-500"><i class="fa-solid fa-circle-radiation"></i></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-4 text-center font-code">
+                            (x, y) Coordinates<br>
+                            <span class="text-blue-400">Precision is Key</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 代码部分 -->
+                <div class="code-container font-code text-sm">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-gray-500 text-xs">level_1_layout.py</div>
+                    </div>
+
+                    <div class="code-body">
+                        <!-- Header -->
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="code-content"><span class="comment"># 让我们开始新建一个吃豆人风格的街机游戏。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        
+                        <!-- Forest Grid -->
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="code-content"><span class="comment"># 让我们以网格模式生成一些"forest"图块。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">16</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">32</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">48</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">6</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">64</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">16</span>, <span class="num">32</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">8</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">32</span>, <span class="num">32</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">9</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">48</span>, <span class="num">32</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">10</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">64</span>, <span class="num">32</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">11</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">16</span>, <span class="num">48</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">12</div>
+                            <div class="code-content"><span class="comment"># 正如你所看到的，森林图块之间的距离是16米</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">13</div>
+                            <div class="code-content"><span class="comment"># 在缺少的三个地点生成更多森林图标</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">14</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">32</span>, <span class="num">48</span>)</div>
+                            <div class="code-annotation"><i class="fa-solid fa-wrench text-green-400 mr-1"></i>补全森林</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">15</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">48</span>, <span class="num">48</span>)</div>
+                            <div class="code-annotation"><i class="fa-solid fa-wrench text-green-400 mr-1"></i>补全森林</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">16</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"forest"</span>, <span class="num">64</span>, <span class="num">48</span>)</div>
+                            <div class="code-annotation"><i class="fa-solid fa-wrench text-green-400 mr-1"></i>补全森林</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Coins Grid -->
+                        <div class="code-row">
+                            <div class="line-num">18</div>
+                            <div class="code-content"><span class="comment"># 接下来，我们在森林中生成硬币。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">19</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">16</span>, <span class="num">8</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">20</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">24</span>, <span class="num">8</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">21</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">32</span>, <span class="num">8</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">22</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">48</span>, <span class="num">8</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">23</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">56</span>, <span class="num">8</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">24</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">64</span>, <span class="num">8</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">25</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">72</span>, <span class="num">8</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">26</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">27</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">8</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">28</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">24</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">29</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">40</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">30</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">56</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">31</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">72</span>, <span class="num">16</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">32</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">33</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">8</span>, <span class="num">24</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">34</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">16</span>, <span class="num">24</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">35</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">24</span>, <span class="num">24</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">36</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">32</span>, <span class="num">24</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">37</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">40</span>, <span class="num">24</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">38</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">48</span>, <span class="num">24</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">39</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">56</span>, <span class="num">24</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">40</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">64</span>, <span class="num">24</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">41</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">72</span>, <span class="num">24</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">42</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">43</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">24</span>, <span class="num">32</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">44</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">56</span>, <span class="num">32</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">45</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">46</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">8</span>, <span class="num">40</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">47</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">16</span>, <span class="num">40</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">48</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">24</span>, <span class="num">40</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">49</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">32</span>, <span class="num">40</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">50</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">40</span>, <span class="num">40</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">51</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">48</span>, <span class="num">40</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">52</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">56</span>, <span class="num">40</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">53</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">64</span>, <span class="num">40</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">54</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">72</span>, <span class="num">40</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">55</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">56</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">8</span>, <span class="num">48</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">57</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">24</span>, <span class="num">48</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">58</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">40</span>, <span class="num">48</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">59</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">56</span>, <span class="num">48</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">60</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">72</span>, <span class="num">48</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">61</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row">
+                            <div class="line-num">62</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">8</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">63</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">16</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">64</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">24</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">65</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">32</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">66</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Filling the Gap -->
+                        <div class="code-row">
+                            <div class="line-num">67</div>
+                            <div class="code-content"><span class="comment"># 硬币之间的距离是8米，在空的地方生成更多硬币</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">68</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">48</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"><i class="fa-solid fa-plus text-yellow-400 mr-1"></i>补全硬币</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">69</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">56</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"><i class="fa-solid fa-plus text-yellow-400 mr-1"></i>补全硬币</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">70</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">64</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"><i class="fa-solid fa-plus text-yellow-400 mr-1"></i>补全硬币</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">71</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"bronze-coin"</span>, <span class="num">72</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"><i class="fa-solid fa-plus text-yellow-400 mr-1"></i>补全硬币</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">72</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- PowerUps -->
+                        <div class="code-row">
+                            <div class="line-num">73</div>
+                            <div class="code-content"><span class="comment"># 蘑菇将是我们的能力强化道具。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">74</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"mushroom"</span>, <span class="num">40</span>, <span class="num">8</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">75</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"mushroom"</span>, <span class="num">8</span>, <span class="num">32</span>)</div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">76</div>
+                            <div class="code-content"><span class="comment"># 生成更多蘑菇。</span></div>
+                            <div class="code-annotation"></div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">77</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"mushroom"</span>, <span class="num">72</span>, <span class="num">32</span>)</div>
+                            <div class="code-annotation"><i class="fa-solid fa-circle-arrow-up text-pink-500 mr-1"></i>能力道具</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">78</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">spawnXY</span>(<span class="str">"mushroom"</span>, <span class="num">40</span>, <span class="num">56</span>)</div>
+                            <div class="code-annotation"><i class="fa-solid fa-circle-arrow-up text-pink-500 mr-1"></i>能力道具</div>
+                        </div>
+
+                        <div class="code-row"><div class="line-num">79</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <!-- Player Setup -->
+                        <div class="code-row">
+                            <div class="line-num">80</div>
+                            <div class="code-content"><span class="var">player</span> <span class="op">=</span> <span class="var">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">'knight'</span>, <span class="num">8</span>, <span class="num">8</span>)</div>
+                            <div class="code-annotation">主角登场</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">81</div>
+                            <div class="code-content"><span class="var">player</span>.<span class="prop">maxSpeed</span> <span class="op">=</span> <span class="num">30</span></div>
+                            <div class="code-annotation">设置移动速度</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">82</div>
+                            <div class="code-content"><span class="var">game</span>.<span class="func">addCollectGoal</span>()</div>
+                            <div class="code-annotation">目标：收集所有</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-500 text-sm mt-10 pb-10 font-arcade">
+        <p>© 2023 CodeCombat Strategy Dept. | INSERT COIN TO CONTINUE</p>
+    </footer>
+
+</body>
+</html>

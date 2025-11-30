@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 第7-9关 程序 结构 字符串 顺序结构 bug 调试</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-dark: #1F2937;
+            --slide-bg: #FFFFFF;
+            --primary-color: #4F46E5;
+            --text-main: #374151;
+            --text-sub: #6B7280;
+            
+            /* 代码高亮色 (VS Code C++ 风格) */
+            --code-bg: #1E1E1E;
+            --code-fg: #D4D4D4;
+            --tok-keyword: #569CD6;   /* int, return, void */
+            --tok-func: #DCDCAA;      /* 函数黄色 */
+            --tok-str: #CE9178;       /* 字符串橙色 */
+            --tok-comment: #6A9955;   /* 注释绿色 */
+            --tok-num: #B5CEA8;       /* 数字浅绿 */
+            --tok-obj: #4FC1FF;       /* 对象蓝色 */
+            --tok-punct: #D4D4D4;     /* 标点符号 */
+            --tok-semi: #FFD700;      /* 分号高亮 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-dark);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 新增：舞台区域，包含按钮和PPT */
+        .stage-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px; /* 按钮和PPT之间的间距 */
+            width: 98vw;
+        }
+
+        /* --- 2. PPT 容器 (16:9) --- */
+        .ppt-wrapper {
+            /* 调整宽度，留出空间给两边的按钮 */
+            width: 80vw; 
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+            background: var(--slide-bg);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 幻灯片页面 */
+        .slide {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            padding: 40px 60px;
+            animation: fadeIn 0.4s ease-out;
+            box-sizing: border-box;
+            overflow-y: auto; /* 防止内容极度溢出时不可见 */
+        }
+        .slide.active {
+            display: flex;
+        }
+
+        /* 标题栏 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #F3F4F6;
+            padding-bottom: 15px;
+            flex-shrink: 0; /* 防止标题被挤压 */
+        }
+        .title-box h1 { margin: 0; font-size: 36px; color: var(--primary-color); }
+        .title-box p { margin: 5px 0 0; font-size: 16px; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1px; }
+        .page-badge {
+            background: #E0E7FF;
+            color: #4338CA;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 18px;
+        }
+
+        /* 内容区布局 */
+        .content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            height: 100%; /* 充满剩余空间 */
+        }
+        
+        .content.center { justify-content: center; flex-direction: column; text-align: center; }
+        .half { flex: 1; display: flex; flex-direction: column; justify-content: center; height: 100%; }
+        
+        /* 说明卡片 */
+        .info-card {
+            background: #F9FAFB;
+            border-left: 6px solid var(--card-color, #4F46E5);
+            padding: 25px;
+            border-radius: 0 15px 15px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .info-card h3 { margin: 0 0 10px 0; font-size: 24px; display: flex; align-items: center; gap: 10px; }
+        .info-card p { margin: 0; font-size: 18px; line-height: 1.6; color: var(--text-main); }
+
+        /* 代码编辑器样式 */
+        .code-editor {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 20px;
+            line-height: 1.6;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+            position: relative;
+            border: 1px solid #333;
+            min-width: 400px;
+        }
+        /* 模拟 macOS 窗口按钮 */
+        .editor-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot.red { background: #FF5F56; }
+        .dot.yellow { background: #FFBD2E; }
+        .dot.green { background: #27C93F; }
+
+        /* 语法高亮类 */
+        .tok-kw { color: var(--tok-keyword); font-weight: bold; }
+        .tok-obj { color: var(--tok-obj); font-weight: bold; }
+        .tok-func { color: var(--tok-func); }
+        .tok-str { color: var(--tok-str); }
+        .tok-comment { color: var(--tok-comment); font-style: italic; }
+        .tok-num { color: var(--tok-num); }
+        .tok-paren { color: #FFD700; } /* 括号 */
+        .tok-semi { color: var(--tok-semi); font-weight: bold; } /* 分号 */
+
+        /* 行高亮动画 */
+        .code-line {
+            padding: 2px 5px;
+            border-radius: 4px;
+            transition: background 0.3s;
+            display: block;
+            white-space: pre; /* 保留缩进 */
+        }
+        .code-line.active {
+            background: #37373D;
+            border-left: 3px solid #27C93F;
+        }
+
+        /* --- 3. 导航控制 (修改版) --- */
+        .nav-btn {
+            /* 不再使用 absolute 定位，改为 Flex 项目 */
+            flex-shrink: 0;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1); /* 半透明背景 */
+            border: 2px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            font-size: 32px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 100;
+        }
+        .nav-btn:hover { 
+            background: white; 
+            color: var(--primary-color);
+            transform: scale(1.1);
+            border-color: white;
+            box-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+        .disabled { 
+            opacity: 0.3; 
+            pointer-events: none; 
+            border-color: transparent;
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background: var(--primary-color);
+            transition: width 0.5s;
+        }
+
+        /* --- 4. SVG 动画与装饰 --- */
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes shake { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
+        
+        .anim-float { animation: float 3s ease-in-out infinite; }
+        .anim-shake { animation: shake 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 特殊组件样式 */
+        .bug-icon { cursor: pointer; transition: opacity 0.3s; }
+        .bug-icon:active { opacity: 0; transform: scale(1.5); }
+        
+        .magnifier {
+            position: absolute;
+            pointer-events: none;
+            transition: all 0.2s;
+            opacity: 0;
+        }
+
+        /* 颜色主题类 */
+        .theme-purple { --card-color: #8B5CF6; --primary-color: #7C3AED; }
+        .theme-orange { --card-color: #F59E0B; --primary-color: #D97706; }
+        .theme-green { --card-color: #10B981; --primary-color: #059669; }
+        .theme-blue { --card-color: #3B82F6; --primary-color: #2563EB; }
+        .theme-red { --card-color: #EF4444; --primary-color: #DC2626; }
+        .theme-gray { --card-color: #4B5563; --primary-color: #374151; }
+
+    </style>
+</head>
+<body>
+
+<div class="stage-area">
+
+    <button class="nav-btn prev" onclick="moveSlide(-1)" id="btnPrev" title="上一页">❮</button>
+
+    <div class="ppt-wrapper">
+        <div class="progress-bar" id="progressBar" style="width: 10%;"></div>
+
+        <div class="slide active center theme-purple">
+            <div class="content center">
+                <div class="anim-float">
+                    <svg width="200" height="200" viewBox="0 0 100 100">
+                        <rect x="10" y="40" width="80" height="50" rx="5" fill="#1F2937" />
+                        <rect x="15" y="45" width="70" height="40" fill="#374151" />
+                        <text x="50" y="70" text-anchor="middle" fill="white" font-size="10" font-family="monospace">SCENE 7-9</text>
+                        <g transform="rotate(-20, 10, 40)">
+                            <rect x="10" y="20" width="80" height="20" rx="2" fill="#1F2937" />
+                            <rect x="15" y="22" width="10" height="16" fill="white" />
+                            <rect x="35" y="22" width="10" height="16" fill="white" />
+                            <rect x="55" y="22" width="10" height="16" fill="white" />
+                            <rect x="75" y="22" width="10" height="16" fill="white" />
+                        </g>
+                    </svg>
+                </div>
+                <h1 style="font-size: 48px; margin: 20px 0; color: #4B5563;">英雄的冒险剧本</h1>
+                <h2 style="font-size: 28px; color: #7C3AED; background: #EDE9FE; padding: 10px 30px; border-radius: 50px;">CodeCombat C++ 第7-9关 知识点大揭秘</h2>
+                <div style="margin-top: 40px; display: flex; gap: 20px;">
+                    <span style="font-size: 40px;" title="C++">🛡️</span>
+                    <span style="font-size: 40px;" title="Bug">🐛</span>
+                    <span style="font-size: 40px;" title="剧本">📜</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-blue">
+            <div class="header">
+                <div class="title-box"><h1>1. 程序 (Program)</h1><p>THE HERO'S SCRIPT</p></div>
+                <div class="page-badge">01</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>📜 英雄的冒险剧本</h3>
+                        <p><b>程序</b>就像给英雄写的剧本！<br>导演（你）告诉演员（计算机），每一步要做什么。<br>在 C++ 中，所有的剧本都必须写在 <b>int main</b> 里面。</p>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiB3aWR0aD0iMTUwIiBoZWlnaHQ9MTUwIj4KICA8cGF0aCBkPSJNIDIwIDEwIEwgODAgMTAgTCA4MCA5MCBMIDIwIDkwIFoiIGZpbGw9IiNmZmYiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPGxpbmUgeDE9IjMwIiB5MT0iMjUiIHgyPSI3MCIgeTI9IjI1IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxsaW5lIHgxPSIzMCIgeTE9IjQwIiB4Mj0iNzAiIHkyPSI0MCIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8bGluZSB4MT0iMzAiIHkxPSI1NSIgeDI9IjcwIiB5Mj0iNTUiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI3NSIgcj0iMTAiIGZpbGw9IiM0RjQ2RTUiIG9wYWNpdHk9IjAuMiIvPgo8L3N2Zz4=" alt="Script Icon">
+                    </div>
+                </div>
+                <div class="half">
+                    <div class="code-editor">
+                        <div class="editor-header"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                        <div class="code-line"><span class="tok-kw">int</span> <span class="tok-func">main</span><span class="tok-paren">() {</span></div>
+                        <div class="code-line">    <span class="tok-comment">// 这是一个完整的C++程序</span></div>
+                        <div class="code-line">    <span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span><span class="tok-paren">()</span><span class="tok-semi">;</span></div>
+                        <div class="code-line">    <span class="tok-obj">hero</span>.<span class="tok-func">attack</span><span class="tok-paren">(</span><span class="tok-str">"Brak"</span><span class="tok-paren">)</span><span class="tok-semi">;</span></div>
+                        <div class="code-line">    <span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span><span class="tok-paren">(</span><span class="tok-num">2</span><span class="tok-paren">)</span><span class="tok-semi">;</span></div>
+                        <div class="code-line">    <span class="tok-kw">return</span> <span class="tok-num">0</span><span class="tok-semi">;</span></div>
+                        <div class="code-line"><span class="tok-paren">}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-gray">
+            <div class="header">
+                <div class="title-box"><h1>1.5 C++ 魔法框架</h1><p>THE SKELETON</p></div>
+                <div class="page-badge">02</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>🏗️ 必须遵守的规则</h3>
+                        <p>1. <b>int main() { ... }</b>：<br>这是程序的"大门"，所有指令必须写在花括号里面。</p>
+                        <p>2. <b>分号 ( ; )</b>：<br>每一句指令结束都要加分号，就像写文章要加句号一样！</p>
+                    </div>
+                </div>
+                <div class="half">
+                    <div class="code-editor" style="border: 2px solid #6B7280;">
+                        <div class="code-line"><span class="tok-kw">int</span> <span class="tok-func">main</span><span class="tok-paren">() {</span>  <span style="color:#6B7280; font-size:16px;">← 魔法开始</span></div>
+                        <div class="code-line">    </div>
+                        <div class="code-line">    <span class="tok-comment">// 你的代码写在这里</span></div>
+                        <div class="code-line">    <span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span><span class="tok-paren">()</span><span class="tok-semi">;</span> <span style="color:#FFD700; font-size:24px;">←</span></div>
+                        <div class="code-line">    </div>
+                        <div class="code-line">    <span class="tok-kw">return</span> <span class="tok-num">0</span><span class="tok-semi">;</span> <span style="color:#FFD700; font-size:24px;">←</span></div>
+                        <div class="code-line"><span class="tok-paren">}</span> <span style="color:#6B7280; font-size:16px;">← 魔法结束</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-orange">
+            <div class="header">
+                <div class="title-box"><h1>2. 编程 (Programming)</h1><p>WRITING THE SCRIPT</p></div>
+                <div class="page-badge">03</div>
+            </div>
+            <div class="content">
+                <div class="half" style="align-items: center;">
+                    <div style="font-size: 100px; margin-bottom: 20px;" class="anim-float">✍️</div>
+                </div>
+                <div class="half">
+                    <div class="info-card">
+                        <h3>🎬 编写冒险剧本</h3>
+                        <p><b>编程</b>就是编写剧本的过程！<br>你就像一个小导演，用代码语言（C++）写下英雄的每一个动作，创造出精彩的冒险故事。</p>
+                    </div>
+                    <div class="code-editor" style="border: 2px dashed #F59E0B;">
+                        <div class="code-line"><span class="tok-kw">int</span> <span class="tok-func">main</span><span class="tok-paren">() {</span></div>
+                        <div class="code-line">    <span class="tok-comment">// 我正在"编程"...</span></div>
+                        <div class="code-line">    <span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span><span class="tok-paren">()</span><span class="tok-semi">;</span></div>
+                        <div class="code-line">    <span class="tok-obj">hero</span>.<span class="tok-func">attack</span><span class="tok-paren">(</span><span class="tok-str">"Treg"</span><span class="tok-paren">)</span><span class="tok-semi">;</span></div>
+                        <div class="code-line">    <span class="tok-kw">return</span> <span class="tok-num">0</span><span class="tok-semi">;</span></div>
+                        <div class="code-line"><span class="tok-paren">}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-green">
+            <div class="header">
+                <div class="title-box"><h1>3. 注释 (Comment)</h1><p>NOTES FOR HUMANS</p></div>
+                <div class="page-badge">04</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>📝 剧本的旁白说明</h3>
+                        <p>以 <span style="background:#DCFCE7; color:#166534; padding:2px 8px; border-radius:4px; font-family:monospace; font-weight:bold;">//</span> 开头的文字。<br>
+                        计算机完全<b>忽略</b>它（看不见！），它是写给<b>人类</b>看的笔记，帮助理解你的意图。</p>
+                    </div>
+                    <div style="font-size: 60px; text-align: center;">🤖 <span style="font-size: 20px; color: #999; vertical-align: middle;">"我看不到注释..."</span></div>
+                </div>
+                <div class="half">
+                    <div class="code-editor">
+                        <div class="editor-header"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                        
+                        <div class="code-line" style="position: relative;">
+                            <span class="tok-comment">// 使用名字击败食人魔</span>
+                            <span style="position: absolute; right: -120px; top: 0; color: #10B981; font-size: 14px;">← 旁白说明</span>
+                        </div>
+                        
+                        <div class="code-line"><span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span><span class="tok-paren">()</span><span class="tok-semi">;</span></div>
+                        
+                        <div class="code-line" style="margin-top: 10px;">
+                            <span class="tok-comment">// 击败第一对食人魔</span>
+                        </div>
+                        <div class="code-line"><span class="tok-obj">hero</span>.<span class="tok-func">attack</span><span class="tok-paren">(</span><span class="tok-str">"Sog"</span><span class="tok-paren">)</span><span class="tok-semi">;</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-red">
+            <div class="header">
+                <div class="title-box"><h1>4. 字符串 (String)</h1><p>MAGIC QUOTES</p></div>
+                <div class="page-badge">05</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>✨ 带引号的魔法咒语</h3>
+                        <p>字符串就是被<b>双引号</b>包围的文字！<br>食人魔的名字都是字符串，引号告诉计算机：<br>“这是文字，不是代码指令哦！”</p>
+                    </div>
+                    <div style="font-size: 24px; text-align: center; color: #EF4444; font-weight: bold; margin-top: 20px;">
+                        <span style="font-size: 60px;">"</span> Brak <span style="font-size: 60px;">"</span>
+                    </div>
+                </div>
+                <div class="half">
+                    <div class="code-editor">
+                        <div class="code-line"><span class="tok-comment">// 名字必须加双引号！</span></div>
+                        <div class="code-line"><span class="tok-obj">hero</span>.<span class="tok-func">attack</span><span class="tok-paren">(</span><span class="tok-str">"Brak"</span><span class="tok-paren">)</span><span class="tok-semi">;</span> <span style="color: #666; font-size: 14px;">👈 字符串</span></div>
+                        <div class="code-line"><span class="tok-obj">hero</span>.<span class="tok-func">attack</span><span class="tok-paren">(</span><span class="tok-str">"Treg"</span><span class="tok-paren">)</span><span class="tok-semi">;</span> <span style="color: #666; font-size: 14px;">👈 也是字符串</span></div>
+                        <div class="code-line"><span class="tok-obj">hero</span>.<span class="tok-func">attack</span><span class="tok-paren">(</span><span class="tok-str">"Kro"</span><span class="tok-paren">)</span><span class="tok-semi">;</span></div>
+                        <div class="code-line" style="opacity: 0.5; text-decoration: line-through;"><span class="tok-obj">hero</span>.<span class="tok-func">attack</span><span class="tok-paren">(</span>Brak<span class="tok-paren">)</span><span class="tok-semi">;</span> <span style="color: #EF4444; font-size: 14px;">❌ 没引号，报错！</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-purple">
+            <div class="header">
+                <div class="title-box"><h1>5. 顺序结构 (Sequential)</h1><p>STEP BY STEP</p></div>
+                <div class="page-badge">06</div>
+                <button onclick="runSequence()" style="background: #27C93F; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 18px; cursor: pointer; box-shadow: 0 4px #1e9e32;">▶ 执行程序</button>
+            </div>
+            <div class="content">
+                <div class="half" style="flex: 0 0 40%;">
+                    <div class="code-editor" id="seqCode">
+                        <div class="code-line" id="line1"><span class="tok-comment">// 1. 先向右移动</span></div>
+                        <div class="code-line" id="line2"><span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span><span class="tok-paren">()</span><span class="tok-semi">;</span></div>
+                        <div class="code-line" id="line3"><span class="tok-comment">// 2. 再攻击Sog</span></div>
+                        <div class="code-line" id="line4"><span class="tok-obj">hero</span>.<span class="tok-func">attack</span><span class="tok-paren">(</span><span class="tok-str">"Sog"</span><span class="tok-paren">)</span><span class="tok-semi">;</span></div>
+                        <div class="code-line" id="line5"><span class="tok-comment">// 3. 最后再移动</span></div>
+                        <div class="code-line" id="line6"><span class="tok-obj">hero</span>.<span class="tok-func">moveRight</span><span class="tok-paren">(</span><span class="tok-num">2</span><span class="tok-paren">)</span><span class="tok-semi">;</span></div>
+                    </div>
+                </div>
+                <div class="half" style="background: #F3F4F6; border-radius: 10px; position: relative; overflow: hidden; border: 2px solid #E5E7EB;">
+                    <div class="info-card" style="position: absolute; top: 10px; right: 10px; z-index: 10; border-radius: 10px;">
+                        <p>像下楼梯一样，<b>从上到下</b>执行，不能跳！</p>
+                    </div>
+                    <div id="heroActor" style="width: 80px; height: 80px; position: absolute; left: 20px; bottom: 40px; transition: all 0.5s;">
+                        <svg viewBox="0 0 100 100">
+                            <path d="M 50 5 Q 65 5 75 25 Q 60 20 50 30 Q 40 20 25 25 Q 35 5 50 5 Z" fill="#EF4444" stroke="#991B1B" stroke-width="2"/>
+                            <path d="M 25 35 Q 50 25 75 35 L 82 55 Q 85 75 75 90 L 50 95 L 25 90 Q 15 75 18 55 L 25 35 Z" fill="#F59E0B" stroke="#B45309" stroke-width="3"/>
+                            <path d="M 30 50 H 70 V 65 H 30 V 50 Z" fill="#1F2937" stroke="#B45309" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div id="enemySog" style="width: 80px; height: 80px; position: absolute; left: 180px; bottom: 40px; opacity: 1; transition: opacity 0.2s;">
+                        <svg viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="40" fill="#4B5563" />
+                            <circle cx="35" cy="40" r="5" fill="red" />
+                            <circle cx="65" cy="40" r="5" fill="red" />
+                            <path d="M 30 70 Q 50 50 70 70" stroke="white" stroke-width="3" fill="none" />
+                            <text x="50" y="25" text-anchor="middle" fill="white" font-size="12">Sog</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-red">
+            <div class="header">
+                <div class="title-box"><h1>6. Bug (程序错误)</h1><p>ERROR IN THE SCRIPT</p></div>
+                <div class="page-badge">07</div>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>🐞 剧本里的小错误</h3>
+                        <p><b>Bug</b> 就是程序出了错，就像剧本里写错了台词！<br>常见的 C++ 错误：<br>1. 忘记分号<br>2. 字符串忘记加引号</p>
+                    </div>
+                </div>
+                <div class="half" style="position: relative;">
+                    <div class="code-editor" style="border: 3px solid #EF4444;">
+                        <div class="code-line"><span class="tok-comment">// 哎呀，这里有Bug！</span></div>
+                        <div class="code-line" style="background: #3f1919;"><span class="tok-obj">hero</span>.<span class="tok-func">attack</span><span class="tok-paren">(</span>Sog<span class="tok-paren">)</span><span class="tok-semi">;</span> <span style="color: #EF4444; font-weight: bold;">← 缺少引号！</span></div>
+                        <div class="code-line"><span class="tok-comment">// 计算机看不懂 Sog 是什么</span></div>
+                    </div>
+                    
+                    <div class="bug-icon anim-shake" style="position: absolute; bottom: -20px; right: -20px; width: 100px;">
+                        <svg viewBox="0 0 100 100">
+                            <path d="M30 50 Q50 20 70 50 Q80 80 50 90 Q20 80 30 50" fill="#EF4444" />
+                            <line x1="30" y1="50" x2="10" y2="40" stroke="#333" stroke-width="3" />
+                            <line x1="70" y1="50" x2="90" y2="40" stroke="#333" stroke-width="3" />
+                            <circle cx="40" cy="50" r="5" fill="black" />
+                            <circle cx="60" cy="50" r="5" fill="black" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide theme-blue">
+            <div class="header">
+                <div class="title-box"><h1>7. 调试 (Debugging)</h1><p>BUG HUNTING</p></div>
+                <div class="page-badge">08</div>
+                <button onclick="startDebug()" style="background: #3B82F6; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 18px; cursor: pointer;">🔍 开始捉虫</button>
+            </div>
+            <div class="content">
+                <div class="half">
+                    <div class="info-card">
+                        <h3>🔍 抓虫子游戏</h3>
+                        <p><b>调试</b>就是找出并修复 Bug！<br>程序员要像侦探一样，仔细检查代码，找到错误的地方并改正它。</p>
+                    </div>
+                    <div style="font-size: 20px; margin-top: 20px; color: #666;">
+                        点击右上角按钮开始修复代码！
+                    </div>
+                </div>
+                <div class="half" style="position: relative;">
+                    <div class="code-editor" id="debugEditor">
+                        <div class="code-line" id="bugLine1"><span class="tok-obj">hero</span>.<span class="tok-func">attack</span><span class="tok-paren">(</span><span class="tok-str">"Sog"</span><span class="tok-paren">)</span><span class="tok-semi">;</span></div>
+                        <div class="code-line" id="bugLine2" style="border: 2px dashed red;"><span class="tok-obj">hero</span>.<span class="tok-func">attack</span><span class="tok-paren">(</span>Gos<span class="tok-paren">)</span><span class="tok-semi">;</span> <span style="color: red;">← 虫子在这!</span></div>
+                        <div class="code-line"><span class="tok-comment">// 找到问题：缺少引号</span></div>
+                    </div>
+                    
+                    <div class="magnifier" id="magGlass" style="width: 100px; height: 100px; top: 0; left: 0;">
+                        <svg viewBox="0 0 100 100">
+                            <circle cx="40" cy="40" r="30" stroke="#4B5563" stroke-width="5" fill="rgba(255,255,255,0.3)" />
+                            <line x1="65" y1="65" x2="90" y2="90" stroke="#4B5563" stroke-width="8" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center theme-green">
+            <div class="content center">
+                <div style="font-size: 80px;">🎉</div>
+                <h1 style="color: #059669; font-size: 48px; margin: 20px 0;">知识点大通关！</h1>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; text-align: left; max-width: 800px;">
+                    <div class="info-card" style="border-left-color: #4B5563;">✅ <b>魔法框架</b>：int main() { }</div>
+                    <div class="info-card" style="border-left-color: #4F46E5;">✅ <b>程序 & 编程</b>：写剧本</div>
+                    <div class="info-card" style="border-left-color: #10B981;">✅ <b>注释</b>：给自己看的笔记 (//)</div>
+                    <div class="info-card" style="border-left-color: #EF4444;">✅ <b>字符串</b>：魔法引号 ("text")</div>
+                    <div class="info-card" style="border-left-color: #F59E0B;">✅ <b>顺序结构</b>：一步一步来</div>
+                    <div class="info-card" style="border-left-color: #8B5CF6;">✅ <b>Bug & 调试</b>：找虫子，修错误</div>
+                </div>
+                <button onclick="goToSlide(0)" style="margin-top: 40px; padding: 15px 40px; font-size: 24px; background: #059669; color: white; border: none; border-radius: 50px; cursor: pointer;">再学一遍 🔄</button>
+            </div>
+        </div>
+
+    </div>
+
+    <button class="nav-btn next" onclick="moveSlide(1)" id="btnNext" title="下一页">❯</button>
+
+</div>
+
+<script>
+    // --- 逻辑控制 ---
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const progressBar = document.getElementById('progressBar');
+    const totalSlides = slides.length;
+
+    // 初始化
+    updateSlide();
+
+    function updateSlide() {
+        slides.forEach((slide, idx) => {
+            slide.classList.remove('active');
+            if (idx === currentSlide) slide.classList.add('active');
+        });
+
+        // 按钮状态
+        document.getElementById('btnPrev').classList.toggle('disabled', currentSlide === 0);
+        document.getElementById('btnNext').classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        // 进度条
+        const percent = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = percent + '%';
+    }
+
+    function moveSlide(dir) {
+        const next = currentSlide + dir;
+        if (next >= 0 && next < totalSlides) {
+            currentSlide = next;
+            updateSlide();
+        }
+    }
+    
+    function goToSlide(idx) {
+        currentSlide = idx;
+        updateSlide();
+    }
+
+    // 键盘支持
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') moveSlide(1);
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+    });
+
+    // --- 顺序结构动画演示 ---
+    function runSequence() {
+        const lines = [
+            { id: 'line2', action: () => moveHero(100) },
+            { id: 'line4', action: () => attackEnemy() },
+            { id: 'line6', action: () => moveHero(250) } // move more
+        ];
+
+        // Reset
+        document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+        const hero = document.getElementById('heroActor');
+        const enemy = document.getElementById('enemySog');
+        hero.style.transform = 'translateX(0)';
+        enemy.style.opacity = '1';
+
+        // Execute step by step
+        let delay = 0;
+        lines.forEach((step, index) => {
+            setTimeout(() => {
+                // Highlight code
+                document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+                document.getElementById(step.id).classList.add('active');
+                // Run action
+                step.action();
+            }, delay);
+            delay += 1500;
+        });
+
+        setTimeout(() => {
+             document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+        }, delay);
+    }
+
+    function moveHero(dist) {
+        const hero = document.getElementById('heroActor');
+        hero.style.transform = `translateX(${dist}px)`;
+    }
+
+    function attackEnemy() {
+        const hero = document.getElementById('heroActor');
+        // Simple attack anim
+        hero.style.transform += ' scale(1.2)';
+        setTimeout(() => {
+            hero.style.transform = hero.style.transform.replace(' scale(1.2)', '');
+            // Enemy dies
+            document.getElementById('enemySog').style.opacity = '0.2';
+        }, 500);
+    }
+
+    // --- Debug 动画演示 ---
+    function startDebug() {
+        const mag = document.getElementById('magGlass');
+        const bugLine = document.getElementById('bugLine2');
+        
+        mag.style.opacity = '1';
+        
+        // Move magnifier to bug
+        setTimeout(() => {
+            mag.style.transform = 'translate(100px, 60px)';
+        }, 500);
+
+        // Fix it
+        setTimeout(() => {
+            bugLine.style.border = 'none';
+            // 修复为 C++ 语法
+            bugLine.innerHTML = '<span class="tok-obj">hero</span>.<span class="tok-func">attack</span><span class="tok-paren">(</span><span class="tok-str">"Gos"</span><span class="tok-paren">)</span><span class="tok-semi">;</span> <span style="color: green;">✅ 修复啦！</span>';
+            mag.style.opacity = '0';
+        }, 2000);
+    }
+
+</script>
+</body>
+</html>

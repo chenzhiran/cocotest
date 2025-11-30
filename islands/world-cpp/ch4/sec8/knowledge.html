@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第13-14关 游戏事件：destroy</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-forest: #2d3436;      /* 深林色 */
+            --board-bg: #f7f1e3;       /* 地图纸色 */
+            --primary: #e17055;        /* 破坏红 */
+            --secondary: #00b894;      /* 生长绿 */
+            --magic: #a29bfe;          /* 魔法紫 */
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            
+            /* 代码高亮 */
+            --code-bg: #2d3436;
+            --code-fg: #dfe6e9;
+            --tok-func: #74b9ff;       /* 函数 */
+            --tok-obj: #fab1a0;        /* 对象 */
+            --tok-kw: #ff7675;         /* 关键字 */
+            --tok-num: #55efc4;        /* 数字 */
+            --tok-prop: #ffeaa7;       /* 属性 */
+            --tok-cm: #b2bec3;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: #1e272e;
+            /* 树叶背景 */
+            background-image: 
+                radial-gradient(#00b894 15%, transparent 16%),
+                radial-gradient(#00b894 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 探险家按钮 (外部) --- */
+        .nav-btn {
+            width: 90px;
+            height: 90px;
+            background: #ffeaa7;
+            border: 4px solid #fdcb6e;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 8px 0 #e1b12c, 0 15px 20px rgba(0,0,0,0.4);
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 45px;
+        }
+
+        .nav-btn:hover { transform: translateY(2px); background: #fff200; }
+        .nav-btn:active { transform: translateY(8px); box-shadow: 0 0 0 #e1b12c; }
+        
+        /* 斧头图标 */
+        .btn-prev::after { content: '🪓'; display: block; transform: rotate(-45deg); }
+        /* 魔法棒图标 */
+        .btn-next::after { content: '🪄'; display: block; transform: rotate(45deg); }
+
+        .disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 地图板容器 --- */
+        .map-container {
+            width: 960px;
+            height: 600px;
+            background: var(--board-bg);
+            border-radius: 10px;
+            /* 卷起的纸张效果 */
+            box-shadow: 
+                0 1px 0 rgba(0,0,0,0.1),
+                0 5px 0 #dcdde1,
+                0 10px 20px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transform: rotate(-1deg);
+        }
+        
+        /* 胶带装饰 */
+        .tape {
+            position: absolute;
+            width: 120px; height: 35px;
+            background: rgba(255, 255, 255, 0.6);
+            border-left: 2px dotted rgba(0,0,0,0.1);
+            border-right: 2px dotted rgba(0,0,0,0.1);
+            top: -15px; left: 50%; transform: translateX(-50%) rotate(2deg);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 20;
+        }
+
+        /* 标签信息 */
+        .map-info {
+            position: absolute;
+            top: 15px; right: 20px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #b2bec3;
+            transform: rotate(2deg);
+        }
+        
+        .level-badge {
+            position: absolute;
+            top: 15px; left: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 2px 2px 0 #c0392b;
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 50px 70px;
+            flex-direction: column;
+            animation: unfold 0.6s ease-out;
+            overflow-y: auto;
+            /* 纸张纹理 */
+            background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%239C92AC" fill-opacity="0.05"><path d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z"/></g></g></svg>');
+        }
+        .slide.active { display: flex; }
+
+        @keyframes unfold { 
+            0% { opacity: 0; clip-path: circle(0% at 50% 50%); } 
+            100% { opacity: 1; clip-path: circle(100% at 50% 50%); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px dashed #b2bec3;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1)); }
+        h1 { margin: 0; color: var(--text-main); font-size: 34px; letter-spacing: 1px; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.2; font-size: 19px; line-height: 1.7; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.8; 
+            background: white;
+            border-radius: 15px; 
+            border: 2px solid #b2bec3; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 5px;
+            font-family: 'Consolas', monospace;
+            font-size: 17px;
+            margin-top: 15px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .k { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .o { color: var(--tok-obj); } 
+        .n { color: var(--tok-num); }
+        .p { color: var(--tok-prop); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #dfe6e9;
+            border-left: 5px solid var(--magic);
+            color: #2d3436;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 对比演示容器 */
+        .vs-box {
+            display: flex; gap: 20px; width: 100%; padding: 20px; justify-content: space-around;
+        }
+        .demo-item {
+            text-align: center; cursor: pointer; transition: transform 0.2s;
+        }
+        .demo-item:hover { transform: scale(1.1); }
+        .demo-icon { font-size: 60px; display: block; transition: all 0.5s; }
+        .demo-label { font-weight: bold; margin-top: 10px; color: var(--text-sub); }
+        
+        /* 动画类 */
+        .dead { transform: rotate(90deg); filter: grayscale(1) opacity(0.5); } /* Defeat 效果 */
+        .vanish { transform: scale(0); opacity: 0; } /* Destroy 效果 */
+
+        /* 闯关地图演示 */
+        .level-map {
+            width: 100%; height: 100%; position: relative;
+            background-image: 
+                linear-gradient(90deg, #b2bec3 1px, transparent 1px),
+                linear-gradient(#b2bec3 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .forest-block {
+            position: absolute; width: 40px; height: 120px; background: #00b894; 
+            border: 2px solid #006266; border-radius: 5px;
+            display: flex; align-items: center; justify-content: center; font-size: 24px; color: white;
+            transition: all 0.5s;
+        }
+        .monster-spawner {
+            position: absolute; width: 60px; height: 60px; background: #636e72; border-radius: 10px;
+            border: 4px solid #2d3436; top: 20px; left: 20px;
+            display: flex; align-items: center; justify-content: center; font-size: 30px;
+        }
+        .monster-unit {
+            position: absolute; font-size: 30px; transition: all 0.3s; cursor: crosshair;
+        }
+        
+        .counter-display {
+            position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #fab1a0;
+            padding: 5px 10px; font-family: monospace; font-weight: bold; border-radius: 5px;
+        }
+
+        /* 流程图节点 */
+        .flow-node {
+            padding: 8px 15px; border-radius: 5px; color: white; font-weight: bold; margin: 8px 0; text-align: center; width: 220px; position: relative; font-size: 16px;
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+        }
+        .bg-purple { background: var(--magic); }
+        .bg-red { background: var(--primary); }
+        .bg-green { background: var(--secondary); }
+        .arrow-down { font-size: 20px; color: #b2bec3; margin: 0; text-align: center; width: 100%; }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #dcdde1;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 漂浮动画 */
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    </style>
+</head>
+<body>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)"></button>
+
+    <!-- 地图板容器 -->
+    <div class="map-container">
+        <div class="tape"></div>
+        <div class="map-info">游戏开发 2</div>
+        <div class="level-badge">第 13-14 关</div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">🌲</div>
+            <h1 style="font-size: 50px; margin: 10px 0; color: var(--text-main);">游戏事件：destroy</h1>
+            <h2 style="font-size: 26px; color: var(--primary); font-weight: bold; margin-top: 0;">消除魔法与开路</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: var(--primary); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #c0392b;">💥 击败 (Defeat)</div>
+                <div style="padding: 15px 30px; background: var(--secondary); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #009475;">✨ 销毁 (Destroy)</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 一切皆对象 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧩</div>
+                <h1>世界由“对象”组成</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>游戏里的每个东西都是<b>对象 (Object)</b>。</p>
+                    <ul style="list-style: none; padding: 0; font-size: 18px;">
+                        <li style="margin-bottom: 10px;">🤠 <b>player</b>：主角</li>
+                        <li style="margin-bottom: 10px;">🏭 <b>munchkinSpawner</b>：造怪机器</li>
+                        <li>🌲 <b>passageForest1</b>：挡路的树</li>
+                    </ul>
+                    <div class="code-box">
+                        <span class="c"># 对象有属性(.)和方法(.)</span><br>
+                        <span class="o">hero</span>.<span class="p">health</span> <span class="c"># 属性</span><br>
+                        <span class="o">forest</span>.<span class="f">destroy</span>() <span class="c"># 方法</span>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 80px;">📦</div>
+                        <p style="font-weight: bold; color: var(--text-main);">Object</p>
+                        <div style="display: flex; gap: 20px; justify-content: center;">
+                            <span style="background: #ffeaa7; padding: 5px 10px; border-radius: 5px;">属性</span>
+                            <span style="background: #81ecec; padding: 5px 10px; border-radius: 5px;">方法</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Defeat vs Destroy (核心) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🆚</div>
+                <h1>两种“消灭”方式</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <div class="card" style="border-color: var(--primary); background: #ffebee; color: #c0392b;">
+                        <b>1. .defeat() (击败)</b><br>
+                        像被打晕了，还在场景里，只是血量归零。<br>
+                        <small>适用：敌人、生成器</small>
+                    </div>
+                    <div class="card" style="border-color: var(--magic); background: #f3e5f5; color: #8e44ad;">
+                        <b>2. .destroy() (销毁)</b><br>
+                        魔法橡皮擦！直接从世界上彻底消失。<br>
+                        <small>适用：墙壁、树木、障碍物</small>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="vs-box">
+                        <div class="demo-item" onclick="demoDefeat(this)">
+                            <span class="demo-icon" id="demo1">👾</span>
+                            <div class="demo-label">点击 Defeat</div>
+                        </div>
+                        <div style="border-left: 2px dashed #b2bec3;"></div>
+                        <div class="demo-item" onclick="demoDestroy(this)">
+                            <span class="demo-icon" id="demo2">🌳</span>
+                            <div class="demo-label">点击 Destroy</div>
+                        </div>
+                    </div>
+                    <script>
+                        function demoDefeat(el) {
+                            const icon = el.querySelector('.demo-icon');
+                            if(icon.classList.contains('dead')) {
+                                icon.classList.remove('dead');
+                            } else {
+                                icon.classList.add('dead');
+                            }
+                        }
+                        function demoDestroy(el) {
+                            const icon = el.querySelector('.demo-icon');
+                            icon.classList.add('vanish');
+                            setTimeout(() => icon.classList.remove('vanish'), 1500);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: defeat 事件 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔔</div>
+                <h1>触发时机：defeat 事件</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>我们需要一个监听器：当敌人倒下时，执行操作。</p>
+                    <div class="code-box">
+                        <span class="k">def</span> <span class="f">onDefeat</span>(event):<br>
+                        &nbsp;&nbsp;<span class="o">game</span>.<span class="p">defeated</span> += <span class="n">1</span><br>
+                        &nbsp;&nbsp;<span class="c"># 检查是否达到目标...</span><br>
+                        <br>
+                        <span class="o">game</span>.<span class="f">setActionFor</span>(<span class="s">"munchkin"</span>, <span class="s">"defeat"</span>, onDefeat)
+                    </div>
+                    <p><b>game.defeated</b> 是一个计数器，记录打倒了多少怪。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div style="font-size: 50px;">💀</div>
+                        <div class="arrow-down">触发事件</div>
+                        <div class="flow-node bg-red">onDefeat()</div>
+                        <div class="arrow-down">计数 +1</div>
+                        <div class="flow-node bg-green">game.defeated += 1</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 逻辑判断 (if) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔑</div>
+                <h1>开门的钥匙：if 条件</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>根据打倒的怪物数量，触发不同的机关。</p>
+                    <div class="code-box">
+                        <span class="k">if</span> <span class="o">game</span>.<span class="p">defeated</span> == <span class="n">3</span>:<br>
+                        &nbsp;&nbsp;<span class="c"># 第一阶段：开第一道门</span><br>
+                        &nbsp;&nbsp;<span class="o">spawner1</span>.<span class="f">defeat</span>()<br>
+                        &nbsp;&nbsp;<span class="o">forest1</span>.<span class="f">destroy</span>()
+                    </div>
+                    <p><b>==</b> 是判断相等。<br>当刚好打倒 3 只时，炸掉生成器，清除森林。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px; display: flex; gap: 20px; align-items: center;">
+                        <div style="background: #333; color: #fab1a0; padding: 10px; border-radius: 10px; font-family: monospace; font-size: 30px;">3</div>
+                        <div>➡️</div>
+                        <div>💥</div>
+                        <div>➕</div>
+                        <div style="opacity: 0.2;">🌳</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 闯关模拟 (互动) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎮</div>
+                <h1>实战模拟：打怪开路</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>点击出现的怪物来击败它们。<br>观察计数器和路障的变化。</p>
+                    <ul style="font-size: 16px;">
+                        <li>击败 <b>3</b> 只：第一棵树消失。</li>
+                        <li>击败 <b>6</b> 只：第二棵树消失。</li>
+                    </ul>
+                </div>
+                <div class="col-visual">
+                    <div class="level-map" id="gameMap">
+                        <div class="counter-display">Defeated: <span id="killCount">0</span></div>
+                        
+                        <!-- 障碍物 -->
+                        <div class="forest-block" id="tree1" style="top: 0; left: 40%;">Tree 1</div>
+                        <div class="forest-block" id="tree2" style="top: 0; left: 70%;">Tree 2</div>
+                        
+                        <!-- 怪物生成区域 -->
+                        <div class="monster-spawner">🏭</div>
+                    </div>
+                    <script>
+                        let kills = 0;
+                        let gameActive = false;
+                        
+                        // 简单的游戏循环模拟
+                        function startGameDemo() {
+                            if(gameActive) return;
+                            gameActive = true;
+                            spawnMob();
+                        }
+
+                        function spawnMob() {
+                            if(!document.getElementById('gameMap').offsetParent) {
+                                gameActive = false; return; // Stop if slide hidden
+                            }
+                            if(kills >= 6) return; // Stop at 6
+
+                            const map = document.getElementById('gameMap');
+                            const mob = document.createElement('div');
+                            mob.className = 'monster-unit';
+                            mob.innerHTML = '👾';
+                            // Random pos near spawner
+                            mob.style.top = (Math.random() * 50 + 50) + 'px';
+                            mob.style.left = (Math.random() * 50 + 20) + 'px';
+                            
+                            mob.onclick = function() {
+                                this.innerHTML = '💀';
+                                this.style.opacity = 0;
+                                kills++;
+                                document.getElementById('killCount').innerText = kills;
+                                checkEvents();
+                                setTimeout(() => this.remove(), 500);
+                                setTimeout(spawnMob, 800); // Next one
+                            };
+                            
+                            map.appendChild(mob);
+                        }
+
+                        function checkEvents() {
+                            if(kills === 3) {
+                                const t1 = document.getElementById('tree1');
+                                t1.style.transform = 'scale(0)';
+                                t1.style.opacity = 0;
+                            }
+                            if(kills === 6) {
+                                const t2 = document.getElementById('tree2');
+                                t2.style.transform = 'scale(0)';
+                                t2.style.opacity = 0;
+                            }
+                        }
+                        
+                        // Start when slide is active (handled by slide switch logic)
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 逻辑总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📋</div>
+                <h1>逻辑对比表</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 18px;">
+                        <tr style="background: #ffeaa7;">
+                            <th style="padding: 10px; border: 1px solid #b2bec3;">方法</th>
+                            <th style="padding: 10px; border: 1px solid #b2bec3;">效果</th>
+                            <th style="padding: 10px; border: 1px solid #b2bec3;">就像...</th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #b2bec3; font-weight: bold; color: var(--primary);">defeat()</td>
+                            <td style="padding: 10px; border: 1px solid #b2bec3;">血量为0，还在原地</td>
+                            <td style="padding: 10px; border: 1px solid #b2bec3;">打晕了</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #b2bec3; font-weight: bold; color: var(--magic);">destroy()</td>
+                            <td style="padding: 10px; border: 1px solid #b2bec3;">彻底移除，消失</td>
+                            <td style="padding: 10px; border: 1px solid #b2bec3;">橡皮擦擦掉</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 80px;">🥊 vs ✏️</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎓</div>
+                <h1>通关口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: #e0f2f1; border-color: #009688; color: #00695c;">
+                        想统计打怪：<b>game.defeated += 1</b><br>
+                        达到数量时：<b>if defeated == 3</b>
+                    </div>
+                    <div class="card" style="background: #fbe9e7; border-color: #ff5722; color: #bf360c; margin-top: 20px;">
+                        生成器打坏用 <b>defeat()</b><br>
+                        挡路树移除用 <b>destroy()</b>
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; animation: float 3s infinite;">🌟</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">
+        <span>🪄</span>
+    </button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+        
+        // Trigger game demo if on that slide
+        if(currentSlide === 5) {
+            startGameDemo();
+        }
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat C++ 教学指南 - 资深教研版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans SC"', 'sans-serif'],
+                        mono: ['"Fira Code"', 'monospace'],
+                    },
+                    colors: {
+                        dungeon: {
+                            bg: '#111111',
+                            panel: '#1e1e1e',
+                            accent: '#ebac00',
+                            rowA: '#202020',
+                            rowB: '#181818', 
+                        },
+                        cpp: {
+                            keyword: '#569cd6',   /* blue for int, return */
+                            control: '#c586c0',   /* purple for flow */
+                            func: '#dcdcaa',  /* yellow */
+                            str: '#ce9178',   /* orange */
+                            num: '#b5cea8',   /* green */
+                            comment: '#6a9955', /* green comment */
+                            text: '#d4d4d4'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0e0e0e;
+            color: #d4d4d4;
+            scroll-behavior: smooth;
+        }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #1e1e1e; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ebac00; }
+
+        .slide-section {
+            min-height: 100vh;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 4px solid #000;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            background-color: #111;
+        }
+
+        /* Code Row Layout */
+        .code-row {
+            display: flex;
+            width: 100%;
+            align-items: stretch; /* Stretch to fill height */
+            border-bottom: 1px solid #252525;
+            transition: background-color 0.1s;
+        }
+        .code-row:hover { background-color: #2a2a2a !important; }
+        .code-row:nth-child(odd) { background-color: #1a1a1a; }
+        .code-row:nth-child(even) { background-color: #141414; }
+        
+        .line-num {
+            width: 2.5rem;
+            text-align: right;
+            padding-right: 0.75rem;
+            padding-top: 0.6rem;
+            color: #555;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            user-select: none;
+            border-right: 1px solid #333;
+            flex-shrink: 0;
+        }
+        
+        /* The Connecting Marker Column */
+        .connector-col {
+            width: 1.5rem;
+            display: flex;
+            align-items: center; /* Center vertically */
+            justify-content: center;
+            flex-shrink: 0;
+            padding-top: 2px; /* Slight visual adjustment */
+        }
+        
+        .code-content {
+            flex: 1; 
+            padding: 0.5rem 0.5rem 0.5rem 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            white-space: pre;
+            color: #d4d4d4;
+            overflow-x: auto;
+            display: flex;
+            align-items: center; /* Ensures text stays vertically centered in row */
+        }
+        
+        /* FIX: Baseline alignment for code spans */
+        .code-text-wrapper {
+            display: inline-block;
+            vertical-align: baseline; /* Key for parenthesis alignment */
+            line-height: 1.5;
+        }
+
+        .explanation-content {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border-left: 1px solid #333;
+            font-size: 0.9rem;
+            color: #9cdcfe; 
+            display: flex;
+            align-items: center;
+        }
+
+        /* Nav Styles */
+        .nav-item {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+            padding: 4px 0;
+            width: 100%;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-item:hover { color: #ebac00; background: #222; }
+
+        /* C++ Specific Indentation */
+        .indent-1 { padding-left: 1.5rem; }
+    </style>
+</head>
+<body class="font-sans">
+
+    <nav class="fixed top-0 left-0 h-full w-16 bg-[#181818] flex flex-col items-center py-6 z-50 border-r border-[#333] hidden md:flex">
+        <div class="text-dungeon-accent font-bold text-lg mb-6"><i class="fas fa-code"></i></div>
+        <div class="flex flex-col space-y-1 w-full text-gray-500">
+            <a href="#intro" class="nav-item">封面</a>
+            <a href="#level1" class="nav-item">第1关</a>
+            <a href="#level2" class="nav-item">第2关</a>
+            <a href="#level3" class="nav-item">第3关</a>
+            <a href="#level3a" class="nav-item">3a关</a>
+            <a href="#level3b" class="nav-item">3b关</a>
+            <a href="#level4" class="nav-item">第4关</a>
+            <a href="#level5" class="nav-item">第5关</a>
+            <a href="#level5a" class="nav-item">5a关</a>
+            <a href="#level5b" class="nav-item">5b关</a>
+            <a href="#level6" class="nav-item">第6关</a>
+        </div>
+    </nav>
+
+    <div class="md:pl-16">
+
+        <section id="intro" class="slide-section items-center justify-center text-center bg-gradient-to-br from-gray-900 to-black">
+            <div class="max-w-4xl p-10 border border-gray-800 rounded-xl bg-[#111] shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-2 bg-dungeon-accent"></div>
+                <div class="text-7xl text-dungeon-accent mb-6"><i class="fas fa-dragon"></i></div>
+                <h1 class="text-5xl font-bold mb-4 text-white">CodeCombat</h1>
+                <h2 class="text-2xl text-gray-400 mb-10 font-light">C++ 编程关卡详解手册</h2>
+                
+                <div class="grid grid-cols-2 gap-8 text-left max-w-2xl mx-auto">
+                    <div class="p-4 bg-[#1e1e1e] rounded border-l-4 border-blue-500">
+                        <div class="text-blue-400 font-bold mb-2">左侧：思路分析</div>
+                        <div class="text-xs text-gray-500">包含故事背景、地图策略和图形化演示。</div>
+                    </div>
+                    <div class="p-4 bg-[#1e1e1e] rounded border-l-4 border-green-500">
+                        <div class="text-green-400 font-bold mb-2">右侧：代码详解</div>
+                        <div class="text-xs text-gray-500">每行代码与解释通过相同颜色的标记对应。</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="level1" class="slide-section">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-dungeon-accent text-black font-bold px-3 py-1 rounded mr-3 font-mono">No.1</span>
+                <h2 class="text-2xl font-bold text-white">第1关 Kithgard 地牢</h2>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row gap-6 flex-1 h-full">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-[#1e1e1e] p-6 rounded border border-gray-800 shadow-lg flex-1">
+                        <h3 class="text-lg font-bold text-blue-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-map-marked-alt mr-2"></i>关卡思路
+                        </h3>
+                        
+                        <p class="text-gray-400 text-sm leading-7 mb-6">
+                            这是你的第一次冒险！<br>
+                            你需要通过编写 C++ 代码来控制英雄。想象代码就是一系列发给英雄的**指令**。
+                            <br><br>
+                            <span class="text-white font-bold">顺序很重要：</span><br>
+                            如果先走向下，就会撞墙。必须按照地图的路径一步步来。注意 C++ 中每行语句结束必须加分号 <code class="bg-black px-1 text-yellow-500">;</code>。
+                        </p>
+                        
+                        <div class="bg-black p-4 rounded border border-gray-800 text-center">
+                            <div class="text-xs text-gray-500 mb-3 uppercase tracking-widest">Path Visualization</div>
+                            <div class="flex justify-center items-center gap-2">
+                                <span class="text-2xl text-white"><i class="fas fa-user-shield"></i></span>
+                                <i class="fas fa-long-arrow-alt-right text-gray-600"></i>
+                                <span class="px-2 py-1 bg-gray-800 rounded text-xs text-blue-300">Right</span>
+                                <i class="fas fa-long-arrow-alt-right text-gray-600"></i>
+                                <span class="px-2 py-1 bg-gray-800 rounded text-xs text-blue-300">Down</span>
+                                <i class="fas fa-long-arrow-alt-right text-gray-600"></i>
+                                <span class="px-2 py-1 bg-gray-800 rounded text-xs text-blue-300">Right</span>
+                                <i class="fas fa-long-arrow-alt-right text-gray-600"></i>
+                                <span class="text-2xl text-yellow-500 animate-bounce"><i class="fas fa-gem"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:w-2/3 flex flex-col bg-[#111] border border-gray-700 rounded-lg overflow-hidden shadow-2xl">
+                    <div class="bg-[#252526] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600 flex justify-between items-center">
+                        <span><i class="fas fa-file-code mr-2 text-blue-500"></i>solution.cpp</span>
+                    </div>
+                    
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row">
+                            <div class="line-num">1</div>
+                            <div class="connector-col"></div>
+                            <div class="code-content"><span class="text-cpp-keyword">int</span> <span class="text-yellow-200">main</span>() {</div>
+                            <div class="explanation-content text-gray-600">程序入口。</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="connector-col"><i class="fas fa-square text-[8px] text-gray-600"></i></div>
+                            <div class="code-content indent-1"><span class="text-cpp-comment">// 向宝石进发。</span></div>
+                            <div class="explanation-content text-gray-500 italic">注释：使用 // 开头。</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="connector-col"><i class="fas fa-play text-[10px] text-blue-500"></i></div>
+                            <div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div>
+                            <div class="explanation-content"><span class="text-blue-400 font-bold mr-2">第1步</span> 英雄向右移动。</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="connector-col"><i class="fas fa-play text-[10px] text-green-500"></i></div>
+                            <div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveDown</span>();</div>
+                            <div class="explanation-content"><span class="text-green-400 font-bold mr-2">第2步</span> 向下转弯避开墙壁。</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="connector-col"><i class="fas fa-play text-[10px] text-yellow-500"></i></div>
+                            <div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div>
+                            <div class="explanation-content"><span class="text-yellow-400 font-bold mr-2">第3步</span> 冲刺拿到宝石。</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">6</div>
+                            <div class="connector-col"></div>
+                            <div class="code-content indent-1"><span class="text-cpp-control">return</span> <span class="text-cpp-num">0</span>;</div>
+                            <div class="explanation-content text-gray-600">结束程序。</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">7</div>
+                            <div class="connector-col"></div>
+                            <div class="code-content">}</div>
+                            <div class="explanation-content"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="level2" class="slide-section bg-[#0a0a0a]">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-dungeon-accent text-black font-bold px-3 py-1 rounded mr-3 font-mono">No.2</span>
+                <h2 class="text-2xl font-bold text-white">第2关 深藏的宝石</h2>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-[#1e1e1e] p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-green-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-shoe-prints mr-2"></i>关卡思路
+                        </h3>
+                        <p class="text-gray-400 text-sm leading-7">
+                            这一关地图变大了，我们需要从入口走到里面，拿完宝石再**原路返回**。
+                        </p>
+                        <div class="mt-4 p-3 bg-gray-900 rounded border border-gray-700 text-xs font-mono text-gray-300">
+                            <div><i class="fas fa-arrow-right text-gray-500"></i> 进去：Right, Down</div>
+                            <div class="mt-1 text-green-400"><i class="fas fa-arrow-left text-green-500"></i> 出来：Up, Up, Right</div>
+                        </div>
+                        <p class="text-gray-500 text-xs mt-4">
+                            提示：退出来的时候，方向是相反的哦！别忘了分号！
+                        </p>
+                    </div>
+                </div>
+
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#252526] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.cpp</div>
+                    <div class="flex-1 overflow-auto">
+                         <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="text-cpp-keyword">int</span> <span class="text-yellow-200">main</span>() {</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">出发向右。</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveDown</span>();</div><div class="explanation-content">向下拿底部的宝石。</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="connector-col"><i class="fas fa-undo text-xs text-purple-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveUp</span>();</div><div class="explanation-content text-purple-300">立刻原路向上返回。</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="connector-col"><i class="fas fa-undo text-xs text-purple-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveUp</span>();</div><div class="explanation-content text-purple-300">继续向上回到主干道。</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="connector-col"><i class="fas fa-flag-checkered text-xs text-yellow-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content text-yellow-500">最后向右到达出口。</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content indent-1"><span class="text-cpp-control">return</span> <span class="text-cpp-num">0</span>;</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">}</div><div class="explanation-content"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="level3" class="slide-section">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-dungeon-accent text-black font-bold px-3 py-1 rounded mr-3 font-mono">No.3</span>
+                <h2 class="text-2xl font-bold text-white">第3关 幽影守卫</h2>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-[#1e1e1e] p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-purple-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-user-secret mr-2"></i>关卡思路
+                        </h3>
+                        
+                        <p class="text-gray-400 text-sm mb-4">
+                            有个可怕的食人魔盯着中间的路！
+                            <br>我们不能走直线，必须**利用掩体**（雕像）。
+                        </p>
+                        <div class="relative h-32 bg-gray-900 rounded border border-gray-700 overflow-hidden">
+                            <div class="absolute top-1/2 left-4 transform -translate-y-1/2 text-3xl text-red-600"><i class="fas fa-eye"></i></div>
+                            <div class="absolute top-1/2 left-16 w-full h-1 bg-red-900 opacity-50"></div>
+                            <div class="absolute top-2 left-20 w-12 h-20 bg-gray-700 rounded border border-gray-500 flex items-center justify-center text-xs text-gray-400">掩体</div>
+                            <div class="absolute top-4 left-24 text-blue-400 text-xl animate-pulse"><i class="fas fa-user"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#252526] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.cpp</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="text-cpp-keyword">int</span> <span class="text-yellow-200">main</span>() {</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="connector-col"><i class="fas fa-arrow-right text-xs text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">向右走。</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="connector-col"><i class="fas fa-shield-alt text-xs text-purple-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveUp</span>();</div><div class="explanation-content text-purple-300">向上躲进掩体后面！</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="connector-col"><i class="fas fa-arrow-right text-xs text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">在掩体阴影下向右移动。</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="connector-col"><i class="fas fa-arrow-down text-xs text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveDown</span>();</div><div class="explanation-content">绕过危险后，向下回主路。</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="connector-col"><i class="fas fa-flag-checkered text-xs text-yellow-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">到达终点。</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content indent-1"><span class="text-cpp-control">return</span> <span class="text-cpp-num">0</span>;</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">}</div><div class="explanation-content"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="level3a" class="slide-section bg-[#0a0a0a]">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-dungeon-accent text-black font-bold px-3 py-1 rounded mr-3 font-mono">No.3a</span>
+                <h2 class="text-2xl font-bold text-white">第3a关 逆时针回转</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-[#1e1e1e] p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-yellow-500 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-history mr-2"></i>关卡思路
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            <span class="text-white font-bold">新知识：参数 (Arguments)</span><br>
+                            括号里填数字，可以让英雄一次走多格。
+                        </p>
+                        <p class="text-gray-400 text-sm">
+                            食人魔在巡逻。我们需要跟在他屁股后面走。
+                            为了不被追上，我们需要用 <code>moveDown(2);</code> 快速切入他的路线！
+                        </p>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#252526] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.cpp</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="text-cpp-keyword">int</span> <span class="text-yellow-200">main</span>() {</div><div class="explanation-content"></div></div>
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="connector-col"><i class="fas fa-bolt text-xs text-yellow-500"></i></div>
+                            <div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveDown</span>(<span class="text-cpp-num">2</span>);</div>
+                            <div class="explanation-content text-yellow-400"><b>加速：</b> 括号里的 2 让你一步走两格，快速切入！</div>
+                        </div>
+                        <div class="code-row"><div class="line-num">3</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">跟在食人魔后面。</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveUp</span>();</div><div class="explanation-content">向上转弯。</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">拿宝石。</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content indent-1"><span class="text-cpp-control">return</span> <span class="text-cpp-num">0</span>;</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">}</div><div class="explanation-content"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="level3b" class="slide-section">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-dungeon-accent text-black font-bold px-3 py-1 rounded mr-3 font-mono">No.3b</span>
+                <h2 class="text-2xl font-bold text-white">第3b关 狭路相逢</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-[#1e1e1e] p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-red-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-exchange-alt mr-2"></i>关卡思路
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            这是一场心理战！门口有守卫。
+                        </p>
+                        <ol class="list-decimal list-inside text-gray-400 text-sm space-y-2">
+                            <li><span class="text-white">假动作：</span> 先走出去一步引起注意。</li>
+                            <li><span class="text-red-400">躲回来：</span> 马上缩回来，让食人魔扑空。</li>
+                            <li><span class="text-green-400">冲刺：</span> 等他走过去，用参数 2 快速穿过门廊。</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#252526] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.cpp</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="text-cpp-keyword">int</span> <span class="text-yellow-200">main</span>() {</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="connector-col"><i class="fas fa-step-forward text-xs text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">第1步：假装出去。</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="connector-col"><i class="fas fa-step-backward text-xs text-red-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveLeft</span>();</div><div class="explanation-content text-red-400">第2步：立刻躲回来！(诱骗)</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="connector-col"><i class="fas fa-running text-xs text-green-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>(<span class="text-cpp-num">2</span>);</div><div class="explanation-content text-green-400">第3步：趁机冲刺2格过门。</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content indent-1"><span class="text-cpp-control">return</span> <span class="text-cpp-num">0</span>;</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">}</div><div class="explanation-content"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="level4" class="slide-section bg-[#0a0a0a]">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-dungeon-accent text-black font-bold px-3 py-1 rounded mr-3 font-mono">No.4</span>
+                <h2 class="text-2xl font-bold text-white">第4关 概念挑战：细心脚步</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-[#1e1e1e] p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-gray-300 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-tasks mr-2"></i>关卡思路
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            这是一个迷宫大挑战！没有新技巧，只考验你的**细心**。
+                        </p>
+                        <p class="text-gray-400 text-sm">
+                            你需要把整个长路径拆分成一小段一小段。不要急，走一步看一步。
+                            最后要走到红色的 X 标记处。
+                        </p>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#252526] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.cpp</div>
+                    <div class="flex-1 overflow-auto h-[400px]">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="text-cpp-keyword">int</span> <span class="text-yellow-200">main</span>() {</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveUp</span>();</div><div class="explanation-content">起步。</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">拿到第1颗宝石。</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveDown</span>();</div><div class="explanation-content">绕过墙壁。</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">深入迷宫。</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="connector-col"><i class="fas fa-undo text-xs text-purple-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveLeft</span>();</div><div class="explanation-content text-purple-300">拿完东西往回走一点。</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveDown</span>();</div><div class="explanation-content">寻找下方出口。</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveUp</span>();</div><div class="explanation-content">调整位置。</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveUp</span>();</div><div class="explanation-content">继续调整。</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveLeft</span>();</div><div class="explanation-content">走向出口方向。</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveDown</span>();</div><div class="explanation-content">调整。</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveLeft</span>();</div><div class="explanation-content">继续。</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="connector-col"><i class="fas fa-caret-right text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveLeft</span>();</div><div class="explanation-content">到达终点。</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content indent-1"><span class="text-cpp-control">return</span> <span class="text-cpp-num">0</span>;</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">}</div><div class="explanation-content"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="level5" class="slide-section">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-dungeon-accent text-black font-bold px-3 py-1 rounded mr-3 font-mono">No.5</span>
+                <h2 class="text-2xl font-bold text-white">第5关 敌人的陷阱</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-[#1e1e1e] p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-orange-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-fire mr-2"></i>关卡思路
+                        </h3>
+                        
+                        <p class="text-gray-400 text-sm mb-4">
+                            地上全是火焰！一步一步走很容易踩到火里。
+                        </p>
+                        <div class="bg-gray-900 p-3 rounded border border-orange-900 text-center">
+                            <span class="block text-white mb-2 font-bold">技能：大跨步</span>
+                            <code class="bg-black px-2 py-1 rounded text-orange-400">moveRight(3);</code>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            使用括号里的数字 3，让英雄像跳远一样，直接跨过危险区域！
+                        </p>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#252526] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.cpp</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="text-cpp-keyword">int</span> <span class="text-yellow-200">main</span>() {</div><div class="explanation-content"></div></div>
+                        <div class="code-row">
+                            <div class="line-num">2</div>
+                            <div class="connector-col"><i class="fas fa-forward text-xs text-orange-500"></i></div>
+                            <div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>(<span class="text-cpp-num">3</span>);</div>
+                            <div class="explanation-content text-orange-400">大跨步：一次走3格避开上方火焰。</div>
+                        </div>
+                        <div class="code-row"><div class="line-num">3</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveUp</span>();</div><div class="explanation-content">调整位置。</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">调整位置。</div></div>
+                        <div class="code-row">
+                            <div class="line-num">5</div>
+                            <div class="connector-col"><i class="fas fa-forward text-xs text-orange-500"></i></div>
+                            <div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveDown</span>(<span class="text-cpp-num">3</span>);</div>
+                            <div class="explanation-content text-orange-400">大跨步：向下跳3格穿过火区。</div>
+                        </div>
+                        <div class="code-row"><div class="line-num">6</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>(<span class="text-cpp-num">2</span>);</div><div class="explanation-content">最后冲刺。</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content indent-1"><span class="text-cpp-control">return</span> <span class="text-cpp-num">0</span>;</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">}</div><div class="explanation-content"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="level5a" class="slide-section bg-[#0a0a0a]">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-dungeon-accent text-black font-bold px-3 py-1 rounded mr-3 font-mono">No.5a</span>
+                <h2 class="text-2xl font-bold text-white">第5a关 虚幻干扰</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-[#1e1e1e] p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-pink-400 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-magic mr-2"></i>关卡思路
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            我们需要使用**诱饵**。<br>地图上的 X 标记是一个机关。
+                        </p>
+                        <ol class="list-decimal list-inside text-gray-400 text-sm space-y-2">
+                            <li>走到 X 处（向下2格）。</li>
+                            <li>机关会生成一个假人，守卫会去打假人。</li>
+                            <li>你趁机逃跑，绕去拿宝石。</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#252526] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.cpp</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="text-cpp-keyword">int</span> <span class="text-yellow-200">main</span>() {</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">出发。</div></div>
+                        <div class="code-row">
+                            <div class="line-num">3</div>
+                            <div class="connector-col"><i class="fas fa-bomb text-xs text-pink-500"></i></div>
+                            <div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveDown</span>(<span class="text-cpp-num">2</span>);</div>
+                            <div class="explanation-content text-pink-400"><b>触发：</b>走到 X 处激活诱饵。</div>
+                        </div>
+                        <div class="code-row">
+                            <div class="line-num">4</div>
+                            <div class="connector-col"><i class="fas fa-running text-xs text-green-500"></i></div>
+                            <div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveUp</span>(<span class="text-cpp-num">2</span>);</div>
+                            <div class="explanation-content text-green-400"><b>逃跑：</b>立刻原路逃回。</div>
+                        </div>
+                        <div class="code-row"><div class="line-num">5</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>(<span class="text-cpp-num">3</span>);</div><div class="explanation-content">守卫被引开了，去拿宝石。</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content indent-1"><span class="text-cpp-control">return</span> <span class="text-cpp-num">0</span>;</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">}</div><div class="explanation-content"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="level5b" class="slide-section">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-dungeon-accent text-black font-bold px-3 py-1 rounded mr-3 font-mono">No.5b</span>
+                <h2 class="text-2xl font-bold text-white">第5b关 健忘的宝石匠</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-[#1e1e1e] p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-blue-300 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-keyboard mr-2"></i>关卡思路
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            这是一个练习关，宝石到处都是。
+                        </p>
+                        <div class="bg-gray-900 p-2 rounded text-gray-400 text-xs">
+                            <span class="text-white font-bold block mb-1">技巧：自动补全</span>
+                            不要一个个字母敲！<br>
+                            输入 <code>he</code> -> 按 <span class="border border-gray-600 px-1 rounded">Enter</span> -> <code>hero</code><br>
+                            输入 <code>.m</code> -> 按 <span class="border border-gray-600 px-1 rounded">Enter</span> -> <code>.moveRight</code>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#252526] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.cpp</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="text-cpp-keyword">int</span> <span class="text-yellow-200">main</span>() {</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">第一颗宝石。</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveDown</span>();</div><div class="explanation-content">向下调整。</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="connector-col"><i class="fas fa-forward text-xs text-blue-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>(<span class="text-cpp-num">2</span>);</div><div class="explanation-content text-blue-400">长距离：用参数 2 省事。</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveUp</span>();</div><div class="explanation-content">拿角落的宝石。</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>();</div><div class="explanation-content">出口。</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content indent-1"><span class="text-cpp-control">return</span> <span class="text-cpp-num">0</span>;</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">}</div><div class="explanation-content"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="level6" class="slide-section bg-[#0a0a0a]">
+            <div class="flex items-center mb-6 pb-2 border-b border-gray-800">
+                <span class="bg-dungeon-accent text-black font-bold px-3 py-1 rounded mr-3 font-mono">No.6</span>
+                <h2 class="text-2xl font-bold text-white">第6关 概念挑战：漫长脚步</h2>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                <div class="lg:w-1/3 flex flex-col space-y-4">
+                    <div class="bg-[#1e1e1e] p-6 rounded border border-gray-800 shadow-lg">
+                        <h3 class="text-lg font-bold text-red-500 mb-4 border-b border-gray-700 pb-2">
+                            <i class="fas fa-exclamation-circle mr-2"></i>关卡思路
+                        </h3>
+                        <p class="text-gray-400 text-sm mb-4">
+                            <span class="text-white font-bold">限制：</span> 代码行数必须少于 8 行。
+                        </p>
+                        <p class="text-gray-400 text-sm">
+                            你必须使用参数来优化代码。
+                            <br>比如 `moveUp(3);` 只占 1 行，而写三次 `moveUp();` 占 3 行。
+                        </p>
+                    </div>
+                </div>
+                <div class="lg:w-2/3 bg-[#111] border border-gray-700 rounded-lg overflow-hidden flex flex-col shadow-2xl">
+                    <div class="bg-[#252526] px-4 py-2 text-xs text-gray-400 font-mono border-b border-gray-600">solution.cpp</div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="text-cpp-keyword">int</span> <span class="text-yellow-200">main</span>() {</div><div class="explanation-content text-gray-500">代码行数挑战开始。</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>(<span class="text-cpp-num">1</span>);</div><div class="explanation-content">向右1格。</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="connector-col"><i class="fas fa-forward text-xs text-red-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveUp</span>(<span class="text-cpp-num">3</span>);</div><div class="explanation-content text-red-400"><b>关键：</b>一口气走3格，省代码！</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>(<span class="text-cpp-num">2</span>);</div><div class="explanation-content">向右2格。</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="connector-col"><i class="fas fa-forward text-xs text-red-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveDown</span>(<span class="text-cpp-num">3</span>);</div><div class="explanation-content text-red-400"><b>关键：</b>向下3格，直达底部。</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveLeft</span>(<span class="text-cpp-num">1</span>);</div><div class="explanation-content">微调。</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveUp</span>(<span class="text-cpp-num">2</span>);</div><div class="explanation-content">回到主路层。</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="connector-col"><i class="fas fa-caret-right text-gray-500"></i></div><div class="code-content indent-1"><span class="text-white">hero</span>.<span class="text-cpp-func">moveRight</span>(<span class="text-cpp-num">3</span>);</div><div class="explanation-content">冲刺到出口。</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content indent-1"><span class="text-cpp-control">return</span> <span class="text-cpp-num">0</span>;</div><div class="explanation-content"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">}</div><div class="explanation-content"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+</body>
+</html>

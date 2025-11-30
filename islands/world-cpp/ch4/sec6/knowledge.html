@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第9-10关 游戏事件：defeat</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-color: #2d3436;       /* 地牢灰 */
+            --board-bg: #f5f6fa;       /* 卷轴白 */
+            --primary: #d63031;        /* 鲜血红 (Defeat) */
+            --secondary: #feca57;      /* 金币黄 */
+            --accent: #0984e3;         /* 魔法蓝 */
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            
+            /* 代码高亮 */
+            --code-bg: #1e272e;
+            --code-fg: #d2dae2;
+            --tok-def: #ff7675;        /* def */
+            --tok-func: #74b9ff;       /* 函数名 */
+            --tok-var: #ffeaa7;        /* 变量 */
+            --tok-kw: #a29bfe;         /* 关键字 */
+            --tok-num: #55efc4;        /* 数字 */
+            --tok-cm: #b2bec3;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-color);
+            /* 地牢砖块背景 */
+            background-image: 
+                linear-gradient(335deg, rgba(0,0,0,0.3) 23px, transparent 23px),
+                linear-gradient(155deg, rgba(0,0,0,0.3) 23px, transparent 23px),
+                linear-gradient(335deg, rgba(0,0,0,0.3) 23px, transparent 23px),
+                linear-gradient(155deg, rgba(0,0,0,0.3) 23px, transparent 23px);
+            background-size: 58px 58px;
+            background-position: 0px 2px, 4px 35px, 29px 31px, 34px 6px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. RPG 风格按钮 (外部) --- */
+        .nav-btn {
+            width: 90px;
+            height: 90px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+        }
+
+        .nav-btn span {
+            font-size: 60px;
+            z-index: 2;
+            transition: transform 0.2s;
+        }
+
+        .nav-btn:hover span { transform: scale(1.2); }
+        .nav-btn:active { transform: scale(0.95) translateY(5px); }
+        
+        .btn-prev span { transform: rotate(-15deg); } /* 盾牌 */
+        .btn-next span { transform: rotate(45deg); } /* 剑 */
+
+        .disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 魔法卷轴容器 --- */
+        .scroll-container {
+            width: 960px;
+            height: 600px;
+            background: var(--board-bg);
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            /* 卷轴边缘效果 */
+            border-top: 20px solid #d2b48c;
+            border-bottom: 20px solid #d2b48c;
+            border-radius: 5px;
+        }
+        
+        /* 卷轴轴头 */
+        .scroll-container::before, .scroll-container::after {
+            content: '';
+            position: absolute;
+            left: -40px;
+            width: 1040px; /* 宽于容器 */
+            height: 30px;
+            background: #8b4513;
+            border-radius: 15px;
+            box-shadow: inset 0 5px 10px rgba(0,0,0,0.3), 5px 5px 10px rgba(0,0,0,0.3);
+            z-index: 20;
+        }
+        .scroll-container::before { top: -35px; }
+        .scroll-container::after { bottom: -35px; }
+
+        /* 地图徽章 */
+        .map-badge {
+            position: absolute;
+            top: -10px;
+            left: 30px;
+            background: #2d3436;
+            color: #fab1a0;
+            padding: 5px 20px;
+            font-family: monospace;
+            font-weight: bold;
+            border-radius: 0 0 10px 10px;
+            z-index: 15;
+            border: 2px solid #d2b48c;
+            border-top: none;
+            box-shadow: 0 5px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px 70px;
+            flex-direction: column;
+            animation: fadeIn 0.6s ease-out;
+            overflow-y: auto;
+            background-image: radial-gradient(#ccc 1px, transparent 1px); /* 纸张纹理 */
+            background-size: 20px 20px;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes fadeIn { 
+            0% { opacity: 0; } 
+            100% { opacity: 1; } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px double #8b4513;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2)); }
+        h1 { margin: 0; color: #2c3e50; font-size: 36px; letter-spacing: 1px; }
+        .page-num { margin-left: auto; font-family: 'Courier New', monospace; font-weight: bold; color: #8b4513; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 19px; line-height: 1.7; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.9; 
+            background: #34495e;
+            border-radius: 15px; 
+            border: 4px solid #2c3e50; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 5px;
+            font-family: 'Consolas', monospace;
+            font-size: 17px;
+            margin-top: 15px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 5px 5px 10px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .k { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .v { color: var(--tok-var); } 
+        .n { color: var(--tok-num); }
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+        .d { color: var(--tok-def); font-weight: bold; }
+
+        /* 卡片 */
+        .card {
+            background: #fff5e6;
+            border-left: 5px solid var(--secondary);
+            color: #d35400;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 5px 5px 0;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 击败事件演示 */
+        .battle-scene {
+            position: relative; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .enemy {
+            font-size: 60px; cursor: pointer; transition: all 0.2s; position: absolute;
+            animation: idle 2s infinite;
+        }
+        .enemy:hover { transform: scale(1.1); }
+        .coin {
+            font-size: 30px; position: absolute; animation: drop 0.5s forwards;
+        }
+        
+        @keyframes idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes drop { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 50% { transform: translateY(-20px) scale(1.2); opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes die { 0% { transform: scale(1) rotate(0); opacity: 1; } 100% { transform: scale(0) rotate(180deg); opacity: 0; } }
+
+        /* 随机范围演示 */
+        .grid-box {
+            width: 200px; height: 200px; border: 2px dashed rgba(255,255,255,0.3);
+            position: relative; background: rgba(255,255,255,0.05);
+        }
+        .center-unit {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 40px; z-index: 2;
+        }
+        .drop-zone {
+            position: absolute; top: 50%; left: 50%; width: 100px; height: 100px;
+            background: rgba(254, 202, 87, 0.2); transform: translate(-50%, -50%);
+            border: 1px solid var(--secondary); box-sizing: border-box;
+        }
+        .random-coin {
+            position: absolute; font-size: 20px; animation: pop 0.3s;
+        }
+
+        /* 计数器演示 */
+        .counter-box {
+            background: #222; padding: 10px 20px; border-radius: 10px; color: var(--secondary);
+            font-family: monospace; font-size: 24px; border: 2px solid #444; margin-bottom: 10px;
+        }
+        .btn-action {
+            padding: 5px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; margin: 5px;
+        }
+        .btn-add { background: var(--accent); }
+        .btn-sub { background: var(--primary); }
+
+        /* Hydra 演示 */
+        .hydra-container {
+            width: 100%; height: 100%; position: relative;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        @keyframes pop { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+    </style>
+</head>
+<body>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">
+        <span>🛡️</span>
+    </button>
+
+    <!-- 卷轴容器 -->
+    <div class="scroll-container">
+        <div class="map-badge">🗺️ 游戏开发 2 | 第 9-10 关</div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; animation: idle 2s infinite;">☠️</div>
+            <h1 style="font-size: 50px; margin: 10px 0; color: var(--primary);">游戏事件：Defeat</h1>
+            <h2 style="font-size: 26px; color: var(--text-main); font-weight: bold; margin-top: 0;">被击败的艺术</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: var(--secondary); color: #d35400; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #e67e22;">💰 掉落金币</div>
+                <div style="padding: 15px 30px; background: var(--accent); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #0984e3;">🐲 九头蛇</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 什么是 defeat -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">💀</div>
+                <h1>什么是 "defeat" 事件？</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>Defeat</b> 意味着一个单位的生命值变成了 0。</p>
+                    <p>当小怪兽倒下时，我们可以触发一个“遗言脚本”：</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">✨ <b>掉落物品</b>：爆出一地金币！</li>
+                        <li style="margin-bottom: 10px;">👻 <b>分裂重生</b>：像九头蛇一样变出两个！</li>
+                        <li>📊 <b>更新数据</b>：计分板 +1。</li>
+                    </ul>
+                </div>
+                <div class="col-visual">
+                    <div class="battle-scene" id="basicDemo">
+                        <div class="enemy" onclick="killEnemy(this)" style="cursor: pointer;">👾</div>
+                        <div style="position: absolute; bottom: 20px; color: #bdc3c7; font-size: 14px;">点击怪兽击败它!</div>
+                    </div>
+                    <script>
+                        function killEnemy(el) {
+                            // 死亡动画
+                            el.style.animation = 'die 0.5s forwards';
+                            // 掉金币
+                            const coin = document.createElement('div');
+                            coin.className = 'coin';
+                            coin.innerHTML = '🪙';
+                            coin.style.left = el.style.left || 'auto';
+                            coin.style.top = el.style.top || 'auto';
+                            el.parentNode.appendChild(coin);
+                            
+                            // 重生
+                            setTimeout(() => {
+                                el.style.animation = 'idle 2s infinite';
+                                coin.remove();
+                            }, 1500);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: onDefeat 函数 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📜</div>
+                <h1>onDefeat：遗言脚本</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>我们需要定义一个函数来处理“身后事”。</p>
+                    <div class="code-box">
+                        <span class="d">def</span> <span class="f">onDefeat</span>(event):<br>
+                        &nbsp;&nbsp;<span class="c"># event.target 是谁被打倒了？</span><br>
+                        &nbsp;&nbsp;<span class="v">unit</span> = event.target<br>
+                        &nbsp;&nbsp;<span class="c"># 在尸体位置生成金币</span><br>
+                        &nbsp;&nbsp;<span class="v">game</span>.<span class="f">spawnXY</span>(<span class="s">"gold-coin"</span>, <span class="v">unit</span>.pos.x, <span class="v">unit</span>.pos.y)
+                    </div>
+                    <div class="card">
+                        event.target = 倒霉蛋 (主角)<br>
+                        unit.pos = 倒下的地点
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px;">⚰️ ➡️ 💰</div>
+                        <p style="color: #bdc3c7;">牺牲小怪，造福玩家</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 随机掉落位置 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎲</div>
+                <h1>金币掉在“附近”</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>为了更真实，金币不应该跟尸体完全重叠，而是“爆”在旁边。</p>
+                    <div class="code-box">
+                        <span class="c"># 原地 x 加上 -5 到 5 的随机偏移</span><br>
+                        <span class="v">x</span> = <span class="v">unit</span>.pos.x + <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">-5</span>, <span class="n">5</span>)<br>
+                        <span class="v">y</span> = <span class="v">unit</span>.pos.y + <span class="v">game</span>.<span class="f">randomInteger</span>(<span class="n">-5</span>, <span class="n">5</span>)<br>
+                        <span class="v">game</span>.<span class="f">spawnXY</span>(<span class="s">"gold-coin"</span>, <span class="v">x</span>, <span class="v">y</span>)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="grid-box" id="dropZone">
+                        <div class="drop-zone"></div>
+                        <div class="center-unit">👾</div>
+                    </div>
+                    <div style="position: absolute; bottom: 10px;">
+                        <button class="btn-action btn-add" onclick="spawnRandomCoin()">爆金币!</button>
+                    </div>
+                    <script>
+                        function spawnRandomCoin() {
+                            const zone = document.getElementById('dropZone');
+                            const coin = document.createElement('div');
+                            coin.className = 'random-coin';
+                            coin.innerHTML = '🪙';
+                            // Random within 100x100 center area (visualizing -5 to 5 range)
+                            const offset = 50; 
+                            const randX = Math.random() * 100 - 50;
+                            const randY = Math.random() * 100 - 50;
+                            
+                            coin.style.left = (100 + randX) + 'px';
+                            coin.style.top = (100 + randY) + 'px';
+                            zone.appendChild(coin);
+                            setTimeout(() => coin.remove(), 1000);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 批量应用脚本 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔗</div>
+                <h1>全员应用：setActionFor</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>写好脚本后，别忘了挂载到事件上。</p>
+                    <div class="code-box">
+                        <span class="v">game</span>.<span class="f">setActionFor</span>(<span class="s">"munchkin"</span>, <span class="s">"defeat"</span>, onDefeat)
+                    </div>
+                    <p style="margin-top: 20px;">
+                        这句话的意思是：<br>
+                        “所有 <b>munchkin</b>，只要 <b>defeat</b> (被打败)，就执行 <b>onDefeat</b>。”
+                    </p>
+                    <div class="card" style="background: #e3f2fd; color: #0984e3; border-color: #0984e3;">
+                        对比：<br>
+                        "spawn" 管出生（设置属性）<br>
+                        "defeat" 管死亡（掉落奖励）
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 50px;">📝 📎 💀</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 进阶 - 计数器 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧮</div>
+                <h1>进阶：游戏计数器</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>我们需要变量来统计战况：</p>
+                    <div class="code-box">
+                        <span class="v">game</span>.defeated += <span class="n">1</span>  <span class="c"># 打败数 +1 (累计)</span><br>
+                        <span class="v">game</span>.toDefeat -= <span class="n">1</span>  <span class="c"># 剩余数 -1 (倒数)</span>
+                    </div>
+                    <p style="margin-top: 15px;">
+                        <b>+= 1</b>：在原来基础上加一<br>
+                        <b>-= 1</b>：在原来基础上减一
+                    </p>
+                </div>
+                <div class="col-visual">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="counter-box" id="scoreDisplay">Kill: 0</div>
+                        <div class="counter-box" id="remainDisplay">Left: 10</div>
+                        <div>
+                            <button class="btn-action btn-add" onclick="updateCount(1)">击杀 (+1)</button>
+                            <button class="btn-action btn-sub" onclick="updateCount(-1)">撤销</button>
+                        </div>
+                    </div>
+                    <script>
+                        let kills = 0;
+                        let left = 10;
+                        function updateCount(change) {
+                            kills += change;
+                            left -= change;
+                            if(kills < 0) { kills = 0; left = 10; }
+                            document.getElementById('scoreDisplay').innerText = `Kill: ${kills}`;
+                            document.getElementById('remainDisplay').innerText = `Left: ${left}`;
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 九头蛇魔法 (Hydra) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🐲</div>
+                <h1>九头蛇魔法：一变二！</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>在 <code>onDefeat</code> 里生成两个新敌人，就能实现“砍掉一个头，长出两个头”的效果！</p>
+                    <div class="code-box" style="font-size: 14px;">
+                        <span class="d">def</span> <span class="f">onDefeat</span>(event):<br>
+                        &nbsp;&nbsp;<span class="v">unit</span> = event.target<br>
+                        &nbsp;&nbsp;<span class="c"># 生成两个新的</span><br>
+                        &nbsp;&nbsp;<span class="v">game</span>.<span class="f">spawnXY</span>(<span class="s">"munchkin"</span>, <span class="v">x1</span>, <span class="v">y</span>)<br>
+                        &nbsp;&nbsp;<span class="v">game</span>.<span class="f">spawnXY</span>(<span class="s">"munchkin"</span>, <span class="v">x2</span>, <span class="v">y</span>)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="hydra-container" id="hydraBox" style="display: flex; justify-content: center; align-items: center;">
+                        <div class="enemy" onclick="splitHydra(this)">👾</div>
+                        <div style="position: absolute; bottom: 10px; color: #bdc3c7;">点击怪物分裂</div>
+                    </div>
+                    <script>
+                        function splitHydra(el) {
+                            el.style.animation = 'die 0.2s forwards';
+                            const parent = el.parentNode;
+                            
+                            setTimeout(() => {
+                                el.remove();
+                                // Spawn 2
+                                for(let i=0; i<2; i++) {
+                                    const m = document.createElement('div');
+                                    m.className = 'enemy';
+                                    m.innerHTML = '👾';
+                                    // Random offset position relative to center visually
+                                    const rX = Math.random() * 100 - 50;
+                                    const rY = Math.random() * 100 - 50;
+                                    m.style.transform = `translate(${rX}px, ${rY}px)`;
+                                    m.onclick = function() { splitHydra(this); };
+                                    parent.appendChild(m);
+                                }
+                            }, 200);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🏆</div>
+                <h1>击败事件口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: #fff0f6; border-color: var(--primary); color: var(--primary);">
+                        "矮人倒在哪 (pos)，<br>金币就从附近弹出来 (random)！"
+                    </div>
+                    <div class="card" style="background: #e3f2fd; border-color: var(--accent); color: #0984e3; margin-top: 20px;">
+                        "还要打的减一只 (-=)，<br>已经打的加一只 (+=)！"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 100px; animation: idle 2s infinite;">🏅</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">
+        <span>⚔️</span>
+    </button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

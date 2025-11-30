@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第17-18关 游戏事件：collide</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-color: #2d3436;       /* 深灰背景 */
+            --screen-bg: #f5f6fa;      /* 屏幕白 */
+            --primary: #d63031;        /* 破坏红 */
+            --secondary: #e17055;      /* 砖块橙 */
+            --accent: #00b894;         /* 蘑菇绿 */
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            
+            /* 代码高亮 */
+            --code-bg: #1e272e;
+            --code-fg: #d2dae2;
+            --tok-kw: #ff7675;         /* 关键字 */
+            --tok-func: #74b9ff;       /* 函数 */
+            --tok-obj: #fab1a0;        /* 对象 */
+            --tok-prop: #ffeaa7;       /* 属性 */
+            --tok-num: #55efc4;        /* 数字 */
+            --tok-str: #a29bfe;        /* 字符串 */
+            --tok-cm: #b2bec3;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-color);
+            /* 破碎背景 */
+            background-image: 
+                linear-gradient(45deg, #222 25%, transparent 25%, transparent 75%, #222 75%, #222),
+                linear-gradient(45deg, #222 25%, transparent 25%, transparent 75%, #222 75%, #222);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 强力按钮 (外部) --- */
+        .nav-btn {
+            width: 90px;
+            height: 90px;
+            background: #fff;
+            border: 4px solid #000;
+            border-radius: 20px;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 8px 0 #000, 0 15px 20px rgba(0,0,0,0.4);
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 45px;
+        }
+
+        .nav-btn:hover { transform: translateY(2px); background: #ffeaa7; }
+        .nav-btn:active { transform: translateY(8px); box-shadow: 0 0 0 #000; }
+        
+        .btn-prev { border-color: var(--accent); color: var(--accent); }
+        .btn-prev::after { content: '🍄'; } /* 蘑菇 */
+        
+        .btn-next { border-color: var(--primary); color: var(--primary); }
+        .btn-next::after { content: '👊'; } /* 拳头 */
+
+        .disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 警告牌屏幕容器 --- */
+        .sign-container {
+            width: 960px;
+            height: 600px;
+            background: var(--secondary);
+            border-radius: 10px;
+            /* 警示条纹边框 */
+            background-image: repeating-linear-gradient(
+                45deg,
+                #e17055,
+                #e17055 20px,
+                #2d3436 20px,
+                #2d3436 40px
+            );
+            padding: 20px; /* 边框厚度 */
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 内部屏幕 */
+        .inner-screen {
+            flex: 1;
+            background: var(--screen-bg);
+            border-radius: 5px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 4px solid #2d3436;
+        }
+
+        /* 螺丝钉装饰 */
+        .screw {
+            position: absolute; width: 15px; height: 15px; background: #b2bec3; border-radius: 50%;
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5); z-index: 20;
+        }
+        .screw-tl { top: 10px; left: 10px; }
+        .screw-tr { top: 10px; right: 10px; }
+        .screw-bl { bottom: 10px; left: 10px; }
+        .screw-br { bottom: 10px; right: 10px; }
+        .screw::after { content: '+'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #636e72; font-weight: bold; font-size: 12px; }
+
+        /* 顶部标签 */
+        .top-tag {
+            position: absolute;
+            top: 0; left: 50%; transform: translateX(-50%);
+            background: #fab1a0;
+            padding: 5px 20px;
+            border-radius: 0 0 10px 10px;
+            font-weight: bold;
+            color: #d63031;
+            border: 2px solid #2d3436;
+            border-top: none;
+            z-index: 15;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 50px 70px;
+            flex-direction: column;
+            animation: slideIn 0.5s ease-out;
+            overflow-y: auto;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes slideIn { 
+            0% { opacity: 0; transform: scale(0.95); } 
+            100% { opacity: 1; transform: scale(1); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 4px solid #dfe6e9;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; animation: shake 3s infinite; }
+        h1 { margin: 0; color: #d63031; font-size: 36px; letter-spacing: 1px; font-weight: 900; text-transform: uppercase; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.2; font-size: 19px; line-height: 1.7; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.8; 
+            background: #fff;
+            border-radius: 10px; 
+            border: 3px solid #b2bec3; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 5px;
+            font-family: 'Consolas', monospace;
+            font-size: 17px;
+            margin-top: 15px;
+            border-left: 6px solid var(--primary);
+            box-shadow: 5px 5px 0 rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .k { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .o { color: var(--tok-obj); } 
+        .p { color: var(--tok-prop); font-weight: bold; } 
+        .n { color: var(--tok-num); }
+        .s { color: var(--tok-str); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #ff7675;
+            background: linear-gradient(135deg, #ff7675, #fab1a0);
+            color: white;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 碰撞演示 */
+        .collision-box {
+            width: 100%; height: 100%; position: relative;
+            display: flex; align-items: center; justify-content: space-around;
+        }
+        .unit-circle {
+            width: 80px; height: 80px; background: var(--accent); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; font-size: 40px; color: white;
+            border: 4px solid #006266; position: relative; transition: all 0.3s;
+        }
+        .wall-block {
+            width: 80px; height: 120px; background: #636e72; border-radius: 5px;
+            display: flex; justify-content: center; align-items: center; font-size: 40px; color: white;
+            border: 4px solid #2d3436; position: relative;
+        }
+        .collision-flash {
+            position: absolute; font-size: 60px; color: var(--primary); 
+            animation: flash 0.5s; display: none; left: 50%; transform: translateX(-50%);
+        }
+        
+        /* 变身演示 */
+        .scale-hero {
+            font-size: 40px; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        .mushroom-item {
+            font-size: 30px; cursor: pointer; animation: float 2s infinite ease-in-out;
+        }
+
+        /* 破坏演示 */
+        .fence-row {
+            display: flex; gap: 5px; align-items: flex-end;
+        }
+        .fence {
+            width: 20px; height: 60px; background: #e17055; border: 2px solid #d35400;
+            transition: all 0.3s;
+        }
+        .fence.broken { transform: scaleY(0); opacity: 0; }
+        
+        .smasher {
+            font-size: 40px; position: absolute; bottom: 20px; left: 20px; transition: left 2s linear, transform 0.5s;
+        }
+        .smasher.big { font-size: 80px; }
+
+        /* 对比表 */
+        .vs-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+        .vs-table th { background: #b2bec3; padding: 8px; border: 2px solid #636e72; }
+        .vs-table td { padding: 8px; border: 2px solid #b2bec3; text-align: center; }
+        .vs-win { background: #fab1a0; font-weight: bold; color: #d63031; }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #dfe6e9;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 动画 */
+        @keyframes shake { 
+            0%, 100% { transform: rotate(0deg); } 
+            25% { transform: rotate(-5deg); } 
+            75% { transform: rotate(5deg); } 
+        }
+        @keyframes flash {
+            0% { transform: translateX(-50%) scale(0); opacity: 0; }
+            50% { transform: translateX(-50%) scale(1.5); opacity: 1; }
+            100% { transform: translateX(-50%) scale(2); opacity: 0; }
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        /* 按钮样式 */
+        .btn-action {
+            padding: 8px 15px; border: none; border-radius: 5px; font-weight: bold; color: white; cursor: pointer;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2); margin-top: 10px;
+        }
+        .btn-action:active { transform: translateY(4px); box-shadow: none; }
+        .bg-green { background: var(--accent); }
+        .bg-red { background: var(--primary); }
+
+    </style>
+</head>
+<body>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)"></button>
+
+    <!-- 警告牌容器 -->
+    <div class="sign-container">
+        <div class="screw screw-tl"></div>
+        <div class="screw screw-tr"></div>
+        <div class="screw screw-bl"></div>
+        <div class="screw screw-br"></div>
+        
+        <div class="inner-screen">
+            <div class="top-tag">🚧 游戏开发 2 | 第 17-18 关</div>
+
+            <!-- Slide 1: 封面 -->
+            <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+                <div style="font-size: 100px; margin-bottom: 20px; animation: shake 2s infinite;">💥</div>
+                <h1 style="font-size: 50px; margin: 10px 0; color: var(--primary);">游戏事件：Collide</h1>
+                <h2 style="font-size: 26px; color: var(--text-main); font-weight: bold; margin-top: 0;">碰撞与破坏</h2>
+                <div style="margin-top: 40px; display: flex; gap: 30px;">
+                    <div style="padding: 15px 30px; background: var(--accent); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; border: 3px solid #006266;">🍄 变身</div>
+                    <div style="padding: 15px 30px; background: var(--primary); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; border: 3px solid #b71540;">🧱 破坏</div>
+                </div>
+            </div>
+
+            <!-- Slide 2: 什么是 collide -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">🤜</div>
+                    <h1>什么是 "collide" 事件？</h1>
+                </div>
+                <div class="layout">
+                    <div class="col-text">
+                        <p>当一个物体<b>“撞到”</b>另一个物体时，触发 <b>collide</b>。</p>
+                        <div class="card" style="background: #fff3e0; border-color: #ff9f43; color: #d35400;">
+                            与 collect 的区别：<br>
+                            🎒 <b>collect</b>：踩到、捡起（软物体，如金币）<br>
+                            🧱 <b>collide</b>：撞上、挤到（硬物体，如墙、人）
+                        </div>
+                    </div>
+                    <div class="col-visual">
+                        <div class="collision-box">
+                            <div class="unit-circle" id="colUnit">🤠</div>
+                            <div class="collision-flash" id="colFlash">💥</div>
+                            <div class="wall-block">🧱</div>
+                        </div>
+                        <button class="btn-action bg-red" style="position: absolute; bottom: 10px;" onclick="simulateCollision()">模拟撞击</button>
+                        <script>
+                            function simulateCollision() {
+                                const u = document.getElementById('colUnit');
+                                const f = document.getElementById('colFlash');
+                                u.style.transform = 'translateX(80px)';
+                                setTimeout(() => {
+                                    u.style.transform = 'translateX(60px) rotate(-20deg)';
+                                    f.style.display = 'block';
+                                }, 300);
+                                setTimeout(() => {
+                                    u.style.transform = 'translateX(0)';
+                                    f.style.display = 'none';
+                                }, 800);
+                            }
+                        </script>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: 主角 target & other -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">👥</div>
+                    <h1>碰撞双方：target & other</h1>
+                </div>
+                <div class="layout">
+                    <div class="col-text">
+                        <p>碰撞是双向的，但在代码里我们通常只从一个角度看：</p>
+                        <div class="code-box">
+                            <span class="k">def</span> <span class="f">onCollide</span>(event):<br>
+                            &nbsp;&nbsp;<span class="c"># event.target: 我 (unit)</span><br>
+                            &nbsp;&nbsp;<span class="v">unit</span> = event.<span class="p">target</span><br>
+                            &nbsp;&nbsp;<span class="c"># event.other: 对方 (被撞物)</span><br>
+                            &nbsp;&nbsp;<span class="v">obj</span> = event.<span class="p">other</span>
+                        </div>
+                        <p style="margin-top: 10px;">可以读作：“<b>unit</b> 撞到了 <b>obj</b>。”</p>
+                    </div>
+                    <div class="col-visual">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div style="text-align: center;">
+                                <div class="unit-circle" style="width: 60px; height: 60px; font-size: 30px;">🤠</div>
+                                <div style="font-weight: bold; color: var(--accent);">Target (我)</div>
+                            </div>
+                            <div style="font-size: 30px; color: var(--primary);">⚡ 💥 ⚡</div>
+                            <div style="text-align: center;">
+                                <div class="wall-block" style="width: 60px; height: 80px; font-size: 30px;">🚧</div>
+                                <div style="font-weight: bold; color: #636e72;">Other (它)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 4: Collect 事件 (变身) -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">🍄</div>
+                    <h1>准备工作：吃蘑菇变大</h1>
+                </div>
+                <div class="layout">
+                    <div class="col-text">
+                        <p>要破坏围栏，首先得变强！</p>
+                        <div class="code-box">
+                            <span class="k">def</span> <span class="f">onCollect</span>(event):<br>
+                            &nbsp;&nbsp;<span class="v">item</span> = event.<span class="p">other</span><br>
+                            &nbsp;&nbsp;<span class="k">if</span> <span class="v">item</span>.<span class="p">type</span> == <span class="s">"mushroom"</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># scale: 缩放比例</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">unit</span>.<span class="p">scale</span> = <span class="n">2</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">unit</span>.<span class="f">say</span>(<span class="s">"变大!"</span>)
+                        </div>
+                        <p><b>unit.scale = 2</b>：变成原来的 2 倍大（巨人模式）。</p>
+                    </div>
+                    <div class="col-visual">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                            <div class="scale-hero" id="scaleHero">🤠</div>
+                            <div class="mushroom-item" onclick="growHero()" id="mushroomBtn">🍄</div>
+                            <div style="color: var(--text-sub);">点击蘑菇变身</div>
+                        </div>
+                        <script>
+                            function growHero() {
+                                const h = document.getElementById('scaleHero');
+                                const m = document.getElementById('mushroomBtn');
+                                h.style.transform = 'scale(2)';
+                                m.style.opacity = '0';
+                                setTimeout(() => {
+                                    h.style.transform = 'scale(1)';
+                                    m.style.opacity = '1';
+                                }, 2000);
+                            }
+                        </script>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5: Collide 事件 (破坏) -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">🔨</div>
+                    <h1>关键时刻：撞碎围栏</h1>
+                </div>
+                <div class="layout">
+                    <div class="col-text">
+                        <p>只有<b>巨人</b>才能撞碎围栏！</p>
+                        <div class="code-box" style="font-size: 14px;">
+                            <span class="k">def</span> <span class="f">onCollide</span>(event):<br>
+                            &nbsp;&nbsp;<span class="v">obj</span> = event.<span class="p">other</span><br>
+                            &nbsp;&nbsp;<span class="k">if</span> <span class="v">obj</span>.<span class="p">type</span> == <span class="s">"fence"</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 检查是不是巨人?</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">if</span> <span class="v">unit</span>.<span class="p">scale</span> == <span class="n">2</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 彻底销毁对象</span><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="v">obj</span>.<span class="f">destroy</span>()
+                        </div>
+                        <p><b>destroy()</b>：直接从世界上移除（消失）。</p>
+                    </div>
+                    <div class="col-visual">
+                        <div style="text-align: center;">
+                            <div style="font-size: 60px;">🦖 ➡️ 🚧 💥</div>
+                            <p style="font-weight: bold; color: var(--primary);">Double Check:</p>
+                            <ol style="text-align: left; font-size: 16px;">
+                                <li>撞的是围栏吗？(type == "fence")</li>
+                                <li>我是巨人吗？(scale == 2)</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 6: Defeat vs Destroy -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">⚖️</div>
+                    <h1>Defeat vs Destroy</h1>
+                </div>
+                <div class="layout">
+                    <div class="col-text">
+                        <table class="vs-table">
+                            <tr>
+                                <th>方法</th>
+                                <th>defeat()</th>
+                                <th>destroy()</th>
+                            </tr>
+                            <tr>
+                                <td>含义</td>
+                                <td>打败</td>
+                                <td class="vs-win">销毁</td>
+                            </tr>
+                            <tr>
+                                <td>效果</td>
+                                <td>倒下，尸体还在</td>
+                                <td class="vs-win">彻底消失，没了</td>
+                            </tr>
+                            <tr>
+                                <td>对象</td>
+                                <td>生物 (Unit)</td>
+                                <td>障碍物 (Obstacle)</td>
+                            </tr>
+                        </table>
+                        <div class="card" style="margin-top: 20px; background: #fab1a0; color: #d63031; border-color: #d63031;">
+                            围栏没有生命，不能被打败，只能被<b>拆除 (destroy)</b>！
+                        </div>
+                    </div>
+                    <div class="col-visual">
+                        <div style="font-size: 80px;">🌪️</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 7: 计时器还原 -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">⏳</div>
+                    <h1>药效过了：变回原型</h1>
+                </div>
+                <div class="layout">
+                    <div class="col-text">
+                        <p>魔法只能持续 3 秒。</p>
+                        <div class="code-box">
+                            <span class="k">if</span> <span class="v">game</span>.<span class="p">time</span> > <span class="v">endTime</span>:<br>
+                            &nbsp;&nbsp;<span class="k">if</span> <span class="v">player</span>.<span class="p">scale</span> == <span class="n">2</span>:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">player</span>.<span class="p">scale</span> = <span class="n">1</span> <span class="c"># 还原</span>
+                        </div>
+                        <p style="margin-top: 20px;">
+                            "时间一到，再大的巨人也要变回原来的小队长。撞墙只会头痛哦！"
+                        </p>
+                    </div>
+                    <div class="col-visual">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="font-size: 60px;">🦖</div>
+                            <div style="font-size: 30px;">🕒 ➡️</div>
+                            <div style="font-size: 30px;">🤠</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 8: 总结 -->
+            <div class="slide">
+                <div class="header">
+                    <div class="icon">🎓</div>
+                    <h1>破坏王口诀</h1>
+                </div>
+                <div class="layout">
+                    <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                        <div class="card" style="background: #dff9fb; border-color: var(--accent); color: #009432;">
+                            吃了蘑菇 <b>scale=2</b>，<br>
+                            变身巨人力量大。
+                        </div>
+                        <div class="card" style="background: #ffeaa7; border-color: var(--primary); color: #d35400; margin-top: 20px;">
+                            撞到围栏 <b>collide</b>，<br>
+                            一击 <b>destroy</b> 全拆掉！
+                        </div>
+                    </div>
+                    <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                        <div style="font-size: 120px; animation: shake 3s infinite;">🏆</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部进度条 -->
+            <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+        </div>
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)"></button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>
