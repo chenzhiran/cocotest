@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第2课：像素与色彩的艺术 | CS Explorer</title>
+    <style>
+        /* --- 1. CSS 变量与重置 --- */
+        :root {
+            --bg-dark: #0f0c29;
+            --bg-gradient: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+            --primary: #00d2ff; /* Cyan */
+            --accent: #ff0099;  /* Magenta */
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-main: #ffffff;
+            --text-muted: #b0b0b0;
+            
+            /* RGB Channels */
+            --red-ch: #ff4757;
+            --green-ch: #2ed573;
+            --blue-ch: #1e90ff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; }
+
+        body {
+            background: var(--bg-dark);
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.6;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        /* --- 2. 通用组件样式 --- */
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1, h2, h3 { margin-bottom: 15px; letter-spacing: 1px; }
+        h1 { font-size: 2.5rem; text-align: center; text-shadow: 0 0 10px var(--primary); }
+        h2 { border-left: 5px solid var(--accent); padding-left: 15px; margin-top: 10px; color: var(--primary); }
+        
+        .en-term {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            font-style: italic;
+            font-weight: normal;
+            margin-left: 8px;
+            background: rgba(0,0,0,0.3);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, rgba(255,0,153,0.3) 0%, rgba(255,0,153,0) 100%);
+            padding: 0 5px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .tag {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            border: 1px solid var(--primary);
+        }
+
+        /* --- 3. 头部动画 (放大镜效果) --- */
+        .hero-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 150px;
+            position: relative;
+        }
+        
+        .phone-screen {
+            width: 100px; height: 160px;
+            background: linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+            border-radius: 10px;
+            border: 4px solid #333;
+            position: relative;
+            z-index: 1;
+        }
+
+        .magnifier {
+            width: 120px; height: 120px;
+            border: 5px solid white;
+            border-radius: 50%;
+            position: absolute;
+            top: 20px; left: 55%;
+            background: #000;
+            overflow: hidden;
+            z-index: 2;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            animation: float 3s ease-in-out infinite;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            padding: 2px;
+        }
+
+        /* 模拟放大的 RGB 像素点 */
+        .sub-pixel { width: 100%; height: 100%; border-radius: 50%; opacity: 0.8; }
+        .sp-r { background: red; animation: blink 0.5s infinite alternate; }
+        .sp-g { background: lime; animation: blink 0.6s infinite alternate; }
+        .sp-b { background: blue; animation: blink 0.7s infinite alternate; }
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes blink { from { opacity: 0.3; } to { opacity: 1; } }
+
+        /* --- 4. RGB 互动调色盘 --- */
+        .rgb-lab {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            justify-content: space-around;
+        }
+        
+        .color-preview {
+            width: 150px; height: 150px;
+            border-radius: 50%;
+            background-color: rgb(0,0,0);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            transition: background-color 0.1s;
+            border: 4px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: white; /* 动态调整文字颜色 */
+            text-shadow: 0 0 4px black;
+        }
+
+        .sliders { flex: 1; min-width: 250px; }
+        
+        .slider-group { margin-bottom: 20px; }
+        .slider-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        
+        input[type=range] {
+            width: 100%; height: 8px; border-radius: 5px; outline: none; -webkit-appearance: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 20px; height: 20px; border-radius: 50%; cursor: pointer; background: white; border: 2px solid #333;
+        }
+
+        /* --- 5. 字符编码部分 --- */
+        .encoding-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .code-box {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .ascii-limit { border-bottom: 3px solid var(--accent); }
+        .unicode-expand { border-bottom: 3px solid var(--primary); }
+        
+        .bit-stream {
+            font-family: 'Courier New', monospace;
+            color: var(--primary);
+            word-break: break-all;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        /* --- 6. 像素画板互动 (Canvas/Grid) --- */
+        .pixel-editor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .controls {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .palette-btn {
+            width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: transform 0.2s;
+        }
+        .palette-btn:hover, .palette-btn.active { transform: scale(1.3); z-index: 2; box-shadow: 0 0 10px white; }
+
+        .pixel-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            background: #444;
+            padding: 4px;
+            border-radius: 8px;
+            width: 300px; height: 300px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .pixel {
+            background-color: #222;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: background-color 0.1s;
+        }
+        .pixel:hover { opacity: 0.8; }
+
+        .action-btn {
+            background: var(--primary); border: none; padding: 8px 20px; border-radius: 20px;
+            color: #000; font-weight: bold; cursor: pointer; margin-top: 15px;
+            transition: all 0.3s;
+        }
+        .action-btn:hover { background: white; box-shadow: 0 0 15px white; }
+
+        /* 眨眼动画 */
+        @keyframes blinkPixel {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(0.2); }
+        }
+        .blinking { animation: blinkPixel 0.5s ease-in-out 2; }
+
+        /* --- 7. 避坑指南卡片 --- */
+        .pitfall-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .pitfall-card { background: rgba(255, 71, 87, 0.1); border-left: 4px solid #ff4757; padding: 15px; border-radius: 8px; }
+        .tip-card { background: rgba(46, 213, 115, 0.1); border-left: 4px solid #2ed573; padding: 15px; border-radius: 8px; }
+
+        /* Footer */
+        footer { text-align: center; margin-top: 50px; font-size: 0.9rem; color: var(--text-muted); padding-bottom: 20px;}
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .magnifier { display: none; } /* 手机端隐藏复杂动画 */
+            .rgb-lab { flex-direction: column; }
+            .encoding-comparison { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <header class="card" style="text-align: center;">
+        <div class="hero-visual">
+            <div class="phone-screen"></div>
+            <div class="magnifier">
+                <div class="sub-pixel sp-r"></div><div class="sub-pixel sp-g"></div><div class="sub-pixel sp-b"></div>
+                <div class="sub-pixel sp-r"></div><div class="sub-pixel sp-g"></div><div class="sub-pixel sp-b"></div>
+                <div class="sub-pixel sp-r"></div><div class="sub-pixel sp-g"></div><div class="sub-pixel sp-b"></div>
+            </div>
+        </div>
+        <h1>像素与色彩的艺术 <br><span style="font-size: 0.5em; color: var(--primary);">Art of Pixels & Colors</span></h1>
+        <p style="margin-top: 15px; max-width: 600px; margin-left: auto; margin-right: auto;">
+            为什么你的手机屏幕明明只是一堆小点点，却能显示出“奶油肌”自拍和全球通用的 😂 表情？
+            <br>让我们戴上“数字显微镜”，探索 <strong>RGB</strong> 与 <strong>编码</strong> 的秘密。
+        </p>
+    </header>
+
+    <section class="card">
+        <h2>1. 像素调色盘 <span class="en-term">RGB Color Model</span></h2>
+        <p>每个像素 (Pixel) 都是由三盏微型“灯泡”组成的：<span style="color:var(--red-ch)">红 Red</span>、<span style="color:var(--green-ch)">绿 Green</span>、<span style="color:var(--blue-ch)">蓝 Blue</span>。计算机通过调整它们的亮度（0-255）来混合出颜色。</p>
+        
+        <div class="rgb-lab" style="margin-top: 30px;">
+            <div>
+                <div class="color-preview" id="colorPreview">
+                    rgb(0, 0, 0)
+                </div>
+                <div style="text-align:center; margin-top:10px; font-size:0.8rem; color: var(--text-muted);">
+                    Color Depth: 24-bit<br>
+                    (16.7 Million Colors)
+                </div>
+            </div>
+
+            <div class="sliders">
+                <div class="slider-group">
+                    <label style="color:var(--red-ch)">R (Red): <span id="val-r">0</span></label>
+                    <input type="range" min="0" max="255" value="0" id="range-r" style="background: linear-gradient(to right, black, red);">
+                </div>
+                <div class="slider-group">
+                    <label style="color:var(--green-ch)">G (Green): <span id="val-g">0</span></label>
+                    <input type="range" min="0" max="255" value="0" id="range-g" style="background: linear-gradient(to right, black, lime);">
+                </div>
+                <div class="slider-group">
+                    <label style="color:var(--blue-ch)">B (Blue): <span id="val-b">0</span></label>
+                    <input type="range" min="0" max="255" value="0" id="range-b" style="background: linear-gradient(to right, black, blue);">
+                </div>
+            </div>
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-top: 20px;">
+            💡 <strong>试一试：</strong> 把 R 和 G 拉到最大(255)，B 设为 0。你会得到什么颜色？(答案：黄色 Yellow)
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>2. 字符字典 <span class="en-term">ASCII vs Unicode</span></h2>
+        <p>计算机内部只存数字。要显示文字，它需要查“字典”。</p>
+
+        <div class="encoding-comparison">
+            <div class="code-box ascii-limit">
+                <h3>📜 ASCII (早期标准)</h3>
+                <p>只用 1 Byte (8 bits)。</p>
+                <p>只能存 256 个字符 (英文+符号)。</p>
+                <div style="margin: 15px 0; font-size: 2rem;">A → 65</div>
+                <div class="bit-stream">01000001</div>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top:5px;">不够用！存不了中文！</p>
+            </div>
+            
+            <div class="code-box unicode-expand">
+                <h3>🌍 Unicode (万能字典)</h3>
+                <p>使用更多 Bytes (16/32 bits)。</p>
+                <p>能存全球文字 + Emoji 😂。</p>
+                <div style="margin: 15px 0; font-size: 2rem;">中 → 20013</div>
+                <div class="bit-stream">01001110 00101101</div>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top:5px;">统一了全宇宙的字符 ID。</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>3. 动手实践：像素头像工坊 <span class="en-term">Scratch Pixel Art</span></h2>
+        <p>像在 Scratch 中一样，我们用代码控制画笔。请在下方网格中绘制一个 8x8 的图标。</p>
+        
+        <div class="pixel-editor-container">
+            <div class="controls">
+                <span style="line-height:30px;">选颜色：</span>
+                <div class="palette-btn active" style="background:white;" onclick="setColor('white', this)"></div>
+                <div class="palette-btn" style="background:#ff4757;" onclick="setColor('#ff4757', this)"></div>
+                <div class="palette-btn" style="background:#2ed573;" onclick="setColor('#2ed573', this)"></div>
+                <div class="palette-btn" style="background:#1e90ff;" onclick="setColor('#1e90ff', this)"></div>
+                <div class="palette-btn" style="background:#ffa502;" onclick="setColor('#ffa502', this)"></div>
+                <div class="palette-btn" style="background:#222; border-color:#555;" onclick="setColor('#222', this)" title="Eraser"></div>
+            </div>
+
+            <div class="pixel-grid" id="pixelGrid">
+                </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="action-btn" onclick="animateAvatar()">✨ Run Animation (眨眼)</button>
+                <button class="action-btn" style="background: transparent; border: 1px solid var(--text-muted); color:white;" onclick="clearGrid()">🗑️ Clear</button>
+            </div>
+
+            <div style="margin-top: 15px; width: 100%; background: #222; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 0.8rem; color: #ccc;">
+                <div style="color: #666">// 伪代码逻辑 (Pseudocode)</div>
+                <div style="color: var(--accent)">FOR</div> each pixel <div style="color: var(--accent)">IN</div> grid:<br>
+                &nbsp;&nbsp;<div style="color: var(--primary)">IF</div> clicked <div style="color: var(--primary)">THEN</div> set color to <span id="code-color-val">White</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>4. 避坑指南与备考锦囊 <span class="en-term">Summary</span></h2>
+        
+        <div class="pitfall-grid">
+            <div class="pitfall-card">
+                <h3>🚫 常见误区 (Pitfalls)</h3>
+                <ul>
+                    <li><strong>误区：</strong> ASCII 可以表示中文。</li>
+                    <li><strong>真相：</strong> ASCII 只有 256 个位置，连表情包都放不下。必须用 Unicode。</li>
+                    <li><strong>误区：</strong> RGB 颜色是颜料混合。</li>
+                    <li><strong>真相：</strong> RGB 是<strong>光</strong>的混合。红+绿=黄，全开(255,255,255)=白。</li>
+                </ul>
+            </div>
+            
+            <div class="tip-card">
+                <h3>🎓 备考核心 (Exam Nuggets)</h3>
+                <ul>
+                    <li><strong>Color Depth (色彩深度):</strong> RGB 每个颜色 8 bits，一共 24 bits。</li>
+                    <li><strong>颜色总数:</strong> $2^{24} \approx 16,777,216$ (1670万色)。</li>
+                    <li><strong>关键词:</strong> Pixel (图片最小单位), Resolution (像素数量)。</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>Create by chenzhiran.</p>
+        <p>扣哒世界花儿实验班教研团队</p>
+    </footer>
+
+</div>
+
+<script>
+    /* --- 1. RGB 调色盘逻辑 --- */
+    const rInput = document.getElementById('range-r');
+    const gInput = document.getElementById('range-g');
+    const bInput = document.getElementById('range-b');
+    const colorPreview = document.getElementById('colorPreview');
+    
+    const valR = document.getElementById('val-r');
+    const valG = document.getElementById('val-g');
+    const valB = document.getElementById('val-b');
+
+    function updateColor() {
+        const r = rInput.value;
+        const g = gInput.value;
+        const b = bInput.value;
+
+        // 更新数字显示
+        valR.innerText = r;
+        valG.innerText = g;
+        valB.innerText = b;
+
+        // 更新颜色盒
+        const colorString = `rgb(${r}, ${g}, ${b})`;
+        colorPreview.style.backgroundColor = colorString;
+        colorPreview.innerText = colorString;
+
+        // 动态调整文字颜色以保持对比度
+        // 简单算法：如果亮度高，文字变黑
+        const brightness = Math.round(((parseInt(r) * 299) + (parseInt(g) * 587) + (parseInt(b) * 114)) / 1000);
+        colorPreview.style.color = (brightness > 125) ? 'black' : 'white';
+        colorPreview.style.textShadow = (brightness > 125) ? 'none' : '0 0 4px black';
+    }
+
+    [rInput, gInput, bInput].forEach(input => {
+        input.addEventListener('input', updateColor);
+    });
+
+    /* --- 2. 像素画板逻辑 --- */
+    const grid = document.getElementById('pixelGrid');
+    let currentColor = 'white';
+    
+    // 初始化网格 (8x8 = 64 pixels)
+    function initGrid() {
+        grid.innerHTML = '';
+        for(let i=0; i<64; i++) {
+            const pixel = document.createElement('div');
+            pixel.classList.add('pixel');
+            pixel.dataset.index = i; // 用于动画定位
+            
+            // 点击事件
+            pixel.addEventListener('mousedown', function() {
+                this.style.backgroundColor = currentColor;
+                // 添加一点点击反馈动画
+                this.style.transform = "scale(0.9)";
+                setTimeout(() => this.style.transform = "scale(1)", 100);
+            });
+            // 支持简单的拖拽绘制 (鼠标按下移动)
+            pixel.addEventListener('mouseenter', function(e) {
+                if(e.buttons === 1) { // 只有按住鼠标左键时才绘制
+                    this.style.backgroundColor = currentColor;
+                }
+            });
+
+            grid.appendChild(pixel);
+        }
+    }
+
+    // 设置画笔颜色
+    function setColor(color, btn) {
+        currentColor = color;
+        // 更新 UI 激活状态
+        document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // 更新伪代码显示的颜色名
+        const nameMap = {
+            'white': 'White',
+            '#ff4757': 'Red',
+            '#2ed573': 'Green',
+            '#1e90ff': 'Blue',
+            '#ffa502': 'Orange',
+            '#222': 'Empty (Eraser)'
+        };
+        document.getElementById('code-color-val').innerText = nameMap[color] || color;
+    }
+
+    // 清空画布
+    function clearGrid() {
+        const pixels = document.querySelectorAll('.pixel');
+        pixels.forEach(p => {
+            p.style.backgroundColor = '#222';
+            p.classList.remove('blinking');
+        });
+    }
+
+    // 运行简单的“眨眼”动画
+    function animateAvatar() {
+        const pixels = document.querySelectorAll('.pixel');
+        
+        // 简单逻辑：让所有非背景色的像素闪烁一下
+        // 或者更高级：随机选几个点闪烁
+        pixels.forEach(p => {
+            // 获取当前背景色 (计算后的样式)
+            const style = window.getComputedStyle(p);
+            const matrix = style.backgroundColor; // 这是一个 rgb(...) 字符串
+            
+            // 如果不是深灰色背景 (#222 approx rgb(34,34,34))，就闪烁
+            if (matrix !== 'rgb(34, 34, 34)') {
+                p.classList.remove('blinking'); // 重置动画
+                void p.offsetWidth; // 触发重绘 reflow
+                p.classList.add('blinking');
+            }
+        });
+    }
+
+    // 初始化
+    initGrid();
+    updateColor(); // 初始化 RGB
+</script>
+
+</body>
+</html>

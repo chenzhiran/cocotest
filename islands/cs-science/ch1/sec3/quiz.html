@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编程逻辑挑战赛 - 条件判断篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 (紫色现代风格) --- */
+        :root {
+            --primary-color: #6C5CE7; /* 主色调：紫色 */
+            --secondary-color: #A29BFE;
+            --bg-color: #DFE6E9;     /* 背景灰 */
+            --card-bg: #FFFFFF;
+            --text-color: #2D3436;   /* 深色文字 */
+            --correct-color: #00b894;/* 正确绿 */
+            --wrong-color: #d63031;  /* 错误红 */
+            --accent-yellow: #fdcb6e;/* 强调黄 */
+            
+            /* 代码高亮颜色 */
+            --code-bg: #2d2d2d;
+            --code-text: #ccc;
+            --code-kw: #cc99cd; /* 关键字 - 紫粉 */
+            --code-fn: #6196cc; /* 方法/函数 - 蓝 */
+            --code-num: #f08d49; /* 数字 - 橙 */
+            --code-str: #7ec699; /* 字符串 - 绿 */
+            --code-cmt: #777777; /* 注释 - 灰 */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            /* 点阵背景纹理 */
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* --- 游戏容器 --- */
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 700px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目区域 --- */
+        .question-area {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        
+        .question-area h2 {
+            color: var(--text-color);
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* --- 代码高亮样式 --- */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', monospace;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            text-align: left;
+            font-size: 0.95rem;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+            overflow-x: auto;
+        }
+        /* 语法着色class */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1.05rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            position: relative;
+            top: 0;
+            box-shadow: 0 5px 0 #bdc3c7;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #aab0b3;
+        }
+
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+        }
+        
+        .option-btn[disabled] {
+            cursor: default;
+        }
+
+        /* --- 答题状态 --- */
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析区域 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+
+        .feedback-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+
+        .explanation-text {
+            color: #636e72;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        /* --- 下一题按钮 --- */
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 5px 0 #5649c0;
+            transition: all 0.2s;
+            float: right;
+        }
+        .next-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .next-btn:active { transform: translateY(5px); box-shadow: none; }
+
+        /* --- 结算画面 --- */
+        .end-screen {
+            display: none;
+            padding: 20px 0;
+        }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score-box {
+            background: var(--accent-yellow);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 25px;
+            display: inline-block;
+            margin: 30px 0;
+            box-shadow: 0 8px 0 #e1b12c;
+        }
+        .end-score { font-size: 3.5rem; font-weight: bold; line-height: 1; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+        
+        .perfect-score-text {
+            background: linear-gradient(45deg, #FFD700, #FF8C00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        /* --- 动画定义 --- */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall {
+            to { transform: translateY(80vh) rotate(720deg); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 10</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container">
+                </div>
+
+            <div class="options-grid" id="options-container">
+                </div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen">
+            </div>
+    </div>
+
+    <script>
+        // --- 题目数据 ---
+        const quizData = [
+            {
+                q: "1. 在程序设计中，条件判断语句的核心作用是：",
+                options: [
+                    "A. 重复执行某段代码", 
+                    "B. 根据条件选择执行不同的代码路径", 
+                    "C. 定义变量和函数", 
+                    "D. 输出结果到屏幕"
+                ],
+                correct: 1, // B
+                desc: "条件判断(如 if/else)的核心作用是根据不同的条件选择执行不同的代码路径，让程序能够做出决策。"
+            },
+            {
+                q: "2. 布尔表达式的结果只能是：",
+                options: [
+                    "A. 数字或文字", 
+                    "B. 真(True)或假(False)", 
+                    "C. 成功或失败", 
+                    "D. 是或否"
+                ],
+                correct: 1, // B
+                desc: "布尔表达式(Boolean)以数学家乔治·布尔命名，其结果只能是逻辑值真(True)或假(False)。"
+            },
+            {
+                q: "3. 在\"接苹果\"游戏的逻辑中，当方块碰到苹果时会发生什么？",
+                code: "if (touching_apple == True) {\n    score = score + 1\n    play_sound(\"Ding\")\n}", 
+                options: [
+                    "A. 游戏立即结束", 
+                    "B. 分数增加并播放音效", 
+                    "C. 苹果停止下落", 
+                    "D. 方块改变颜色"
+                ],
+                correct: 1, // B
+                desc: "根据游戏逻辑，当检测到碰撞(touching_apple == true)时，分数增加并播放音效，然后通常会重置苹果位置。"
+            },
+            {
+                q: "4. 关于if-else语句的结构，以下描述正确的是：",
+                code: "if (condition) {\n    // do A\n} else {\n    // do B\n}",
+                options: [
+                    "A. else分支必须放在所有if条件之前", 
+                    "B. if后面可以跟任意类型的表达式", 
+                    "C. else分支用于处理所有条件都不满足的情况", 
+                    "D. 一个if语句只能有一个else分支"
+                ],
+                correct: 2, // C
+                desc: "else分支作为\"兜底\"选项，当if中的条件为假(False)时，程序会自动执行else里的代码。"
+            },
+            {
+                q: "5. 在程序流程控制中，条件判断的作用类似于：",
+                options: [
+                    "A. 直线道路", 
+                    "B. 环形路口", 
+                    "C. 分岔路口", 
+                    "D. 高速公路"
+                ],
+                correct: 2, // C
+                desc: "条件判断就像分岔路口，根据条件的不同（比如是否下雨），选择不同的前进方向（带伞或不带伞），改变程序的执行流程。"
+            },
+            {
+                q: "6. 关于布尔表达式，以下说法错误的是：",
+                options: [
+                    "A. 布尔表达式的结果只有两种可能", 
+                    "B. 布尔表达式可以包含比较运算符（如>, <, ==）", 
+                    "C. 布尔表达式的结果可以是数字", 
+                    "D. 布尔表达式用于决定程序的分支"
+                ],
+                correct: 2, // C
+                desc: "错误的是C。布尔表达式的结果只能是True或False，不能是数字、文字等其他类型。"
+            },
+            {
+                q: "7. 在智能门铃的例子中，当检测到有人时，程序会：",
+                code: "if (person_detected) {\n    ring_bell()\n} else {\n    sleep()\n}",
+                options: [
+                    "A. 执行if分支的代码", 
+                    "B. 执行else分支的代码", 
+                    "C. 同时执行if和else分支", 
+                    "D. 跳过所有条件判断"
+                ],
+                correct: 0, // A
+                desc: "当检测条件满足（person_detected 为 True）时，程序会进入if分支执行代码；否则执行else分支。"
+            },
+            {
+                q: "8. 关于条件语句的常见误区，以下正确的是：",
+                options: [
+                    "A. if后面可以跟一段文字描述", 
+                    "B. else语句可以省略", 
+                    "C. 条件表达式必须是布尔类型", 
+                    "D. 一个if语句必须有对应的else"
+                ],
+                correct: 2, // C
+                desc: "常见的正确理解是：if后面的条件必须是布尔表达式，即结果为True或False的表达式。注：else是可以省略的。"
+            },
+            {
+                q: "9. 在程序跟踪(Trace)过程中，如果条件为假，程序会：",
+                code: "if (False) {\n    // Step 1\n} else {\n    // Step 2\n}",
+                options: [
+                    "A. 执行if分支的代码", 
+                    "B. 执行else分支的代码（如果存在）", 
+                    "C. 停止执行", 
+                    "D. 重新评估条件"
+                ],
+                correct: 1, // B
+                desc: "在程序跟踪时，如果if条件为假(False)，程序会跳过if分支，直接执行else分支（如果存在）或继续执行后续代码。"
+            },
+            {
+                q: "10. 条件判断结构在计算机科学中也被称为：",
+                options: [
+                    "A. 循环结构", 
+                    "B. 顺序结构", 
+                    "C. 选择结构", 
+                    "D. 函数结构"
+                ],
+                correct: 2, // C
+                desc: "在计算机科学中，条件判断结构被称为选择结构(Selection)，与顺序结构(Sequence)、循环结构(Iteration)并称为程序的三种基本控制结构。"
+            }
+        ];
+
+        // --- 游戏状态变量 ---
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        // --- DOM 元素 ---
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        // --- 正则高亮引擎 (One-pass Lexical Analysis) ---
+        // 使用一个强大的正则表达式，一次性匹配所有Token
+        function highlightCode(code) {
+            // 0. HTML转义
+            const safeCode = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            // 定义正则组件
+            const patterns = {
+                // 字符串: 双引号或单引号包裹内容
+                string: /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/,
+                // 注释: # 开头 或 // 开头
+                comment: /(#.*|\/\/.*)/,
+                // 关键字: 针对本课(条件判断)定制
+                keyword: /\b(if|else|elif|then|True|False|boolean|while|for|return)\b/,
+                // 方法/函数: 单词后紧跟括号 或 点号开头
+                method: /(\.\w+|\b\w+(?=\())/,
+                // 数字: 纯数字
+                number: /\b(\d+)\b/
+            };
+
+            // 组合正则：注意顺序 (String > Comment > Keyword > Method > Number)
+            const tokenRegex = new RegExp(
+                patterns.string.source + "|" + 
+                patterns.comment.source + "|" + 
+                patterns.keyword.source + "|" + 
+                patterns.method.source + "|" + 
+                patterns.number.source, 
+                "g"
+            );
+
+            // 执行替换
+            return safeCode.replace(tokenRegex, (match, str, cmt, kw, fn, num) => {
+                if (str) return `<span class="str">${str}</span>`;
+                if (cmt) return `<span class="cmt">${cmt}</span>`;
+                if (kw) return `<span class="kw">${kw}</span>`;
+                if (fn) return `<span class="fn">${fn}</span>`;
+                if (num) return `<span class="num">${num}</span>`;
+                return match; 
+            });
+        }
+
+        // --- 初始化游戏 ---
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            
+            // 如果题目包含代码块，应用高亮引擎
+            if (data.code) {
+                const highlightedCode = highlightCode(data.code);
+                html += `<div class="code-block">${highlightedCode}</div>`;
+            }
+
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // --- 检查答案 ---
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => {
+                   allBtns[data.correct].classList.add('correct');
+                }, 400);
+                // 获取正确选项的字母 (A/B/C/D)
+                const rightAnswerStr = data.options[data.correct].charAt(0);
+                showFeedback(false, `❌ 回答错误，正确答案是 ${rightAnswerStr}`, data.desc);
+            }
+        }
+
+        // --- 显示解析 ---
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // --- 下一题 ---
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        // --- 结束画面 ---
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none'; 
+
+            const totalScore = quizData.length * 100;
+            const isPerfect = (score === totalScore);
+            
+            let html = '';
+            if (isPerfect) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 逻辑大师诞生！ 🎉</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score perfect-score-text">${score}</div></div>`;
+                html += `<div class="end-desc">太棒了！你已经完全掌握了条件判断和程序流控制！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score">${score} / ${totalScore}</div></div>`;
+                html += `<div class="end-desc">做得不错！继续加油，让程序的逻辑更清晰！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; font-size:1.2rem; padding: 15px 40px;">🔄 再玩一次</button>`;
+            
+            endScreen.innerHTML = html;
+        }
+
+        // --- 撒花特效 ---
+        function createConfetti() {
+            const colors = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#fdcb6e'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-20px';
+                const scale = Math.random() * 0.6 + 0.4;
+                confetti.style.transform = `scale(${scale}) rotate(${Math.random()*360}deg)`;
+                confetti.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                
+                container.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 2500);
+            }
+        }
+
+        // --- 启动游戏 ---
+        loadQuestion();
+
+    </script>
+</body>
+</html>

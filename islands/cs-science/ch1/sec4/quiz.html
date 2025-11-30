@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编程思维挑战赛 - 循环篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 (紫色现代风格) --- */
+        :root {
+            --primary-color: #6C5CE7; /* 主色调：紫色 */
+            --secondary-color: #A29BFE;
+            --bg-color: #DFE6E9;     /* 背景灰 */
+            --card-bg: #FFFFFF;
+            --text-color: #2D3436;   /* 深色文字 */
+            --correct-color: #00b894;/* 正确绿 */
+            --wrong-color: #d63031;  /* 错误红 */
+            --accent-yellow: #fdcb6e;/* 强调黄 */
+            
+            /* 代码高亮颜色 */
+            --code-bg: #2d2d2d;
+            --code-text: #ccc;
+            --code-kw: #cc99cd; /* 关键字 - 紫粉 */
+            --code-fn: #6196cc; /* 方法/函数 - 蓝 */
+            --code-num: #f08d49; /* 数字 - 橙 */
+            --code-str: #7ec699; /* 字符串 - 绿 */
+            --code-cmt: #777777; /* 注释 - 灰 */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            /* 点阵背景纹理 */
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* --- 游戏容器 --- */
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 700px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目区域 --- */
+        .question-area {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        
+        .question-area h2 {
+            color: var(--text-color);
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* --- 代码高亮样式 --- */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', monospace;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            text-align: left;
+            font-size: 0.95rem;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+            overflow-x: auto;
+        }
+        /* 语法着色class */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1.05rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            position: relative;
+            top: 0;
+            box-shadow: 0 5px 0 #bdc3c7;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #aab0b3;
+        }
+
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+        }
+        
+        .option-btn[disabled] {
+            cursor: default;
+        }
+
+        /* --- 答题状态 --- */
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析区域 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+
+        .feedback-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+
+        .explanation-text {
+            color: #636e72;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        /* --- 下一题按钮 --- */
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 5px 0 #5649c0;
+            transition: all 0.2s;
+            float: right;
+        }
+        .next-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .next-btn:active { transform: translateY(5px); box-shadow: none; }
+
+        /* --- 结算画面 --- */
+        .end-screen {
+            display: none;
+            padding: 20px 0;
+        }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score-box {
+            background: var(--accent-yellow);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 25px;
+            display: inline-block;
+            margin: 30px 0;
+            box-shadow: 0 8px 0 #e1b12c;
+        }
+        .end-score { font-size: 3.5rem; font-weight: bold; line-height: 1; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+        
+        .perfect-score-text {
+            background: linear-gradient(45deg, #FFD700, #FF8C00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        /* --- 动画定义 --- */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall {
+            to { transform: translateY(80vh) rotate(720deg); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 10</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container">
+                </div>
+
+            <div class="options-grid" id="options-container">
+                </div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen">
+            </div>
+    </div>
+
+    <script>
+        // --- 题目数据 ---
+        const quizData = [
+            {
+                q: "1. 关于Repeat循环和Forever循环的主要区别，正确的是：",
+                options: [
+                    "A. Repeat循环比Forever循环运行更快", 
+                    "B. Repeat循环次数固定，Forever循环无限执行", 
+                    "C. Forever循环只能用于游戏开发", 
+                    "D. Repeat循环不需要设置终止条件"
+                ],
+                correct: 1, // B
+                desc: "Repeat循环有明确的执行次数（例如重复10次），而Forever循环会无限期执行，直到程序被强制停止或遇到Stop指令。"
+            },
+            {
+                q: "2. 如果需要给全班50个同学发送生日祝福，最适合使用的循环类型是：",
+                code: "repeat (50) {\n    send_wish(\"Happy Birthday\")\n}",
+                options: [
+                    "A. Forever循环", 
+                    "B. Repeat 50次循环", 
+                    "C. 条件循环", 
+                    "D. 嵌套循环"
+                ],
+                correct: 1, // B
+                desc: "给固定数量（50个）的同学发送祝福，次数是已知的，因此最适合使用Repeat循环来自动化这个过程。"
+            },
+            {
+                q: "3. 在游戏开发中，需要不断生成敌人，最适合使用的循环类型是：",
+                code: "forever {\n    spawn_enemy()\n    wait(2)\n}",
+                options: [
+                    "A. Repeat 10次循环", 
+                    "B. Forever循环", 
+                    "C. 条件循环", 
+                    "D. 有限循环"
+                ],
+                correct: 1, // B
+                desc: "游戏中的敌人生成通常需要持续不断进行，没有明确的结束次数，因此适合使用Forever循环。"
+            },
+            {
+                q: "4. 以下哪个是循环的核心目的？",
+                options: [
+                    "A. 增加代码复杂度", 
+                    "B. 减少重复代码，实现自动化", 
+                    "C. 提高程序运行速度", 
+                    "D. 让代码更难以理解"
+                ],
+                correct: 1, // B
+                desc: "循环的核心价值在于自动化处理重复任务（DRY原则 - Don't Repeat Yourself），减少代码冗余，提高开发效率。"
+            },
+            {
+                q: "5. 在跟踪循环执行过程时，推荐的方法是：",
+                options: [
+                    "A. 凭记忆猜测变量的变化", 
+                    "B. 在纸上画表格记录每轮循环的变量值", 
+                    "C. 直接运行程序看结果", 
+                    "D. 跳过循环部分直接看最终结果"
+                ],
+                correct: 1, // B
+                desc: "在纸上画表格(Trace Table)记录每轮循环的变量变化是跟踪循环执行过程的有效方法，有助于理解循环的行为和调试代码。"
+            },
+            {
+                q: "6. 什么情况下会导致无限循环（死循环）？",
+                code: "i = 0\nwhile (i < 5) {\n    print(\"Hello\")\n    // 忘记写 i = i + 1\n}",
+                options: [
+                    "A. 循环次数设置得太少", 
+                    "B. 循环体内有输出语句", 
+                    "C. 循环条件永远为真或忘记更新循环变量", 
+                    "D. 使用了Repeat循环"
+                ],
+                correct: 2, // C
+                desc: "当循环条件始终为真(True)，或者在循环体内忘记更新影响条件的变量（如忘记i+1）时，循环就永远无法停止，导致死循环。"
+            },
+            {
+                q: "7. 循环结构在程序设计中的主要优势是：",
+                options: [
+                    "A. 让代码看起来更专业", 
+                    "B. 减少代码重复，提高开发效率", 
+                    "C. 增加程序的复杂性", 
+                    "D. 使程序运行速度变慢"
+                ],
+                correct: 1, // B
+                desc: "循环通过自动化重复任务，显著减少了代码量，提高了开发效率和代码的可维护性。"
+            },
+            {
+                q: "8. 关于循环条件，以下说法正确的是：",
+                options: [
+                    "A. Repeat循环不需要条件", 
+                    "B. 所有循环都需要明确的终止条件", 
+                    "C. Forever循环的条件永远为假", 
+                    "D. 循环条件可以是任意的表达式"
+                ],
+                correct: 1, // B
+                desc: "所有循环都需要有明确的终止机制（条件或次数），否则会导致无限循环。即使是Forever循环，通常也需要外部事件（如按停止键）来终止。"
+            },
+            {
+                q: "9. 在循环执行过程中，如果遇到\"Stop\"指令，会发生什么？",
+                code: "forever {\n    if (game_over) {\n        stop()\n    }\n}",
+                options: [
+                    "A. 计算机会重启", 
+                    "B. 程序会跳过当前循环", 
+                    "C. 循环会立即终止", 
+                    "D. 循环会加速执行"
+                ],
+                correct: 2, // C
+                desc: "\"Stop\"指令（或编程中的break）会立即终止循环的执行，跳出循环体，无论循环原本设定的次数或条件如何。"
+            },
+            {
+                q: "10. 生活中的心跳、呼吸类似于程序设计中的：",
+                options: [
+                    "A. Repeat循环", 
+                    "B. Forever循环", 
+                    "C. 条件循环", 
+                    "D. 有限循环"
+                ],
+                correct: 1, // B
+                desc: "心跳、呼吸是持续不断的过程，只要生命存在就会一直进行，这类似于程序设计中的Forever循环。"
+            }
+        ];
+
+        // --- 游戏状态变量 ---
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        // --- DOM 元素 ---
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        // --- 正则高亮引擎 (One-pass Lexical Analysis) ---
+        // 使用一个强大的正则表达式，一次性匹配所有Token
+        function highlightCode(code) {
+            // 0. HTML转义
+            const safeCode = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            // 定义正则组件
+            const patterns = {
+                // 字符串: 双引号或单引号包裹内容
+                string: /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/,
+                // 注释: # 开头 或 // 开头
+                comment: /(#.*|\/\/.*)/,
+                // 关键字: 针对本课(循环)定制
+                keyword: /\b(repeat|forever|while|for|if|else|stop|break|True|False)\b/,
+                // 方法/函数: 单词后紧跟括号 或 点号开头
+                method: /(\.\w+|\b\w+(?=\())/,
+                // 数字: 纯数字
+                number: /\b(\d+)\b/
+            };
+
+            // 组合正则：注意顺序 (String > Comment > Keyword > Method > Number)
+            const tokenRegex = new RegExp(
+                patterns.string.source + "|" + 
+                patterns.comment.source + "|" + 
+                patterns.keyword.source + "|" + 
+                patterns.method.source + "|" + 
+                patterns.number.source, 
+                "g"
+            );
+
+            // 执行替换
+            return safeCode.replace(tokenRegex, (match, str, cmt, kw, fn, num) => {
+                if (str) return `<span class="str">${str}</span>`;
+                if (cmt) return `<span class="cmt">${cmt}</span>`;
+                if (kw) return `<span class="kw">${kw}</span>`;
+                if (fn) return `<span class="fn">${fn}</span>`;
+                if (num) return `<span class="num">${num}</span>`;
+                return match; 
+            });
+        }
+
+        // --- 初始化游戏 ---
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            
+            // 如果题目包含代码块，应用高亮引擎
+            if (data.code) {
+                const highlightedCode = highlightCode(data.code);
+                html += `<div class="code-block">${highlightedCode}</div>`;
+            }
+
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // --- 检查答案 ---
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => {
+                   allBtns[data.correct].classList.add('correct');
+                }, 400);
+                // 获取正确选项的字母 (A/B/C/D)
+                const rightAnswerStr = data.options[data.correct].charAt(0);
+                showFeedback(false, `❌ 回答错误，正确答案是 ${rightAnswerStr}`, data.desc);
+            }
+        }
+
+        // --- 显示解析 ---
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // --- 下一题 ---
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        // --- 结束画面 ---
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none'; 
+
+            const totalScore = quizData.length * 100;
+            const isPerfect = (score === totalScore);
+            
+            let html = '';
+            if (isPerfect) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 循环大师诞生！ 🎉</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score perfect-score-text">${score}</div></div>`;
+                html += `<div class="end-desc">太棒了！你已经完全掌握了重复、循环和自动化的奥秘！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score">${score} / ${totalScore}</div></div>`;
+                html += `<div class="end-desc">做得不错！继续加油，让代码为你自动工作！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; font-size:1.2rem; padding: 15px 40px;">🔄 再玩一次</button>`;
+            
+            endScreen.innerHTML = html;
+        }
+
+        // --- 撒花特效 ---
+        function createConfetti() {
+            const colors = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#fdcb6e'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-20px';
+                const scale = Math.random() * 0.6 + 0.4;
+                confetti.style.transform = `scale(${scale}) rotate(${Math.random()*360}deg)`;
+                confetti.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                
+                container.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 2500);
+            }
+        }
+
+        // --- 启动游戏 ---
+        loadQuestion();
+
+    </script>
+</body>
+</html>

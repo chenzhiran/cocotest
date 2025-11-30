@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第3课：让程序"思考" | CS Explorer</title>
+    <style>
+        /* --- 1. 全局设置与变量 --- */
+        :root {
+            --bg-color: #e0e5ec;
+            --text-main: #4a4a4a;
+            --primary: #4d79ff; /* 逻辑蓝 */
+            --success: #00b894; /* 真/执行 */
+            --danger: #ff7675;  /* 假/Else */
+            --shadow-light: #ffffff;
+            --shadow-dark: #a3b1c6;
+            --code-bg: #2d3436;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        /* --- 2. 组件样式 (新拟态风格) --- */
+        .card {
+            background: var(--bg-color);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        h1, h2, h3 { color: #2d3436; margin-bottom: 15px; letter-spacing: 0.5px; }
+        h1 { font-size: 2.2rem; text-align: center; color: var(--primary); }
+        h2 { border-left: 5px solid var(--primary); padding-left: 15px; margin-top: 10px; }
+        
+        .bilingual {
+            font-size: 0.85em;
+            color: #888;
+            font-weight: normal;
+            background: rgba(0,0,0,0.05);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .highlight { color: var(--primary); font-weight: bold; }
+        .tag-true { color: var(--success); font-weight: bold; }
+        .tag-false { color: var(--danger); font-weight: bold; }
+
+        /* --- 3. 锚点互动：智能门铃 --- */
+        .doorbell-section { text-align: center; }
+        
+        .doorbell-btn {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg-color);
+            box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+            cursor: pointer;
+            position: relative;
+            outline: none;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+        
+        .doorbell-btn:active, .doorbell-btn.pressed {
+            box-shadow: inset 6px 6px 10px var(--shadow-dark), inset -6px -6px 10px var(--shadow-light);
+        }
+
+        .bell-icon { font-size: 3rem; color: #888; transition: color 0.3s; }
+        .doorbell-btn.pressed .bell-icon { color: var(--primary); text-shadow: 0 0 15px var(--primary); }
+
+        .log-box {
+            margin-top: 20px;
+            background: #f1f3f6;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            min-height: 60px;
+            box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+            color: #555;
+        }
+
+        /* --- 4. 核心概念：流程图动画 --- */
+        .flowchart-container {
+            position: relative;
+            height: 250px;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        /* 路径线条 */
+        .path-svg {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        /* 节点 */
+        .node {
+            position: absolute;
+            background: var(--bg-color);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+            z-index: 2;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .node-start { top: 0; left: 50%; transform: translateX(-50%); border: 2px solid var(--primary); }
+        .node-true { top: 150px; left: 20%; border: 2px solid var(--success); color: var(--success); }
+        .node-false { top: 150px; right: 20%; border: 2px solid var(--danger); color: var(--danger); }
+        
+        /* 移动的数据球 */
+        .data-ball {
+            width: 20px; height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            top: 40px; left: 50%;
+            transform: translate(-50%, 0);
+            z-index: 3;
+            box-shadow: 0 0 10px var(--primary);
+        }
+        
+        /* 定义动画 */
+        @keyframes flowLeft {
+            0% { top: 40px; left: 50%; background: var(--primary); }
+            40% { top: 80px; left: 50%; background: var(--primary); }
+            60% { top: 100px; left: 20%; background: var(--success); } /* 变绿 */
+            100% { top: 150px; left: 20%; background: var(--success); opacity: 0; }
+        }
+        @keyframes flowRight {
+            0% { top: 40px; left: 50%; background: var(--primary); }
+            40% { top: 80px; left: 50%; background: var(--primary); }
+            60% { top: 100px; right: 20%; background: var(--danger); } /* 变红 */
+            100% { top: 150px; right: 20%; background: var(--danger); opacity: 0; }
+        }
+
+        .anim-left { animation: flowLeft 2s infinite ease-in-out; }
+        .anim-right { animation: flowRight 2s infinite ease-in-out; }
+
+        /* --- 5. 游戏互动区域 --- */
+        .game-wrapper {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .game-canvas-box {
+            flex: 1;
+            min-width: 300px;
+            text-align: center;
+        }
+        
+        canvas {
+            background: #333;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            cursor: none; /* 隐藏鼠标，用角色代替 */
+        }
+
+        .code-brain {
+            flex: 1;
+            min-width: 300px;
+            background: var(--code-bg);
+            border-radius: 10px;
+            padding: 20px;
+            color: #dcdcdc;
+            font-family: 'Consolas', monospace;
+            font-size: 0.95rem;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .code-line {
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 2px;
+            transition: background 0.1s;
+        }
+        
+        /* 代码高亮样式 */
+        .active-check { background: rgba(255, 255, 255, 0.2); }
+        .active-true { background: rgba(46, 204, 113, 0.3); border-left: 4px solid #2ecc71; color: #fff; }
+        .active-else { background: rgba(231, 76, 60, 0.3); border-left: 4px solid #e74c3c; color: #fff; }
+
+        .score-board {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        /* --- 6. 总结卡片 --- */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .tip-box {
+            background: rgba(255,255,255,0.5);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ccc;
+        }
+        .tip-pitfall { border-color: var(--danger); }
+        .tip-exam { border-color: var(--primary); }
+
+        footer { text-align: center; color: #888; font-size: 0.9rem; margin-top: 50px; }
+
+        @media (max-width: 600px) {
+            .game-wrapper { flex-direction: column-reverse; }
+            .node { font-size: 0.7rem; padding: 8px; }
+            .node-true { left: 5px; } .node-false { right: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <header class="card" style="text-align: center; border-top: 5px solid var(--primary);">
+        <h1>让程序"思考"：条件判断 <br> <span style="font-size:0.6em; color:#7f8c8d;">Making Programs Think: Conditionals</span></h1>
+        <p style="margin-top:15px; max-width: 600px; margin-left: auto; margin-right: auto;">
+            为什么游戏角色碰到敌人会扣血？为什么智能门铃知道有人来了？<br>
+            因为程序学会了做选择题：<strong>IF (如果)... ELSE (否则)...</strong>
+        </p>
+    </header>
+
+    <section class="card doorbell-section">
+        <h2>1. 生活中的"如果" <span class="bilingual">The "IF" in Life</span></h2>
+        <p>试着点击下面的智能门铃。观察它的思考过程。</p>
+        
+        <div style="margin: 30px 0;">
+            <button class="doorbell-btn" id="doorbell" onmousedown="pressBell()" onmouseup="releaseBell()" onmouseleave="releaseBell()">
+                <div class="bell-icon">🔔</div>
+            </button>
+        </div>
+
+        <div class="log-box" id="doorbell-log">
+            > System Ready. Waiting for input...
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>2. 程序流控制 <span class="bilingual">Control Flow</span></h2>
+        <p>代码通常是从上往下跑的。但 <strong>Condition (条件)</strong> 就像分岔路口。</p>
+        <p>这被称为 <span class="highlight">Boolean Expression (布尔表达式)</span>，结果只有两个：<span class="tag-true">True (真)</span> 或 <span class="tag-false">False (假)</span>。</p>
+
+        <div class="flowchart-container">
+            <svg class="path-svg">
+                <path d="M450 40 L450 80" stroke="#ccc" stroke-width="2" fill="none" />
+                <path d="M450 80 Q450 100 270 150" stroke="#a3b1c6" stroke-width="2" fill="none" />
+                <path d="M450 80 Q450 100 630 150" stroke="#a3b1c6" stroke-width="2" fill="none" />
+            </svg>
+
+            <div class="node node-start">Is Raining? (下雨吗?)</div>
+            <div class="node node-true">True: Take Umbrella<br>(带伞)</div>
+            <div class="node node-false">False: Go Play<br>(出去玩)</div>
+
+            <div class="data-ball" id="demo-ball"></div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 10px;">
+            <button onclick="toggleWeather(true)" style="padding: 5px 15px; border-radius: 20px; border:none; background: var(--success); color:white; cursor:pointer;">Set: Raining (True)</button>
+            <button onclick="toggleWeather(false)" style="padding: 5px 15px; border-radius: 20px; border:none; background: var(--danger); color:white; cursor:pointer;">Set: Sunny (False)</button>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>3. 迷你项目：接苹果 AI <span class="bilingual">Mini Game Logic</span></h2>
+        <p>这是一个简单的"接苹果"游戏。但这次，我们要盯着右边的<strong>"程序大脑"</strong>看。</p>
+        <p><strong>玩法：</strong> 在黑色区域移动鼠标(或手指)控制蓝色方块。去接住下落的红苹果。</p>
+
+        <div class="score-board">Score: <span id="scoreVal">0</span></div>
+
+        <div class="game-wrapper">
+            <div class="game-canvas-box">
+                <canvas id="gameCanvas" width="300" height="400"></canvas>
+                <p style="font-size: 0.8rem; color: #888; margin-top: 5px;">(Touch or Mouse Move to play)</p>
+            </div>
+
+            <div class="code-brain">
+                <div style="color:#888; margin-bottom:10px;">// 每一帧都在运行的代码 (Forever Loop)</div>
+                
+                <div class="code-line" id="line-check">IF (touching_apple == true) THEN</div>
+                <div class="code-line" id="line-true" style="padding-left: 20px;">
+                    score = score + 1<br>
+                    reset_apple() <span style="color:#aaa;">// 苹果归位</span><br>
+                    play_sound("Ding!")
+                </div>
+                <div class="code-line" id="line-else-head">ELSE</div>
+                <div class="code-line" id="line-else-body" style="padding-left: 20px;">
+                    apple_y = apple_y + speed <span style="color:#aaa;">// 继续下落</span>
+                </div>
+                <div class="code-line">END IF</div>
+                
+                <div style="margin-top: 20px; border-top: 1px dashed #555; padding-top:10px;">
+                    <div>System Status:</div>
+                    <div id="debug-status" style="color: var(--danger);">Touching: FALSE</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>4. 避坑与备考 <span class="bilingual">Summary & Tips</span></h2>
+        
+        <div class="summary-grid">
+            <div class="tip-box tip-pitfall">
+                <h3 style="color: var(--danger);">🚫 常见误区 (Pitfalls)</h3>
+                <ul style="padding-left: 20px; font-size: 0.9rem;">
+                    <li><strong>"If 只吃布尔饭"</strong>: IF 后面的括号里必须是一个能判断真假(True/False)的式子，不能是一段话。</li>
+                    <li><strong>Else 必须兜底</strong>: Else 永远放在最后，代表"除了上面所有情况之外的其余情况"。</li>
+                </ul>
+            </div>
+            
+            <div class="tip-box tip-exam">
+                <h3 style="color: var(--primary);">🎓 备考锦囊 (Exam Nuggets)</h3>
+                <ul style="padding-left: 20px; font-size: 0.9rem;">
+                    <li><strong>Trace (程序跟踪)</strong>: 考试时像走迷宫一样，手指按住代码，条件为真走里面，为假跳过。</li>
+                    <li><strong>关键词</strong>: Selection (选择结构), Boolean Expression (布尔表达式)。</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>From AI Decision Trees to Self-Driving Cars, it all starts with "IF".</p>
+        <p>&copy; 2023 CS Explorer</p>
+    </footer>
+
+</div>
+
+<script>
+    /* --- 1. Doorbell Logic --- */
+    function pressBell() {
+        const btn = document.getElementById('doorbell');
+        const log = document.getElementById('doorbell-log');
+        btn.classList.add('pressed');
+        
+        // 模拟 IF 按下
+        log.innerHTML = `<span style="color:var(--primary)">IF (button_pressed == True) THEN</span><br>
+                         &nbsp;&nbsp;>> Ring Bell! 🔔<br>
+                         &nbsp;&nbsp;>> Send Notification to Phone 📱`;
+    }
+
+    function releaseBell() {
+        const btn = document.getElementById('doorbell');
+        const log = document.getElementById('doorbell-log');
+        btn.classList.remove('pressed');
+        
+        // 模拟 ELSE 松开
+        log.innerHTML = `<span style="color:#888">ELSE (button_pressed == False)</span><br>
+                         &nbsp;&nbsp;>> Standby (Waiting)... 💤`;
+    }
+
+    /* --- 2. Flowchart Animation Logic --- */
+    const ball = document.getElementById('demo-ball');
+    
+    function toggleWeather(isRaining) {
+        // 重置动画
+        ball.classList.remove('anim-left', 'anim-right');
+        void ball.offsetWidth; // 触发 reflow
+        
+        if (isRaining) {
+            ball.classList.add('anim-left');
+        } else {
+            ball.classList.add('anim-right');
+        }
+    }
+    // 默认开始一个动画
+    toggleWeather(true);
+
+
+    /* --- 3. Game & Code Visualization Logic --- */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('scoreVal');
+    const debugEl = document.getElementById('debug-status');
+
+    // Code Line Elements
+    const lineCheck = document.getElementById('line-check');
+    const lineTrue = document.getElementById('line-true');
+    const lineElseHead = document.getElementById('line-else-head');
+    const lineElseBody = document.getElementById('line-else-body');
+
+    // Game Variables
+    let player = { x: 125, y: 350, w: 50, h: 20, color: '#4d79ff' };
+    let apple = { x: 140, y: 0, r: 10, color: '#ff7675', speed: 3 };
+    let score = 0;
+    let isTouching = false;
+
+    // Mouse/Touch Handling
+    function movePlayer(e) {
+        const rect = canvas.getBoundingClientRect();
+        let clientX = e.clientX;
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+        }
+        
+        let relativeX = clientX - rect.left;
+        
+        // 限制在画布内
+        if(relativeX > 0 && relativeX < canvas.width) {
+            player.x = relativeX - player.w / 2;
+        }
+    }
+
+    canvas.addEventListener('mousemove', movePlayer);
+    canvas.addEventListener('touchmove', movePlayer, {passive: false});
+
+    // Check Collision
+    function checkCollision() {
+        // 简单的矩形/圆形碰撞检测近似
+        if (apple.y + apple.r >= player.y &&
+            apple.x >= player.x &&
+            apple.x <= player.x + player.w) {
+            return true;
+        }
+        return false;
+    }
+
+    // Main Loop
+    function gameLoop() {
+        // 1. Clear Canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 2. Logic Check (The "Brain")
+        isTouching = checkCollision();
+
+        // 可视化代码高亮逻辑
+        lineCheck.classList.add('active-check'); // 永远在检查
+        
+        if (isTouching) {
+            // IF True Branch
+            score++;
+            scoreEl.innerText = score;
+            
+            // 重置苹果
+            apple.y = 0;
+            apple.x = Math.random() * (canvas.width - 20) + 10;
+            apple.speed = Math.min(apple.speed + 0.2, 8); // 增加难度
+            
+            // 代码高亮
+            lineTrue.classList.add('active-true');
+            lineElseHead.classList.remove('active-else');
+            lineElseBody.classList.remove('active-else');
+            
+            debugEl.innerHTML = `Touching: <span style="color:var(--success)">TRUE</span>`;
+            
+        } else {
+            // ELSE Branch
+            apple.y += apple.speed;
+            if (apple.y > canvas.height) {
+                apple.y = 0;
+                apple.x = Math.random() * (canvas.width - 20) + 10;
+                // Missed apple logic could go here
+            }
+
+            // 代码高亮
+            lineTrue.classList.remove('active-true');
+            lineElseHead.classList.add('active-else');
+            lineElseBody.classList.add('active-else');
+            
+            debugEl.innerHTML = `Touching: <span style="color:var(--danger)">FALSE</span>`;
+        }
+
+        // Remove active-check briefly to create blinking effect or just keep it steady? 
+        // Keeping it steady is better for readability, let's pulse the True/Else.
+
+        // 3. Draw Elements
+        // Player
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+        
+        // Apple
+        ctx.beginPath();
+        ctx.arc(apple.x, apple.y, apple.r, 0, Math.PI*2);
+        ctx.fillStyle = apple.color;
+        ctx.fill();
+        ctx.closePath();
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Start
+    gameLoop();
+
+</script>
+
+</body>
+</html>

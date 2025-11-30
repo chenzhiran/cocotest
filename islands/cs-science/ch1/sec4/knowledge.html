@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第4课：重复的力量 - 循环 | CS Explorer</title>
+    <style>
+        /* --- 1. 全局变量与重置 --- */
+        :root {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --primary: #f1c40f; /* 工业黄 */
+            --accent: #3498db;  /* 科技蓝 */
+            --danger: #e74c3c;  /* 警告红 */
+            --text-main: #ecf0f1;
+            --text-muted: #bdc3c7;
+            --shadow: 0 8px 30px rgba(0,0,0,0.5);
+            --code-bg: #1e1e1e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(241, 196, 15, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(52, 152, 219, 0.05) 0%, transparent 20%);
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        /* --- 2. 通用组件 --- */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        /* 装饰性条纹 */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 6px; height: 100%;
+            background: var(--primary);
+        }
+
+        h1, h2, h3 { color: var(--primary); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        h1 { font-size: 2.2rem; text-align: center; text-shadow: 0 0 10px rgba(241, 196, 15, 0.3); }
+        h2 { border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        
+        .bilingual {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            font-weight: normal;
+            background: rgba(255,255,255,0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+            vertical-align: middle;
+            text-transform: none;
+        }
+
+        .highlight { color: var(--primary); font-weight: bold; }
+        .tag { display: inline-block; background: var(--accent); color: white; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; margin-right: 5px; }
+
+        /* --- 3. 头部与锚点 --- */
+        .hook-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .phone-mockup {
+            width: 150px; height: 250px;
+            background: #000;
+            border: 4px solid #444;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .msg-bubble {
+            background: var(--accent);
+            padding: 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin: 5px;
+            opacity: 0;
+            animation: popUp 2s infinite;
+        }
+        @keyframes popUp {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        /* 不同的延迟模拟循环发送 */
+        .msg-bubble:nth-child(1) { animation-delay: 0s; }
+        .msg-bubble:nth-child(2) { animation-delay: 0.5s; }
+        .msg-bubble:nth-child(3) { animation-delay: 1s; }
+
+        /* --- 4. 奶茶流水线 (Repeat 概念) --- */
+        .factory-line {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            height: 120px;
+            background: #222;
+            border-radius: 10px;
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 4px solid #555;
+        }
+
+        .conveyor-belt {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 10px;
+            background: repeating-linear-gradient(90deg, #333 0, #333 20px, #555 20px, #555 40px);
+            animation: beltMove 1s linear infinite;
+        }
+        @keyframes beltMove { from { background-position: 0 0; } to { background-position: 40px 0; } }
+
+        .tea-cup {
+            font-size: 3rem;
+            position: absolute;
+            left: -50px;
+            bottom: 15px;
+            /* 默认暂停 */
+            animation: none; 
+        }
+
+        /* 定义流水线动画类 */
+        .anim-tea-move { animation: moveRight 3s linear infinite; }
+        @keyframes moveRight { 
+            0% { left: -50px; opacity: 0; transform: scale(0.8); } 
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: 100%; opacity: 0; transform: scale(1); }
+        }
+
+        .step-labels { display: flex; justify-content: space-between; padding: 0 50px; margin-top: 5px; font-size: 0.8rem; color: #777; }
+
+        /* --- 5. 游戏生成器实验室 (Interactive Main) --- */
+        .lab-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .game-screen {
+            background: #000;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            background-image: 
+                linear-gradient(rgba(0, 255, 0, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 0, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .enemy {
+            width: 30px; height: 30px;
+            background: var(--danger);
+            position: absolute;
+            top: -30px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 0 10px var(--danger);
+            animation: fallDown 3s linear forwards;
+        }
+        @keyframes fallDown { to { top: 320px; transform: rotate(360deg); } }
+
+        .control-panel {
+            background: var(--code-bg);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .code-block {
+            color: #d4d4d4;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .code-line { padding: 4px; border-radius: 4px; transition: background 0.2s; }
+        .code-keyword { color: #c586c0; font-weight: bold; } /* pink */
+        .code-func { color: #dcdcaa; } /* yellow */
+        .code-num { color: #b5cea8; } /* green */
+        
+        .active-line { background: rgba(241, 196, 15, 0.2); border-left: 3px solid var(--primary); }
+
+        .btn-group { display: flex; gap: 10px; }
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+        .btn-repeat { background: var(--accent); color: white; }
+        .btn-repeat:hover { background: #2980b9; box-shadow: 0 0 15px var(--accent); }
+        
+        .btn-forever { background: var(--danger); color: white; }
+        .btn-forever:hover { background: #c0392b; box-shadow: 0 0 15px var(--danger); }
+        
+        .btn-stop { background: #555; color: white; }
+
+        /* --- 6. 永远的循环 (Heartbeat) --- */
+        .heart-box {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(231, 76, 60, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .heart {
+            font-size: 2rem;
+            color: var(--danger);
+            animation: heartbeat 1s infinite;
+        }
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            15% { transform: scale(1.3); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.15); }
+            60% { transform: scale(1); }
+        }
+
+        /* --- 7. 总结部分 --- */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .pitfall-card {
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--danger);
+            padding: 15px;
+        }
+        .exam-card {
+            background: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .lab-container { grid-template-columns: 1fr; }
+            .hook-box { flex-direction: column; text-align: center; gap: 15px; }
+            .step-labels { display: none; } /* 手机上隐藏标签以防拥挤 */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <header class="card" style="text-align: center; border-top: 5px solid var(--primary);">
+        <h1>重复的力量 - 循环 <br><span style="font-size:0.5em; color:var(--text-muted)">The Power of Repetition: Loops</span></h1>
+        
+        <div class="hook-box">
+            <div style="flex: 1;">
+                <h3 style="color:var(--text-main)">❓ 思考一下</h3>
+                <p>如果要给全班 100 个同学发同样的生日祝福，你会怎么做？</p>
+                <p style="margin-top: 10px; font-size: 0.9em; color: var(--primary);">
+                    A. 手动复制粘贴 100 次 (累死 😫)<br>
+                    B. 写 1 行代码，让计算机跑 100 次 (躺平 😎)
+                </p>
+            </div>
+            <div class="phone-mockup">
+                <div style="color:white; font-size:0.8rem; margin-top:10px;">Message App</div>
+                <div class="msg-bubble">Happy Birthday! 🎂</div>
+                <div class="msg-bubble">Happy Birthday! 🎂</div>
+                <div class="msg-bubble">Happy Birthday! 🎂</div>
+                <div style="position: absolute; bottom: 10px; font-size: 0.6rem; color:#888;">Sending 97 more...</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Concept 1: The Factory Line (Repeat) -->
+    <section class="card">
+        <h2>1. 流水线工厂 <span class="bilingual">Loop as an Assembly Line</span></h2>
+        <p>循环就像工厂流水线。你不需要对每杯奶茶下达指令，你只需要说：<strong>“重复制作过程，做 N 次”</strong>。</p>
+        
+        <div class="factory-line">
+            <!-- 背景传送带 -->
+            <div class="conveyor-belt"></div>
+            
+            <!-- 奶茶元素，通过JS控制数量/动画 -->
+            <div class="tea-cup anim-tea-move" style="animation-delay: 0s;">🧋</div>
+            <div class="tea-cup anim-tea-move" style="animation-delay: 1s;">🧋</div>
+            <div class="tea-cup anim-tea-move" style="animation-delay: 2s;">🧋</div>
+        </div>
+        <div class="step-labels">
+            <span>Start</span>
+            <span>Add Pearls</span>
+            <span>Add Tea</span>
+            <span>Seal Cup</span>
+            <span>Done (Repeat)</span>
+        </div>
+
+        <div style="margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px;">
+            <span class="tag">REPEAT</span> <span class="highlight">次数是已知的 (Fixed Count)</span>。比如做100杯奶茶，发100条短信。
+        </div>
+    </section>
+
+    <!-- Concept 2: The Loop Lab (Interactive) -->
+    <section class="card">
+        <h2>2. 游戏生成器实验室 <span class="bilingual">Loop Lab: Spawning Enemies</span></h2>
+        <p>如果你在做游戏，需要不断生成敌人。我们来对比一下两种循环模式：</p>
+        
+        <div class="lab-container">
+            <!-- 左侧：游戏画面 -->
+            <div class="game-screen" id="gameScreen">
+                <div style="position: absolute; bottom: 10px; left: 10px; color: #555; font-size: 0.8rem;">Game World (Canvas)</div>
+            </div>
+
+            <!-- 右侧：控制台与代码 -->
+            <div class="control-panel">
+                <div class="code-block" id="codeDisplay">
+                    <div style="color: #666">// 选择一个模式运行代码...</div>
+                    <div class="code-line" id="line-header">LOOP_TYPE:</div>
+                    <div class="code-line" id="line-body" style="padding-left: 20px;">
+                        create_enemy()<br>
+                        wait(0.5s)
+                    </div>
+                    <div class="code-line" id="line-end">END_LOOP</div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-repeat" onclick="runRepeat()">🔁 Repeat 5</button>
+                    <button class="btn btn-forever" onclick="runForever()">♾️ Forever</button>
+                    <button class="btn btn-stop" onclick="stopLoop()">🛑 Stop</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Concept 3: Forever Loop -->
+    <section class="card">
+        <h2>3. 停不下来的 Forever <span class="bilingual">Infinite Loop</span></h2>
+        
+        <div class="heart-box">
+            <div class="heart">❤️</div>
+            <div>
+                <h3>Forever 循环</h3>
+                <p>就像你的<strong>心跳</strong>、<strong>呼吸</strong>，或者游戏的<strong>背景音乐</strong>。</p>
+                <p>它没有具体的次数，只要程序活着，它就一直跑。</p>
+                <code style="display:block; margin-top:5px; background:#222; padding:5px; color:#ccc;">
+                    <span style="color:var(--danger)">FOREVER</span>: <br>&nbsp;&nbsp;beat_heart()<br>&nbsp;&nbsp;wait(1s)
+                </code>
+            </div>
+        </div>
+    </section>
+
+    <!-- Concept 4: Summary -->
+    <section class="card">
+        <h2>4. 避坑指南与备考 <span class="bilingual">Summary & Exam Nuggets</span></h2>
+        
+        <div class="summary-grid">
+            <div class="pitfall-card">
+                <h3>🚫 常见误区 (Pitfalls)</h3>
+                <ul style="padding-left: 20px; font-size: 0.9rem;">
+                    <li><strong>Repeat vs Forever:</strong> Repeat 是“我知道要做几次”；Forever 是“我不喊停就别停”。</li>
+                    <li><strong>无限死循环:</strong> 如果你写了一个 <code>while</code> 循环但忘了更新条件，程序会卡死（就像复读机）。</li>
+                </ul>
+            </div>
+            
+            <div class="exam-card">
+                <h3>🎓 备考金句 (Exam Tips)</h3>
+                <ul style="padding-left: 20px; font-size: 0.9rem;">
+                    <li><strong>Trace (跟踪):</strong> 考试遇到循环代码，拿笔在纸上画表格，一圈一圈记录变量的变化。</li>
+                    <li><strong>Automation (自动化):</strong> 循环的核心目的是减少重复代码 (Reduce Repetition)。</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <footer style="text-align: center; color: var(--text-muted); margin-top: 50px; font-size: 0.9rem;">
+        <p>CS Explorer - Designed for Future Coders 🚀</p>
+    </footer>
+
+</div>
+
+<!-- JavaScript Logic -->
+<script>
+    // 游戏生成器逻辑
+    const gameScreen = document.getElementById('gameScreen');
+    const lineHeader = document.getElementById('line-header');
+    const lineBody = document.getElementById('line-body');
+    const lineEnd = document.getElementById('line-end');
+    
+    let loopInterval = null;
+    let loopCount = 0;
+    let isRunning = false;
+
+    // 生成敌人的函数
+    function spawnEnemy() {
+        const enemy = document.createElement('div');
+        enemy.classList.add('enemy');
+        enemy.innerText = "👾";
+        
+        // 随机位置
+        const randomX = Math.floor(Math.random() * (gameScreen.clientWidth - 30));
+        enemy.style.left = randomX + 'px';
+        
+        gameScreen.appendChild(enemy);
+
+        // 动画结束后移除DOM，防止内存泄漏
+        setTimeout(() => {
+            if(enemy.parentElement) enemy.parentElement.removeChild(enemy);
+        }, 3000);
+    }
+
+    // 高亮代码行逻辑
+    function highlightCode(type) {
+        lineHeader.innerHTML = type === 'repeat' ? 
+            '<span class="code-keyword">REPEAT</span> <span class="code-num">5</span> times:' : 
+            '<span class="code-keyword">FOREVER</span>:';
+        
+        // 简单的闪烁效果模拟执行
+        lineBody.classList.add('active-line');
+        setTimeout(() => lineBody.classList.remove('active-line'), 300);
+    }
+
+    // 运行 Repeat 循环 (5次)
+    function runRepeat() {
+        if(isRunning) return;
+        isRunning = true;
+        loopCount = 0;
+        
+        // 立即生成第一个
+        spawnEnemy();
+        highlightCode('repeat');
+
+        // 使用 setInterval 模拟循环间隔
+        loopInterval = setInterval(() => {
+            loopCount++;
+            if (loopCount >= 5) {
+                stopLoop(); // 达到次数自动停止
+                return;
+            }
+            spawnEnemy();
+            highlightCode('repeat');
+        }, 800);
+    }
+
+    // 运行 Forever 循环
+    function runForever() {
+        if(isRunning) return;
+        isRunning = true;
+
+        spawnEnemy();
+        highlightCode('forever');
+
+        loopInterval = setInterval(() => {
+            spawnEnemy();
+            highlightCode('forever');
+        }, 600); // 稍微快一点
+    }
+
+    // 停止循环
+    function stopLoop() {
+        clearInterval(loopInterval);
+        loopInterval = null;
+        isRunning = false;
+        
+        // 重置代码显示
+        lineHeader.innerHTML = 'LOOP_STOPPED';
+        lineBody.classList.remove('active-line');
+        
+        // 可选：清除屏幕上的所有敌人
+        // gameScreen.innerHTML = '<div style="position: absolute; bottom: 10px; left: 10px; color: #555; font-size: 0.8rem;">Game World (Canvas)</div>';
+    }
+
+</script>
+
+</body>
+</html>
