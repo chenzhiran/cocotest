@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>花儿实验班 - 岛屿地图</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Zcool+KuaiLe&display=swap" rel="stylesheet">
+    <style>
+        /* --- 配色方案 --- */
+        :root {
+            --bg-sky: #87CEEB;
+            --card-white: #FFFFFF;
+            --text-main: #5D4037;
+            
+            /* 各个岛屿的主题色 */
+            --col-py-world: #FFB74D;  /* 橙色 */
+            --col-cpp-world: #4DB6AC; /* 青色 */
+            --col-arena: #FF7043;     /* 深橙红 */
+            --col-cs: #7E57C2;        /* 紫色 */
+            --col-oj-basic: #9CCC65;  /* 草绿 */
+            --col-oj-algo: #42A5F5;   /* 深蓝 */
+            --col-exam: #EC407A;      /* 粉色 */
+            --col-csp: #26C6DA;       /* 青蓝 */
+
+            --btn-back-bg: #FFFFFF;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+        body {
+            font-family: 'Zcool KuaiLe', 'Fredoka One', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-sky);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.2) 5%, transparent 5%),
+                radial-gradient(circle at 90% 80%, rgba(255,255,255,0.2) 8%, transparent 8%);
+            min-height: 100vh;
+            /* 允许页面滚动 */
+            overflow-y: auto; 
+            overflow-x: hidden;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        /* --- 装饰性背景云 (固定不随滚动移动) --- */
+        .cloud-bg {
+            position: fixed;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50px;
+            z-index: -1;
+            animation: drift 60s linear infinite;
+        }
+        .c1 { width: 200px; height: 100px; top: 5%; left: 5%; }
+        .c2 { width: 150px; height: 80px; bottom: 10%; right: 5%; animation-direction: reverse; }
+
+        @keyframes drift { 0% { transform: translateX(0); } 50% { transform: translateX(50px); } 100% { transform: translateX(0); } }
+
+        /* --- 顶部导航区 --- */
+        .nav-header {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 20;
+        }
+
+        .back-btn {
+            background: #FFF;
+            border: 3px solid #FFD54F;
+            padding: 10px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            color: var(--text-main);
+            font-weight: bold;
+            font-family: inherit;
+            font-size: 1.1rem;
+            box-shadow: 0 5px 0 #FFA000;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+        }
+        .back-btn:hover { transform: translateY(-3px); }
+        .back-btn:active { transform: translateY(2px); box-shadow: none; }
+
+        /* --- 核心网格布局 --- */
+        .island-grid {
+            display: grid;
+            /* 大屏一行4个，自适应宽度，最小240px */
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+            /* 入场动画 */
+            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background: var(--card-white);
+            border-radius: 35px;
+            height: 240px; /* 统一高度 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-main);
+            position: relative;
+            border: 5px solid #FFF;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        /* 图标 */
+        .icon {
+            font-size: 5rem;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1));
+            transition: transform 0.3s;
+        }
+        .card:hover .icon { transform: scale(1.1) rotate(5deg); }
+
+        /* 标题 */
+        .title {
+            font-size: 1.3rem;
+            text-align: center;
+            line-height: 1.4;
+            padding: 0 15px;
+            font-weight: bold;
+        }
+
+        /* 底部彩色条条装饰 */
+        .card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 12px;
+        }
+
+        /* --- 各个岛屿的定制颜色 --- */
+        
+        /* 1. 扣哒世界 Python */
+        .card-py .icon { text-shadow: 0 0 30px var(--col-py-world); }
+        .card-py::after { background: var(--col-py-world); }
+
+        /* 2. 扣哒世界 C++ */
+        .card-cpp .icon { text-shadow: 0 0 30px var(--col-cpp-world); }
+        .card-cpp::after { background: var(--col-cpp-world); }
+
+        /* 3. 竞技场 */
+        .card-arena .icon { text-shadow: 0 0 30px var(--col-arena); }
+        .card-arena::after { background: var(--col-arena); }
+
+        /* 4. 计算机科学 */
+        .card-cs .icon { text-shadow: 0 0 30px var(--col-cs); }
+        .card-cs::after { background: var(--col-cs); }
+
+        /* 5. 信奥基础 */
+        .card-basic .icon { text-shadow: 0 0 30px var(--col-oj-basic); }
+        .card-basic::after { background: var(--col-oj-basic); }
+
+        /* 6. 信奥算法 */
+        .card-algo .icon { text-shadow: 0 0 30px var(--col-oj-algo); }
+        .card-algo::after { background: var(--col-oj-algo); }
+
+        /* 7. 考级真题 */
+        .card-exam .icon { text-shadow: 0 0 30px var(--col-exam); }
+        .card-exam::after { background: var(--col-exam); }
+
+        /* 8. CSP 真题 */
+        .card-csp .icon { text-shadow: 0 0 30px var(--col-csp); }
+        .card-csp::after { background: var(--col-csp); }
+
+
+        /* 响应式调整 */
+        @media (max-width: 600px) {
+            .island-grid {
+                grid-template-columns: repeat(2, 1fr); /* 手机两列 */
+                gap: 15px;
+            }
+            .card { height: 180px; border-radius: 25px; }
+            .icon { font-size: 3.5rem; margin-bottom: 8px; }
+            .title { font-size: 1rem; }
+            .back-btn { padding: 8px 15px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cloud-bg c1"></div>
+    <div class="cloud-bg c2"></div>
+
+    <div class="nav-header">
+        <button class="back-btn" onclick="window.location.href='index.html'">↩ 返回首页</button>
+    </div>
+
+    <div class="island-grid">
+        
+        <a href="islands/world-python/index.html" class="card card-py">
+            <div class="icon">🐍</div>
+            <div class="title">扣哒世界<br>Python 冒险</div>
+        </a>
+
+        <a href="islands/world-cpp/index.html" class="card card-cpp">
+            <div class="icon">⚙️</div>
+            <div class="title">扣哒世界<br>C++ 工坊</div>
+        </a>
+
+        <a href="islands/arena/index.html" class="card card-arena">
+            <div class="icon">🏆</div>
+            <div class="title">扣哒世界<br>竞技场</div>
+        </a>
+
+        <a href="islands/cs-science/index.html" class="card card-cs">
+            <div class="icon">💻</div>
+            <div class="title">计算机科学<br>原理探索</div>
+        </a>
+
+        <a href="islands/oj-basic/index.html" class="card card-basic">
+            <div class="icon">🌱</div>
+            <div class="title">扣哒信奥<br>基础篇</div>
+        </a>
+
+        <a href="islands/oj-algo/index.html" class="card card-algo">
+            <div class="icon">🧠</div>
+            <div class="title">扣哒信奥<br>算法篇</div>
+        </a>
+
+        <a href="islands/grade-exam/index.html" class="card card-exam">
+            <div class="icon">📜</div>
+            <div class="title">编程考级<br>历年真题</div>
+        </a>
+
+        <a href="islands/csp-real/index.html" class="card card-csp">
+            <div class="icon">🏅</div>
+            <div class="title">CSP-J/S<br>初赛真题</div>
+        </a>
+
+    </div>
+
+</body>
+</html>
