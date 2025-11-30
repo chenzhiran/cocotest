@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：逻辑运算符OR</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-or: #ff79c6; /* OR 强调色 */
+            --accent-logic: #8be9fd; /* 逻辑蓝 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, return, not */
+            --code-func: #8be9fd;    /* findNearestEnemy, moveXY */
+            --code-string: #f1fa8c;  /* "gem" */
+            --code-num: #bd93f9;     /* 4 */
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* type, pos */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(255, 121, 198, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 121, 198, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-or);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-logic);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(255, 121, 198, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-logic); }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-logic);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-or { color: var(--accent-or); font-weight: bold; }
+        .op-not { color: var(--accent-not-equal); font-weight: bold; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-code-compare text-pink-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-pink-400">逻辑与或</span></h1>
+                    <p class="text-xs text-gray-500">逻辑运算符 OR 系列（32-37关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><span class="op-or">or</span> <i class="fa-solid fa-plus text-pink-500 mr-1"></i>Loose Condition</span>
+                <span><i class="fa-solid fa-question-circle text-cyan-500 mr-1"></i>Boolean Test</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 32: 宝石或者死亡 (条件表达式调试) -->
+        <section id="level-32" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 32 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">宝石或者死亡 (Gem or Death)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-bug mr-2"></i>战术思路分析：调试逻辑</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄被困在一个房间里，周围是地雷和宝石。**地雷**的 `if` 语句必须是 **False**，而**宝石**的 `if` 语句必须是 **True**。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">布尔值的控制艺术</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们通过修改条件表达式，来控制 `if` 语句的结果是 `True` 还是 `False`：
+                                    <br>
+                                    - 想要 `True`：`2 + 2 == 4`
+                                    <br>
+                                    - 想要 `False`：`2 + 2 == 5` 或使用 `!=` 或 `not`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-toggle-on text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="text-red-400">False</span>: <span class="var">Avoid Mine</span> <br>
+                            IF <span class="text-green-400">True</span>: <span class="var">Go Gem</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">if </span><span class="num">1</span> <span class="op">+</span> <span class="num">1</span> <span class="op">+</span> <span class="num">1</span> <span class="op">==</span> <span class="num">4</span>: <span class="comment"># ∆ 将其设为 false。</span></div><div class="code-annotation">修正：1+1+1==4 (False) 避免地雷</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">5</span>, <span class="num">15</span>)</div><div class="code-annotation">不执行</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="kwd">if </span><span class="num">2</span> <span class="op">+</span> <span class="num">2</span> <span class="op">==</span> <span class="num">4</span>: <span class="comment"># ∆ 将其设为 true。</span></div><div class="code-annotation">修正：2+2==4 (True) 移动到宝石 1</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">15</span>, <span class="num">40</span>)</div><div class="code-annotation">执行</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><span class="kwd">if </span><span class="num">2</span> <span class="op">+</span> <span class="num">2</span> <span class="op-not">!=</span> <span class="num">5</span>: <span class="comment"># ∆ 将其设为 true。</span></div><div class="code-annotation">修正：2+2!=5 (True) 移动到宝石 2</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">25</span>, <span class="num">15</span>)</div><div class="code-annotation">执行</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="kwd">if </span><span class="num">2</span> <span class="op">+</span> <span class="num">2</span> <span class="op"><</span> <span class="num">5</span>: <span class="comment"># ∆ 将其设为 true。</span></div><div class="code-annotation">修正：4<5 (True) 攻击敌人</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">执行</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">执行</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="kwd">if </span><span class="num">2</span> <span class="op"><</span> <span class="num">1</span>: <span class="comment"># ∆ 将其设为 false。</span></div><div class="code-annotation">修正：2<1 (False) 避免地雷</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">40</span>, <span class="num">55</span>)</div><div class="code-annotation">不执行</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"><span class="kwd">if </span><span class="kwd">not </span><span class="kwd">True</span>: <span class="comment"># ∆ 将其设为 false。</span></div><div class="code-annotation">修正：not True (False) 避免地雷</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">50</span>, <span class="num">10</span>)</div><div class="code-annotation">不执行</div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content"><span class="kwd">if </span><span class="kwd">not </span><span class="kwd">False</span>: <span class="comment"># ∆ 将其设为 true。</span></div><div class="code-annotation">修正：not False (True) 移动到宝石 3</div></div>
+                        <div class="code-row"><div class="line-num">21</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">55</span>, <span class="num">25</span>)</div><div class="code-annotation">执行</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 33: Burl和布尔 (布尔值识别) -->
+        <section id="level-33" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 33 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Burl和布尔 (Burl and Booleans)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-question-circle mr-2"></i>战术思路分析：回答问题</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                友善的 Burl 巫师在考你关于**布尔值**的知识。你需要准确判断比较运算符（`==`）的结果是 `True` 还是 `False`。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">注意类型匹配</h4>
+                                <p class="text-xs text-gray-400">
+                                    - 数字 (`3`) 只能和数字比较。
+                                    <br>
+                                    - 字符串 (`"Three"`) 只能和字符串比较。
+                                    <br>
+                                    例如：`"Three" == 3` 结果是 `False`，因为类型不同。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-code-compare text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            3 <span class="op">==</span> "3" <span class="op-not">!=</span> <span class="kwd">True</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 问题: 2 == 3 </span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="kwd">False</span>)</div><div class="code-annotation">答案是 False</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="comment"># 问题: 3 == 3</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="kwd">True</span>)</div><div class="code-annotation">答案是 True</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><span class="comment"># 问题: "Three" == 3</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="kwd">False</span>)</div><div class="code-annotation">答案是 False (字符串 != 数字)</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="comment"># 问题: "Three" == "Three"</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="kwd">True</span>)</div><div class="code-annotation">答案是 True</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="comment"># 问题: 1 + 2 == 3</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="kwd">True</span>)</div><div class="code-annotation">答案是 True</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 34: 盐碱地 (逻辑或 OR) -->
+        <section id="level-34" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 34 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">盐碱地 (Salted Lands)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-plus-circle mr-2"></i>战术思路分析：多选一</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                我们必须攻击两种敌人：矮人 (`"munchkin"`) 或投矛手 (`"thrower"`)。我们必须收集两种物品：宝石 (`"gem"`) 或硬币 (`"coin"`)。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">逻辑 OR (`or`)</h4>
+                                <p class="text-xs text-gray-400">
+                                    `A or B` 的结果是：
+                                    <br>
+                                    - 只要 A 或 B 中**至少有一个是 True**，结果就是 `True`。
+                                    <br>
+                                    - 只有当 A 和 B **都是 False** 时，结果才是 `False`。
+                                    <br>
+                                    这让我们可以在一个 `if` 语句中处理多种目标。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-sitemap text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF (A <span class="op-or">or</span> B): Action
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"munchkin"</span> <span class="op-or">or </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"thrower"</span>:</div><div class="code-annotation">如果敌人是矮人 **或** 投矛手</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击敌人</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="comment"># 如果物品的类型是"gem"或"coin"：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"coin"</span> <span class="op-or">or </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"gem"</span>:</div><div class="code-annotation">如果物品是硬币 **或** 宝石</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动去收集</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 35: 流星雨 (OR 距离/类型) -->
+        <section id="level-35" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 35 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">流星雨 (Meteor Shower)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-meteor mr-2"></i>战术思路分析：宝物急救</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                流星雨下的硬币很快会消失（需要近距离抢）。但宝石不会消失（可以慢慢捡）。
+                                <br>
+                                决策逻辑是：**如果它是宝石 (永远可以捡) 或 距离近 (硬币快消失了)**，就去捡。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">OR 连接不同类型条件</h4>
+                                <p class="text-xs text-gray-400">
+                                    硬币是**距离**条件，宝石是**类型**条件。OR 可以将这两个完全不同的判断连接起来：
+                                    <br>
+                                    `if item.type == "gem" or distance < 20:`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-hands-clapping text-6xl text-yellow-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            (Is Gem?) <span class="op-or">or</span> (Is Close?)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">distance</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">item</span>)</div><div class="code-annotation">计算到物品的距离</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="comment"># 如果物品的类型是"gem"</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="comment"># 或到物品的距离小于20米：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"gem"</span> <span class="op-or">or </span><span class="var">distance</span> <span class="op"><</span> <span class="num">20</span>:</div><div class="code-annotation">如果物品是宝石 **或** 距离小于 20</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="comment"># 移动到物品的位置。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 36: 森林影子 (双重 OR) -->
+        <section id="level-36" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 36 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">森林影子 (Forest Shadow)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-eye-low-vision mr-2"></i>战术思路分析：多目标搜寻</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                大食人魔看不见你，所以你只需要对付小食人魔（矮人/投矛手）和收集宝物（宝石/硬币）。
+                                <br>
+                                我们需要两次使用 `or`：一次用于敌人，一次用于物品。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">两次 OR 的应用</h4>
+                                <p class="text-xs text-gray-400">
+                                    - **攻击条件：** `enemy.type == "thrower" or enemy.type == "munchkin"`
+                                    <br>
+                                    - **收集条件：** `item.type == "gem" or item.type == "coin"`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-sitemap text-6xl text-purple-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            (Munchkin <span class="op-or">or</span> Thrower) <br>
+                            AND <br>
+                            (Gem <span class="op-or">or</span> Coin)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 只有当类型是"thrower"或"munchkin"时才攻击。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"thrower"</span> <span class="op-or">or </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"munchkin"</span>:</div><div class="code-annotation">攻击小食人魔或投矛手</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="comment"># 只有当类型是"gem"或"coin"时才收集。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"gem"</span> <span class="op-or">or </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"coin"</span>:</div><div class="code-annotation">收集宝石或硬币</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 37: 概念挑战. 守护者 (简单 OR) -->
+        <section id="level-37" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 37 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 守护者 (The Guardian)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-code-branch mr-2"></i>战术思路分析：纯 OR 过滤</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄必须攻击两种类型的敌人：矮人 (`"munchkin"`) 和投掷者 (`"thrower"`)。这是一个直接使用 `or` 运算符来过滤目标的练习。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">最简洁的 OR 语句</h4>
+                                <p class="text-xs text-gray-400">
+                                    将两个 `==` 语句用 `or` 连接起来，是 Python 中处理多条件满足的常用方法。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-sitemap text-6xl text-purple-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF (Munchkin <span class="op-or">or</span> Thrower): Attack()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"munchkin"</span> <span class="op-or">or </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"thrower"</span>:</div><div class="code-annotation">如果敌人是矮人 **或** 投掷者</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">发起攻击</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. OR Logic Mastery.</p>
+    </footer>
+
+</body>
+</html>

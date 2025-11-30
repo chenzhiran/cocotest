@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第32-37关 逻辑运算符 or</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-circuit: #2c3e50;     /* 电路蓝黑 */
+            --panel-bg: #ecf0f1;       /* 面板白 */
+            --wire-color: #7f8c8d;     /* 导线灰 */
+            --active-color: #f1c40f;   /* 通电黄 */
+            --primary: #e67e22;        /* 逻辑橙 */
+            --secondary: #3498db;      /* 逻辑蓝 */
+            --accent: #9b59b6;         /* 强调紫 */
+            --text-main: #2c3e50;
+            
+            /* 代码高亮 */
+            --code-bg: #2c3e50;
+            --code-fg: #ecf0f1;
+            --tok-kw: #e67e22;         /* 关键字 or/and */
+            --tok-func: #3498db;       /* 函数 */
+            --tok-str: #2ecc71;        /* 字符串 */
+            --tok-obj: #f1c40f;        /* 对象 */
+            --tok-cm: #95a5a6;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
+            background-color: var(--bg-circuit);
+            /* 电路板背景 */
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            color: var(--text-main);
+        }
+
+        /* 脉冲信号动画 */
+        .signal {
+            position: absolute;
+            width: 10px; height: 10px; background: var(--active-color);
+            border-radius: 50%; box-shadow: 0 0 10px var(--active-color);
+            animation: travel 4s infinite linear;
+        }
+        @keyframes travel {
+            0% { left: 0; top: 10%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: 100%; top: 10%; opacity: 0; }
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 70px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 开关按钮 (外部) --- */
+        .nav-btn {
+            width: 80px;
+            height: 120px;
+            background: #34495e;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 拨动开关 */
+        .switch-lever {
+            width: 20px; height: 60px; background: #95a5a6;
+            border-radius: 5px; position: relative;
+            transition: all 0.3s; box-shadow: inset 2px 2px 5px rgba(255,255,255,0.3), 2px 5px 10px rgba(0,0,0,0.3);
+        }
+        .switch-base {
+            position: absolute; bottom: 10px; width: 40px; height: 40px;
+            background: #2c3e50; border-radius: 50%; border: 2px solid #7f8c8d;
+        }
+
+        .nav-btn:hover .switch-lever { background: #bdc3c7; }
+        .nav-btn:active { transform: scale(0.95); }
+        
+        /* 左按钮状态 */
+        .btn-prev .switch-lever { transform: rotate(-20deg); background: var(--primary); }
+        .btn-prev:active .switch-lever { transform: rotate(-30deg); }
+        
+        /* 右按钮状态 */
+        .btn-next .switch-lever { transform: rotate(20deg); background: var(--secondary); }
+        .btn-next:active .switch-lever { transform: rotate(30deg); }
+
+        .disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 逻辑控制台容器 --- */
+        .console-container {
+            width: 960px;
+            height: 620px;
+            background: var(--panel-bg);
+            border-radius: 20px;
+            /* 金属边框 */
+            border: 15px solid #7f8c8d;
+            box-shadow: 
+                inset 0 0 50px rgba(0,0,0,0.1),
+                0 0 0 5px #2c3e50,
+                0 30px 60px rgba(0,0,0,0.6);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部信息栏 */
+        .info-bar {
+            height: 60px;
+            background: #34495e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            color: var(--active-color);
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 20px;
+            border-bottom: 5px solid #2c3e50;
+            z-index: 15;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+        .map-tag {
+            background: var(--primary); color: #fff; padding: 4px 12px; border-radius: 5px; font-size: 16px;
+        }
+        .status-light {
+            width: 15px; height: 15px; background: var(--active-color); border-radius: 50%;
+            box-shadow: 0 0 10px var(--active-color); animation: blink 2s infinite;
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px 70px;
+            flex-direction: column;
+            animation: screenOn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow-y: auto;
+            background-color: #ecf0f1;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes screenOn { 
+            0% { opacity: 0; transform: scale(0.95); filter: brightness(0.5); } 
+            100% { opacity: 1; transform: scale(1); filter: brightness(1); } 
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #bdc3c7;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1)); }
+        h1 { margin: 0; color: var(--text-main); font-size: 34px; letter-spacing: 1px; font-weight: 800; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 19px; line-height: 1.6; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.9; 
+            background: #fff;
+            border: 2px solid #bdc3c7; 
+            border-radius: 10px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 18px;
+            margin-top: 15px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .kw { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .s { color: var(--tok-str); } 
+        .o { color: var(--tok-obj); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #fdf2e9;
+            border-left: 5px solid var(--primary);
+            color: #d35400;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 8px 8px 0;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 并联电路演示 (OR) */
+        .circuit-box {
+            width: 100%; height: 100%; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #2c3e50;
+        }
+        .wire {
+            background: #95a5a6; position: absolute; transition: background 0.3s;
+        }
+        .wire.hot { background: var(--active-color); box-shadow: 0 0 10px var(--active-color); }
+        
+        /* 灯泡 */
+        .bulb {
+            width: 60px; height: 60px; background: #555; border-radius: 50%;
+            position: absolute; right: 50px; top: 50%; transform: translateY(-50%);
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.5); transition: all 0.3s;
+            display: flex; justify-content: center; align-items: center; font-size: 30px; color: rgba(0,0,0,0.2);
+        }
+        .bulb.on { background: var(--active-color); box-shadow: 0 0 40px var(--active-color); color: #fff; text-shadow: 0 0 5px #fff; }
+
+        /* 开关 */
+        .switch-unit {
+            width: 80px; height: 40px; background: #34495e; border-radius: 5px;
+            position: absolute; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; border: 2px solid #7f8c8d;
+        }
+        .switch-unit.closed { background: var(--secondary); border-color: var(--secondary); }
+        
+        .sw-1 { left: 100px; top: 30%; }
+        .sw-2 { left: 100px; bottom: 30%; }
+
+        /* 双胞胎对比 */
+        .brother-box {
+            display: flex; gap: 20px; align-items: stretch; height: 80%; width: 90%;
+        }
+        .brother {
+            flex: 1; border-radius: 10px; padding: 15px; color: white; display: flex; flex-direction: column; align-items: center;
+            position: relative; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .bro-or { background: var(--primary); }
+        .bro-and { background: var(--secondary); }
+        .bro-icon { font-size: 50px; margin-bottom: 10px; }
+        .path-visual {
+            width: 100%; flex: 1; background: rgba(0,0,0,0.2); border-radius: 5px; position: relative; margin-top: 10px;
+        }
+        
+        /* 路径示意 */
+        .p-path { position: absolute; background: white; opacity: 0.5; }
+        /* OR path: split and join */
+        .p-or-1 { top: 20%; left: 0; width: 100%; height: 10px; }
+        .p-or-2 { bottom: 20%; left: 0; width: 100%; height: 10px; }
+        /* AND path: straight with gaps */
+        .p-and { top: 50%; left: 0; width: 100%; height: 10px; transform: translateY(-50%); }
+        .gate-block { width: 10px; height: 20px; background: #c0392b; position: absolute; top: -5px; }
+
+        /* 多重目标雷达 */
+        .radar-screen {
+            width: 250px; height: 250px; background: #000; border-radius: 50%; border: 5px solid #333;
+            position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .radar-scan {
+            width: 125px; height: 125px; background: conic-gradient(from 0deg, rgba(46, 204, 113, 0.5), transparent 60deg);
+            position: absolute; top: 0; left: 0; transform-origin: bottom right;
+            animation: radarSpin 2s infinite linear;
+        }
+        .blip {
+            width: 10px; height: 10px; background: #e74c3c; border-radius: 50%; position: absolute;
+            box-shadow: 0 0 10px #e74c3c; animation: blink 1s infinite;
+        }
+        .blip-1 { top: 50px; left: 150px; }
+        .blip-2 { bottom: 60px; left: 80px; }
+        .radar-text {
+            position: absolute; bottom: 10px; width: 100%; text-align: center; color: #2ecc71; font-family: monospace;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #bdc3c7;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        @keyframes radarSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+        /* 按钮 */
+        .btn-action {
+            padding: 5px 15px; border: none; border-radius: 5px; font-weight: bold; color: white; cursor: pointer; margin-top: 10px;
+            background: var(--text-main); box-shadow: 0 4px 0 #000;
+        }
+        .btn-action:active { transform: translateY(4px); box-shadow: none; }
+
+    </style>
+</head>
+<body>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">
+        <div class="switch-lever"></div>
+        <div class="switch-base"></div>
+    </button>
+
+    <!-- 控制台容器 -->
+    <div class="console-container">
+        <div class="info-bar">
+            <div>
+                <span class="map-tag">计算机科学 3</span>
+                <span>第 32-37 关</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                LOGIC STATUS <div class="status-light"></div>
+            </div>
+        </div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; animation: pulse 2s infinite;">🔀</div>
+            <h1 style="font-size: 48px; margin: 10px 0; color: var(--text-main);">逻辑运算符 or</h1>
+            <h2 style="font-size: 24px; color: var(--primary); font-weight: bold; margin-top: 0;">多重选择专家</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: var(--primary); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #d35400;">🛤️ 多条通路</div>
+                <div style="padding: 15px 30px; background: var(--secondary); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #2980b9;">💡 灵活判断</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 什么是 or -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🤷‍♂️</div>
+                <h1>什么是 "or" (逻辑或)？</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>or</b> 就像一个“多重选择器”。<br>
+                    它问：“这些条件里，<b>至少有一个</b>是成立的吗？”</p>
+                    <ul style="list-style: none; padding: 0; font-size: 18px;">
+                        <li style="margin-bottom: 10px;">🍎 苹果 <b>or</b> 🍌 香蕉？</li>
+                        <li>只要有其中一样，我就开心！</li>
+                    </ul>
+                    <div class="code-box">
+                        <span class="kw">if</span> <span class="o">type</span> == <span class="s">"munchkin"</span> <span class="kw">or</span> <span class="o">type</span> == <span class="s">"thrower"</span>:<br>
+                        &nbsp;&nbsp;<span class="f">attack</span>()
+                    </div>
+                    <div class="card">
+                        "是小怪？打！是投手？也打！只要满足一个就动手！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 80px; display: flex; align-items: center; gap: 20px;">
+                        <div>🍎</div>
+                        <div style="font-size: 40px; color: var(--primary);">OR</div>
+                        <div>🍌</div>
+                        <div style="font-size: 40px;">=</div>
+                        <div>😋</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 电路原理 (核心) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔌</div>
+                <h1>并联电路原理</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>把 <b>or</b> 想象成并联电路中的开关。</p>
+                    <p>只要<b>任何一条路</b>通了，灯泡就会亮！</p>
+                    <ul style="list-style: none; padding: 0; font-size: 16px; margin-top: 10px;">
+                        <li>✅ 开关A 开 + 开关B 关 = 💡 亮 (True)</li>
+                        <li>✅ 开关A 关 + 开关B 开 = 💡 亮 (True)</li>
+                        <li>✅ 开关A 开 + 开关B 开 = 💡 亮 (True)</li>
+                        <li>❌ 开关A 关 + 开关B 关 = 🌑 灭 (False)</li>
+                    </ul>
+                </div>
+                <div class="col-visual">
+                    <div class="circuit-box">
+                        <!-- 导线 -->
+                        <div class="wire" style="top: 50%; left: 0; width: 50px; height: 4px;"></div> <!-- Main Left -->
+                        <div class="wire" style="top: 30%; left: 50px; width: 4px; height: 40%;"></div> <!-- Split Vertical -->
+                        
+                        <div class="wire" style="top: 30%; left: 50px; width: 50px; height: 4px;"></div> <!-- Top Branch In -->
+                        <div class="wire" style="top: 30%; left: 180px; width: 50px; height: 4px;"></div> <!-- Top Branch Out -->
+                        
+                        <div class="wire" style="bottom: 30%; left: 50px; width: 50px; height: 4px;"></div> <!-- Bot Branch In -->
+                        <div class="wire" style="bottom: 30%; left: 180px; width: 50px; height: 4px;"></div> <!-- Bot Branch Out -->
+
+                        <div class="wire" style="top: 30%; left: 230px; width: 4px; height: 40%;"></div> <!-- Join Vertical -->
+                        <div class="wire" style="top: 50%; left: 230px; width: 80px; height: 4px;"></div> <!-- Main Right -->
+
+                        <!-- 开关 -->
+                        <div class="switch-unit sw-1" id="sw1" onclick="toggleSwitch(1)">OFF</div>
+                        <div class="switch-unit sw-2" id="sw2" onclick="toggleSwitch(2)">OFF</div>
+
+                        <!-- 灯泡 -->
+                        <div class="bulb" id="mainBulb">💡</div>
+                    </div>
+                    <script>
+                        let s1 = false, s2 = false;
+                        function toggleSwitch(id) {
+                            if(id===1) s1 = !s1; else s2 = !s2;
+                            
+                            document.getElementById('sw'+id).className = 'switch-unit ' + (eval('s'+id) ? 'closed' : '');
+                            document.getElementById('sw'+id).innerText = eval('s'+id) ? 'ON' : 'OFF';
+                            
+                            const bulb = document.getElementById('mainBulb');
+                            if(s1 || s2) {
+                                bulb.className = 'bulb on';
+                            } else {
+                                bulb.className = 'bulb';
+                            }
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: OR vs AND (对比) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🆚</div>
+                <h1>or 哥哥 vs and 弟弟</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <div class="brother-box">
+                        <div class="brother bro-or">
+                            <div class="bro-icon">🛣️</div>
+                            <div><b>OR (或者)</b></div>
+                            <div style="font-size: 12px;">"条条大路通罗马"</div>
+                            <div class="path-visual">
+                                <div class="p-path p-or-1"></div>
+                                <div class="p-path p-or-2"></div>
+                            </div>
+                            <div style="margin-top: 5px; font-size: 12px;">任意一条通就行</div>
+                        </div>
+                        <div class="brother bro-and">
+                            <div class="bro-icon">🚧</div>
+                            <div><b>AND (并且)</b></div>
+                            <div style="font-size: 12px;">"过五关斩六将"</div>
+                            <div class="path-visual">
+                                <div class="p-path p-and"></div>
+                                <div class="gate-block" style="left: 30%;"></div>
+                                <div class="gate-block" style="left: 70%;"></div>
+                            </div>
+                            <div style="margin-top: 5px; font-size: 12px;">必须全通才行</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 实战代码分析 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📡</div>
+                <h1>程序：双重目标攻击</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>我们的英雄要同时监视两种敌人。</p>
+                    <div class="code-box">
+                        <span class="kw">while</span> <span class="kw">True</span>:<br>
+                        &nbsp;&nbsp;<span class="v">enemy</span> = <span class="f">findNearestEnemy</span>()<br>
+                        &nbsp;&nbsp;<span class="kw">if</span> <span class="v">enemy</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 只要满足其一，就攻击</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> <span class="v">enemy</span>.<span class="o">type</span> == <span class="s">"munchkin"</span> <span class="kw">or</span> <span class="v">enemy</span>.<span class="o">type</span> == <span class="s">"thrower"</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">attack</span>(<span class="v">enemy</span>)
+                    </div>
+                    <p>保安接到命令：“看到穿红衣的<b>或者</b>戴黑帽的，都要检查！”</p>
+                </div>
+                <div class="col-visual">
+                    <div class="radar-screen">
+                        <div class="radar-scan"></div>
+                        <div class="blip blip-1"></div>
+                        <div class="blip blip-2"></div>
+                        <div class="radar-text">TARGETS: 2</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 优先级 (Order) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔢</div>
+                <h1>谁先谁后？(优先级)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>编程里的运算顺序像数学里的“先乘除后加减”。</p>
+                    <div class="card">
+                        优先级：<br>
+                        <b>== / !=</b> (比较) > <b>and / or</b> (逻辑)
+                    </div>
+                    <div class="code-box">
+                        <span class="kw">if</span> <span class="v">type</span> == <span class="s">"A"</span> <span class="kw">or</span> <span class="v">type</span> == <span class="s">"B"</span>:<br>
+                        <span class="c"># 先算 ==，再算 or。</span>
+                    </div>
+                    <p style="margin-top: 15px;"><b>💡 小贴士：</b> 拿不准的时候，用<b>括号 ()</b> 把条件包起来，绝对没错！</p>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 50px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                        <div style="background: #ecf0f1; padding: 10px 20px; border-radius: 10px;">1. ( )</div>
+                        <div style="font-size: 30px;">⬇️</div>
+                        <div style="background: #ecf0f1; padding: 10px 20px; border-radius: 10px;">2. == != > <</div>
+                        <div style="font-size: 30px;">⬇️</div>
+                        <div style="background: #ecf0f1; padding: 10px 20px; border-radius: 10px;">3. and or</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 扩展场景 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎒</div>
+                <h1>更多应用场景</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>1. 收集多种宝物：</b></p>
+                    <div class="code-box" style="font-size: 14px;">
+                        <span class="kw">if</span> <span class="v">item</span>.<span class="o">type</span> == <span class="s">"coin"</span> <span class="kw">or</span> <span class="v">item</span>.<span class="o">type</span> == <span class="s">"gem"</span>:<br>
+                        &nbsp;&nbsp;<span class="f">moveXY</span>(<span class="v">item</span>.pos.x, <span class="v">item</span>.pos.y)
+                    </div>
+                    <p style="margin-top: 10px;"><b>2. 和朋友聊天：</b></p>
+                    <div class="code-box" style="font-size: 14px;">
+                        <span class="kw">if</span> <span class="v">type</span> == <span class="s">"peasant"</span> <span class="kw">or</span> <span class="v">type</span> == <span class="s">"archer"</span>:<br>
+                        &nbsp;&nbsp;<span class="f">say</span>(<span class="s">"你好!"</span>)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>💰</div><div>💎</div>
+                        <div>👨‍🌾</div><div>🏹</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 安全检查 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🛡️</div>
+                <h1>安全检查 (Safety Check)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>如果 <code>enemy</code> 不存在，直接问 <code>enemy.type</code> 会报错！</p>
+                    <div class="code-box" style="border-left-color: #e74c3c;">
+                        <span class="c"># ❌ 危险写法</span><br>
+                        <span class="kw">if</span> <span class="v">enemy</span>.<span class="o">type</span> == <span class="s">"munchkin"</span> ...
+                    </div>
+                    <div class="code-box" style="border-left-color: #2ecc71; margin-top: 10px;">
+                        <span class="c"># ✅ 安全写法</span><br>
+                        <span class="kw">if</span> <span class="v">enemy</span> <span class="kw">and</span> (<span class="v">enemy</span>.<span class="o">type</span> == <span class="s">"A"</span> <span class="kw">or</span> ...):
+                    </div>
+                    <p>先确定“有人”，再问“你是谁”。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px;">👻</div>
+                        <p style="color: #e74c3c; font-weight: bold;">Error: enemy is null</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎓</div>
+                <h1>逻辑大师口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: #fef9e7; border-color: var(--primary); color: #d35400;">
+                        "<b>or</b> 是多选一，<br>
+                        只要一个对，大门就打开！"
+                    </div>
+                    <div class="card" style="background: #e8f6f3; border-color: var(--secondary); color: #16a085; margin-top: 20px;">
+                        "复杂条件用括号 <b>()</b>，<br>
+                        先查存在保平安！"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; animation: pulse 2s infinite;">🏅</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">
+        <div class="switch-lever"></div>
+        <div class="switch-base"></div>
+    </button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

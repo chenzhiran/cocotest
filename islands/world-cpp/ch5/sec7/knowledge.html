@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第38-41关 逻辑运算符 and</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-cyber: #0b0c10;       /* 赛博黑 */
+            --panel-bg: #1f2833;       /* 面板灰 */
+            --neon-green: #66fcf1;     /* 霓虹绿 */
+            --neon-blue: #45a29e;      /* 霓虹蓝 */
+            --neon-red: #ff4d4d;       /* 警示红 */
+            --text-main: #c5c6c7;      /* 文本灰 */
+            
+            /* 代码高亮 */
+            --code-bg: #121212;
+            --code-fg: #e0e0e0;
+            --tok-kw: #c56cf0;         /* 关键字 and/if/else */
+            --tok-func: #4bcffa;       /* 函数 */
+            --tok-prop: #ff9f43;       /* 属性 */
+            --tok-num: #ff5e57;        /* 数字 */
+            --tok-str: #0be881;        /* 字符串 */
+            --tok-cm: #808e9b;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
+            background-color: var(--bg-cyber);
+            /* 数据流背景 */
+            background-image: 
+                linear-gradient(0deg, transparent 24%, rgba(69, 162, 158, .3) 25%, rgba(69, 162, 158, .3) 26%, transparent 27%, transparent 74%, rgba(69, 162, 158, .3) 75%, rgba(69, 162, 158, .3) 76%, transparent 77%, transparent),
+                linear-gradient(90deg, transparent 24%, rgba(69, 162, 158, .3) 25%, rgba(69, 162, 158, .3) 26%, transparent 27%, transparent 74%, rgba(69, 162, 158, .3) 75%, rgba(69, 162, 158, .3) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            color: var(--text-main);
+        }
+
+        /* 扫描线动画 */
+        .scan-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, transparent 50%, rgba(102, 252, 241, 0.1) 51%, transparent 51%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 科技按钮 (外部) --- */
+        .nav-btn {
+            width: 90px;
+            height: 90px;
+            background: var(--panel-bg);
+            border: 2px solid var(--neon-green);
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.3);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+        }
+
+        /* 左按钮：扫描探头 */
+        .btn-prev::after { content: '📡'; filter: drop-shadow(0 0 5px var(--neon-green)); }
+
+        /* 右按钮：急救包 */
+        .btn-next::after { content: '🚑'; filter: drop-shadow(0 0 5px var(--neon-red)); }
+
+        .nav-btn:hover { transform: scale(1.1); box-shadow: 0 0 25px rgba(102, 252, 241, 0.6); background: #2b3b4b; }
+        .nav-btn:active { transform: scale(0.95); }
+        
+        .disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 诊断终端容器 --- */
+        .terminal-container {
+            width: 960px;
+            height: 620px;
+            background: rgba(31, 40, 51, 0.95);
+            border-radius: 15px;
+            /* 全息边框 */
+            border: 2px solid var(--neon-blue);
+            box-shadow: 
+                0 0 20px rgba(69, 162, 158, 0.2),
+                inset 0 0 50px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部信息栏 */
+        .info-bar {
+            height: 50px;
+            background: rgba(11, 12, 16, 0.8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            color: var(--neon-green);
+            font-family: 'Consolas', monospace;
+            font-size: 18px;
+            border-bottom: 1px solid var(--neon-blue);
+            z-index: 15;
+        }
+        .map-tag {
+            background: var(--neon-blue); color: #000; padding: 2px 10px; border-radius: 2px; font-weight: bold;
+        }
+        .status-text { animation: blinkText 2s infinite; }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px 70px;
+            flex-direction: column;
+            animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes slideIn { 
+            0% { opacity: 0; transform: translateX(50px); filter: blur(5px); } 
+            100% { opacity: 1; transform: translateX(0); filter: blur(0); } 
+        }
+        @keyframes blinkText { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px dashed var(--neon-blue);
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 40px; margin-right: 20px; filter: drop-shadow(0 0 5px var(--neon-green)); }
+        h1 { margin: 0; color: var(--neon-green); font-size: 32px; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 10px rgba(102, 252, 241, 0.3); }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 18px; line-height: 1.6; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.9; 
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--neon-blue); 
+            border-radius: 10px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 5px;
+            font-family: 'Consolas', monospace;
+            font-size: 16px;
+            margin-top: 15px;
+            border-left: 3px solid var(--neon-green);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        
+        .kw { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .p { color: var(--tok-prop); } 
+        .s { color: var(--tok-str); } 
+        .n { color: var(--tok-num); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: rgba(69, 162, 158, 0.1);
+            border-left: 3px solid var(--neon-blue);
+            color: var(--neon-green);
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 5px 5px 0;
+            font-size: 16px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 串联电路演示 (AND) */
+        .circuit-box {
+            width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center;
+            background: #111;
+        }
+        .wire {
+            height: 4px; background: #333; position: absolute; transition: background 0.3s;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        .wire.hot { background: var(--neon-green); box-shadow: 0 0 15px var(--neon-green); }
+        
+        .switch-unit {
+            width: 60px; height: 30px; background: #222; border: 2px solid #555; border-radius: 5px;
+            position: absolute; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            color: #777; font-size: 12px; font-weight: bold; transition: all 0.2s;
+        }
+        .switch-unit.on { border-color: var(--neon-green); color: var(--neon-green); background: rgba(102, 252, 241, 0.1); }
+
+        /* 布局 */
+        .wire-1 { width: 50px; left: 20px; top: 50%; }
+        .sw-1 { left: 70px; top: 46%; }
+        .wire-2 { width: 50px; left: 130px; top: 50%; }
+        .sw-2 { left: 180px; top: 46%; }
+        .wire-3 { width: 50px; left: 240px; top: 50%; }
+        .bulb {
+            width: 50px; height: 50px; border-radius: 50%; background: #222; border: 2px solid #444;
+            position: absolute; right: 30px; top: 45%; transition: all 0.3s;
+            display: flex; justify-content: center; align-items: center; font-size: 24px;
+        }
+        .bulb.on { background: var(--neon-green); box-shadow: 0 0 40px var(--neon-green); border-color: #fff; }
+
+        /* 医疗扫描仪 */
+        .med-scanner {
+            width: 80%; height: 80%; border: 2px solid var(--neon-blue); position: relative;
+            background: rgba(0, 20, 20, 0.5); display: flex; flex-direction: column; align-items: center;
+            padding: 20px;
+        }
+        .scan-target { font-size: 80px; transition: all 0.3s; }
+        .scan-data { width: 100%; margin-top: 20px; }
+        .data-row {
+            display: flex; justify-content: space-between; padding: 5px 10px; border-bottom: 1px solid #333; font-family: monospace;
+        }
+        .check-mark { opacity: 0.2; }
+        .check-mark.pass { opacity: 1; color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
+        .check-mark.fail { opacity: 1; color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
+        
+        .scan-action { margin-top: 20px; padding: 10px 20px; background: #333; color: #555; border-radius: 5px; font-weight: bold; }
+        .scan-action.heal { background: var(--neon-green); color: #000; box-shadow: 0 0 15px var(--neon-green); }
+        .scan-btn-row { position: absolute; bottom: 10px; display: flex; gap: 10px; }
+        .btn-test { padding: 5px 10px; background: #222; border: 1px solid var(--neon-blue); color: var(--neon-blue); cursor: pointer; }
+        .btn-test:hover { background: var(--neon-blue); color: #000; }
+
+        /* 真值表网格 */
+        .truth-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; width: 90%; font-family: monospace;
+        }
+        .t-cell {
+            background: rgba(255,255,255,0.05); padding: 10px; text-align: center; border: 1px solid #333;
+        }
+        .t-head { background: var(--neon-blue); color: #000; font-weight: bold; }
+        .t-true { color: var(--neon-green); }
+        .t-false { color: var(--neon-red); }
+
+        /* HP 条 */
+        .hp-bar-container {
+            width: 200px; height: 20px; border: 2px solid #fff; position: relative; background: #333;
+        }
+        .hp-fill { height: 100%; width: 100%; background: var(--neon-green); transition: width 0.3s, background 0.3s; }
+        .hp-fill.low { background: var(--neon-red); animation: pulseRed 1s infinite; }
+        .hp-text { position: absolute; width: 100%; text-align: center; top: -25px; color: white; font-family: monospace; }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 4px;
+            background: #333;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
+            width: 0%;
+            transition: width 0.3s;
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        /* 动画 */
+        @keyframes pulseRed { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+    </style>
+</head>
+<body>
+
+<div class="scan-overlay"></div>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)"></button>
+
+    <!-- 终端容器 -->
+    <div class="terminal-container">
+        <div class="info-bar">
+            <div>
+                <span class="map-tag">计算机科学 3</span>
+                <span>第 38-41 关</span>
+            </div>
+            <div class="status-text">SYSTEM: ONLINE</div>
+        </div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; filter: drop-shadow(0 0 20px var(--neon-green));">🧬</div>
+            <h1 style="font-size: 48px; margin: 10px 0; color: var(--neon-green);">逻辑运算符 and</h1>
+            <h2 style="font-size: 24px; color: var(--neon-blue); font-weight: bold; margin-top: 0;">双重检查专家</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: rgba(69, 162, 158, 0.2); color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 5px; font-weight: bold; font-size: 20px; box-shadow: 0 0 15px var(--neon-green);">⛓️ 严密逻辑</div>
+                <div style="padding: 15px 30px; background: rgba(255, 77, 77, 0.2); color: var(--neon-red); border: 2px solid var(--neon-red); border-radius: 5px; font-weight: bold; font-size: 20px; box-shadow: 0 0 15px var(--neon-red);">⚕️ 精准医疗</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 什么是 and -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">👮‍♂️</div>
+                <h1>严格检查官：and</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>and</b> 就像一个超级严格的检查官。</p>
+                    <p>他会检查所有条件，只有<b>全部满足</b>，才肯放行。</p>
+                    <div class="code-box">
+                        <span class="kw">if</span> <span class="p">type</span> <span class="kw">==</span> <span class="s">"burl"</span> <span class="kw">and</span> <span class="p">health</span> <span class="kw"><</span> <span class="n">10</span>:<br>
+                        &nbsp;&nbsp;<span class="f">heal</span>(<span class="p">unit</span>)
+                    </div>
+                    <div class="card">
+                        "既要是特定的种族，又要真的生病了（血量低），才给治疗！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div style="font-size: 60px; margin-bottom: 10px;">🛑</div>
+                        <div style="display: flex; gap: 20px; font-size: 30px;">
+                            <div>✅</div>
+                            <div style="color: var(--neon-green);">AND</div>
+                            <div>✅</div>
+                        </div>
+                        <div style="font-size: 30px; margin-top: 10px;">⬇️</div>
+                        <div style="color: var(--neon-green); font-weight: bold; font-size: 24px;">PASS</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 串联电路 (核心) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔌</div>
+                <h1>串联电路原理</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>把 <b>and</b> 想象成串联电路中的开关。</p>
+                    <p>电流必须流过所有开关才能点亮灯泡。</p>
+                    <ul style="list-style: none; padding: 0; color: var(--text-main); font-size: 16px;">
+                        <li>❌ 关 + 关 = 灭 (False)</li>
+                        <li>❌ 开 + 关 = 灭 (False)</li>
+                        <li>❌ 关 + 开 = 灭 (False)</li>
+                        <li style="color: var(--neon-green); font-weight: bold;">✅ 开 + 开 = 亮 (True)</li>
+                    </ul>
+                </div>
+                <div class="col-visual">
+                    <div class="circuit-box">
+                        <div class="wire wire-1" id="w1"></div>
+                        <div class="switch-unit sw-1" id="sw1" onclick="toggleSwitch(1)">OFF</div>
+                        <div class="wire wire-2" id="w2"></div>
+                        <div class="switch-unit sw-2" id="sw2" onclick="toggleSwitch(2)">OFF</div>
+                        <div class="wire wire-3" id="w3"></div>
+                        <div class="bulb" id="bulb">💡</div>
+                    </div>
+                    <script>
+                        let s1 = false, s2 = false;
+                        function toggleSwitch(id) {
+                            if(id===1) s1 = !s1; else s2 = !s2;
+                            
+                            const el = document.getElementById('sw'+id);
+                            el.innerText = eval('s'+id) ? 'ON' : 'OFF';
+                            el.className = 'switch-unit sw-'+id + (eval('s'+id) ? ' on' : '');
+                            
+                            updateCircuit();
+                        }
+                        function updateCircuit() {
+                            document.getElementById('w1').className = 'wire wire-1 hot'; // Always power start
+                            document.getElementById('w2').className = 'wire wire-2' + (s1 ? ' hot' : '');
+                            document.getElementById('w3').className = 'wire wire-3' + (s1 && s2 ? ' hot' : '');
+                            document.getElementById('bulb').className = 'bulb' + (s1 && s2 ? ' on' : '');
+                        }
+                        setTimeout(updateCircuit, 100);
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 实战演示 - 精准医疗 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">⚕️</div>
+                <h1>实战：精准医疗战士</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>医生诊断病人需要满足两个条件：</p>
+                    <div class="code-box">
+                        <span class="kw">if</span> <span class="p">type</span> <span class="kw">==</span> <span class="s">"burl"</span> <span class="kw">and</span> <span class="p">health</span> <span class="kw"><</span> <span class="n">10</span>:<br>
+                        &nbsp;&nbsp;<span class="f">heal</span>(<span class="p">unit</span>)<br>
+                        <span class="kw">else</span>:<br>
+                        &nbsp;&nbsp;<span class="f">say</span>(<span class="s">"Next!"</span>)
+                    </div>
+                    <p style="font-size: 14px; margin-top: 10px; color: #888;">"只治疗濒死的树精，健康的不管。"</p>
+                </div>
+                <div class="col-visual">
+                    <div class="med-scanner">
+                        <div class="scan-target" id="medTarget">🌳</div>
+                        <div class="scan-data">
+                            <div class="data-row">Type: Burl <span class="check-mark" id="markType">✔️</span></div>
+                            <div class="data-row">Health: <span id="hpVal">50</span> <span class="check-mark" id="markHp">✔️</span></div>
+                        </div>
+                        <div class="scan-action" id="medAction">WAITING...</div>
+                        <div class="scan-btn-row">
+                            <button class="btn-test" onclick="testPatient('sick')">濒死树精</button>
+                            <button class="btn-test" onclick="testPatient('healthy')">健康树精</button>
+                            <button class="btn-test" onclick="testPatient('munchkin')">小怪兽</button>
+                        </div>
+                    </div>
+                    <script>
+                        function testPatient(type) {
+                            const t = document.getElementById('medTarget');
+                            const markT = document.getElementById('markType');
+                            const markH = document.getElementById('markHp');
+                            const act = document.getElementById('medAction');
+                            const hpv = document.getElementById('hpVal');
+                            
+                            // Reset
+                            markT.className = 'check-mark'; markH.className = 'check-mark';
+                            act.className = 'scan-action'; act.innerText = 'SCANNING...';
+                            
+                            setTimeout(() => {
+                                if(type === 'sick') {
+                                    t.innerText = '🌳'; hpv.innerText = '5';
+                                    markT.className = 'check-mark pass'; markH.className = 'check-mark pass';
+                                    act.className = 'scan-action heal'; act.innerText = 'HEALING!';
+                                } else if(type === 'healthy') {
+                                    t.innerText = '🌳'; hpv.innerText = '100';
+                                    markT.className = 'check-mark pass'; markH.className = 'check-mark fail';
+                                    act.innerText = 'IGNORED';
+                                } else {
+                                    t.innerText = '👾'; hpv.innerText = '5';
+                                    markT.className = 'check-mark fail'; markH.className = 'check-mark pass';
+                                    act.innerText = 'IGNORED';
+                                }
+                            }, 500);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 健康值系统 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">❤️</div>
+                <h1>健康值 (Health Value)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>health</b> 属性代表生命力。</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li>📈 数值大 = 健康</li>
+                        <li>📉 数值小 = 虚弱</li>
+                    </ul>
+                    <div class="code-box">
+                        <span class="kw">if</span> <span class="p">enemy.health</span> <span class="kw"><</span> <span class="n">10</span>:<br>
+                        &nbsp;&nbsp;<span class="f">attack</span>(<span class="p">enemy</span>) <span class="cm"># 补刀!</span>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 30px;">
+                        <div class="hp-bar-container">
+                            <div class="hp-text">Health: 100</div>
+                            <div class="hp-fill" style="width: 100%;"></div>
+                        </div>
+                        <div class="hp-bar-container">
+                            <div class="hp-text">Health: 5 (Critical!)</div>
+                            <div class="hp-fill low" style="width: 5%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: else 语句 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔀</div>
+                <h1>备选方案：else</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><code>else</code> 就像“B 计划”。<br>当主要条件（if）不满足时，执行它。</p>
+                    <div class="code-box">
+                        <span class="kw">if</span> <span class="p">condition</span>:<br>
+                        &nbsp;&nbsp;<span class="f">do_A</span>()<br>
+                        <span class="kw">else</span>:<br>
+                        &nbsp;&nbsp;<span class="f">do_B</span>()
+                    </div>
+                    <div class="card">
+                        "如果符合条件就治疗，<b>否则</b>就走开。"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 50px;">🛣️</div>
+                        <div style="display: flex; gap: 40px; margin-top: 20px;">
+                            <div style="color: var(--neon-green);">⬆️ IF (True)</div>
+                            <div style="color: var(--neon-red);">⬇️ ELSE (False)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 编程思维 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🛡️</div>
+                <h1>安全检查 (Safety)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>在使用 <code>enemy.type</code> 之前，必须确保 <code>enemy</code> 真的存在！</p>
+                    <div class="code-box">
+                        <span class="c"># ❌ 危险：enemy 可能是 None</span><br>
+                        <span class="kw">if</span> <span class="p">enemy.type</span> <span class="kw">==</span> <span class="s">"burl"</span>...<br>
+                        <br>
+                        <span class="c"># ✅ 安全：先检查存在</span><br>
+                        <span class="kw">if</span> <span class="p">enemy</span> <span class="kw">and</span> <span class="p">enemy.type</span>...
+                    </div>
+                    <p>如果 <code>enemy</code> 是 None，<code>and</code> 会立刻停止（短路），防止报错。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px;">👻 ➡️ 🚫</div>
+                    <div style="margin-top: 10px;">Null Protection</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 扩展：组合拳 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🥊</div>
+                <h1>组合拳 (AND + OR)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>我们可以把 <code>and</code> 和 <code>or</code> 混合使用，加上括号 <code>()</code> 更清晰。</p>
+                    <div class="code-box">
+                        <span class="kw">if</span> (<span class="p">type</span> <span class="kw">==</span> <span class="s">"A"</span> <span class="kw">or</span> <span class="p">type</span> <span class="kw">==</span> <span class="s">"B"</span>) <span class="kw">and</span> <span class="p">health</span> <span class="kw"><</span> <span class="n">10</span>:<br>
+                        &nbsp;&nbsp;<span class="f">attack</span>()
+                    </div>
+                    <p>含义：<br>1. 是A或者B（任选其一）<br>2. <b>并且</b> 血量低</p>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center; font-family: monospace; font-size: 24px;">
+                        (🅰️ || 🅱️) && 🩸
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎓</div>
+                <h1>医生口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: rgba(102, 252, 241, 0.1); border-color: var(--neon-green);">
+                        "<b>and</b> 是全部都要，<br>
+                        缺一个就不通过！"
+                    </div>
+                    <div class="card" style="background: rgba(255, 77, 77, 0.1); border-color: var(--neon-red); margin-top: 20px;">
+                        "先查存在再查属性，<br>
+                        安全第一不报错！"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; filter: drop-shadow(0 0 20px var(--neon-green));">🏅</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)"></button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

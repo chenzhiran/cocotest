@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第21-23关 认识数组迭代</title>
+    <style>
+        :root {
+            --primary-color: #4ECDC4; /* 活泼青 */
+            --secondary-color: #FF6B6B; /* 暖红 */
+            --accent-color: #FFE66D; /* 亮黄 */
+            --dark-color: #2C3E50;
+            --bg-color: #F7F9FC;
+            --code-bg: #282C34; /* Atom Dark */
+            --slide-width: 1000px;
+            --slide-height: 562.5px; /* 16:9 ratio */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Varela Round", "Microsoft YaHei", "Rounded Mplus 1c", sans-serif;
+            background-color: #A8D8EA;
+            background-image: 
+                radial-gradient(#ffffff 20%, transparent 20%),
+                radial-gradient(#ffffff 20%, transparent 20%);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: var(--dark-color);
+        }
+
+        /* 布局容器 */
+        .layout-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 舞台区域 */
+        .stage-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 顶部信息栏 */
+        .header-bar {
+            width: var(--slide-width);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 15px;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        .map-title {
+            background: var(--dark-color);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 15px 15px 0 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+
+        .level-info {
+            background: var(--secondary-color);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            transform: translateY(5px);
+            box-shadow: 0 4px 0 #c0392b;
+        }
+
+        /* PPT 屏幕 - 16:9 */
+        .ppt-screen {
+            width: var(--slide-width);
+            height: var(--slide-height);
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15), 0 0 0 12px rgba(255,255,255,0.4);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 幻灯片内容 */
+        .slide {
+            flex: 1;
+            display: none;
+            padding: 40px;
+            flex-direction: column;
+            justify-content: center;
+            box-sizing: border-box;
+            animation: fadeIn 0.5s ease;
+            position: relative;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* 内容样式 */
+        h1 { font-size: 2.4rem; margin: 0 0 20px 0; color: var(--dark-color); text-align: center; }
+        h2 { font-size: 1.5rem; color: var(--secondary-color); margin: 10px 0; border-left: 6px solid var(--accent-color); padding-left: 15px; }
+        p { font-size: 1.2rem; line-height: 1.6; color: #555; margin-bottom: 15px; }
+        
+        .highlight-box {
+            background: #eef9f9;
+            border: 2px dashed var(--primary-color);
+            padding: 15px;
+            border-radius: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        /* 双栏布局 */
+        .two-col {
+            display: flex;
+            gap: 30px;
+            height: 100%;
+            align-items: center;
+        }
+        .col { flex: 1; }
+
+        /* 代码编辑器样式 */
+        .code-editor {
+            background: var(--code-bg);
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            overflow: hidden;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 1rem;
+            text-align: left;
+            border: 1px solid #111;
+        }
+
+        .editor-header {
+            background: #21252b;
+            padding: 8px 12px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .red { background: #ff5f56; }
+        .yellow { background: #ffbd2e; }
+        .green { background: #27c93f; }
+
+        .code-content {
+            padding: 15px 20px;
+            color: #abb2bf;
+            margin: 0;
+            white-space: pre; /* 保留缩进 */
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+
+        /* 语法高亮 */
+        .k { color: #c678dd; font-weight: bold; } /* keyword */
+        .f { color: #61afef; } /* function */
+        .s { color: #98c379; } /* string */
+        .n { color: #d19a66; } /* number */
+        .c { color: #7f848e; font-style: italic; } /* comment */
+        .v { color: #e06c75; } /* variable */
+        .o { color: #56b6c2; } /* operator */
+
+        /* 按钮 */
+        .nav-btn {
+            background: white;
+            border: none;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            cursor: pointer;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover { transform: scale(1.1); color: var(--secondary-color); }
+        .nav-btn:active { transform: scale(0.95); }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* 图示元素 */
+        .array-viz {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .array-item {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border: 3px solid var(--dark-color);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            position: relative;
+        }
+        .index-label {
+            position: absolute;
+            bottom: -25px;
+            font-size: 0.9rem;
+            color: #888;
+            font-weight: bold;
+        }
+        .finger {
+            font-size: 3rem;
+            position: absolute;
+            top: 70px;
+            transition: left 0.5s;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #eee;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .emoji-float {
+            font-size: 4rem;
+            animation: float 3s ease-in-out infinite;
+            display: block;
+            text-align: center;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+    </style>
+</head>
+<body>
+
+<div class="layout-container">
+    <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">❮</button>
+
+    <div class="stage-area">
+        <div class="header-bar">
+            <div class="map-title">🗺️ 计算机科学 4</div>
+            <div class="level-info" id="levelInfo">第 21-23 关</div>
+        </div>
+
+        <div class="ppt-screen">
+            
+            <!-- Slide 1: 封面 -->
+            <div class="slide active" data-title="第 21-23 关">
+                <div class="emoji-float">🔎 📋 👣</div>
+                <h1>认识“数组迭代”</h1>
+                <h2 style="text-align:center; border:none; color:#666;">Array Iteration</h2>
+                <div class="highlight-box" style="margin-top: 40px;">
+                    <p style="font-size: 1.4rem;">
+                        <strong>核心本领：</strong><br>
+                        把一整队东西，<br>
+                        从头到尾，一个一个地看过去！
+                    </p>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <span style="background: #FFE66D; padding: 5px 15px; border-radius: 10px;">#21 沙蛇</span>
+                    <span style="background: #FF6B6B; color:white; padding: 5px 15px; border-radius: 10px; margin-left:10px;">#22 奇数沙尘暴</span>
+                </div>
+            </div>
+
+            <!-- Slide 2: 概念解释 -->
+            <div class="slide" data-title="什么是迭代？">
+                <h1>一、什么是数组迭代？</h1>
+                <div class="two-col">
+                    <div class="col">
+                        <p>想象有一排小椅子，每个椅子上坐着一个“东西”（硬币、敌人、名字）。</p>
+                        <p><strong>迭代 (Iteration)</strong> 就是让你的“手指”，从第 0 个椅子开始，一直指到最后一个。</p>
+                        <ul>
+                            <li><strong>Array / List</strong>: 排好队的一排东西。</li>
+                            <li><strong>Index</strong>: 椅子上的编号 (0, 1, 2...)。</li>
+                        </ul>
+                    </div>
+                    <div class="col" style="text-align: center;">
+                        <div class="array-viz">
+                            <div class="array-item">💰<span class="index-label">0</span></div>
+                            <div class="array-item">👾<span class="index-label">1</span></div>
+                            <div class="array-item">💎<span class="index-label">2</span></div>
+                            <div class="array-item">🛡️<span class="index-label">3</span></div>
+                        </div>
+                        <div style="font-size: 3rem; margin-top: 20px;">👆</div>
+                        <p style="color: #888;">index (小手指)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: 关卡21 介绍 -->
+            <div class="slide" data-title="关卡 21：沙蛇">
+                <div class="emoji-float">🐍 🪙 📏</div>
+                <h1>关卡 21：找到“最近”的金币</h1>
+                <div class="two-col">
+                    <div class="col">
+                        <h2>任务目标</h2>
+                        <p>沙漠里全是硬币，但我只要<strong>离我最近</strong>的那一枚！</p>
+                        <h2>思考方法</h2>
+                        <ol>
+                            <li>先假装最近距离是无限大 (9999)。</li>
+                            <li>用手指 (Index) 指向每一枚硬币。</li>
+                            <li><strong>比较 (Compare)</strong>：如果这枚硬币比我之前记录的更近，那它就是新的“最近硬币”！</li>
+                        </ol>
+                    </div>
+                    <div class="col">
+                        <div class="highlight-box">
+                            <strong>Min Search Algorithm</strong><br>
+                            最小值搜索算法<br><br>
+                            像老师找“全班最矮”的同学：<br>
+                            先看第一个，记下来；<br>
+                            再看第二个，如果更矮，就更新记录...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 4: 关卡21 代码逻辑 -->
+            <div class="slide" data-title="代码逻辑：最小值算法">
+                <h1>核心代码：打擂台</h1>
+                <div class="two-col">
+                    <div class="col" style="flex: 1.2;">
+                         <div class="code-editor">
+                            <div class="editor-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                            <pre class="code-content">
+<span class="v">nearest</span> <span class="o">=</span> <span class="n">None</span>
+<span class="v">minDist</span> <span class="o">=</span> <span class="n">9999</span>  <span class="c"># 初始设个超级大的数</span>
+<span class="v">index</span> <span class="o">=</span> <span class="n">0</span>
+
+<span class="k">while</span> <span class="v">index</span> <span class="o">&lt;</span> <span class="f">len</span>(<span class="v">coins</span>):
+    <span class="v">coin</span> <span class="o">=</span> <span class="v">coins</span>[<span class="v">index</span>]
+    <span class="v">dist</span> <span class="o">=</span> <span class="v">hero</span>.<span class="f">distanceTo</span>(<span class="v">coin</span>)
+    
+    <span class="c"># 👇 挑战擂主！如果现在的更近</span>
+    <span class="k">if</span> <span class="v">dist</span> <span class="o">&lt;</span> <span class="v">minDist</span>:
+        <span class="v">nearest</span> <span class="o">=</span> <span class="v">coin</span>    <span class="c"># 更新最近的硬币</span>
+        <span class="v">minDist</span> <span class="o">=</span> <span class="v">dist</span>    <span class="c"># 更新最短距离记录</span>
+        
+    <span class="v">index</span> <span class="o">+=</span> <span class="n">1</span></pre>
+                        </div>
+                    </div>
+                    <div class="col" style="flex: 0.8;">
+                        <p><strong>关键点：</strong></p>
+                        <p><code>nearest = None</code><br>一开始两手空空。</p>
+                        <p><code>dist < minDist</code><br>这是核心判断！只有比当前的记录更好，才更新。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5: 关卡22 介绍 -->
+            <div class="slide" data-title="关卡 22：奇数沙尘暴">
+                <div class="emoji-float">🌪️ 🤝 👹</div>
+                <h1>关卡 22：隔一个挑一个</h1>
+                <p>我们要处理一个混合名单：<strong>朋友</strong> 和 <strong>兽人</strong> 混在一起。</p>
+                
+                <div class="array-viz" style="margin-top: 30px;">
+                    <div class="array-item" style="border-color:red; background:#ffebeb;">👹<span class="index-label">0</span></div>
+                    <div class="array-item" style="border-color:green; background:#e6fffa;">👱‍♀️<span class="index-label">1</span></div>
+                    <div class="array-item" style="border-color:red; background:#ffebeb;">👹<span class="index-label">2</span></div>
+                    <div class="array-item" style="border-color:green; background:#e6fffa;">👱‍♂️<span class="index-label">3</span></div>
+                    <div class="array-item" style="border-color:red; background:#ffebeb;">👹<span class="index-label">4</span></div>
+                    <div class="array-item" style="border-color:green; background:#e6fffa;">👱‍♀️<span class="index-label">5</span></div>
+                </div>
+
+                <div class="two-col" style="margin-top: 20px;">
+                    <div class="col">
+                        <h3 style="color: #e74c3c;">偶数 Even (0, 2, 4)</h3>
+                        <p>是兽人 (Enemy) → 攻击！</p>
+                    </div>
+                    <div class="col">
+                        <h3 style="color: #27ae60;">奇数 Odd (1, 3, 5)</h3>
+                        <p>是朋友 (Friend) → 跳过！</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 6: 关卡22 代码逻辑 -->
+            <div class="slide" data-title="代码逻辑：跳跃迭代">
+                <h1>跳着走：Step / Stride</h1>
+                <div class="two-col">
+                    <div class="col">
+                        <p>平时我们是一个一个数：<code>index += 1</code></p>
+                        <p>这次我们要<strong>跳着数</strong>：<code>index += 2</code></p>
+                        <div class="highlight-box">
+                            就像玩跳房子！<br>
+                            从 0 跳到 2，再跳到 4...<br>
+                            直接略过了中间的 1, 3, 5。
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="code-editor">
+                            <div class="editor-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                            <pre class="code-content">
+<span class="v">everybody</span> <span class="o">=</span> [<span class="s">'Yetu'</span>, <span class="s">'Tabitha'</span>, <span class="s">'Rasha'</span>...]
+<span class="v">index</span> <span class="o">=</span> <span class="n">0</span>
+
+<span class="k">while</span> <span class="v">index</span> <span class="o">&lt;</span> <span class="f">len</span>(<span class="v">everybody</span>):
+    <span class="v">enemy</span> <span class="o">=</span> <span class="v">everybody</span>[<span class="v">index</span>]
+    
+    <span class="c"># ⚔️ 攻击兽人</span>
+    <span class="v">hero</span>.<span class="f">attack</span>(<span class="v">enemy</span>)
+    
+    <span class="c"># 🏃‍♂️ 关键：每次加 2，跳过朋友！</span>
+    <span class="v">index</span> <span class="o">+=</span> <span class="n">2</span></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 7: 知识总结 -->
+            <div class="slide" data-title="总结：迭代模板">
+                <h1>📚 数组迭代三大模板</h1>
+                <p>这些代码以后会经常用到，请记在小本本上！</p>
+                
+                <div style="display: flex; gap: 20px; width: 100%;">
+                    <!-- 模板1 -->
+                    <div style="flex:1; background:#fff; border:2px solid #ddd; padding:15px; border-radius:10px; font-size:0.9rem;">
+                        <h3 style="margin-top:0; color:var(--dark-color);">1. 普通遍历</h3>
+                        <p style="color:#666;">每一个都看</p>
+                        <code style="background:#eee; padding:2px;">index += 1</code>
+                        <div style="margin-top:10px; font-size:2rem; text-align:right;">👀</div>
+                    </div>
+
+                    <!-- 模板2 -->
+                    <div style="flex:1; background:#fff; border:2px solid #ddd; padding:15px; border-radius:10px; font-size:0.9rem;">
+                        <h3 style="margin-top:0; color:var(--dark-color);">2. 跳跃遍历</h3>
+                        <p style="color:#666;">隔一个看一个</p>
+                        <code style="background:#eee; padding:2px;">index += 2</code>
+                        <div style="margin-top:10px; font-size:2rem; text-align:right;">🐇</div>
+                    </div>
+
+                    <!-- 模板3 -->
+                    <div style="flex:1; background:#fff; border:2px solid #ddd; padding:15px; border-radius:10px; font-size:0.9rem;">
+                        <h3 style="margin-top:0; color:var(--dark-color);">3. 找最好 (Min/Max)</h3>
+                        <p style="color:#666;">打擂台法</p>
+                        <code style="background:#eee; padding:2px;">if score > best:</code>
+                        <div style="margin-top:10px; font-size:2rem; text-align:right;">🏆</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 进度条 -->
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+        </div>
+    </div>
+
+    <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">❯</button>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const levelInfo = document.getElementById('levelInfo');
+    const progressFill = document.getElementById('progressFill');
+
+    function updateSlide() {
+        // Remove active class
+        slides.forEach(s => s.classList.remove('active'));
+        // Add active class
+        slides[currentSlide].classList.add('active');
+
+        // Update Title
+        levelInfo.textContent = slides[currentSlide].getAttribute('data-title');
+
+        // Update Buttons
+        prevBtn.disabled = currentSlide === 0;
+        nextBtn.disabled = currentSlide === totalSlides - 1;
+
+        // Update Progress
+        const percent = ((currentSlide + 1) / totalSlides) * 100;
+        progressFill.style.width = `${percent}%`;
+    }
+
+    function changeSlide(dir) {
+        if (dir === 1 && currentSlide < totalSlides - 1) {
+            currentSlide++;
+        } else if (dir === -1 && currentSlide > 0) {
+            currentSlide--;
+        }
+        updateSlide();
+    }
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') changeSlide(1);
+        if (e.key === 'ArrowLeft') changeSlide(-1);
+    });
+
+    // Initialize
+    updateSlide();
+
+</script>
+
+</body>
+</html>

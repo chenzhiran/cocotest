@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第1-6关 认识 while 循环</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-magic: #2d1b4e;       /* 魔法深紫 */
+            --book-bg: #fdf6e3;        /* 羊皮纸色 */
+            --primary: #9c88ff;        /* 循环紫 */
+            --secondary: #00d2d3;      /* 逻辑蓝 */
+            --accent: #ff9f43;         /* 重点橙 */
+            --danger: #ff6b6b;         /* 警告红 */
+            --text-main: #2f3640;
+            --text-sub: #718093;
+            
+            /* 代码高亮 */
+            --code-bg: #2f3640;
+            --code-fg: #dcdde1;
+            --tok-kw: #c23616;         /* 关键字 while, if */
+            --tok-func: #00a8ff;       /* 函数 */
+            --tok-var: #e1b12c;        /* 变量 */
+            --tok-num: #4cd137;        /* 数字 */
+            --tok-cm: #7f8fa6;         /* 注释 */
+            --tok-str: #9c88ff;        /* 字符串 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-magic);
+            /* 魔法星空背景 */
+            background-image: 
+                radial-gradient(white 1px, transparent 1px),
+                radial-gradient(white 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 漂浮的魔法符号 */
+        .symbol {
+            position: absolute; color: rgba(255,255,255,0.1); font-size: 30px;
+            animation: floatSymbol 10s infinite linear; pointer-events: none;
+        }
+        @keyframes floatSymbol {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 符文石按钮 (外部) --- */
+        .nav-btn {
+            width: 90px;
+            height: 90px;
+            border: none;
+            border-radius: 20px; /* 石头形状 */
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.1s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 36px;
+            color: white;
+            box-shadow: 0 10px 0 rgba(0,0,0,0.3), 0 15px 20px rgba(0,0,0,0.4);
+        }
+
+        /* 左：回溯石 */
+        .btn-prev {
+            background: #485460;
+            border: 2px solid #808e9b;
+        }
+        .btn-prev::after { content: '⏪'; }
+
+        /* 右：前进石 */
+        .btn-next {
+            background: var(--primary);
+            border: 2px solid #8c7ae6;
+        }
+        .btn-next::after { content: '⏩'; }
+
+        .nav-btn:hover { transform: translateY(5px); box-shadow: 0 5px 0 rgba(0,0,0,0.3); filter: brightness(1.1); }
+        .nav-btn:active { transform: translateY(10px); box-shadow: none; }
+        
+        .disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 魔法书容器 --- */
+        .book-container {
+            width: 960px;
+            height: 620px;
+            background: var(--book-bg);
+            border-radius: 15px;
+            /* 厚重的魔法书边框 */
+            border: 12px solid #574b90;
+            box-shadow: 
+                inset 0 0 60px rgba(0,0,0,0.1),
+                0 0 0 5px #303952,
+                0 30px 60px rgba(0,0,0,0.6);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部书签栏 */
+        .bookmark-bar {
+            height: 50px;
+            background: #303952;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            color: var(--secondary);
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 18px;
+            z-index: 20;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .map-badge {
+            background: var(--accent); color: #2f3640; padding: 2px 10px; border-radius: 4px; margin-right: 10px;
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px 60px;
+            flex-direction: column;
+            animation: pageTurn 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            overflow-y: auto;
+            background-image: linear-gradient(#e5e5e5 1px, transparent 1px);
+            background-size: 100% 30px; /* 信纸纹理 */
+            line-height: 30px;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes pageTurn { 
+            0% { opacity: 0; transform: rotateY(-10deg) translateX(50px); } 
+            100% { opacity: 1; transform: rotateY(0) translateX(0); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 3px double #574b90;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1)); }
+        h1 { margin: 0; color: #303952; font-size: 34px; letter-spacing: 1px; font-weight: 800; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.2; font-size: 19px; line-height: 1.6; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.8; 
+            background: #fff;
+            border: 2px solid #d1ccc0; 
+            border-radius: 10px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 17px;
+            margin-top: 15px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 5px 5px 10px rgba(0,0,0,0.2);
+            position: relative;
+            line-height: 1.5;
+        }
+        
+        .k { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .v { color: var(--tok-var); } 
+        .n { color: var(--tok-num); } 
+        .s { color: var(--tok-str); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #e7eef8;
+            border-left: 5px solid var(--secondary);
+            color: #2c3e50;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 5px 5px 0;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 循环圈动画 */
+        .loop-circle {
+            width: 200px; height: 200px; border: 6px dashed var(--primary); border-radius: 50%;
+            position: relative; animation: spin 4s infinite linear;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .loop-arrow {
+            position: absolute; top: -15px; left: 50%; font-size: 30px; color: var(--primary); transform: translateX(-50%) rotate(90deg);
+        }
+        .loop-center {
+            font-size: 24px; font-weight: bold; color: var(--text-main); text-align: center;
+            animation: counterSpin 4s infinite linear; /* 保持文字不转 */
+        }
+        
+        /* 门卫图解 */
+        .gate-scene {
+            display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%;
+        }
+        .gate-check {
+            background: #fbc531; padding: 10px; border-radius: 10px; font-weight: bold; width: 80%; text-align: center;
+            position: relative;
+        }
+        .gate-check::after { content: '❓ 条件成立吗?'; font-size: 12px; display: block; color: #555; }
+        .arrow-down { font-size: 24px; color: #aaa; }
+        .loop-body {
+            background: #4cd137; padding: 20px; border-radius: 10px; width: 80%; text-align: center; color: white; font-weight: bold;
+        }
+        .loop-back-arrow {
+            position: absolute; right: 20px; height: 80px; width: 20px; 
+            border-right: 4px solid var(--primary); border-top: 4px solid var(--primary); border-bottom: 4px solid var(--primary);
+            top: 30%; border-radius: 0 10px 10px 0;
+        }
+
+        /* 记事本计数器 */
+        .notebook {
+            background: #fff; border: 1px solid #ccc; padding: 20px; width: 150px; height: 180px;
+            box-shadow: 5px 5px 0 rgba(0,0,0,0.1); font-family: 'Comic Sans MS', cursive;
+            position: relative;
+        }
+        .notebook::before {
+            content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            width: 40px; height: 10px; background: #aaa; border-radius: 5px;
+        }
+        .tally-mark { font-size: 30px; letter-spacing: 5px; color: var(--text-main); word-break: break-all; line-height: 30px; }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #dcdde1;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 动画 */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes counterSpin { 100% { transform: rotate(-360deg); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+        /* 按钮 */
+        .demo-btn {
+            margin-top: 10px; padding: 5px 15px; border: none; border-radius: 5px; cursor: pointer;
+            background: var(--primary); color: white; font-weight: bold;
+        }
+        .demo-btn:active { transform: scale(0.95); }
+
+    </style>
+</head>
+<body>
+
+<!-- 背景符号生成 -->
+<script>
+    const syms = ['🔄', '🔁', '∞', '⏱️', '❓'];
+    for(let i=0; i<15; i++) {
+        let s = document.createElement('div');
+        s.className = 'symbol';
+        s.innerText = syms[Math.floor(Math.random() * syms.length)];
+        s.style.left = Math.random() * 100 + 'vw';
+        s.style.animationDelay = Math.random() * 5 + 's';
+        document.body.appendChild(s);
+    }
+</script>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)"></button>
+
+    <!-- 魔法书容器 -->
+    <div class="book-container">
+        <div class="bookmark-bar">
+            <div>
+                <span class="map-badge">计算机科学 3</span>
+                <span>第 1-6 关</span>
+            </div>
+            <div style="font-size: 14px;">THE BOOK OF LOOPS</div>
+        </div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; animation: spin 10s infinite linear;">🌀</div>
+            <h1 style="font-size: 50px; margin: 10px 0; color: #2c3e50;">认识 while 循环</h1>
+            <h2 style="font-size: 26px; color: var(--primary); font-weight: bold; margin-top: 0;">The Magic of Loops</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: var(--secondary); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #00a8ff;">🏃 一直跑</div>
+                <div style="padding: 15px 30px; background: var(--accent); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #e67e22;">🛑 直到停</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: while 是什么 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🚪</div>
+                <h1>什么是 while 循环？</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>while</b> 就像一个严格的门卫。</p>
+                    <p>每次你想进游乐场玩（执行代码），门卫都会问：<br>
+                    <span style="color: var(--primary); font-weight: bold;">"你还符合条件吗？"</span></p>
+                    <ul style="list-style: none; padding: 0; font-size: 18px;">
+                        <li style="margin-bottom: 10px;">✅ <b>True (符合)</b>：进去玩一圈，回来再检查。</li>
+                        <li>❌ <b>False (不符合)</b>：不让进了，循环结束。</li>
+                    </ul>
+                </div>
+                <div class="col-visual">
+                    <div class="gate-scene">
+                        <div class="gate-check">👮‍♂️ 门卫 (Condition)</div>
+                        <div class="arrow-down">⬇️ True</div>
+                        <div class="loop-body">🎢 游乐场 (Do Something)</div>
+                        <div style="font-size: 14px; color: #999; margin-top: 5px;">(玩完一圈回到门卫处)</div>
+                        <div class="loop-back-arrow"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 语法结构 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📝</div>
+                <h1>基本语法 (Syntax)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <div class="code-box">
+                        <span class="k">while</span> <span class="v">条件</span>:<br>
+                        &nbsp;&nbsp;<span class="c"># 只要条件是 True</span><br>
+                        &nbsp;&nbsp;<span class="c"># 就一直做这里的事情</span><br>
+                        &nbsp;&nbsp;<span class="f">做动作</span>()
+                    </div>
+                    <div class="card">
+                        "当（while）这件事没做完，就一直做。"
+                    </div>
+                    <p style="margin-top: 10px;"><b>注意：</b>不要忘了冒号 <code>:</code> 和缩进！</p>
+                </div>
+                <div class="col-visual">
+                    <div class="loop-circle">
+                        <div class="loop-arrow">➤</div>
+                        <div class="loop-center">
+                            Condition<br>Checking...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 关卡1 - 计数器 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔢</div>
+                <h1>关卡 1：数数 (Counting)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>我们用一个变量来数数：打了几下？</p>
+                    <div class="code-box">
+                        <span class="v">attacks</span> <span class="o">=</span> <span class="n">0</span><br>
+                        <span class="k">while</span> <span class="v">attacks</span> <span class="o"><</span> <span class="n">10</span>:<br>
+                        &nbsp;&nbsp;<span class="f">attack</span>()<br>
+                        &nbsp;&nbsp;<span class="v">attacks</span> <span class="o">+=</span> <span class="n">1</span>
+                    </div>
+                    <p><b>attacks += 1</b>：这步最关键！<br>每打一次，就在本子上画一笔。不画的话，永远数不到10！</p>
+                </div>
+                <div class="col-visual">
+                    <div class="notebook">
+                        <div style="text-align: center; font-weight: bold; border-bottom: 2px solid #eee;">记事本</div>
+                        <div class="tally-mark" id="tally"></div>
+                    </div>
+                    <button class="demo-btn" onclick="addTally()">打一下 (+1)</button>
+                    <script>
+                        let count = 0;
+                        function addTally() {
+                            if(count < 10) {
+                                count++;
+                                document.getElementById('tally').innerText += '| ';
+                            } else {
+                                document.getElementById('tally').innerText = "满 10 次了，停止!";
+                                document.getElementById('tally').style.color = "var(--danger)";
+                            }
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 关卡2 - 属性做条件 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">💰</div>
+                <h1>关卡 2：属性做条件</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>除了自己定义的变量，也可以用英雄的<b>属性</b>。</p>
+                    <div class="code-box">
+                        <span class="k">while</span> <span class="v">hero</span>.<span class="v">gold</span> <span class="o"><</span> <span class="n">30</span>:<br>
+                        &nbsp;&nbsp;<span class="c"># 钱不够30就一直捡</span><br>
+                        &nbsp;&nbsp;<span class="f">collectCoin</span>()
+                    </div>
+                    <div class="card" style="background: #fff3e0; border-color: var(--accent); color: #e67e22;">
+                        "就像妈妈说：零花钱不到30块，就多做家务！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px;">👛</div>
+                        <div style="font-size: 20px; margin-top: 10px;">Gold < 30 ?</div>
+                        <div style="font-size: 40px; margin-top: 10px; animation: float 2s infinite;">🪙 🏃</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 关卡3 - 对象存在性 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🐂</div>
+                <h1>关卡 3：只要还在 (Object)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>判断东西是否存在，也是 True/False。</p>
+                    <div class="code-box">
+                        <span class="v">yak</span> <span class="o">=</span> <span class="f">findEnemy</span>()<br>
+                        <span class="k">while</span> <span class="v">yak</span>:<br>
+                        &nbsp;&nbsp;<span class="f">collect</span>()<br>
+                        &nbsp;&nbsp;<span class="c"># 重要：更新 yak！</span><br>
+                        &nbsp;&nbsp;<span class="v">yak</span> <span class="o">=</span> <span class="f">findEnemy</span>()
+                    </div>
+                    <p style="color: var(--danger); font-weight: bold;">注意：必须在循环里更新 yak！</p>
+                    <p>如果不更新，电脑以为 yak 还在，就会陷入死循环。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 50px; text-align: center;">
+                        <div>👀 看着牦牛</div>
+                        <div style="font-size: 30px;">⬇️</div>
+                        <div>捡金币</div>
+                        <div style="font-size: 30px;">⬇️</div>
+                        <div style="border: 2px dashed var(--danger); padding: 5px; border-radius: 5px;">再看一眼牦牛还在吗？</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 关卡4 - 安全阈值 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">❤️</div>
+                <h1>关卡 4：安全第一</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>用生命值作为停止条件。</p>
+                    <div class="code-box">
+                        <span class="k">while</span> <span class="v">hero</span>.<span class="v">health</span> <span class="o">></span> <span class="n">200</span>:<br>
+                        &nbsp;&nbsp;<span class="f">run</span>() <span class="c"># 健康就跑步</span><br>
+                        <br>
+                        <span class="f">goHome</span>() <span class="c"># 累了(血少)就回家</span>
+                    </div>
+                    <div class="card" style="background: #ffebee; border-color: var(--danger); color: #c0392b;">
+                        "当心率小于150时继续跑，太累了就停下来。"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="width: 80%; height: 30px; background: #ddd; border-radius: 15px; position: relative; overflow: hidden;">
+                        <div style="width: 60%; height: 100%; background: var(--danger); position: absolute; left: 0;"></div>
+                        <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: black;"></div>
+                    </div>
+                    <div style="margin-top: 10px; font-weight: bold;">
+                        <span style="color: var(--danger)">Current</span> > <span>200</span> ?
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 关卡5 - 死循环陷阱 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">⚠️</div>
+                <h1>关卡 5：死循环 (Infinite Loop)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>如果条件永远是 True，循环就永远不会停！</p>
+                    <div class="code-box">
+                        <span class="v">count</span> <span class="o">=</span> <span class="n">0</span><br>
+                        <span class="k">while</span> <span class="v">count</span> <span class="o"><</span> <span class="n">5</span>:<br>
+                        &nbsp;&nbsp;<span class="f">say</span>(<span class="s">"Hello"</span>)<br>
+                        &nbsp;&nbsp;<span class="c"># 😱 忘了 count += 1</span>
+                    </div>
+                    <p>电脑会一直喊 Hello 到宇宙毁灭...</p>
+                    <p style="color: var(--danger); font-weight: bold;">千万别忘了改变条件变量！</p>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px; animation: spin 0.5s infinite linear;">😵‍💫</div>
+                    <div style="color: var(--danger); font-weight: bold; margin-top: 10px;">永远停不下来！</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 关卡6 - 抽象函数 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📦</div>
+                <h1>关卡 6：打包循环</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>把复杂的 while 循环装进函数里，变成一个强力技能！</p>
+                    <div class="code-box">
+                        <span class="k">def</span> <span class="f">collectUntil</span>(<span class="v">goldAmount</span>):<br>
+                        &nbsp;&nbsp;<span class="k">while</span> <span class="v">hero</span>.<span class="v">gold</span> <span class="o"><</span> <span class="v">goldAmount</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">collect</span>()<br>
+                        <br>
+                        <span class="f">collectUntil</span>(<span class="n">50</span>) <span class="c"># 一句话搞定!</span>
+                    </div>
+                    <p>这就叫<b>抽象 (Abstraction)</b>：把复杂过程藏起来，留一个简单按钮。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px;">🎛️</div>
+                    <div style="background: var(--secondary); color: white; padding: 5px 15px; border-radius: 10px; margin-top: 10px;">
+                        一键收集
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📝</div>
+                <h1>循环四步口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="font-size: 20px; line-height: 2;">
+                    <ol>
+                        <li>🎯 <b>定目标</b> (我要数到10)</li>
+                        <li>👮 <b>设条件</b> (while count < 10)</li>
+                        <li>🔨 <b>做事情</b> (hero.attack)</li>
+                        <li>🔄 <b>变数据</b> (count += 1)</li>
+                    </ol>
+                    <div class="card" style="margin-top: 20px; background: #dff9fb; color: #130f40; border-color: var(--secondary);">
+                        "忘了第四步，电脑会迷路！"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; animation: floatSymbol 3s infinite ease-in-out;">🎓</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)"></button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

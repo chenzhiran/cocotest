@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：数组查找练习</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-algo: #8be9fd; /* 算法青色 */
+            --accent-logic: #ff79c6; /* 逻辑粉色 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; 
+            --code-func: #8be9fd;    
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* health, pos */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(139, 237, 253, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 121, 198, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-algo);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-logic);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(139, 237, 253, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-algo); }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-while { color: var(--accent-loop); font-weight: bold; }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-square-root-variable text-cyan-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-cyan-400">极值查找练习</span></h1>
+                    <p class="text-xs text-gray-500">数组 Max/Min 查找与函数封装（24-25关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-magnifying-glass-chart text-pink-500 mr-1"></i>Min/Max Health</span>
+                <span><i class="fa-solid fa-user-tie text-yellow-500 mr-1"></i>Strongest/Weakest</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 24: 脆弱的士气 (查找最大生命值算法) -->
+        <section id="level-24" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 24 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">脆弱的士气 (Brittle Morale)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-user-tie mr-2"></i>战术思路分析：击杀首领</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                敌人首领生命值最高。击败他可以瓦解敌人士气。你需要实现 Max Search 算法，找出**生命值最高**的敌人。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-pink-500">
+                                <h4 class="font-bold text-white text-sm mb-1">Max Search 函数封装</h4>
+                                <p class="text-xs text-gray-400">
+                                    将查找逻辑封装进 `findStrongestEnemy(enemies)` 函数中，让主代码（寻找、攻击）变得更简洁。
+                                    <br>
+                                    比较依据：`enemy.health > strongestHealth`。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-heart-pulse text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Enemy.HP > MaxHP: <br>
+                            &nbsp;&nbsp;Strongest <span class="op">=</span> Enemy <br>
+                            <span class="func">return</span> Strongest
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 你只有一个弓箭手，要发挥他的作用</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="comment"># 这将返回一个最多生命值的敌人</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="kwd">def </span><span class="func">findStrongestEnemy</span>(<span class="var">enemies</span>):</div><div class="code-annotation">函数：返回生命值最高的敌人</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">strongest</span> <span class="op">=</span> <span class="kwd">None</span></div><div class="code-annotation">初始化最强敌人为 None</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="var">strongestHealth</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化最高生命值</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="var">enemyIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化索引</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="comment"># 当 enemyIndex 少于enemies数组的长度</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="op-while">while </span><span class="var">enemyIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">enemies</span>):</div><div class="code-annotation">遍历敌人数组</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="comment"># 将enemy变量设置为enemies[enemyIndex]</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="var">enemy</span> <span class="op">=</span> <span class="var">enemies</span>[<span class="var">enemyIndex</span>]</div><div class="code-annotation">获取当前敌人</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="comment"># 如果 enemy.health 大于 strongestHealth</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">health</span> <span class="op">></span> <span class="var">strongestHealth</span>:</div><div class="code-annotation">进行生命值比较</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">            <span class="comment"># 将enemy赋值给strongest</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">            <span class="var">strongest</span> <span class="op">=</span> <span class="var">enemy</span></div><div class="code-annotation">更新 strongest</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">            <span class="comment"># 将enemy.health赋值为strongestHealth</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">            <span class="var">strongestHealth</span> <span class="op">=</span> <span class="var">enemy</span>.<span class="prop">health</span></div><div class="code-annotation">更新 highestHealth</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">        <span class="comment"># 让 enemyIndex 递增</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content">        <span class="var">enemyIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">索引步进</div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content">    <span class="kwd">return </span><span class="var">strongest</span></div><div class="code-annotation">返回最强敌人</div></div>
+                        <div class="code-row"><div class="line-num">21</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">22</div><div class="code-content"><span class="var">enemies</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findEnemies</span>()</div><div class="code-annotation">获取敌人数组</div></div>
+                        <div class="code-row"><div class="line-num">23</div><div class="code-content"><span class="var">leader</span> <span class="op">=</span> <span class="func">findStrongestEnemy</span>(<span class="var">enemies</span>)</div><div class="code-annotation">找到首领</div></div>
+                        <div class="code-row"><div class="line-num">24</div><div class="code-content"><span class="kwd">if </span><span class="var">leader</span>:</div><div class="code-annotation">如果找到首领</div></div>
+                        <div class="code-row"><div class="line-num">25</div><div class="code-content">    <span class="var">hero</span>.<span class="func">say</span>(<span class="var">leader</span>)</div><div class="code-annotation">报告首领位置（英雄会攻击）</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 25: 疯狂Maxer 反击 (查找最小生命值算法) -->
+        <section id="level-25" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 25 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">疯狂Maxer 反击 (Mad Maxer Strikes Back)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-heart-crack mr-2"></i>战术思路分析：优先击杀最弱</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                最小的兽人（生命值最低）是最危险的，必须优先攻击。你需要实现 Min Search 算法，找出**生命值最低**的敌人。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">Min Search 算法（最小查找）</h4>
+                                <p class="text-xs text-gray-400">
+                                    1. **初始化：** `leastHealth = 99999` (设置一个比任何敌人生命值都大的起始值)。
+                                    <br>
+                                    2. **遍历与比较：** 如果当前 `enemy.health` **小于** `leastHealth`，则更新 `weakest` 和 `leastHealth`。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-sort-amount-up text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Enemy.HP < MinHP: <br>
+                            &nbsp;&nbsp;MinHP <span class="op">=</span> Enemy.HP <br>
+                            &nbsp;&nbsp;Weakest <span class="op">=</span> Enemy
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="op-while">while </span><span class="kwd">True</span>:</div><div class="code-annotation">外层无限循环</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">weakest</span> <span class="op">=</span> <span class="kwd">None</span></div><div class="code-annotation">初始化最弱敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">leastHealth</span> <span class="op">=</span> <span class="num">99999</span></div><div class="code-annotation">初始化最小生命值</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">enemyIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化索引</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">enemies</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findEnemies</span>()</div><div class="code-annotation">获取敌人数组</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="comment"># 循环检查所有敌人。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="op-while">while </span><span class="var">enemyIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">enemies</span>):</div><div class="code-annotation">遍历敌人数组</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">enemy</span> <span class="op">=</span> <span class="var">enemies</span>[<span class="var">enemyIndex</span>]</div><div class="code-annotation">获取当前敌人</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="comment"># 如果当前敌人的生命值小于 leastHealth</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">health</span> <span class="op"><</span> <span class="var">leastHealth</span>:</div><div class="code-annotation">进行生命值比较</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">            <span class="comment"># 标记这个敌人为weakest，并设置 leastHealth 变量的值</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">            <span class="var">weakest</span> <span class="op">=</span> <span class="var">enemy</span></div><div class="code-annotation">更新 weakest</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">            <span class="var">leastHealth</span> <span class="op">=</span> <span class="var">enemy</span>.<span class="prop">health</span></div><div class="code-annotation">更新 leastHealth</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="comment"># 别忘了给 enemyIndex 加 1</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="var">enemyIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">索引步进</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="kwd">if </span><span class="var">weakest</span>:</div><div class="code-annotation">如果找到了最弱敌人</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">        <span class="comment"># 攻击最弱的食人魔。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">weakest</span>)</div><div class="code-annotation">攻击</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Array Traversal Practice.</p>
+    </footer>
+
+</body>
+</html>

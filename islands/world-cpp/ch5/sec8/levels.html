@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：逻辑运算符NOT与组合</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-not: #ff00ff; /* NOT 强调色 (洋红) */
+            --accent-and: #ff79c6; /* AND 强调色 (粉) */
+            --accent-or: #8be9fd; /* OR 强调色 (青) */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, return, not */
+            --code-func: #8be9fd;    
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(255, 0, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-not);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-and);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(255, 0, 255, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-logic); }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-logic);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-and { color: var(--accent-and); font-weight: bold; }
+        .op-or { color: var(--accent-or); font-weight: bold; }
+        .op-not { color: var(--accent-not); font-weight: bold; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-code-compare text-pink-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-pink-400">逻辑组合与优化</span></h1>
+                    <p class="text-xs text-gray-500">布尔运算符 NOT / 短路求值 / 混合运算（42-46关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><span class="op-not">not</span> <i class="fa-solid fa-sync-alt text-purple-500 mr-1"></i>Inversion</span>
+                <span><i class="fa-solid fa-bolt text-yellow-500 mr-1"></i>Short-Circuiting</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 42: 平常的一天 (短路求值) -->
+        <section id="level-42" class="level-card" style="border-left-color: var(--accent-and);">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(255, 121, 198, 0.1), transparent);">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 42 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">平常的一天 (A Normal Day)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-bolt mr-2"></i>战术思路分析：短路求值</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                以前，我们总要写两层 `if` 语句来检查目标：`if enemy: if enemy.type == "munchkin":`。这很繁琐！
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">编程优化：AND 的短路特性</h4>
+                                <p class="text-xs text-gray-400">
+                                    在 `enemy and enemy.type == "munchkin"` 中：
+                                    <br>
+                                    1. 计算机先检查 `enemy` 是否存在（是否为 `None`）。
+                                    <br>
+                                    2. **如果 `enemy` 是 `None`（即不存在），** 整个表达式立刻被判定为 `False`，**右侧的 `enemy.type` 代码不会被执行**，从而避免了程序崩溃！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-road-lock text-6xl text-yellow-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Target <span class="op-and">AND</span> Target.Prop: <span class="var">Run Code</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="comment"># 使用与(AND)以后，我们只会在敌人存在时检查类型。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span> <span class="op-and">and </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"munchkin"</span>:</div><div class="code-annotation">**短路求值：** 检查存在 AND 检查类型</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击矮人</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="comment"># 寻找最近的物品</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="comment"># 如果存在且类型为"coin"，则收集该物品。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span> <span class="op-and">and </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"coin"</span>:</div><div class="code-annotation">短路求值：检查存在 AND 检查类型</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">收集硬币</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 43: 逻辑之路 (AND/OR/NOT 基础应用) -->
+        <section id="level-43" class="level-card" style="border-left-color: var(--accent-not);">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 43 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">逻辑之路 (The Logic Path)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-map-signs mr-2"></i>战术思路分析：三元组逻辑</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                巫师的路口是布尔逻辑控制的。你需要根据逻辑表达式的结果（`True` 走上，`False` 走下）来选择道路。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">三大家族运算符</h4>
+                                <ul class="list-disc list-inside text-xs text-gray-400 ml-4 space-y-1">
+                                    <li><span class="op-and">AND</span>: **都**为真才为真。 (`secretA and secretB`)</li>
+                                    <li><span class="op-or">OR</span>: **有一个**为真即为真。 (`secretA or secretB`)</li>
+                                    <li><span class="op-not">NOT</span>: **取反**。 (`not secretB`)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-diagram-project text-6xl text-purple-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            A <span class="op-and">and</span> B <br>
+                            A <span class="op-or">or</span> B <br>
+                            <span class="op-not">not</span> B
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">14</span>, <span class="num">24</span>)</div><div class="code-annotation">移动到巫师处</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">secretA</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>().<span class="func">getSecretA</span>()</div><div class="code-annotation">获取 Secret A</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="var">secretB</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>().<span class="func">getSecretB</span>()</div><div class="code-annotation">获取 Secret B</div></div>
+                        
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="comment"># 第一路口：AND</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="var">secretC</span> <span class="op">=</span> <span class="var">secretA</span> <span class="op-and">and </span><span class="var">secretB</span></div><div class="code-annotation">计算 A **AND** B</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><span class="kwd">if </span><span class="var">secretC</span>:</div><div class="code-annotation">如果 C 为 True，走上面 (33)</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">20</span>, <span class="num">33</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="kwd">else</span>:</div><div class="code-annotation">否则，走下面 (15)</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">20</span>, <span class="num">15</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">26</span>, <span class="num">24</span>)</div><div class="code-annotation"></div></div>
+
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="comment"># 第二路口：OR</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">secretD</span> <span class="op">=</span> <span class="var">secretA</span> <span class="op-or">or </span><span class="var">secretB</span></div><div class="code-annotation">计算 A **OR** B</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="kwd">if </span><span class="var">secretD</span>:</div><div class="code-annotation">如果 D 为 True，走上面 (33)</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">32</span>, <span class="num">33</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"><span class="kwd">else</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">32</span>, <span class="num">15</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">38</span>, <span class="num">24</span>)</div><div class="code-annotation"></div></div>
+                        
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">    <span class="comment"># 第三路口：NOT</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content"><span class="var">secretE</span> <span class="op">=</span> <span class="op-not">not </span><span class="var">secretB</span></div><div class="code-annotation">计算 **NOT** B</div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content"><span class="kwd">if </span><span class="var">secretE</span>:</div><div class="code-annotation">如果 E 为 True，走上面 (33)</div></div>
+                        <div class="code-row"><div class="line-num">21</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">44</span>, <span class="num">33</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">22</div><div class="code-content"><span class="kwd">else</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">23</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">44</span>, <span class="num">15</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">24</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">50</span>, <span class="num">24</span>)</div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 44: 逻辑之圈 (多重 AND/OR) -->
+        <section id="level-44" class="level-card" style="border-left-color: var(--accent-and);">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(255, 121, 198, 0.1), transparent);">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 44 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">逻辑之圈 (The Logic Circle)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-puzzle-piece mr-2"></i>战术思路分析：连续判断</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这次布尔值有三个 (`A`, `B`, `C`)，你需要判断更长的逻辑表达式。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">链式 AND 和 OR</h4>
+                                <p class="text-xs text-gray-400">
+                                    - **`AND` 链：** `A and B and C` (所有都必须为真)
+                                    <br>
+                                    - **`OR` 链：** `A or B or C` (任何一个为真即可)
+                                    <br>
+                                    **注意：** Python 可以直接处理多于两个变量的 `and` 和 `or` 运算。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-sitemap text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            (A <span class="op-and">and</span> B <span class="op-and">and</span> C) <br>
+                            (A <span class="op-or">or</span> B <span class="op-or">or</span> C)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">20</span>, <span class="num">24</span>)</div><div class="code-annotation">移动到巫师旁</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">secretA</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>().<span class="func">getSecretA</span>()</div><div class="code-annotation">获取 A, B, C 三个值</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="var">secretB</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>().<span class="func">getSecretB</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="var">secretC</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>().<span class="func">getSecretC</span>()</div><div class="code-annotation"></div></div>
+                        
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="comment"># 第一个路口：AND 链</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><span class="var">secretD</span> <span class="op">=</span> <span class="var">secretA</span> <span class="op-and">and </span><span class="var">secretB</span> <span class="op-and">and </span><span class="var">secretC</span></div><div class="code-annotation">计算 A **AND** B **AND** C</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><span class="kwd">if </span><span class="var">secretD</span>:</div><div class="code-annotation">如果 D 为 True，走上面 (33)</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">30</span>, <span class="num">33</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="kwd">else</span>:</div><div class="code-annotation">否则走下面 (15)</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">30</span>, <span class="num">15</span>)</div><div class="code-annotation"></div></div>
+                        
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="comment"># 第二个路口：OR 链</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">secretE</span> <span class="op">=</span> <span class="var">secretA</span> <span class="op-or">or </span><span class="var">secretB</span> <span class="op-or">or </span><span class="var">secretC</span></div><div class="code-annotation">计算 A **OR** B **OR** C</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="kwd">if </span><span class="var">secretE</span>:</div><div class="code-annotation">如果 E 为 True，走左边 (20)</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">20</span>, <span class="num">24</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"><span class="kwd">else</span>:</div><div class="code-annotation">否则走右边 (40)</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">40</span>, <span class="num">24</span>)</div><div class="code-annotation"></div></div>
+
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">    <span class="comment"># 第三个路口：AND/OR 混合，复用之前的结果</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content"><span class="var">secretF</span> <span class="op">=</span> <span class="var">secretA</span> <span class="op-and">and </span><span class="var">secretB</span> <span class="op-and">and </span><span class="var">secretC</span> <span class="op-and">and </span><span class="var">secretD</span> <span class="op-and">and </span><span class="var">secretE</span></div><div class="code-annotation">计算 A AND B AND C AND D AND E</div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content"><span class="kwd">if </span><span class="var">secretF</span>:</div><div class="code-annotation">如果 F 为 True，走上面 (33)</div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">30</span>, <span class="num">33</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">21</div><div class="code-content"><span class="kwd">else</span>:</div><div class="code-annotation">否则走下面 (15)</div></div>
+                        <div class="code-row"><div class="line-num">22</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">30</span>, <span class="num">15</span>)</div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 45: 逻辑结论 (运算优先级与括号) -->
+        <section id="level-45" class="level-card" style="border-left-color: var(--accent-not);">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 45 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">逻辑结论 (The Logical Conclusion)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-balance-scale mr-2"></i>战术思路分析：优先级</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这是最复杂的布尔挑战，涉及到所有三个运算符，你需要使用**括号**来控制运算顺序！
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">优先级顺序 (高到低)</h4>
+                                <p class="text-xs text-gray-400">
+                                    1. **圆括号** `()`
+                                    <br>
+                                    2. **NOT** (`not`)
+                                    <br>
+                                    3. **AND** (`and`)
+                                    <br>
+                                    4. **OR** (`or`)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-brackets-square text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            (A <span class="op-and">and</span> B) <span class="op-or">or</span> C
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">24</span>, <span class="num">16</span>)</div><div class="code-annotation">移动到 Eszter</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">secretA</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>().<span class="func">getSecretA</span>()</div><div class="code-annotation">获取 A, B, C 三个值</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="var">secretB</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>().<span class="func">getSecretB</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="var">secretC</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>().<span class="func">getSecretC</span>()</div><div class="code-annotation"></div></div>
+                        
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="comment"># Tamas: (A AND B) OR C</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><span class="var">tam</span> <span class="op">=</span> (<span class="var">secretA</span> <span class="op-and">and </span><span class="var">secretB</span>) <span class="op-or">or </span><span class="var">secretC</span></div><div class="code-annotation">确保 AND 先执行</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">19</span>, <span class="num">26</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">tam</span>)</div><div class="code-annotation"></div></div>
+
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="comment"># Zsofi: (A OR B) AND C</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">zso</span> <span class="op">=</span> (<span class="var">secretA</span> <span class="op-or">or </span><span class="var">secretB</span>) <span class="op-and">and </span><span class="var">secretC</span></div><div class="code-annotation">确保 OR 先执行</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">26</span>, <span class="num">36</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">zso</span>)</div><div class="code-annotation"></div></div>
+
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="comment"># Istvan: (A OR C) AND (B OR C)</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="var">ist</span> <span class="op">=</span> (<span class="var">secretA</span> <span class="op-or">or </span><span class="var">secretC</span>) <span class="op-and">and </span>(<span class="var">secretB</span> <span class="op-or">or </span><span class="var">secretC</span>)</div><div class="code-annotation">确保每个括号内的 OR 先执行</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">37</span>, <span class="num">34</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">ist</span>)</div><div class="code-annotation"></div></div>
+
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">    <span class="comment"># Csilla: (A AND B) OR (B AND NOT C)</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content"><span class="var">csi</span> <span class="op">=</span> (<span class="var">secretA</span> <span class="op-and">and </span><span class="var">secretB</span>) <span class="op-or">or </span>(<span class="var">secretB</span> <span class="op-and">and </span>(<span class="op-not">not </span><span class="var">secretC</span>))</div><div class="code-annotation">括号保证了 NOT > AND > OR 的顺序</div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">40</span>, <span class="num">22</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">csi</span>)</div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 46: 组合挑战. 非与或 (最终组合) -->
+        <section id="level-46" class="level-card" style="border-left-color: var(--accent-and);">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 46 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">组合挑战. 非与或 (NOT AND OR)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-puzzle-piece mr-2"></i>战术思路分析：综合决策</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这是对所有布尔运算符的总测试！
+                            </p>
+                            <ul class="list-disc list-inside text-gray-300 space-y-2">
+                                <li>**物品条件（OR）：** 收集 `potion` **或** `lightstone`。</li>
+                                <li>**敌人条件（NOT AND）：** 攻击 **非** `burl` **且** 距离 `< 15` 的敌人。</li>
+                            </ul>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">NOT AND 结构</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们使用 `!= "burl"` (不等于) 来实现 `NOT` 的功能，然后用 `AND` 来连接距离条件。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-infinity text-6xl text-purple-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Attack: (Type <span class="op-not">!=</span> Burl) <span class="op-and">and</span> (Close) <br>
+                            Collect: (Potion <span class="op-or">or</span> Lightstone)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"potion"</span> <span class="op-or">or </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"lightstone"</span>:</div><div class="code-annotation">收集：类型是药水 **OR** 光石</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">distance</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">enemy</span>)</div><div class="code-annotation">计算距离</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op-not">!=</span> <span class="str">"burl"</span> <span class="op-and">and </span><span class="var">distance</span> <span class="op"><</span> <span class="num">15</span>:</div><div class="code-annotation">攻击：非树精 **AND** 距离小于 15</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Full Logic Mastery.</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：函数的返回值</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-return: #ff79c6; /* return 紫色 */
+            --accent-logic: #8be9fd; /* 逻辑蓝 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, return */
+            --code-func: #8be9fd;    /* findNearestEnemy, say */
+            --code-string: #f1fa8c;  /* "去战斗, " */
+            --code-num: #bd93f9;     /* 4 */
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* pos, type, x, y */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(159, 122, 234, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(159, 122, 234, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-return);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-logic);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(159, 122, 234, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-logic); }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-logic);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .ret { color: var(--accent-return); font-weight: bold; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-brain text-purple-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-purple-400">函数与返回值</span></h1>
+                    <p class="text-xs text-gray-500">函数返回值：编程的“超级大脑”（19-26关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-reply text-pink-500 mr-1"></i>return Keyword</span>
+                <span><i class="fa-solid fa-toggle-on text-cyan-500 mr-1"></i>Boolean Logic</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 19: 树精树林 (Should Attack?) -->
+        <section id="level-19" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-purple-900 text-purple-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 19 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">树精树林 (Burlwood)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-tree mr-2"></i>战术思路分析：排除法决策</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄必须攻击敌人，但不能攻击友好的**树精（"burl"）**。我们创建一个函数 `shouldAttack(target)`，让它替英雄思考：**“我应该攻击这个目标吗？”**
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-pink-500">
+                                <h4 class="font-bold text-white text-sm mb-1">返回值类型：布尔值 (True/False)</h4>
+                                <p class="text-xs text-gray-400">
+                                    函数通过返回 `True` 或 `False` 来给出明确的答案。
+                                    <br>
+                                    1. 如果目标不存在或它是树精，函数返回 `False`。
+                                    <br>
+                                    2. 否则，函数执行到底，默认返回 `True` (可以攻击)。
+                                    <br>
+                                    英雄的主代码只需要检查 `if shouldAttack(enemy):` 即可。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-reply text-6xl text-pink-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            shouldAttack(Target) <br>
+                            <i class="fa-solid fa-arrow-down text-cyan-400"></i><br>
+                            <span class="text-green-400">True</span> or <span class="text-red-400">False</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">shouldAttack</span>(<span class="var">target</span>):</div><div class="code-annotation">定义决策函数，接收目标</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># return False 如果没有`target`</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="kwd">not </span><span class="var">target</span>:</div><div class="code-annotation">如果目标不存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="ret">return </span><span class="kwd">False</span></div><div class="code-annotation"><i class="fa-solid fa-reply mr-1"></i>返回 False，停止执行</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="comment"># return False 如果target.type == "burl"</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="kwd">if </span><span class="var">target</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"burl"</span>:</div><div class="code-annotation">如果目标是树精</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="ret">return </span><span class="kwd">False</span></div><div class="code-annotation"><i class="fa-solid fa-reply mr-1"></i>返回 False，停止执行</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="comment"># 否则 return True</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="ret">return </span><span class="kwd">True</span></div><div class="code-annotation"><i class="fa-solid fa-reply mr-1"></i>否则返回 True</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="comment"># heroShouldAttack将被赋值为shouldAttack()返回的值！</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="var">heroShouldAttack</span> <span class="op">=</span> <span class="func">shouldAttack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">调用函数，结果是 True/False</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">    <span class="kwd">if </span><span class="var">heroShouldAttack</span>:</div><div class="code-annotation">如果返回值为 True</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">发起攻击</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 20: 盲距 (Return Distance) -->
+        <section id="level-20" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-purple-900 text-purple-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 20 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">盲距 (Blind Spot)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-reply mr-2"></i>战术思路分析：返回距离</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄担任盲人巫师的“观测手”，需要测量并说出敌人的距离。这次函数不再返回 True/False，而是返回一个**数字**。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-pink-500">
+                                <h4 class="font-bold text-white text-sm mb-1">数值返回与哨兵值 (Sentinel Value)</h4>
+                                <p class="text-xs text-gray-400">
+                                    `nearestEnemyDistance()` 函数会做两件事：
+                                    <br>
+                                    1. 如果有敌人，返回精确的距离 (`hero.distanceTo(enemy)`)。
+                                    <br>
+                                    2. 如果没有敌人，返回 `0`。这个 `0` 是一个特殊的**哨兵值**，告诉调用者：“虽然没找到，但别报错，结果是 0。”
+                                    <br>
+                                    主循环通过检查 `if enemyDistance > 0:` 来知道是否找到了目标。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-ruler-combined text-6xl text-cyan-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Enemy: <span class="ret">return</span> Distance <br>
+                            ELSE: <span class="ret">return</span> 0 <br>
+                            <i class="fa-solid fa-check text-green-400"></i> Say(15.42)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">nearestEnemyDistance</span>():</div><div class="code-annotation">定义返回敌人距离的函数</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找最近的敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">result</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化结果为 0 (哨兵值)</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">result</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">enemy</span>)</div><div class="code-annotation">计算并存储实际距离</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="ret">return </span><span class="var">result</span></div><div class="code-annotation"><i class="fa-solid fa-reply mr-1"></i>返回距离（0 或实际值）</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="comment"># 调用nearestEnemyDistance()并</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="comment"># 将结果保存在变量enemyDistance中。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="var">enemyDistance</span> <span class="op">=</span> <span class="func">nearestEnemyDistance</span>()</div><div class="code-annotation">获取函数返回值</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="comment"># 如果enemyDistance大于0：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemyDistance</span> <span class="op">></span> <span class="num">0</span>:</div><div class="code-annotation">只有当距离大于 0 (即有敌人) 时</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="comment"># 说出enemyDistance变量的值。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="var">enemyDistance</span>)</div><div class="code-annotation">告诉巫师距离</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 21: 固定打击 (Return Boolean with logic) -->
+        <section id="level-21" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-purple-900 text-purple-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 21 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">固定打击 (Static Shock)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-lock mr-2"></i>战术思路分析：安全范围检查</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                你被困住了，移动会受伤！只能在敌人靠近到攻击范围（3米）时才能反击。我们需要一个“攻击许可”函数。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">多重返回路径</h4>
+                                <p class="text-xs text-gray-400">
+                                    `inAttackRange(enemy)` 函数会计算距离，并使用 `if/else` 来决定返回路径：
+                                    <br>
+                                    - `if distance <= 3`: <span class="text-green-400">return True</span>
+                                    <br>
+                                    - `else`: <span class="text-red-400">return False</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-sword text-6xl text-gray-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Distance <span class="op"><=</span> 3: <span class="ret">return</span> <span class="kwd">True</span> <br>
+                            ELSE: <span class="ret">return</span> <span class="kwd">False</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">inAttackRange</span>(<span class="var">enemy</span>):</div><div class="code-annotation">检查是否在攻击范围内的函数</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">distance</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">enemy</span>)</div><div class="code-annotation">计算距离</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="comment"># 几乎所有剑的攻击范围都是3。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">distance</span> <span class="op"><=</span> <span class="num">3</span>:</div><div class="code-annotation">如果距离小于等于 3</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="ret">return </span><span class="kwd">True</span></div><div class="code-annotation"><i class="fa-solid fa-reply mr-1"></i>返回 True (可以攻击)</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="ret">return </span><span class="kwd">False</span></div><div class="code-annotation"><i class="fa-solid fa-reply mr-1"></i>返回 False (不能攻击)</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="var">nearestEnemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="comment"># 把结果保存于canAttack变量中</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="var">canAttack</span> <span class="op">=</span> <span class="func">inAttackRange</span>(<span class="var">nearestEnemy</span>)</div><div class="code-annotation">调用函数，结果是 True/False</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="comment"># 如果存储在canAttack中的结果是 True, 则发起攻击！</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="kwd">if </span><span class="var">canAttack</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">nearestEnemy</span>)</div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 22: 金币猎手 (Return with Parameter) -->
+        <section id="level-22" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-purple-900 text-purple-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 22 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">金币猎手 (Coin Hunter)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-coins mr-2"></i>战术思路分析：机会成本</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                毒药让英雄不能乱动！只有当硬币在**20米以内**，才值得冒险移动。函数 `isCoinClose(coin)` 接收一个参数 `coin`，专门针对这个硬币对象进行距离检查。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">接收参数并返回布尔值</h4>
+                                <p class="text-xs text-gray-400">
+                                    函数接收的 `coin` 参数让它具有通用性，可以检查任何物品的距离。
+                                    <br>
+                                    - 检查：`distance < 20`
+                                    <br>
+                                    - 结果：返回 `True` 或 `False`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-person-running text-6xl text-yellow-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            <span class="ret">return</span> <span class="var">distance</span> <span class="op"><</span> 20 <br>
+                            <i class="fa-solid fa-arrow-down text-cyan-400"></i><br>
+                            Move <span class="ret">IF</span> <span class="kwd">True</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">isCoinClose</span>(<span class="var">coin</span>):</div><div class="code-annotation">检查硬币距离的函数，接收硬币对象</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 确定与`coin`之间的距离。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">distance</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">coin</span>)</div><div class="code-annotation">计算英雄到硬币的距离</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="comment"># 如果距离小于20：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="kwd">if </span><span class="var">distance</span> <span class="op"><</span> <span class="num">20</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="comment"># 返回 True</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="ret">return </span><span class="kwd">True</span></div><div class="code-annotation">距离够近，返回 True</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="comment"># 否则：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="comment"># 返回 False</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="ret">return </span><span class="kwd">False</span></div><div class="code-annotation">距离太远，返回 False</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果找到了物品</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">        <span class="comment"># 如果isCoinClose(item)返回true：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">        <span class="kwd">if </span><span class="func">isCoinClose</span>(<span class="var">item</span>):</div><div class="code-annotation">调用函数，如果为 True 则执行</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 23: 返回Agrippa (Code Simplification) -->
+        <section id="level-23" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-purple-900 text-purple-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 23 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">返回Agrippa (Return to Agrippa)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-swords mr-2"></i>战术思路分析：优雅出击</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这是一次代码重构（Re-factoring）练习。我们将“判断是否在攻击范围内”的逻辑封装起来，让主循环的代码读起来像流水账一样简单。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">函数抽离的价值</h4>
+                                <p class="text-xs text-gray-400">
+                                    - **`enemyInRange(enemy)`:** 负责计算距离并返回 **True** 或 **False**。
+                                    <br>
+                                    - **`cleaveOrAttack(enemy)`:** 负责决定是使用 `cleave` 还是 `attack`。
+                                    <br>
+                                    主循环：`if enemy: if enemyInRange(enemy): cleaveOrAttack(enemy)`，**逻辑清晰，易于维护！**
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-code-commit text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            <span class="func">checkDistance</span>()<br>
+                            <span class="ret">return</span> <span class="kwd">True</span>/<span class="kwd">False</span><br>
+                            <i class="fa-solid fa-arrow-down text-pink-400"></i><br>
+                            <span class="func">cleaveOrAttack</span>()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">enemyInRange</span>(<span class="var">enemy</span>):</div><div class="code-annotation">检查是否在攻击范围内 (< 5米)</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 如果敌人的距离少于5米，则返回True值。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">distance</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">enemy</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">distance</span> <span class="op"><</span> <span class="num">5</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="ret">return </span><span class="kwd">True</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="ret">return </span><span class="kwd">False</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="kwd">def </span><span class="func">cleaveOrAttack</span>(<span class="var">enemy</span>):</div><div class="code-annotation">定义攻击方式 (范围斩或普通攻击)</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="func">isReady</span>(<span class="str">'cleave'</span>):</div><div class="code-annotation">如果范围斩准备好了</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="var">hero</span>.<span class="func">cleave</span>(<span class="var">enemy</span>)</div><div class="code-annotation">执行范围斩</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">执行普通攻击</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">        <span class="comment"># 调用 enemyInRange 来检查敌人的距离。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content">        <span class="kwd">if </span><span class="func">enemyInRange</span>(<span class="var">enemy</span>):</div><div class="code-annotation">如果函数返回 True (在范围内)</div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content">            <span class="func">cleaveOrAttack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">执行攻击动作</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 24: 金属探测器 (Return Distance or 0) -->
+        <section id="level-24" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-purple-900 text-purple-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 24 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">金属探测器 (Metal Detector)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-ruler mr-2"></i>战术思路分析：测量与报告</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄是炮兵的测距仪。你必须测量到金币的距离。如果找不到金币，则报告 `0`。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">返回值类型：数字 (含 0)</h4>
+                                <p class="text-xs text-gray-400">
+                                    - 如果 `coin` 存在，`return distance` (实际数字)。
+                                    <br>
+                                    - 否则，`return 0` (哨兵值)。
+                                    <br>
+                                    **注意：** 必须使用 `else` 语句来确保在找不到硬币时，函数能返回 `0`。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-bullseye text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Coin: <span class="ret">return</span> Distance <br>
+                            ELSE: <span class="ret">return</span> 0
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">coinDistance</span>():</div><div class="code-annotation">测距函数</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 找到最近的硬币，</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">coin</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="comment"># 如果有一枚硬币，返回到它的距离。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="kwd">if </span><span class="var">coin</span>:</div><div class="code-annotation">如果硬币存在</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">distance</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">coin</span>)</div><div class="code-annotation">计算距离</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="ret">return </span><span class="var">distance</span></div><div class="code-annotation"><i class="fa-solid fa-reply mr-1"></i>返回实际距离</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="comment"># 否则，返回0（零）。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="ret">return </span><span class="num">0</span></div><div class="code-annotation"><i class="fa-solid fa-reply mr-1"></i>返回哨兵值 0</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="var">distance</span> <span class="op">=</span> <span class="func">coinDistance</span>()</div><div class="code-annotation">获取距离值 (可能是 0)</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="kwd">if </span><span class="var">distance</span> <span class="op">></span> <span class="num">0</span>:</div><div class="code-annotation">如果值大于 0 (即有硬币)</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="comment"># 说`distance`。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="var">distance</span>)</div><div class="code-annotation">报告给炮兵</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 25: 概念挑战. 食人魔入侵者 (Return Coordinate or -1) -->
+        <section id="level-25" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-purple-900 text-purple-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 25 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 食人魔入侵者 (Ogre Infiltrator)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-map-marked-alt mr-2"></i>战术思路分析：坐标报告</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                机器人需要敌人的 X 坐标才能发射激光。如果找不到敌人，函数应该返回一个不可能的坐标值，例如 **`-1`**，作为哨兵值。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">返回值类型：坐标 (或 -1)</h4>
+                                <p class="text-xs text-gray-400">
+                                    - 如果 `enemy` 存在，`return enemy.pos.x`。
+                                    <br>
+                                    - 否则，Python 函数默认会返回 `None`。为了确保返回值是数字类型（即使是哨兵值），我们需要显式地在 `if` 语句外添加 `return -1`。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-robot text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Enemy: <span class="ret">return</span> X <br>
+                            <span class="var">enemyX</span> <span class="op">=</span> <span class="func">getEnemyX</span>() <br>
+                            IF <span class="var">enemyX</span> <span class="op">!=</span> <span class="num">-1</span>: Say(X)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">getEnemyX</span>():</div><div class="code-annotation">获取敌人 X 坐标的函数</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="ret">return </span><span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">x</span></div><div class="code-annotation"><i class="fa-solid fa-reply mr-1"></i>返回 X 坐标</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="ret">return </span><span class="op">-</span><span class="num">1</span></div><div class="code-annotation"><i class="fa-solid fa-reply mr-1"></i>否则返回 -1</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="var">enemyX</span> <span class="op">=</span> <span class="func">getEnemyX</span>()</div><div class="code-annotation">获取 X 坐标 (可能是 -1)</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemyX</span> <span class="op">!=</span> <span class="op">-</span><span class="num">1</span>:</div><div class="code-annotation">如果 X 不等于 -1 (即有敌人)</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="var">enemyX</span>)</div><div class="code-annotation">说出坐标，机器人开火</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- LEVEL 26: 组合挑战. 森林风暴 (Nested Return Logic) -->
+        <section id="level-26" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-purple-900 text-purple-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 26 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">组合挑战. 森林风暴 (Storm)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-bolt mr-2"></i>战术思路分析：三层过滤</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这是对函数和布尔逻辑的终极测试。英雄只有在满足以下所有条件时才能行动：**存在 + 距离近 + 类型正确**。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">复合逻辑封装 (`isCloseType`)</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们使用嵌套的 `if` 语句将三个条件全部封装在一个函数中：
+                                    <br>
+                                    1. `if target:` (是否存在？)
+                                    <br>
+                                    2. `if distance < 15:` (是否靠近？)
+                                    <br>
+                                    3. `if target.type == type:` (是否类型匹配？)
+                                    <br>
+                                    只有通过所有检查，函数才会返回 `True`。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-filter text-6xl text-yellow-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            (Exists AND Close AND Type?) <br>
+                            <i class="fa-solid fa-arrow-down text-cyan-400"></i><br>
+                            One Function, One Final Decision.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">isCloseType</span>(<span class="var">target</span>, <span class="var">type</span>):</div><div class="code-annotation">定义三合一检查函数：目标和期望类型</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="kwd">if </span><span class="var">target</span>:</div><div class="code-annotation">检查 1: 目标是否存在</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">        <span class="var">distance</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">target</span>)</div><div class="code-annotation">如果存在，计算距离</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="kwd">if </span><span class="var">distance</span> <span class="op"><</span> <span class="num">15</span>:</div><div class="code-annotation">检查 2: 距离是否小于 15 米</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">            <span class="kwd">if </span><span class="var">target</span>.<span class="prop">type</span> <span class="op">==</span> <span class="var">type</span>:</div><div class="code-annotation">检查 3: 类型是否匹配</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">                <span class="ret">return </span><span class="kwd">True</span></div><div class="code-annotation"><i class="fa-solid fa-reply mr-1"></i>所有条件满足，返回 True</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="ret">return </span><span class="kwd">False</span></div><div class="code-annotation"><i class="fa-solid fa-reply mr-1"></i>任何条件失败，返回 False</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找物品</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="kwd">if </span><span class="func">isCloseType</span>(<span class="var">item</span>, <span class="str">"coin"</span>):</div><div class="code-annotation">调用函数：如果是近距离硬币</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动去收集</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找敌人</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="kwd">if </span><span class="func">isCloseType</span>(<span class="var">enemy</span>, <span class="str">"munchkin"</span>):</div><div class="code-annotation">调用函数：如果是近距离矮人</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击敌人</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Function Return Mastery.</p>
+    </footer>
+
+</body>
+</html>

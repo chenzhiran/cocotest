@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第1-8关 字符串与数字运算</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-magic: #2c003e;       /* 魔法深紫 */
+            --book-page: #fdf6e3;      /* 羊皮纸色 */
+            --primary: #9b59b6;        /* 紫罗兰 */
+            --secondary: #e67e22;      /* 南瓜橙 */
+            --accent: #3498db;         /* 天空蓝 */
+            --highlight: #f1c40f;      /* 金色 */
+            --text-main: #2c3e50;
+            
+            /* 代码高亮 */
+            --code-bg: #2d3436;
+            --code-fg: #dfe6e9;
+            --tok-str: #ff9ff3;        /* 字符串 */
+            --tok-num: #55efc4;        /* 数字 */
+            --tok-op: #feca57;         /* 运算符 */
+            --tok-var: #54a0ff;        /* 变量 */
+            --tok-cm: #95a5a6;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-magic);
+            /* 星空背景 */
+            background-image: 
+                radial-gradient(white 1px, transparent 1px),
+                radial-gradient(white 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            color: var(--text-main);
+        }
+
+        /* 漂浮符文动画 */
+        .rune {
+            position: absolute; font-size: 20px; color: rgba(255,255,255,0.2);
+            animation: floatRune 10s infinite linear; pointer-events: none;
+        }
+        @keyframes floatRune {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            20% { opacity: 0.5; }
+            80% { opacity: 0.5; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 80px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 书签按钮 (外部) --- */
+        .nav-btn {
+            width: 60px;
+            height: 100px;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: white;
+            background: transparent;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3));
+        }
+
+        .bookmark-body {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--secondary);
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+            z-index: -1;
+            border-top: 4px solid #d35400;
+        }
+        
+        .btn-prev .bookmark-body { background: var(--primary); border-color: #8e44ad; }
+        .btn-next .bookmark-body { background: var(--secondary); border-color: #d35400; }
+
+        .nav-btn:hover { transform: translateY(-5px) scale(1.1); }
+        .nav-btn:active { transform: translateY(5px) scale(0.95); }
+        
+        .disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 魔法书容器 --- */
+        .book-container {
+            width: 960px;
+            height: 640px;
+            background: var(--book-page);
+            border-radius: 10px 20px 20px 10px;
+            box-shadow: 
+                inset 20px 0 50px rgba(0,0,0,0.1), /* 书脊阴影 */
+                10px 10px 0 #3e2723, /* 书皮厚度 */
+                20px 20px 60px rgba(0,0,0,0.6);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 10px solid #5d4037;
+        }
+        
+        /* 顶部书名 */
+        .book-header {
+            height: 60px;
+            border-bottom: 2px solid #8d6e63;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            font-family: 'Georgia', serif;
+            background: #efebe9;
+            z-index: 20;
+        }
+        .map-tag {
+            background: var(--primary); color: white; padding: 4px 12px; border-radius: 15px; font-size: 14px; font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px 70px;
+            flex-direction: column;
+            animation: pageTurn 0.6s ease-in-out;
+            overflow-y: auto;
+            background-image: url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><text x="10" y="50" font-size="80" fill="%23f0e6d2" font-family="serif" opacity="0.3">✨</text></svg>');
+            background-repeat: repeat;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes pageTurn { 
+            0% { opacity: 0; transform: rotateY(-10deg) translateX(20px); } 
+            100% { opacity: 1; transform: rotateY(0) translateX(0); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 3px double #8d6e63;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2)); }
+        h1 { margin: 0; color: #5d4037; font-size: 34px; letter-spacing: 1px; font-weight: bold; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 19px; line-height: 1.7; color: #4e342e; }
+        .col-visual { 
+            flex: 0.9; 
+            background: #fff;
+            border: 4px solid #8d6e63; 
+            border-radius: 10px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 5px;
+            font-family: 'Consolas', monospace;
+            font-size: 18px;
+            margin-top: 15px;
+            border-left: 5px solid var(--highlight);
+            box-shadow: 5px 5px 10px rgba(0,0,0,0.2);
+        }
+        
+        .s { color: var(--tok-str); } 
+        .n { color: var(--tok-num); }
+        .o { color: var(--tok-op); font-weight: bold; } 
+        .v { color: var(--tok-var); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #fff3e0;
+            border-left: 5px solid var(--secondary);
+            color: #e65100;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 8px 8px 0;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 字符串拼接演示 */
+        .lego-container {
+            display: flex; gap: 10px; align-items: center;
+        }
+        .lego-block {
+            padding: 10px 20px; color: white; font-weight: bold; border-radius: 5px; font-family: monospace; font-size: 20px;
+            position: relative; cursor: pointer; transition: all 0.3s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+        .lego-block::after { /* 积木凸起 */
+            content: ''; position: absolute; right: -10px; top: 10px; width: 10px; height: 20px;
+            background: inherit; border-radius: 0 5px 5px 0;
+        }
+        .lego-block.orange { background: #e67e22; }
+        .lego-block.blue { background: #3498db; }
+        .lego-block.purple { background: #9b59b6; width: 100%; text-align: center; }
+        .lego-plus { font-size: 30px; color: #555; transition: all 0.3s; }
+
+        /* 复印机演示 */
+        .copy-machine {
+            width: 100px; height: 100px; background: #95a5a6; border: 2px solid #7f8c8d; border-radius: 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .paper-out {
+            position: absolute; background: white; border: 1px solid #ccc; padding: 5px;
+            font-family: monospace; font-size: 12px; width: 80px; text-align: center;
+            opacity: 0;
+        }
+        @keyframes printPaper {
+            0% { top: 50%; opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1); }
+            100% { top: 120%; opacity: 0; }
+        }
+
+        /* 魔法运算演示 */
+        .math-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;
+        }
+        .math-item {
+            background: #f1f2f6; padding: 10px; border-radius: 8px; text-align: center;
+            border: 2px solid #dfe4ea; transition: transform 0.2s; cursor: pointer;
+        }
+        .math-item:hover { transform: scale(1.05); border-color: var(--accent); }
+        .op-symbol { font-size: 24px; font-weight: bold; display: block; margin-bottom: 5px; color: var(--primary); }
+
+        /* 乘方演示 */
+        .wizard-box { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        .wizard { font-size: 40px; position: absolute; transition: all 0.5s; }
+        .wizard-main { font-size: 60px; z-index: 10; cursor: pointer; }
+
+        /* 变量盒子 */
+        .variable-box {
+            width: 100px; height: 100px; border: 4px solid var(--secondary); border-top: none;
+            position: relative; display: flex; justify-content: center; align-items: flex-end;
+            background: rgba(230, 126, 34, 0.1);
+        }
+        .var-label {
+            position: absolute; top: 10px; width: 100%; text-align: center; font-weight: bold; color: var(--secondary);
+        }
+        .coin {
+            width: 20px; height: 20px; background: var(--highlight); border-radius: 50%; border: 2px solid #f39c12;
+            margin: 2px; animation: dropIn 0.5s;
+        }
+        @keyframes dropIn { from { transform: translateY(-100px); } to { transform: translateY(0); } }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #d7ccc8;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 动画 */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    </style>
+</head>
+<body>
+
+<!-- 背景符文生成 -->
+<script>
+    const runes = ['⚡', '➕', '➖', '➗', '✖️', '📜', '✨'];
+    for(let i=0; i<15; i++) {
+        let r = document.createElement('div');
+        r.className = 'rune';
+        r.innerText = runes[Math.floor(Math.random() * runes.length)];
+        r.style.left = Math.random() * 100 + 'vw';
+        r.style.animationDelay = Math.random() * 5 + 's';
+        r.style.fontSize = (Math.random() * 20 + 10) + 'px';
+        document.body.appendChild(r);
+    }
+</script>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">
+        <div class="bookmark-body"></div>
+        <span style="z-index: 2;">❮</span>
+    </button>
+
+    <!-- 魔法书容器 -->
+    <div class="book-container">
+        <div class="book-header">
+            <div class="map-tag">游戏开发 2</div>
+            <div style="font-weight: bold; color: #3e2723;">第 1-8 关</div>
+        </div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">🔮</div>
+            <h1 style="font-size: 50px; margin: 10px 0; color: #4e342e;">魔法运算手册</h1>
+            <h2 style="font-size: 26px; color: var(--primary); font-weight: bold; margin-top: 0;">String & Number Operations</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: var(--accent); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #2980b9;">🔤 字符串拼贴</div>
+                <div style="padding: 15px 30px; background: var(--secondary); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #d35400;">🔢 数字炼金</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 字符串加法 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔗</div>
+                <h1>字符串加法：拼接术</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>像拼乐高积木一样，用 <b>+</b> 号把两段文字连起来。</p>
+                    <div class="code-box">
+                        <span class="s">"Friend "</span> <span class="o">+</span> <span class="s">"Alice"</span><br>
+                        <span class="c"># 结果: "Friend Alice"</span>
+                    </div>
+                    <p style="margin-top: 15px;">在游戏里，这很有用：</p>
+                    <div class="code-box">
+                        <span class="v">hero</span>.<span class="f">say</span>(<span class="s">"Hello "</span> <span class="o">+</span> <span class="v">friend</span>.<span class="v">id</span>)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="lego-container" id="legoDemo" onclick="mergeLego()" style="cursor: pointer;">
+                        <div class="lego-block orange">"Hello"</div>
+                        <div class="lego-plus">+</div>
+                        <div class="lego-block blue">"World"</div>
+                    </div>
+                    <div style="position: absolute; bottom: 20px; color: #aaa;">点击积木拼接</div>
+                    <script>
+                        function mergeLego() {
+                            const container = document.getElementById('legoDemo');
+                            container.innerHTML = '<div class="lego-block purple" style="animation: pulse 0.5s">"HelloWorld"</div>';
+                            setTimeout(() => {
+                                container.innerHTML = `
+                                    <div class="lego-block orange">"Hello"</div>
+                                    <div class="lego-plus">+</div>
+                                    <div class="lego-block blue">"World"</div>
+                                `;
+                            }, 2000);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 字符串乘法 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🖨️</div>
+                <h1>字符串乘法：复制术</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>就像魔法复印机！把字符串乘以数字，就能复制多份。</p>
+                    <div class="code-box">
+                        <span class="s">"Ha"</span> <span class="o">*</span> <span class="n">3</span><br>
+                        <span class="c"># 结果: "HaHaHa"</span>
+                    </div>
+                    <div class="card">
+                        "Danger! " * 2 = "Danger! Danger! "
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="copy-machine">
+                        <div style="font-size: 30px;">📄</div>
+                        <div style="font-weight: bold;">x 3</div>
+                        <!-- JS 生成纸张动画 -->
+                        <div id="paperArea"></div>
+                    </div>
+                    <script>
+                        setInterval(() => {
+                            if(document.querySelector('.slide:nth-child(4)').classList.contains('active')) {
+                                const p = document.createElement('div');
+                                p.className = 'paper-out';
+                                p.innerText = '"Ha"';
+                                p.style.animation = 'printPaper 1s linear';
+                                document.getElementById('paperArea').appendChild(p);
+                                setTimeout(() => p.remove(), 1000);
+                            }
+                        }, 800);
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 数字四兄弟 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">➗</div>
+                <h1>整数四则运算</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>数字的魔法比较直接：</p>
+                    <div class="math-grid">
+                        <div class="math-item"><span class="op-symbol">+</span>加法 (合体)</div>
+                        <div class="math-item"><span class="op-symbol">-</span>减法 (拿走)</div>
+                        <div class="math-item"><span class="op-symbol">*</span>乘法 (倍增)</div>
+                        <div class="math-item"><span class="op-symbol">/</span>除法 (平分)</div>
+                    </div>
+                    <div class="code-box" style="margin-top: 20px;">
+                        <span class="v">total</span> <span class="o">=</span> <span class="n">5</span> <span class="o">+</span> <span class="n">3</span>  <span class="c"># 8</span><br>
+                        <span class="v">share</span> <span class="o">=</span> <span class="n">10</span> <span class="o">/</span> <span class="n">2</span> <span class="c"># 5</span>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 100px; color: var(--primary);">🧮</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 乘方运算 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">💥</div>
+                <h1>乘方运算：超级复制</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>这是更厉害的魔法！成倍成倍地增长。</p>
+                    <div class="code-box">
+                        <span class="c"># 3 的 2 次方 (3²)</span><br>
+                        <span class="v">power</span> <span class="o">=</span> <span class="n">3</span> <span class="o">**</span> <span class="n">2</span><br>
+                        <span class="c"># 结果: 9</span>
+                    </div>
+                    <p>注意是两个星号 <code>**</code> 哦！</p>
+                </div>
+                <div class="col-visual">
+                    <div class="wizard-box" onclick="castClone()">
+                        <div class="wizard wizard-main">🧙‍♂️</div>
+                        <div style="position: absolute; bottom: 10px; color: #888;">点击法师施法 (3²)</div>
+                    </div>
+                    <script>
+                        function castClone() {
+                            const box = document.querySelector('.wizard-box');
+                            const main = document.querySelector('.wizard-main');
+                            
+                            // 清除旧的
+                            document.querySelectorAll('.clone').forEach(c => c.remove());
+                            
+                            main.style.transform = 'scale(1.2)';
+                            setTimeout(() => main.style.transform = 'scale(1)', 200);
+
+                            // 生成8个克隆 (共9个)
+                            for(let i=0; i<8; i++) {
+                                const clone = document.createElement('div');
+                                clone.className = 'wizard clone';
+                                clone.innerText = '🧙‍♂️';
+                                clone.style.opacity = '0.5';
+                                const angle = (i / 8) * Math.PI * 2;
+                                const radius = 80;
+                                clone.style.left = `calc(50% + ${Math.cos(angle)*radius}px - 20px)`;
+                                clone.style.top = `calc(50% + ${Math.sin(angle)*radius}px - 20px)`;
+                                box.appendChild(clone);
+                            }
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 变量与顺序 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📦</div>
+                <h1>变量与顺序执行</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>变量 (Variable)</b>：贴了标签的箱子。<br>
+                    <b>顺序 (Sequence)</b>：一步一步来，像做菜。</p>
+                    <div class="code-box">
+                        <span class="v">sum</span> <span class="o">=</span> <span class="n">5</span> <span class="o">+</span> <span class="n">3</span> <span class="c"># 第一步</span><br>
+                        <span class="v">hero</span>.<span class="f">say</span>(<span class="v">sum</span>)<br>
+                        <span class="v">sub</span> <span class="o">=</span> <span class="v">sum</span> <span class="o">-</span> <span class="n">2</span> <span class="c"># 第二步</span>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="variable-box" id="varBox">
+                            <div class="var-label">sum</div>
+                        </div>
+                        <button onclick="addCoin()" style="margin-top: 10px; padding: 5px 10px; background: var(--highlight); border: none; border-radius: 5px; cursor: pointer;">放入金币</button>
+                    </div>
+                    <script>
+                        function addCoin() {
+                            const box = document.getElementById('varBox');
+                            const c = document.createElement('div');
+                            c.className = 'coin';
+                            box.appendChild(c);
+                            if(box.children.length > 6) box.innerHTML = '<div class="var-label">sum</div>'; // Reset
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 优先级 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🥇</div>
+                <h1>运算符优先级</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>魔法规则：<b>先乘除，后加减</b>。</p>
+                    <div class="code-box">
+                        <span class="n">2</span> <span class="o">+</span> <span class="n">3</span> <span class="o">*</span> <span class="n">4</span><br>
+                        <span class="c"># 先算 3*4=12</span><br>
+                        <span class="c"># 再算 2+12=14</span>
+                    </div>
+                    <p>想要改变顺序？用<b>括号 ()</b>！</p>
+                    <div class="code-box">
+                        <span class="o">(</span><span class="n">2</span> <span class="o">+</span> <span class="n">3</span><span class="o">)</span> <span class="o">*</span> <span class="n">4</span> <span class="c"># = 20</span>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 80px; color: var(--accent);">
+                        ( ) <span style="font-size: 40px;">></span> * / <span style="font-size: 40px;">></span> + -
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 魔法小贴士 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🦉</div>
+                <h1>魔法小贴士</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <div class="card" style="background: #ffebee; border-color: #c0392b; color: #c0392b;">
+                        🚫 <b>不要</b>把文字和数字直接相加！<br>
+                        "HP: " + 100 (Python里可能需要转换)
+                    </div>
+                    <div class="card" style="background: #e3f2fd; border-color: #1976d2; color: #0d47a1; margin-top: 15px;">
+                        ➗ 除法可能产生小数：<br>
+                        5 / 2 = 2.5 (不是 2 哦)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 100px;">🧙‍♀️</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎓</div>
+                <h1>毕业总结</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <h2 style="color: var(--primary);">编程就是施展魔法！</h2>
+                    <p>用 <b>+</b> 连接世界，<br>用 <b>*</b> 复制力量，<br>用 <b>变量</b> 储存宝藏。</p>
+                    <div style="font-size: 60px; margin-top: 20px;">✨ 📜 ✨</div>
+                </div>
+                <div class="col-visual" style="background: transparent; border: none; box-shadow: none;">
+                    <div style="font-size: 120px; filter: drop-shadow(0 0 20px gold);">🏆</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">
+        <div class="bookmark-body"></div>
+        <span style="z-index: 2;">❯</span>
+    </button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

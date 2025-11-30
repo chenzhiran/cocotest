@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：团队指挥与字典</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-command: #4299e1; /* 指挥蓝色 */
+            --accent-summon: #ffc94d; /* 召唤黄色 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else */
+            --code-func: #8be9fd;    /* findFriends, summon, command */
+            --code-string: #f1fa8c;  /* "soldier" */
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* gold, costOf, pos */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(66, 153, 225, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 201, 77, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-command);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-summon);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(66, 153, 225, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-command); }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-while { color: var(--accent-loop); font-weight: bold; }
+        .op-command { color: var(--accent-command); font-weight: bold; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-users-line text-blue-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-blue-400">团队指挥与召唤</span></h1>
+                    <p class="text-xs text-gray-500">列表遍历与非阻塞移动（30-31关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-crown text-yellow-500 mr-1"></i>Summon & CostOf</span>
+                <span><i class="fa-solid fa-arrows-to-dot text-cyan-500 mr-1"></i>Command(unit, "action", pos)</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 30: 安息之云指挥官 (summon and command move) -->
+        <section id="level-30" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-blue-900 text-blue-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 30 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">安息之云指挥官 (Cloudrip Commander)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-blue-400 mb-3"><i class="fa-solid fa-siren-on mr-2"></i>战术思路分析：召唤与集结</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄拥有**首领之星**，可以召唤士兵并指挥他们。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">阶段 1：召唤士兵</h4>
+                                <p class="text-xs text-gray-400">
+                                    使用 `hero.costOf("soldier")` 检查所需金钱，确保在召唤前 (`hero.summon`) 金钱足够。
+                                </p>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500 mt-3">
+                                <h4 class="font-bold text-white text-sm mb-1">阶段 2：命令集结</h4>
+                                <p class="text-xs text-gray-400">
+                                    使用 `while` 循环遍历 `hero.findFriends()` 数组，并使用 `hero.command(unit, "move", {x: N, y: N})` 命令每个士兵移动到集合点。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-people-arrows text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            WHILE Gold > Cost: Summon() <br>
+                            WHILE Index < len(S): Command(<span class="op-command">"move"</span>, {x, y})
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-blue-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 每个士兵消耗 20 金钱。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="op-while">while </span><span class="var">hero</span>.<span class="prop">gold</span> <span class="op">></span> <span class="var">hero</span>.<span class="func">costOf</span>(<span class="str">"soldier"</span>):</div><div class="code-annotation">当金钱足够召唤士兵时</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">hero</span>.<span class="func">summon</span>(<span class="str">"soldier"</span>)</div><div class="code-annotation">召唤士兵</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    </div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="var">soldiers</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findFriends</span>()</div><div class="code-annotation">获取盟友数组</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><span class="var">soldierIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化索引</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><span class="comment"># 添加一个 while 循环来命令所有的士兵。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="op-while">while </span><span class="var">soldierIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">soldiers</span>):</div><div class="code-annotation">遍历所有士兵</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="var">soldier</span> <span class="op">=</span> <span class="var">soldiers</span>[<span class="var">soldierIndex</span>]</div><div class="code-annotation">获取当前士兵</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="var">hero</span>.<span class="op-command">command</span>(<span class="var">soldier</span>, <span class="str">"move"</span>, {<span class="str">"x"</span>: <span class="num">50</span>, <span class="str">"y"</span>: <span class="num">40</span>})</div><div class="code-annotation">命令士兵移动到集合点</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="var">soldierIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">索引步进</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="comment"># 去加入你的朋友！</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="var">target</span> <span class="op">=</span> {<span class="str">"x"</span>: <span class="num">48</span>, <span class="str">"y"</span>: <span class="num">40</span>}</div><div class="code-annotation">英雄的移动目标（字典）</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"><span class="op-while">while </span><span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">target</span>):</div><div class="code-annotation">当英雄未到达目标时</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="var">hero</span>.<span class="func">move</span>(<span class="var">target</span>)</div><div class="code-annotation">使用 move (非阻塞) 持续移动</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 31: 佣兵山 (summon and command attack) -->
+        <section id="level-31" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-blue-900 text-blue-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 31 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">佣兵山 (Mountain Mercenaries)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-blue-400 mb-3"><i class="fa-solid fa-hand-fist mr-2"></i>战术思路分析：持续战斗指挥</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄必须在收集硬币的同时，持续指挥盟友攻击最近的敌人。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">一个 `while True` 包裹所有逻辑</h4>
+                                <p class="text-xs text-gray-400">
+                                    - **`move(coin.pos)`:** 英雄使用非阻塞移动收集硬币。
+                                    <br>
+                                    - **`hero.command(soldier, "attack", enemy)`:** 在同一循环内，英雄找到敌人并命令所有士兵攻击。
+                                    <br>
+                                    英雄在每一步都能同时管理移动、召唤和指挥。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-arrows-rotate text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            WHILE True: <br>
+                            &nbsp;&nbsp;Collect() <br>
+                            &nbsp;&nbsp;Summon() <br>
+                            &nbsp;&nbsp;Command <span class="op-command">"attack"</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-blue-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="op-while">while </span><span class="kwd">True</span>:</div><div class="code-annotation">外层无限循环</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 移动到最近的硬币处。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">coin</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearest</span>(<span class="var">hero</span>.<span class="func">findItems</span>())</div><div class="code-annotation">寻找最近的硬币</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">coin</span>:</div><div class="code-annotation">如果硬币存在</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">move</span>(<span class="var">coin</span>.<span class="prop">pos</span>)</div><div class="code-annotation">使用 move 持续收集</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        </div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="comment"># 如果攒够了招募士兵的资金，就招募一个。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="prop">gold</span> <span class="op">></span> <span class="var">hero</span>.<span class="func">costOf</span>(<span class="str">"soldier"</span>):</div><div class="code-annotation">如果金钱足够</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">hero</span>.<span class="func">summon</span>(<span class="str">"soldier"</span>)</div><div class="code-annotation">召唤士兵</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        </div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearest</span>(<span class="var">hero</span>.<span class="func">findEnemies</span>())</div><div class="code-annotation">寻找最近的敌人</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">        <span class="var">soldiers</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findFriends</span>()</div><div class="code-annotation">获取盟友数组</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="var">soldierIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化索引</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="comment"># 遍历你所有的士兵，命令他们攻击。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">        <span class="op-while">while </span><span class="var">soldierIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">soldiers</span>):</div><div class="code-annotation">遍历所有士兵</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">            <span class="var">soldier</span> <span class="op">=</span> <span class="var">soldiers</span>[<span class="var">soldierIndex</span>]</div><div class="code-annotation">获取当前士兵</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">            <span class="var">soldierIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">索引步进</div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content">            <span class="comment"># 使用 'attack' 命令，让你的士兵们发起攻击。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content">            <span class="var">hero</span>.<span class="op-command">command</span>(<span class="var">soldier</span>, <span class="str">"attack"</span>, <span class="var">enemy</span>)</div><div class="code-annotation">命令士兵攻击敌人</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Command and Summon Mastery.</p>
+    </footer>
+
+</body>
+</html>

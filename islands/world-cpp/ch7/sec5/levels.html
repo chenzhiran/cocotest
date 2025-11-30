@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：认识嵌套循环</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-array: #00ffff; /* 数组青色 */
+            --accent-loop: #ff79c6; /* 循环粉色 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else, len */
+            --code-func: #8be9fd;    /* findEnemies, attack, moveXY */
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* health, pos, type */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 121, 198, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-array);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-loop);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(0, 255, 255, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-loop); }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-while { color: var(--accent-loop); font-weight: bold; }
+        .op-array { color: var(--accent-array); font-weight: bold; }
+        .op-not { color: var(--accent-logic); font-weight: bold; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-layer-group text-pink-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-pink-400">嵌套循环</span></h1>
+                    <p class="text-xs text-gray-500">数组遍历与持续操作（15-18关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-sync-alt text-cyan-500 mr-1"></i>Outer Loop: Traversal</span>
+                <span><i class="fa-solid fa-infinity text-pink-500 mr-1"></i>Inner Loop: Action</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 15: 游魂 (嵌套 while 循环) -->
+        <section id="level-15" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 15 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">游魂 (Wander)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-layer-group mr-2"></i>战术思路分析：多次命中</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄需要对**每个敌人**持续攻击直到死亡，并对**每个物品**持续移动直到收集。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">循环结构：遍历 + 持续行动</h4>
+                                <p class="text-xs text-gray-400">
+                                    - **外层循环（遍历）：** `while enemyIndex < len(enemies):` (保证每个敌人都被处理)
+                                    <br>
+                                    - **内层循环（行动）：** `while enemy.health > 0:` (保证行动持续到条件改变)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-swords text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Outer: <span class="op-while">WHILE</span> <span class="var">Index</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">E</span>): <span class="var">Next E</span> <br>
+                            Inner: <span class="op-while">WHILE</span> <span class="var">E</span>.<span class="prop">Health</span> <span class="op">></span> 0: <span class="func">Attack</span>()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="op-while">while </span><span class="kwd">True</span>:</div><div class="code-annotation">外层主循环</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemies</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findEnemies</span>()</div><div class="code-annotation">获取敌人列表</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">enemyIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化敌人索引</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="op-while">while </span><span class="var">enemyIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">enemies</span>):</div><div class="code-annotation">**外层循环 1：** 遍历敌人列表</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">enemy</span> <span class="op">=</span> <span class="var">enemies</span>[<span class="var">enemyIndex</span>]</div><div class="code-annotation">获取当前敌人</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="comment"># 当敌人还有生命值时攻击。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="op-while">while </span><span class="var">enemy</span>.<span class="prop">health</span> <span class="op">></span> <span class="num">0</span>:</div><div class="code-annotation">**内层循环 1：** 持续攻击直到死亡</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">enemyIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">敌人索引步进</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="var">items</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findItems</span>()</div><div class="code-annotation">获取物品列表</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="var">itemIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化物品索引</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="comment"># 遍历所有的物品。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="op-while">while </span><span class="var">itemIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">items</span>):</div><div class="code-annotation">**外层循环 2：** 遍历物品列表</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="var">item</span> <span class="op">=</span> <span class="var">items</span>[<span class="var">itemIndex</span>]</div><div class="code-annotation">获取当前物品</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="comment"># 当距离大于 2 时：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">        <span class="op-while">while </span><span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">item</span>) <span class="op">></span> <span class="num">2</span>:</div><div class="code-annotation">**内层循环 2：** 持续移动直到靠近</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">        <span class="comment"># 别忘了增加 itemIndex</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content">        <span class="var">itemIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">物品索引步进</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 16: 潜伏 (攻击特定类型) -->
+        <section id="level-16" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 16 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">潜伏 (Lurkers)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-filter mr-2"></i>战术思路分析：类型筛选与坚持</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄只攻击萨满巫师（`"shaman"`），并持续攻击直到击败。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：`if` 筛选 + `while` 持续攻击</h4>
+                                <p class="text-xs text-gray-400">
+                                    - **`if enemy.type == "shaman"`:** 筛选出要攻击的目标。
+                                    <br>
+                                    - **`while enemy.health > 0:`:** 对选中的目标执行内层持续攻击。
+                                    <br>
+                                    **重要：** `enemyIndex += 1` 必须在内层 `while` 之后，但在外层 `while` 内部，以确保遍历继续。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-wand-magic-sparkles text-6xl text-purple-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">E</span>.<span class="prop">Type</span> <span class="op">==</span> <span class="str">"shaman"</span>: <span class="op-while">WHILE</span> <span class="var">E</span>.<span class="prop">Health</span> <span class="op">></span> 0: <span class="func">Attack</span>()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">enemies</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findEnemies</span>()</div><div class="code-annotation">获取敌人列表</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">enemyIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化索引</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="op-while">while </span><span class="var">enemyIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">enemies</span>):</div><div class="code-annotation">遍历敌人数组</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">enemies</span>[<span class="var">enemyIndex</span>]</div><div class="code-annotation">获取当前敌人</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">'shaman'</span>:</div><div class="code-annotation">如果敌人是萨满巫师</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="op-while">while </span><span class="var">enemy</span>.<span class="prop">health</span> <span class="op">></span> <span class="num">0</span>:</div><div class="code-annotation">持续攻击直到生命值耗尽</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="comment"># 记得增加 enemyIndex</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="var">enemyIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">索引步进 (无论是否攻击)</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 17: 优待 (多阶段攻击) -->
+        <section id="level-17" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 17 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">优待 (Preferential Treatment)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-list-check mr-2"></i>战术思路分析：优先击杀</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                投掷者（`thrower`）攻击力高，必须**优先**击杀。这需要两个独立的遍历循环（阶段）：
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">两阶段战术</h4>
+                                <ul class="list-disc list-inside text-xs text-gray-400 space-y-1">
+                                    <li>**阶段 1：** 遍历一次，只攻击 `thrower`。</li>
+                                    <li>**阶段 2：** 重新遍历，攻击所有**仍活着**的敌人。</li>
+                                </ul>
+                                **关键：** 在阶段 2 开始前，必须再次调用 `hero.findEnemies()`，因为阶段 1 可能击败了一些敌人。
+                            </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-user-shield text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Loop 1: IF Type <span class="op">==</span> Thrower: Attack() <br>
+                            Loop 2: IF Enemy Exists: Attack()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">enemies</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findEnemies</span>()</div><div class="code-annotation">获取敌人列表</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">enemyIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化索引</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="comment"># 阶段 1: 攻击投掷者</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="op-while">while </span><span class="var">enemyIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">enemies</span>):</div><div class="code-annotation">遍历敌人列表</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">enemies</span>[<span class="var">enemyIndex</span>]</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span> <span class="op-and">and </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"thrower"</span>:</div><div class="code-annotation">如果目标是投掷者</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="var">enemyIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">索引步进</div></div>
+                        
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="comment"># 阶段 2: 攻击剩下的敌人</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">enemies</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findEnemies</span>()</div><div class="code-annotation">重新获取最新的敌人列表</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="var">enemyIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">重置索引</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="op-while">while </span><span class="var">enemyIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">enemies</span>):</div><div class="code-annotation">遍历敌人列表</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">enemies</span>[<span class="var">enemyIndex</span>]</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人仍然存在（未被击败）</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击剩下的所有敌人</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="var">enemyIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">索引步进</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 18: Sarven 牧羊人 (嵌套循环与类型排除) -->
+        <section id="level-18" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 18 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Sarven 牧羊人 (Sarven Shepherd)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-filter mr-2"></i>战术思路分析：排除与坚持</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄必须攻击所有敌人，但要**忽略沙牦牛**（`sand-yak`）。对选中的敌人要持续攻击直到死亡。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">结构：`while` (遍历) → `if` (筛选) → `while` (持续攻击)</h4>
+                                <p class="text-xs text-gray-400">
+                                    - 遍历所有敌人，通过 `if enemy.type != "sand-yak"` 排除牦牛。
+                                    <br>
+                                    - 对非牦牛的敌人，使用 `while enemy.health > 0:` 确保击杀。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-shield-alt text-6xl text-yellow-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Type <span class="op-not">!=</span> Yak: <br>
+                            &nbsp;&nbsp;WHILE Health > 0: Attack()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="op-while">while </span><span class="kwd">True</span>:</div><div class="code-annotation">外层无限循环，持续防御</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemies</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findEnemies</span>()</div><div class="code-annotation">获取敌人列表</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">enemyIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化索引</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="op-while">while </span><span class="var">enemyIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">enemies</span>):</div><div class="code-annotation">**外层循环：** 遍历敌人列表</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">enemy</span> <span class="op">=</span> <span class="var">enemies</span>[<span class="var">enemyIndex</span>]</div><div class="code-annotation">获取当前敌人</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="comment"># "!=" 意思是 "不等于"</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op-not">!=</span> <span class="str">"sand-yak"</span>:</div><div class="code-annotation">筛选：如果不是沙牦牛</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">            <span class="comment"># 当敌人的生命值大于0，攻击它！</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">            <span class="op-while">while </span><span class="var">enemy</span>.<span class="prop">health</span> <span class="op">></span> <span class="num">0</span>:</div><div class="code-annotation">**内层循环：** 持续攻击直到死亡</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">                <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="var">enemyIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">索引步进 (遍历下一个)</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="comment"># 攻击完敌人后，回到中间位置</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">40</span>, <span class="num">32</span>)</div><div class="code-annotation">回到待命点</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Nested Loop Mastery.</p>
+    </footer>
+
+</body>
+</html>

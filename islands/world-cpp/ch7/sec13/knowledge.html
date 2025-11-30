@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第35关 练习For循环</title>
+    <style>
+        :root {
+            --primary: #FF9F1C; /* 活力橙 */
+            --secondary: #4ECDC4; /* 清新绿 */
+            --accent: #FF6B6B; /* 珊瑚红 */
+            --purple: #9B5DE5; /* 魔法紫 */
+            --dark: #2D3436; /* 深色文字 */
+            --light: #F7FFF7; /* 象牙白 */
+            --code-bg: #282C34; /* 代码背景 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Varela Round", "Microsoft YaHei", "Rounded Mplus 1c", sans-serif;
+            background-color: #C7F9CC;
+            background-image: 
+                radial-gradient(#80ED99 15%, transparent 16%),
+                radial-gradient(#80ED99 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: var(--dark);
+        }
+
+        /* 布局容器 */
+        .layout-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            width: 100%;
+            height: 100%;
+            max-width: 1400px;
+        }
+
+        /* 舞台区域 */
+        .stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 85vw;
+            max-width: 1100px;
+        }
+
+        /* 顶部标题栏 */
+        .header-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 15px;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        .map-badge {
+            background: var(--dark);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 15px 15px 0 0;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .level-info {
+            background: var(--purple);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.2);
+            transition: background 0.3s;
+        }
+
+        /* PPT 屏幕 (16:9 比例) */
+        .ppt-screen {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: var(--light);
+            border-radius: 25px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15), 0 0 0 12px rgba(255,255,255,0.6);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 幻灯片页面 */
+        .slide {
+            flex: 1;
+            display: none;
+            padding: 30px 50px;
+            box-sizing: border-box;
+            flex-direction: column;
+            justify-content: center;
+            animation: fadeIn 0.5s ease-out;
+            height: 100%;
+            position: relative;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 排版样式 */
+        h1 { font-size: 2.5rem; margin: 0 0 20px 0; color: #333; text-align: center; }
+        h2 { font-size: 1.6rem; color: var(--secondary); margin: 15px 0; }
+        p { font-size: 1.2rem; line-height: 1.6; margin-bottom: 15px; color: #555; }
+        
+        /* 双栏布局 */
+        .two-columns {
+            display: flex;
+            gap: 40px;
+            height: 100%;
+            align-items: center;
+        }
+        .col { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+        /* 代码编辑器样式 */
+        .code-window {
+            background: var(--code-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            font-family: 'Consolas', 'Monaco', monospace;
+            overflow: hidden;
+            width: 100%;
+            border: 2px solid #333;
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+
+        .window-header {
+            background: #21252b;
+            padding: 8px 15px;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid #181a1f;
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .red { background: #ff5f56; }
+        .yellow { background: #ffbd2e; }
+        .green { background: #27c93f; }
+
+        .code-content {
+            padding: 20px;
+            color: #abb2bf;
+            margin: 0;
+            white-space: pre; /* 保留缩进 */
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        /* 语法高亮 */
+        .kw { color: #c678dd; font-weight: bold; } /* keyword */
+        .func { color: #61afef; } /* function */
+        .str { color: #98c379; } /* string */
+        .num { color: #d19a66; } /* number */
+        .comment { color: #7f848e; font-style: italic; } /* comment */
+        .obj { color: #e06c75; } /* object */
+        .prop { color: #e5c07b; } /* property */
+        .op { color: #56b6c2; } /* operator */
+        .key { color: #e5c07b; } /* dict key */
+
+        /* 装饰元素 */
+        .highlight-box {
+            background: #FFF8E1;
+            border-left: 6px solid var(--accent);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .emoji-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            display: block;
+            text-align: center;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-10px);}
+            60% {transform: translateY(-5px);}
+        }
+
+        /* 按钮样式 */
+        .nav-btn {
+            background: white;
+            border: 4px solid var(--secondary);
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            font-size: 2.5rem;
+            color: var(--secondary);
+            cursor: pointer;
+            box-shadow: 0 8px 0 rgba(78, 205, 196, 0.3), 0 15px 20px rgba(0,0,0,0.1);
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+
+        .nav-btn:hover { background: var(--secondary); color: white; transform: translateY(-3px); box-shadow: 0 12px 0 rgba(78, 205, 196, 0.3), 0 20px 30px rgba(0,0,0,0.1); }
+        .nav-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(78, 205, 196, 0.3); }
+        .nav-btn:disabled { border-color: #ccc; color: #ccc; background: #eee; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 10px;
+            background: #eee;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--purple));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="layout-container">
+    <!-- 左按钮 -->
+    <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">❮</button>
+
+    <div class="stage">
+        <div class="header-bar">
+            <div class="map-badge">🗺️ 计算机科学 4</div>
+            <div class="level-info" id="levelInfo">Loading...</div>
+        </div>
+
+        <div class="ppt-screen">
+            
+            <!-- Slide 1: 封面 -->
+            <div class="slide active" data-title="第35关：练习 For 循环">
+                <div style="text-align: center;">
+                    <span style="font-size: 6rem; display: block; margin-bottom: 20px; animation: float 3s ease-in-out infinite;">👮‍♂️ 📜 🤖</span>
+                    <h1 style="font-size: 3.5rem; color: var(--purple);">For 循环练习</h1>
+                    <h2 style="text-align:center; border:none; color: #888;">(For Loop Practice)</h2>
+                    <p style="font-size: 1.5rem; margin-top: 30px;">
+                        训练你的代码像<strong>小队长</strong>一样，<br>
+                        自动管理整支队伍！
+                    </p>
+                    <style>@keyframes float { 0%, 100% {transform: translateY(0);} 50% {transform: translateY(-15px);} }</style>
+                </div>
+            </div>
+
+            <!-- Slide 2: 核心概念 -->
+            <div class="slide" data-title="什么是 For 循环练习？">
+                <h1> For 循环：你的“自动小队长”</h1>
+                <div class="two-columns">
+                    <div class="col">
+                        <div class="highlight-box" style="border-left-color: var(--secondary);">
+                            <h3 style="margin-top:0;">生动解释</h3>
+                            <p>For 循环就像一个训练有素的<strong>小队长</strong>！</p>
+                            <p>他不需要你一个一个手动指挥士兵，而是能<strong>自动</strong>走到每个士兵面前，检查情况并下达命令。</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="code-window">
+                            <div class="window-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                            <pre class="code-content">
+<span class="kw">while</span> <span class="kw">True</span>:
+    <span class="obj">friends</span> <span class="op">=</span> <span class="obj">hero</span>.<span class="func">findFriends</span>()
+    <span class="comment"># 小队长开始巡逻每个人：</span>
+    <span class="kw">for</span> <span class="obj">friend</span> <span class="kw">in</span> <span class="obj">friends</span>:
+        <span class="obj">enemy</span> <span class="op">=</span> <span class="obj">friend</span>.<span class="func">findNearestEnemy</span>()
+        <span class="kw">if</span> <span class="obj">enemy</span>:
+            <span class="obj">hero</span>.<span class="func">command</span>(<span class="obj">friend</span>, <span class="str">"attack"</span>, <span class="obj">enemy</span>)
+        <span class="kw">else</span>:
+            <span class="comment"># 没有敌人就前进</span>
+            <span class="comment"># ...</span></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: 对象位置 -->
+            <div class="slide" data-title="对象位置 (Object Position)">
+                <h1>📍 朋友在哪里？</h1>
+                <div class="two-columns">
+                    <div class="col">
+                        <span class="emoji-icon">🗺️</span>
+                        <p>每个游戏对象都有自己的<strong>位置信息 (.pos)</strong>。</p>
+                        <p>就像你知道每个朋友坐在教室的哪个座位一样。</p>
+                        <div class="highlight-box">
+                            <strong>x</strong>: 横坐标 (左右)<br>
+                            <strong>y</strong>: 纵坐标 (上下)
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="code-window">
+                            <div class="window-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                            <pre class="code-content">
+<span class="comment"># 问："你现在坐在哪里？"</span>
+<span class="obj">current_pos</span> <span class="op">=</span> <span class="obj">friend</span>.<span class="prop">pos</span>
+
+<span class="comment"># 获取具体的 X 和 Y</span>
+<span class="func">print</span>(<span class="str">"朋友在 X:"</span>, <span class="obj">friend</span>.<span class="prop">pos</span>.<span class="prop">x</span>)
+<span class="func">print</span>(<span class="str">"朋友在 Y:"</span>, <span class="obj">friend</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 4: 坐标运算 -->
+            <div class="slide" data-title="坐标运算 (Coordinate Arithmetic)">
+                <h1>➕ 计算下一步：向右走！</h1>
+                <div class="two-columns">
+                    <div class="col">
+                        <p>我们要告诉朋友：“从你<strong>现在的位置</strong>，向右走一小步！”</p>
+                        <div class="highlight-box" style="background: #E8F8F5; border-left-color: #2ECC71;">
+                            <strong>数学公式：</strong><br>
+                            新位置 X = 旧位置 X + 0.35<br>
+                            (Y 保持不变)
+                        </div>
+                        <p style="font-size: 0.9rem; color: #666; text-align: center;">想向左走？那就减去 0.35！</p>
+                    </div>
+                    <div class="col">
+                        <div class="code-window">
+                            <div class="window-header"><span class="dot red"></span></div>
+                            <pre class="code-content">
+<span class="comment"># 创建一个新的目标位置</span>
+<span class="obj">moveTo</span> <span class="op">=</span> {
+    <span class="key">"x"</span>: <span class="obj">friend</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">+</span> <span class="num">0.35</span>, 
+    <span class="key">"y"</span>: <span class="obj">friend</span>.<span class="prop">pos</span>.<span class="prop">y</span>
+}
+
+<span class="obj">hero</span>.<span class="func">command</span>(<span class="obj">friend</span>, <span class="str">"move"</span>, <span class="obj">moveTo</span>)</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5: 智能决策 -->
+            <div class="slide" data-title="智能决策 (Decision Making)">
+                <h1>🚦 聪明的交通警察：If-Else</h1>
+                <div class="two-columns">
+                    <div class="col">
+                        <span class="emoji-icon">🚥</span>
+                        <p><strong>if-else</strong> 就像交通警察！</p>
+                        <ul>
+                            <li>🔴 <strong>红灯 (有敌人)</strong>：危险！必须停下来攻击。</li>
+                            <li>🟢 <strong>绿灯 (没敌人)</strong>：安全！继续向前移动。</li>
+                        </ul>
+                    </div>
+                    <div class="col">
+                        <div class="code-window">
+                            <div class="window-header"><span class="dot red"></span></div>
+                            <pre class="code-content">
+<span class="obj">enemy</span> <span class="op">=</span> <span class="obj">friend</span>.<span class="func">findNearestEnemy</span>()
+
+<span class="kw">if</span> <span class="obj">enemy</span>: <span class="comment"># 🔴 发现敌人！</span>
+    <span class="obj">hero</span>.<span class="func">command</span>(<span class="obj">friend</span>, <span class="str">"attack"</span>, <span class="obj">enemy</span>)
+<span class="kw">else</span>:     <span class="comment"># 🟢 安全通行</span>
+    <span class="obj">moveTo</span> <span class="op">=</span> {<span class="key">"x"</span>: <span class="obj">friend</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">+</span> <span class="num">0.35</span>, ...}
+    <span class="obj">hero</span>.<span class="func">command</span>(<span class="obj">friend</span>, <span class="str">"move"</span>, <span class="obj">moveTo</span>)</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 6: 无限循环 -->
+            <div class="slide" data-title="无限循环 (Infinite Loop)">
+                <h1>🎥 永不停歇：While True</h1>
+                <div class="two-columns">
+                    <div class="col">
+                        <span class="emoji-icon">📹</span>
+                        <p><strong>while True:</strong> 就像一个 24 小时工作的监控摄像头。</p>
+                        <p>它不会只检查一次，而是<strong>永远在运行</strong>，不断地发现新情况并做出反应。</p>
+                    </div>
+                    <div class="col">
+                        <div class="code-window">
+                            <div class="window-header"><span class="dot red"></span></div>
+                            <pre class="code-content">
+<span class="kw">while</span> <span class="kw">True</span>: <span class="comment"># 永远重复！</span>
+    <span class="comment"># 1. 扫描所有人</span>
+    <span class="obj">friends</span> <span class="op">=</span> <span class="obj">hero</span>.<span class="func">findFriends</span>()
+    
+    <span class="comment"># 2. 每个人做决定</span>
+    <span class="kw">for</span> <span class="obj">friend</span> <span class="kw">in</span> <span class="obj">friends</span>:
+        <span class="comment"># ... 攻击或移动</span>
+    
+    <span class="comment"># 3. 回到第一步，继续循环...</span></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 7: 战术思维 -->
+            <div class="slide" data-title="游戏战术思维">
+                <h1>🧠 战术思维升级</h1>
+                <div style="display: flex; gap: 20px; width: 100%;">
+                    <div class="col highlight-box" style="background: white; border-left-color: var(--primary);">
+                        <span style="font-size: 2rem;">👁️</span>
+                        <h3>个体感知</h3>
+                        <p><code>friend.findNearestEnemy()</code></p>
+                        <p>每个士兵都有自己的“眼睛”，只看离自己最近的敌人。</p>
+                    </div>
+                    <div class="col highlight-box" style="background: white; border-left-color: var(--purple);">
+                        <span style="font-size: 2rem;">🐌</span>
+                        <h3>缓慢推进</h3>
+                        <p><code>x + 0.35</code></p>
+                        <p>为什么要慢慢走？<br>1. 保持队形整齐<br>2. 避免跑太快被包围</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 8: 总结 -->
+            <div class="slide" data-title="总结">
+                <h1>🎉 总结：游乐场管理员</h1>
+                <div class="two-columns">
+                    <div class="col">
+                        <h3>👨‍🏫 传统方式 (累!)</h3>
+                        <pre style="background:white; padding:10px; border-radius:10px; font-size: 0.9rem; color: #666;">
+"小明，去攻击！"
+"小红，去攻击！" 
+"小刚，去攻击！"
+# 要一个一个喊...</pre>
+                    </div>
+                    <div class="col">
+                        <h3>🤖 智能方式 (For 循环)</h3>
+                        <pre style="background:white; padding:10px; border-radius:10px; font-size: 0.9rem; color: #666;">
+children = [小明, 小红, 小刚]
+for child in children:
+    child.去玩()
+# 自动搞定所有人！</pre>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <strong style="color: var(--purple); font-size: 1.2rem;">For 循环让你从“微观管理”升级到“宏观指挥”！ ✨</strong>
+                </div>
+            </div>
+
+            <!-- 底部进度条 -->
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">❯</button>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const levelInfo = document.getElementById('levelInfo');
+    const progressFill = document.getElementById('progressFill');
+
+    // 初始化
+    updateUI();
+
+    // 键盘支持
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') changeSlide(1);
+        if (e.key === 'ArrowLeft') changeSlide(-1);
+    });
+
+    function changeSlide(direction) {
+        const nextSlide = currentSlide + direction;
+        
+        if (nextSlide >= 0 && nextSlide < totalSlides) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = nextSlide;
+            slides[currentSlide].classList.add('active');
+            updateUI();
+        }
+    }
+
+    function updateUI() {
+        // 更新按钮状态
+        prevBtn.disabled = currentSlide === 0;
+        nextBtn.disabled = currentSlide === totalSlides - 1;
+
+        // 更新标题
+        const activeSlide = slides[currentSlide];
+        levelInfo.textContent = activeSlide.getAttribute('data-title');
+
+        // 更新进度条
+        const percent = ((currentSlide + 1) / totalSlides) * 100;
+        progressFill.style.width = `${percent}%`;
+
+        // 颜色动态变化
+        const colors = ['#9B5DE5', '#FF9F1C', '#4ECDC4', '#FF6B6B', '#00cec9', '#9B5DE5', '#6c5ce7', '#FF9F1C'];
+        levelInfo.style.backgroundColor = colors[currentSlide % colors.length];
+        
+        // 调整文字颜色
+        if (currentSlide === 1 || currentSlide === 7) { 
+             levelInfo.style.color = "#333";
+        } else {
+             levelInfo.style.color = "white";
+        }
+    }
+</script>
+
+</body>
+</html>

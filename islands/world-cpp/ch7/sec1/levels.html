@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：条件循环While基础</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-while: #ff79c6; /* While 强调色 */
+            --accent-logic: #8be9fd; /* 逻辑蓝 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else */
+            --code-func: #8be9fd;    /* findNearestEnemy, moveXY */
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* health, gold, pos */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(255, 121, 198, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 121, 198, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-while);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-logic);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(255, 121, 198, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-while); }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-while { color: var(--accent-while); font-weight: bold; }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-sync-alt text-pink-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-pink-400">While 循环基础</span></h1>
+                    <p class="text-xs text-gray-500">条件循环与退出机制（1-6关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><span class="op-while">while</span> <i class="fa-solid fa-less-than text-cyan-500 mr-1"></i>Condition Check</span>
+                <span><i class="fa-solid fa-plus text-yellow-500 mr-1"></i>Increment Counter</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 1: 尘埃 (计数器循环) -->
+        <section id="level-1" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 1 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">尘埃 (Dust)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-flag-checkered mr-2"></i>战术思路分析：定数攻击</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄需要精确地攻击 **10 次**，然后撤退。这需要一个**计数器（`attacks`）**来控制 `while` 循环的次数。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：自增操作 (`+= 1`)</h4>
+                                <p class="text-xs text-gray-400">
+                                    条件是 `while attacks < 10:`。每次循环体执行后，必须执行 `attacks += 1`，确保循环最终能够退出。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-rotate-right text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            WHILE Attacks < 10: <br>
+                            &nbsp;&nbsp;Attack() <br>
+                            &nbsp;&nbsp;Attacks <span class="op">+=</span> 1
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">attacks</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">攻击计数器初始化为 0</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="op-while">while </span><span class="var">attacks</span> <span class="op"><</span> <span class="num">10</span>:</div><div class="code-annotation">当攻击次数小于 10 时，重复执行</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找最近的敌人</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">发起攻击</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="comment"># 给 `attacks` 变量加 1</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="var">attacks</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">每次循环后计数器自增 1</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">79</span>, <span class="num">33</span>)</div><div class="code-annotation">循环结束，撤退到伏击点</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 2: 双颊 (多阶段循环：计数器 + 属性值) -->
+        <section id="level-2" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 2 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">双颊 (Two Cheeks)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-list-ol mr-2"></i>战术思路分析：两阶段任务</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄需要按顺序完成两个不同的任务：**击败 6 个兽人**（计数器控制）和**收集 30 金币**（属性值控制）。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">循环条件切换</h4>
+                                <p class="text-xs text-gray-400">
+                                    - 阶段 1 条件：`while defeatedOgres < 6:`
+                                    <br>
+                                    - 阶段 2 条件：`while hero.gold < 30:` (使用英雄的 `gold` 属性作为动态条件)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-chart-line text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            WHILE Defeats < 6: Fight <br>
+                            WHILE Gold < 30: Collect
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">defeatedOgres</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化击败计数器</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="op-while">while </span><span class="var">defeatedOgres</span> <span class="op"><</span> <span class="num">6</span>:</div><div class="code-annotation">**阶段 1:** 当击败数小于 6 时</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击敌人</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">defeatedOgres</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">计数器加 1</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"兽人！"</span>)</div><div class="code-annotation">喊话等待</div></div>
+                        
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">49</span>, <span class="num">36</span>)</div><div class="code-annotation">移动到收集区</div></div>
+                        
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="op-while">while </span><span class="var">hero</span>.<span class="prop">gold</span> <span class="op"><</span> <span class="num">30</span>:</div><div class="code-annotation">**阶段 2:** 当英雄金币小于 30 时</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找最近的硬币</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动收集硬币</div></div>
+                        
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">76</span>, <span class="num">32</span>)</div><div class="code-annotation">移动到出口</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 3: 峡谷风暴 (对象存在性循环) -->
+        <section id="level-3" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 3 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">峡谷风暴 (Canyon Storm)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-cow mr-2"></i>战术思路分析：跟随牦牛</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                牦牛知道风暴何时来临，只要它们在场，英雄就安全。循环条件是**牦牛是否存在**。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：`while yak:`</h4>
+                                <p class="text-xs text-gray-400">
+                                    如果 `yak` 变量包含一个对象（即找到牦牛），Python 视其为 `True`；如果 `yak` 是 `None`（找不到），则为 `False`。
+                                    <br>
+                                    **必须在循环内部更新 `yak` 的值**，否则一旦找到牦牛，循环将永远不会退出。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-tornado text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            WHILE Yak Is True: <br>
+                            &nbsp;&nbsp;Collect() <br>
+                            &nbsp;&nbsp;Yak <span class="op">=</span> <span class="func">FindEnemy</span>()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">yak</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">初次寻找沙牦牛</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="op-while">while </span><span class="var">yak</span>:</div><div class="code-annotation">当牦牛（敌人对象）存在时，循环继续</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找硬币</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">收集硬币</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="comment"># 更新变量 `yak` 的值</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="var">yak</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">更新牦牛变量，检查是否撤退</div></div>
+                        
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">38</span>, <span class="num">58</span>)</div><div class="code-annotation">牦牛撤退后，英雄移动到撤离点</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 4: 先有付出 才有回报 (属性值作为条件) -->
+        <section id="level-4" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 4 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">先有付出 才有回报 (Pay for Play)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-running mr-2"></i>战术思路分析：生命值限制</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                炎热的太阳下，英雄的健康值不断下降。英雄必须在 `hero.health` **大于 200** 时停止跑步。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">循环条件：`hero.health`</h4>
+                                <p class="text-xs text-gray-400">
+                                    `while hero.health > 200:` 循环条件依赖于一个动态变化的属性值。当 `health` 降到 200 或以下时，循环自动终止。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-heart-crack text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            WHILE Health <span class="op">></span> 200: Run!
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 在英雄生命值大于 200 时一直跑。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="op-while">while </span><span class="var">hero</span>.<span class="prop">health</span> <span class="op">></span> <span class="num">200</span>:</div><div class="code-annotation">当生命值大于 200 时，循环继续</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">48</span>, <span class="num">24</span>)</div><div class="code-annotation">来回跑步</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">16</span>, <span class="num">24</span>)</div><div class="code-annotation"></div></div>
+                        
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="comment"># 移动到 Okar 那里。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">32</span>, <span class="num">40</span>)</div><div class="code-annotation">循环结束后移动到 Okar 处</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 5: 沙漠战役 (计数器循环) -->
+        <section id="level-5" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 5 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">沙漠战役 (Desert Combat)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-flag mr-2"></i>战术思路分析：定数命令</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄必须精确地在 X 标记处下达 **5 次**命令，然后才能加入战斗。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">防止死循环 (再强调一次)</h4>
+                                <p class="text-xs text-gray-400">
+                                    条件是 `ordersGiven < 5`。**必须**在循环里执行 `ordersGiven += 1`，否则英雄将永远卡在发号施令的循环中。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-user-tie text-6xl text-purple-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Counter <span class="op">+=</span> 1 <span class="op-while">in While Loop</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">ordersGiven</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化命令计数器</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="op-while">while </span><span class="var">ordersGiven</span> <span class="op"><</span> <span class="num">5</span>:</div><div class="code-annotation">当命令次数小于 5 时</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="comment"># 向下移动 10 米</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">-</span> <span class="num">10</span>)</div><div class="code-annotation">向下移动到 X 标记</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"Attack!"</span>)</div><div class="code-annotation">下达命令</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="comment"># 确保 ordersGiven 要加 1！</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="var">ordersGiven</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">计数器自增 1</div></div>
+                        
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="op-while">while </span><span class="kwd">True</span>:</div><div class="code-annotation">命令下达完毕，开始无限战斗循环</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击敌人</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 6: 诱饵和开关 (函数封装循环) -->
+        <section id="level-6" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 6 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">诱饵和开关 (Bait and Switch)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-box-open mr-2"></i>战术思路分析：函数化收集</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄需要分阶段收集金币（25 金后建造诱饵，50 金后建造第二个）。我们把收集逻辑封装到一个函数 `collectUntil(enoughGold)` 中。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">封装循环条件</h4>
+                                <p class="text-xs text-gray-400">
+                                    `while hero.gold < enoughGold:` 循环条件由英雄的 `gold` 属性和函数传入的参数 `enoughGold` 共同决定。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-coins text-6xl text-yellow-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            <span class="func">collectUntil</span>(25) <br>
+                            <span class="func">buildXY</span>() <br>
+                            <span class="func">collectUntil</span>(50)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">collectUntil</span>(<span class="var">enoughGold</span>):</div><div class="code-annotation">定义收集函数，参数为目标金币数</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 当 hero.gold 小于 enoughGold 时：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="op-while">while </span><span class="var">hero</span>.<span class="prop">gold</span> <span class="op"><</span> <span class="var">enoughGold</span>:</div><div class="code-annotation">循环条件：金币不足目标数</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="var">coin</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="kwd">if </span><span class="var">coin</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">coin</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">coin</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动收集</div></div>
+                        
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="func">collectUntil</span>(<span class="num">25</span>)</div><div class="code-annotation">调用函数收集 25 金币</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"decoy"</span>, <span class="num">40</span>, <span class="num">52</span>)</div><div class="code-annotation">建造第一个诱饵</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">25</span>, <span class="num">52</span>)</div><div class="code-annotation">躲藏</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="func">collectUntil</span>(<span class="num">50</span>)</div><div class="code-annotation">调用函数收集到 50 金币</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"decoy"</span>, <span class="num">69</span>, <span class="num">28</span>)</div><div class="code-annotation">建造第二个诱饵</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"decoy"</span>, <span class="num">30</span>, <span class="num">20</span>)</div><div class="code-annotation">建造第三个诱饵</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Conditional While Loop Mastery.</p>
+    </footer>
+
+</body>
+</html>
