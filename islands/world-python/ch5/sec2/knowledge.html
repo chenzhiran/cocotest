@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第8-13关 坐标计算与位置属性</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-space: #1a1a2e;       /* 深空蓝 */
+            --map-bg: #fdf6e3;         /* 羊皮纸色 */
+            --primary: #e94560;        /* 魔法红 */
+            --secondary: #16213e;      /* 深蓝 */
+            --accent: #0f3460;         /* 强调蓝 */
+            --highlight: #ffbd69;      /* 金色 */
+            --text-main: #2d3436;
+            
+            /* 代码高亮 */
+            --code-bg: #282c34;
+            --code-fg: #abb2bf;
+            --tok-kw: #c678dd;         /* 关键字 */
+            --tok-func: #61afef;       /* 函数 */
+            --tok-var: #e06c75;        /* 变量 */
+            --tok-num: #d19a66;        /* 数字 */
+            --tok-str: #98c379;        /* 字符串 */
+            --tok-cm: #7f8c8d;         /* 注释 */
+            --tok-prop: #e5c07b;       /* 属性 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
+            background-color: var(--bg-space);
+            /* 星图背景 */
+            background-image: 
+                radial-gradient(white 1px, transparent 1px),
+                radial-gradient(white 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            color: var(--text-main);
+        }
+
+        /* 漂浮星球 */
+        .planet {
+            position: absolute; border-radius: 50%; opacity: 0.2; pointer-events: none;
+        }
+        .p1 { width: 100px; height: 100px; background: #ffbd69; top: 10%; left: 10%; }
+        .p2 { width: 60px; height: 60px; background: #e94560; bottom: 20%; right: 15%; }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 探险按钮 (外部) --- */
+        .nav-btn {
+            width: 90px;
+            height: 90px;
+            background: #fff;
+            border: 4px solid var(--secondary);
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+        
+        /* 左：指南针 */
+        .btn-prev::before {
+            content: '🧭';
+            transform: rotate(-10deg);
+        }
+        
+        /* 右：望远镜 */
+        .btn-next::before {
+            content: '🔭';
+            transform: rotate(10deg);
+        }
+
+        .nav-btn:hover { transform: scale(1.1); background: var(--highlight); }
+        .nav-btn:active { transform: scale(0.95); }
+        
+        .disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 导航终端容器 --- */
+        .terminal-container {
+            width: 960px;
+            height: 620px;
+            background: var(--map-bg);
+            border-radius: 20px;
+            /* 地图边框 */
+            border: 15px solid var(--secondary);
+            box-shadow: 
+                inset 0 0 50px rgba(0,0,0,0.2),
+                0 0 0 5px #535c68,
+                0 30px 60px rgba(0,0,0,0.7);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部信息栏 */
+        .info-bar {
+            height: 50px;
+            background: var(--secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            color: white;
+            font-family: monospace;
+            font-size: 18px;
+            border-bottom: 4px solid var(--highlight);
+            z-index: 20;
+        }
+        .map-tag {
+            background: var(--primary); padding: 2px 10px; border-radius: 4px; font-weight: bold; margin-right: 10px;
+        }
+        
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px 60px;
+            flex-direction: column;
+            animation: mapUnfold 0.6s ease-out;
+            overflow-y: auto;
+            background-image: linear-gradient(#e0e0e0 1px, transparent 1px), linear-gradient(90deg, #e0e0e0 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes mapUnfold { 
+            0% { opacity: 0; clip-path: circle(0% at 50% 50%); } 
+            100% { opacity: 1; clip-path: circle(150% at 50% 50%); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px double var(--secondary);
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2)); }
+        h1 { margin: 0; color: var(--secondary); font-size: 34px; letter-spacing: 1px; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 19px; line-height: 1.6; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.9; 
+            background: #fff;
+            border: 2px solid var(--secondary); 
+            border-radius: 10px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 18px;
+            margin-top: 15px;
+            border-left: 5px solid var(--highlight);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .k { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .v { color: var(--tok-var); } 
+        .n { color: var(--tok-num); }
+        .s { color: var(--tok-str); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+        .p { color: var(--tok-prop); font-weight: bold; }
+
+        /* 卡片 */
+        .card {
+            background: #fff3e0;
+            border-left: 5px solid var(--primary);
+            color: #d35400;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 5px 5px 0;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 坐标网格演示 */
+        .grid-demo {
+            width: 100%; height: 100%; position: relative; cursor: crosshair;
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .axis-x { position: absolute; bottom: 20px; left: 20px; width: 300px; height: 2px; background: #333; }
+        .axis-y { position: absolute; bottom: 20px; left: 20px; width: 2px; height: 300px; background: #333; }
+        .grid-point {
+            width: 15px; height: 15px; background: var(--primary); border-radius: 50%;
+            position: absolute; transform: translate(-50%, 50%);
+            box-shadow: 0 0 0 5px rgba(233, 69, 96, 0.3);
+            transition: all 0.1s;
+        }
+        .grid-label {
+            position: absolute; background: rgba(0,0,0,0.8); color: white; padding: 2px 8px; border-radius: 4px;
+            font-family: monospace; pointer-events: none; transform: translateY(-30px);
+        }
+
+        /* 位置调整演示 */
+        .target-view {
+            position: relative; width: 100%; height: 100%;
+        }
+        .enemy-mark {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 60px;
+        }
+        .aim-point {
+            position: absolute; top: 50%; left: 50%; width: 20px; height: 20px;
+            border: 2px solid red; border-radius: 50%; transform: translate(-50%, -50%);
+            transition: all 0.5s;
+        }
+        .aim-line {
+            position: absolute; top: 50%; left: 50%; width: 2px; height: 0; background: red;
+            transition: height 0.5s; transform-origin: top;
+        }
+        .ctrl-panel {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 10px;
+        }
+
+        /* 相对位置演示 */
+        .relative-box {
+            width: 100%; height: 100%; position: relative; display: flex; justify-content: center; align-items: center;
+        }
+        .rel-hero { position: absolute; font-size: 40px; top: 60%; left: 30%; }
+        .rel-item { position: absolute; font-size: 30px; top: 30%; left: 70%; }
+        .dist-line-x {
+            position: absolute; height: 2px; background: var(--highlight); top: 60%; left: 30%; width: 40%;
+            border-bottom: 2px dashed #333;
+        }
+        .dist-line-y {
+            position: absolute; width: 2px; background: var(--highlight); top: 30%; left: 70%; height: 30%;
+            border-right: 2px dashed #333;
+        }
+        .dist-text { position: absolute; font-family: monospace; font-weight: bold; color: var(--secondary); font-size: 14px; background: white; padding: 2px;}
+
+        /* 按钮 */
+        .btn-action {
+            padding: 8px 15px; border: none; border-radius: 5px; font-weight: bold; color: white; cursor: pointer; 
+            background: var(--secondary); box-shadow: 0 4px 0 #0a101f;
+        }
+        .btn-action:active { transform: translateY(4px); box-shadow: none; }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #dcdde1;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--highlight), var(--primary));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 动画 */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    </style>
+</head>
+<body>
+
+<div class="p1 planet"></div>
+<div class="p2 planet"></div>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn" id="btnPrev" onclick="moveSlide(-1)"></button>
+
+    <!-- 终端容器 -->
+    <div class="terminal-container">
+        <div class="info-bar">
+            <div>
+                <span class="map-tag">计算机科学 3</span>
+                <span>第 8-13 关</span>
+            </div>
+            <div style="font-family: 'Courier New'; font-weight: bold;">COORD SYSTEM</div>
+        </div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">🗺️</div>
+            <h1 style="font-size: 50px; margin: 10px 0; color: var(--secondary);">坐标计算与位置属性</h1>
+            <h2 style="font-size: 26px; color: var(--primary); font-weight: bold; margin-top: 0;">Coordinate & Position</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: var(--highlight); color: #d35400; border-radius: 10px; font-weight: bold; font-size: 20px; border: 2px solid #d35400;">📍 位置属性</div>
+                <div style="padding: 15px 30px; background: var(--accent); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; border: 2px solid #0a101f;">➕ 坐标运算</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 坐标系统 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🌐</div>
+                <h1>坐标系统 (Coordinate System)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>游戏世界就像一张巨大的网格纸。</p>
+                    <ul style="list-style: none; padding: 0; font-size: 18px;">
+                        <li style="margin-bottom: 15px;">➡️ <b>X 轴</b>：水平方向（马路）<br><small style="color:#666">数值越大越往右</small></li>
+                        <li>⬆️ <b>Y 轴</b>：垂直方向（电梯）<br><small style="color:#666">数值越大越往上</small></li>
+                    </ul>
+                    <div class="card">
+                        "原点 (0,0) 通常在地图的左下角。"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="grid-demo" onmousemove="updateGrid(event)">
+                        <div class="axis-x"></div>
+                        <div class="axis-y"></div>
+                        <div style="position: absolute; bottom: 5px; left: 5px;">(0,0)</div>
+                        <div style="position: absolute; bottom: 5px; right: 10px; font-weight: bold;">X</div>
+                        <div style="position: absolute; top: 10px; left: 10px; font-weight: bold;">Y</div>
+                        <div class="grid-point" id="demoPoint" style="bottom: 20px; left: 20px;"></div>
+                        <div class="grid-label" id="demoLabel"></div>
+                    </div>
+                    <script>
+                        function updateGrid(e) {
+                            const box = e.currentTarget.getBoundingClientRect();
+                            const x = Math.round((e.clientX - box.left) / box.width * 100);
+                            const y = Math.round((box.bottom - e.clientY) / box.height * 100);
+                            const pt = document.getElementById('demoPoint');
+                            const lb = document.getElementById('demoLabel');
+                            
+                            // Limit range visually
+                            if(x > 5 && x < 95 && y > 5 && y < 95) {
+                                pt.style.left = x + '%';
+                                pt.style.bottom = y + '%';
+                                lb.style.left = x + '%';
+                                lb.style.bottom = (y + 5) + '%';
+                                lb.innerText = `(${x}, ${y})`;
+                            }
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 位置属性 pos -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📍</div>
+                <h1>位置属性 (Position Property)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>每个物体都有一个“地址”，叫做 <b>pos</b>。</p>
+                    <div class="code-box">
+                        <span class="v">item</span> <span class="o">=</span> <span class="v">hero</span>.<span class="f">findNearestItem</span>()<br>
+                        <span class="k">if</span> <span class="v">item</span>:<br>
+                        &nbsp;&nbsp;<span class="c"># 获取物品的 x 和 y</span><br>
+                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">item</span>.<span class="p">pos</span>.<span class="p">x</span>, <span class="v">item</span>.<span class="p">pos</span>.<span class="p">y</span>)
+                    </div>
+                    <p><b>.pos.x</b>：它的横坐标<br><b>.pos.y</b>：它的纵坐标</p>
+                    <div class="card">
+                        "就像去朋友家，你需要知道具体的门牌号 (X, Y)。"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 80px;">💎</div>
+                        <div style="font-family: monospace; background: #333; color: white; padding: 5px 10px; border-radius: 5px; display: inline-block;">
+                            item.pos<br>{x: 34, y: 56}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 修改坐标 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📐</div>
+                <h1>修改坐标 (调整位置)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>有时候我们需要微调位置，比如瞄准。</p>
+                    <div class="code-box">
+                        <span class="v">x</span> <span class="o">=</span> <span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">x</span><br>
+                        <span class="v">y</span> <span class="o">=</span> <span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">y</span> <span class="o">-</span> <span class="n">4</span>
+                    </div>
+                    <p><b>y - 4</b>：把位置往下移 4 格。<br>这是为了更精确地攻击！</p>
+                </div>
+                <div class="col-visual">
+                    <div class="target-view">
+                        <div class="enemy-mark">👾</div>
+                        <div class="aim-point" id="aimPoint"></div>
+                        <div class="aim-line" id="aimLine"></div>
+                        <div class="ctrl-panel">
+                            <button class="btn-action" onclick="adjustAim(0)">原始位置</button>
+                            <button class="btn-action" onclick="adjustAim(40)">下移 (y-4)</button>
+                        </div>
+                    </div>
+                    <script>
+                        function adjustAim(offset) {
+                            const aim = document.getElementById('aimPoint');
+                            const line = document.getElementById('aimLine');
+                            aim.style.transform = `translate(-50%, calc(-50% + ${offset}px))`;
+                            line.style.height = offset + 'px';
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 坐标运算 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧮</div>
+                <h1>坐标运算魔法</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>你可以对坐标进行加减法：</p>
+                    <ul style="list-style: none; padding: 0; font-size: 18px;">
+                        <li style="margin-bottom: 10px;">🔼 <b>y + 5</b>：向上移动</li>
+                        <li style="margin-bottom: 10px;">🔽 <b>y - 5</b>：向下移动</li>
+                        <li style="margin-bottom: 10px;">◀️ <b>x - 3</b>：向左移动</li>
+                        <li>▶️ <b>x + 3</b>：向右移动</li>
+                    </ul>
+                    <div class="code-box">
+                        <span class="c"># 预判敌人走位</span><br>
+                        <span class="v">new_x</span> <span class="o">=</span> <span class="v">current_x</span> <span class="o">+</span> <span class="n">5</span>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px;">➕ ➖ ✖️ ➗</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 相对位置 (进阶) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📏</div>
+                <h1>相对位置 (Distance)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>想知道两个物体离多远？用坐标相减！</p>
+                    <div class="code-box">
+                        <span class="c"># 水平距离</span><br>
+                        <span class="v">dx</span> <span class="o">=</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">x</span> <span class="o">-</span> <span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">x</span><br>
+                        <br>
+                        <span class="c"># 垂直距离</span><br>
+                        <span class="v">dy</span> <span class="o">=</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">y</span> <span class="o">-</span> <span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">y</span>
+                    </div>
+                    <div class="card">
+                        这在数学里叫“勾股定理”的基础。
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="relative-box">
+                        <div class="rel-hero">🤠</div>
+                        <div class="rel-item">👹</div>
+                        <div class="dist-line-x"></div>
+                        <div class="dist-text" style="top: 60%; left: 50%;">dx</div>
+                        <div class="dist-line-y"></div>
+                        <div class="dist-text" style="top: 45%; left: 70%;">dy</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 实战：物品收集专家 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎒</div>
+                <h1>程序 1：物品收集专家</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>看到玩具捡起来！</p>
+                    <div class="code-box">
+                        <span class="k">while</span> <span class="k">True</span>:<br>
+                        &nbsp;&nbsp;<span class="v">item</span> <span class="o">=</span> <span class="v">hero</span>.<span class="f">findNearestItem</span>()<br>
+                        &nbsp;&nbsp;<span class="k">if</span> <span class="v">item</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 走到物品的坐标</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">item</span>.<span class="p">pos</span>.<span class="p">x</span>, <span class="v">item</span>.<span class="p">pos</span>.<span class="p">y</span>)
+                    </div>
+                    <p style="margin-top: 20px;">
+                        1. <b>item.pos.x</b> 获取横坐标<br>
+                        2. <b>item.pos.y</b> 获取纵坐标
+                    </p>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 80px;">🏃 ➡️ 🎁</div>
+                        <p style="font-weight: bold;">精准定位</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 实战：坐标报告员 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📢</div>
+                <h1>程序 2：坐标报告员</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>把数字变成文字喊出来！</p>
+                    <div class="code-box">
+                        <span class="k">if</span> <span class="v">enemy</span>:<br>
+                        &nbsp;&nbsp;<span class="v">x</span> <span class="o">=</span> <span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">x</span><br>
+                        &nbsp;&nbsp;<span class="v">y</span> <span class="o">=</span> <span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">y</span> <span class="o">-</span> <span class="n">4</span> <span class="c"># 调整</span><br>
+                        &nbsp;&nbsp;<span class="c"># 字符串拼接</span><br>
+                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">say</span>(<span class="v">x</span> <span class="o">+</span> <span class="s">","</span> <span class="o">+</span> <span class="v">y</span>)
+                    </div>
+                    <div class="card">
+                        <b>类型转换：</b> 这里的 + 号会自动把数字变成字符串连接起来。<br>
+                        Example: "30,21"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px;">🗣️ "30, 21!"</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📜</div>
+                <h1>导航员口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: #e3f2fd; border-color: var(--secondary); color: #0d47a1;">
+                        "<b>pos</b> 是地址，<b>x</b> 横 <b>y</b> 竖要分清。"
+                    </div>
+                    <div class="card" style="background: #fff3e0; border-color: var(--primary); color: #e65100; margin-top: 20px;">
+                        "想要瞄得准，坐标算一算。<br>
+                        <b>y - 4</b> 往下移，百发百中！"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px;" class="anim-pulse">🌟</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn" id="btnNext" onclick="moveSlide(1)"></button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

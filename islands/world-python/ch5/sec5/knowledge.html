@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第26-31关 不等于运算符</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-forest: #1e272e;      /* 森林深色 */
+            --gate-frame: #485460;     /* 门框灰 */
+            --screen-bg: #f7f1e3;      /* 屏幕亮色 */
+            --magic-blue: #0fb9b1;     /* 魔法蓝 */
+            --alert-red: #eb3b5a;      /* 警示红 */
+            --safe-green: #20bf6b;     /* 安全绿 */
+            --gold: #f7b731;           /* 金色 */
+            --text-main: #2d3436;
+            
+            /* 代码高亮 */
+            --code-bg: #2d3436;
+            --code-fg: #d1d8e0;
+            --tok-kw: #fa8231;         /* 关键字 if/else/while */
+            --tok-func: #45aaf2;       /* 函数 */
+            --tok-prop: #f7b731;       /* 属性 .type */
+            --tok-str: #20bf6b;        /* 字符串 */
+            --tok-op: #eb3b5a;         /* 运算符 != */
+            --tok-cm: #a5b1c2;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
+            background-color: var(--bg-forest);
+            /* 魔法粒子背景 */
+            background-image: 
+                radial-gradient(rgba(32, 191, 107, 0.1) 2px, transparent 2px),
+                radial-gradient(rgba(235, 59, 90, 0.1) 2px, transparent 2px);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            color: var(--text-main);
+        }
+
+        /* 漂浮的魔法符号 */
+        .magic-symbol {
+            position: absolute;
+            font-size: 24px;
+            opacity: 0.2;
+            animation: floatSymbol 10s infinite linear;
+            pointer-events: none;
+            color: var(--magic-blue);
+        }
+        @keyframes floatSymbol {
+            0% { transform: translateY(110vh) rotate(0deg); }
+            100% { transform: translateY(-10vh) rotate(360deg); }
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 检查站按钮 (外部) --- */
+        .nav-btn {
+            width: 90px;
+            height: 90px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            background: #fff;
+        }
+
+        /* 左按钮：拒绝手势 */
+        .btn-prev { border: 5px solid var(--alert-red); color: var(--alert-red); }
+        .btn-prev::after { content: '🙅‍♂️'; }
+
+        /* 右按钮：通过印章 */
+        .btn-next { border: 5px solid var(--safe-green); color: var(--safe-green); }
+        .btn-next::after { content: '🙆‍♂️'; }
+
+        .nav-btn:hover { transform: scale(1.1); }
+        .nav-btn:active { transform: scale(0.95); }
+        
+        .disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 魔法检查站容器 --- */
+        .gate-container {
+            width: 960px;
+            height: 620px;
+            background: #d2dae2;
+            border-radius: 20px;
+            /* 石门边框 */
+            border: 20px solid var(--gate-frame);
+            box-shadow: 
+                inset 0 0 50px rgba(0,0,0,0.5),
+                0 0 0 5px #2d3436,
+                0 30px 60px rgba(0,0,0,0.8);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部信息栏 */
+        .info-bar {
+            height: 60px;
+            background: #2d3436;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 20px;
+            border-bottom: 4px solid var(--gate-frame);
+            z-index: 15;
+        }
+        .map-tag {
+            background: var(--magic-blue); color: #fff; padding: 4px 12px; border-radius: 5px; box-shadow: 0 0 10px var(--magic-blue);
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px 70px;
+            flex-direction: column;
+            animation: doorOpen 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow-y: auto;
+            background-color: var(--screen-bg);
+            background-image: radial-gradient(#ccc 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes doorOpen { 
+            0% { opacity: 0; transform: scale(0.9); } 
+            100% { opacity: 1; transform: scale(1); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px dashed #808e9b;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2)); }
+        h1 { margin: 0; color: var(--text-main); font-size: 34px; letter-spacing: 1px; font-weight: 800; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 19px; line-height: 1.6; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.9; 
+            background: #fff;
+            border: 3px solid #808e9b; 
+            border-radius: 10px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 18px;
+            margin-top: 15px;
+            border-left: 5px solid var(--alert-red);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        .kw { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .p { color: var(--tok-prop); font-weight: bold; } 
+        .s { color: var(--tok-str); } 
+        .o { color: var(--tok-op); font-weight: bold; } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #fff;
+            border-left: 5px solid var(--magic-blue);
+            color: #0fb9b1;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 8px 8px 0;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 身份验证动画 */
+        .scanner-scene {
+            width: 100%; height: 100%; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #333;
+        }
+        .scan-gate {
+            width: 200px; height: 250px; border: 10px solid #555; border-bottom: none;
+            position: relative; overflow: hidden; background: #222;
+        }
+        .scan-beam {
+            position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: var(--alert-red);
+            box-shadow: 0 0 15px var(--alert-red); animation: scanMove 2s infinite linear; opacity: 0;
+        }
+        .scan-subject {
+            font-size: 80px; margin-top: 50px; transition: all 0.3s;
+        }
+        .scan-result {
+            position: absolute; top: 10px; right: 10px; font-family: monospace; font-weight: bold; font-size: 24px;
+            background: rgba(0,0,0,0.8); padding: 5px 10px; border-radius: 5px; opacity: 0;
+        }
+        .btn-row {
+            display: flex; gap: 10px; margin-top: 20px;
+        }
+        .char-btn {
+            font-size: 24px; padding: 5px 10px; cursor: pointer; border: 2px solid #555; background: #444; border-radius: 5px;
+        }
+        .char-btn:hover { background: #666; }
+
+        @keyframes scanMove { 0% { top: 0; } 100% { top: 100%; } }
+
+        /* 运算符对比 */
+        .op-compare {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 90%;
+        }
+        .op-card {
+            background: #fff; padding: 15px; text-align: center; border-radius: 10px;
+            border: 2px solid #eee; transition: transform 0.2s; cursor: pointer;
+        }
+        .op-card:hover { transform: scale(1.05); border-color: var(--magic-blue); }
+        .op-symbol { font-size: 40px; font-weight: bold; display: block; margin-bottom: 10px; }
+        .op-desc { font-size: 14px; color: #666; }
+        .op-eq { color: var(--safe-green); }
+        .op-ne { color: var(--alert-red); }
+
+        /* 布尔逻辑开关 */
+        .logic-board {
+            width: 80%; display: flex; flex-direction: column; gap: 15px;
+        }
+        .logic-row {
+            display: flex; align-items: center; justify-content: space-between;
+            background: #eee; padding: 10px 20px; border-radius: 30px;
+        }
+        .bool-val { font-family: monospace; font-weight: bold; }
+        .bool-res { font-size: 24px; }
+
+        /* 运算符家族 */
+        .family-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 90%;
+        }
+        .fam-item {
+            background: #f1f2f6; padding: 10px; text-align: center; border-radius: 8px;
+            border: 1px solid #ccc; font-family: monospace; font-weight: bold;
+        }
+        .fam-item:hover { background: var(--magic-blue); color: white; border-color: var(--magic-blue); }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #d2dae2;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--safe-green), var(--alert-red));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 动画 */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+    </style>
+</head>
+<body>
+
+<!-- 背景符文生成 -->
+<script>
+    const signs = ['!=', '==', '?', '!', '🚫', '✅', '🛡️'];
+    for(let i=0; i<15; i++) {
+        let s = document.createElement('div');
+        s.className = 'magic-symbol';
+        s.innerText = signs[Math.floor(Math.random() * signs.length)];
+        s.style.left = Math.random() * 100 + 'vw';
+        s.style.animationDelay = Math.random() * 10 + 's';
+        document.body.appendChild(s);
+    }
+</script>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)"></button>
+
+    <!-- 检查站容器 -->
+    <div class="gate-container">
+        <div class="info-bar">
+            <div>
+                <span class="map-tag">计算机科学 3</span>
+                <span>第 26-31 关</span>
+            </div>
+            <div style="font-family: 'Courier New'; font-weight: bold; color: var(--alert-red);">ACCESS CONTROL</div>
+        </div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; animation: pulse 2s infinite;">🚫</div>
+            <h1 style="font-size: 50px; margin: 10px 0; color: var(--text-main);">不等于运算符 (!=)</h1>
+            <h2 style="font-size: 26px; color: var(--alert-red); font-weight: bold; margin-top: 0;">Not Equal Operator</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: var(--alert-red); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #b33939;">排除法</div>
+                <div style="padding: 15px 30px; background: var(--safe-green); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #218c74;">逻辑判断</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 什么是 != -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">👮‍♂️</div>
+                <h1>排除检查官：!=</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>!=</b> 就像一个挑剔的检查官，他在问：<br>
+                    “这两个东西<b>不一样</b>吗？”</p>
+                    <ul style="list-style: none; padding: 0; font-size: 18px;">
+                        <li style="margin-bottom: 10px; color: var(--safe-green);">✅ 如果<b>不一样</b> → 回答 True (是的，不一样)</li>
+                        <li style="color: var(--alert-red);">❌ 如果<b>一样</b> → 回答 False (不是，它们一样)</li>
+                    </ul>
+                    <div class="code-box">
+                        <span class="kw">if</span> <span class="v">enemy</span>.<span class="p">type</span> <span class="o">!=</span> <span class="s">"burl"</span>:<br>
+                        &nbsp;&nbsp;<span class="f">hero.attack</span>(<span class="v">enemy</span>)
+                    </div>
+                    <div class="card">
+                        "除了 Burl，其他的都可以打！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 80px; margin-bottom: 10px;">🙅‍♂️</div>
+                        <p style="font-weight: bold; color: var(--text-main);">"NOT EQUAL!"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: == vs != 对比 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">⚖️</div>
+                <h1>双胞胎：== vs !=</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>它们就像一对性格相反的双胞胎。</p>
+                    <div class="op-compare">
+                        <div class="op-card">
+                            <span class="op-symbol op-eq">==</span>
+                            <div class="op-desc">相等运算符<br>问：一样吗？</div>
+                            <div style="margin-top:10px; font-weight:bold;">🍎 == 🍎 (True)</div>
+                        </div>
+                        <div class="op-card">
+                            <span class="op-symbol op-ne">!=</span>
+                            <div class="op-desc">不等于运算符<br>问：不同吗？</div>
+                            <div style="margin-top:10px; font-weight:bold;">🍎 != 🍊 (True)</div>
+                        </div>
+                    </div>
+                    <div class="code-box" style="margin-top: 20px;">
+                        <span class="s">"apple"</span> <span class="o">!=</span> <span class="s">"apple"</span> <span class="c"># False</span>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 100px;">👯</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 实战演示 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔍</div>
+                <h1>实战：避开巨人</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>在游戏里，我们不想攻击友好的 "burl"。</p>
+                    <div class="code-box">
+                        <span class="kw">while</span> <span class="kw">True</span>:<br>
+                        &nbsp;&nbsp;<span class="v">enemy</span> = <span class="f">findNearestEnemy</span>()<br>
+                        &nbsp;&nbsp;<span class="kw">if</span> <span class="v">enemy</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> <span class="v">enemy</span>.<span class="p">type</span> <span class="o">!=</span> <span class="s">"burl"</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">attack</span>(<span class="v">enemy</span>)
+                    </div>
+                    <p><b>逻辑：</b><br>
+                    1. 找到人了吗？(if enemy)<br>
+                    2. 是不是 burl？(if type != "burl")<br>
+                    3. 不是 burl 才打！</p>
+                </div>
+                <div class="col-visual">
+                    <div class="scanner-scene">
+                        <div class="scan-gate">
+                            <div class="scan-beam" id="scanBeam"></div>
+                            <div class="scan-subject" id="scanSubject">👾</div>
+                        </div>
+                        <div class="scan-result" id="scanResult"></div>
+                        <div class="btn-row">
+                            <button class="char-btn" onclick="checkTarget('👾', 'munchkin')">👾 小怪</button>
+                            <button class="char-btn" onclick="checkTarget('🌳', 'burl')">🌳 巨人</button>
+                            <button class="char-btn" onclick="checkTarget('👹', 'ogre')">👹 食人魔</button>
+                        </div>
+                    </div>
+                    <script>
+                        function checkTarget(emoji, type) {
+                            const sub = document.getElementById('scanSubject');
+                            const beam = document.getElementById('scanBeam');
+                            const res = document.getElementById('scanResult');
+                            
+                            sub.innerText = emoji;
+                            beam.style.opacity = 1;
+                            res.style.opacity = 0;
+                            
+                            setTimeout(() => {
+                                beam.style.opacity = 0;
+                                res.style.opacity = 1;
+                                if(type !== 'burl') {
+                                    res.style.color = 'var(--safe-green)';
+                                    res.innerText = `!= "burl"\nATTACK!`;
+                                } else {
+                                    res.style.color = 'var(--alert-red)';
+                                    res.innerText = `== "burl"\nPASS`;
+                                }
+                            }, 1000);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 布尔逻辑 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">💡</div>
+                <h1>布尔逻辑 (Boolean Logic)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><code>!=</code> 也是布尔逻辑的一个开关。</p>
+                    <div class="logic-board">
+                        <div class="logic-row">
+                            <span class="bool-val" style="color:var(--safe-green)">True</span> != <span class="bool-val" style="color:var(--safe-green)">True</span>
+                            <span class="bool-res" style="color:var(--alert-red)">False</span>
+                        </div>
+                        <div class="logic-row">
+                            <span class="bool-val" style="color:var(--safe-green)">True</span> != <span class="bool-val" style="color:var(--alert-red)">False</span>
+                            <span class="bool-res" style="color:var(--safe-green)">True</span>
+                        </div>
+                        <div class="logic-row">
+                            <span class="bool-val" style="color:var(--alert-red)">False</span> != <span class="bool-val" style="color:var(--safe-green)">True</span>
+                            <span class="bool-res" style="color:var(--safe-green)">True</span>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-top: 20px;">
+                        "只有两边状态不一样时，才返回真！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 80px;">🔛</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 运算符家族 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧰</div>
+                <h1>运算符家族</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>比较运算符大家庭，各司其职：</p>
+                    <div class="family-grid">
+                        <div class="fam-item">==<br>等于</div>
+                        <div class="fam-item" style="background: var(--alert-red); color: white; border-color: var(--alert-red);">!=<br>不等于</div>
+                        <div class="fam-item">&gt;<br>大于</div>
+                        <div class="fam-item">&lt;<br>小于</div>
+                        <div class="fam-item">&gt;=<br>大等于</div>
+                        <div class="fam-item">&lt;=<br>小等于</div>
+                    </div>
+                    <p style="margin-top: 20px;">它们都会给你一个 <b>True</b> 或 <b>False</b> 的答案。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 80px;">👪</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 编程思维 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧠</div>
+                <h1>思维训练：排除法</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>有时候，告诉计算机“不要做什么”比“要做什么”更简单！</p>
+                    <div class="code-box" style="border-left-color: var(--gold);">
+                        <span class="c"># 正向思维 (麻烦)</span><br>
+                        <span class="kw">if</span> <span class="v">type</span> <span class="o">==</span> <span class="s">"A"</span> <span class="kw">or</span> <span class="v">type</span> <span class="o">==</span> <span class="s">"B"</span> <span class="kw">or</span> <span class="v">type</span> <span class="o">==</span> <span class="s">"C"</span>:<br>
+                        &nbsp;&nbsp;<span class="f">attack</span>()<br>
+                        <br>
+                        <span class="c"># 逆向思维 (简单)</span><br>
+                        <span class="kw">if</span> <span class="v">type</span> <span class="o">!=</span> <span class="s">"D"</span>:<br>
+                        &nbsp;&nbsp;<span class="f">attack</span>()
+                    </div>
+                    <div class="card">
+                        "只要不是那个特定的，其他的通通拿下！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px;">🌪️</div>
+                        <p>一网打尽</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 扩展知识 Burl -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🌳</div>
+                <h1>为什么是 "burl"?</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>在 CodeCombat 中，<b>"burl"</b> 是森林里的树人巨人。</p>
+                    <ul style="list-style: none; padding: 0; font-size: 18px;">
+                        <li style="margin-bottom: 10px;">🕊️ <b>中立生物</b>：如果你不打它，它就不打你。</li>
+                        <li>💪 <b>极其强大</b>：如果你打了它，你可能会被秒杀！</li>
+                    </ul>
+                    <div class="card" style="background: #e6ffe6; border-color: var(--safe-green); color: #009432;">
+                        所以我们用 <code>!= "burl"</code> 来保护自己，不要惹怒巨人！
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 100px;">🌳</div>
+                    <div style="position: absolute; bottom: 20px; font-weight: bold;">PEACE</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎓</div>
+                <h1>检查官口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: #dff9fb; border-color: var(--magic-blue); color: #2d3436;">
+                        "<b>!=</b> 问不同，不同才是真 (True)。"
+                    </div>
+                    <div class="card" style="background: #ffcccc; border-color: var(--alert-red); color: #b33939; margin-top: 20px;">
+                        "排除法思维好，<br>省时省力效率高！"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; filter: drop-shadow(0 0 20px gold);">🏅</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)"></button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

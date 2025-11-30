@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：循环控制Continue与Break</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-continue: #68d391; /* Continue 绿 */
+            --accent-break: #fc8181; /* Break 红 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else, continue, break */
+            --code-func: #8be9fd;    
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(104, 211, 145, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(252, 129, 129, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-continue);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-break);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(104, 211, 145, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-logic); }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-continue);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-continue { color: var(--accent-continue); font-weight: bold; }
+        .op-break { color: var(--accent-break); font-weight: bold; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-arrows-spin text-green-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-green-400">循环控制流</span></h1>
+                    <p class="text-xs text-gray-500">Continue 与 Break 进阶应用（67-69关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><span class="op-continue">continue</span> <i class="fa-solid fa-sync-alt text-green-500 mr-1"></i>Skip Current</span>
+                <span><span class="op-break">break</span> <i class="fa-solid fa-circle-xmark text-red-500 mr-1"></i>Exit Loop</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 67: 炼金术传承 (continue for poison) -->
+        <section id="level-67" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-green-900 text-green-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 67 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">炼金术传承 (Alchemist's Legacy)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-3"><i class="fa-solid fa-flask-poison mr-2"></i>战术思路分析：跳过毒药</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                食人魔在抢水源，但地面上混杂着毒药（`"poison"`）。英雄需要避免触碰毒药。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：`continue` 的作用</h4>
+                                <p class="text-xs text-gray-400">
+                                    当程序执行到 **`continue`** 语句时，它会**立即停止当前循环迭代中剩余的代码**，并跳转到 `while` 循环的起始处，开始下一次迭代。
+                                    <br>
+                                    - `if item.type is "poison": continue`
+                                    <br>
+                                    这样可以高效地过滤掉毒药，让英雄不用执行移动到毒药位置的代码。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-arrow-right-from-bracket text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">Bad Item</span>: <span class="op-continue">continue</span> (Jump to Start)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-green-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找物品</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="comment"># 如果没有敌人，使用continue跳出此轮循环继续运行。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="kwd">if not </span><span class="var">enemy</span>:</div><div class="code-annotation">如果周围没有敌人</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="op-continue">continue</span></div><div class="code-annotation">跳过本轮，重新开始循环</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="comment"># 如果没有物品，要一瓶药水，然后continue。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="kwd">if not </span><span class="var">item</span>:</div><div class="code-annotation">如果周围没有物品</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"给我点喝的！"</span>)</div><div class="code-annotation">喊话要水</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="op-continue">continue</span></div><div class="code-annotation">跳过本轮，重新开始循环</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="comment"># 如果item.type是"poison"，使用continue跳出此轮循环继续运行。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="kwd">is </span><span class="str">"poison"</span>:</div><div class="code-annotation">如果是毒药</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">        <span class="op-continue">continue</span></div><div class="code-annotation">跳过本轮，避免触碰</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="comment"># 此时，药水一定是一瓶水</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">    <span class="comment"># 使用moveXY移到药水，然后回到起点！</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">44</span>, <span class="num">35</span>)</div><div class="code-annotation">移到药水</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">34</span>, <span class="num">47</span>)</div><div class="code-annotation">回到起点</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 68: 概念挑战. 伪装大师 (continue for inaction) -->
+        <section id="level-68" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-green-900 text-green-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 68 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 伪装大师 (Master of Disguise)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-3"><i class="fa-solid fa-eye-slash mr-2"></i>战术思路分析：静默伪装</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄在伪装状态下，只有在**没有敌人卫兵**时才能移动。如果卫兵在场，英雄必须**原地不动**，保持伪装。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：`if enemy: continue`</h4>
+                                <p class="text-xs text-gray-400">
+                                    如果检测到敌人，执行 `continue`。这将跳过所有移动代码，英雄保持静止，但程序仍继续运行，等待下一刻的安全。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-mask text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">Enemy</span>: <span class="op-continue">continue</span> <br>
+                            <span class="var">Else</span>: <span class="func">Move</span>()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-green-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找卫兵</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果卫兵存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="op-continue">continue</span></div><div class="code-annotation">跳过移动，保持原地不动</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果没有卫兵且找到了物品</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动收集宝石</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 69: 组合挑战. 逃到春天 (break, continue, time, gold) -->
+        <section id="level-69" class="level-card" style="border-left-color: var(--accent-break);">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(252, 129, 129, 0.1), transparent);">
+                <div>
+                    <span class="bg-red-900 text-red-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 69 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">组合挑战. 逃到春天 (Escape to Spring)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-red-400 mb-3"><i class="fa-solid fa-route mr-2"></i>战术思路分析：三阶段逃脱</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这是一个复杂的任务，需要三个阶段的循环控制：
+                                <br>
+                                1. **阶段一（战斗）：** 在 30 秒内，使用 `continue` 跳过不能攻击的敌人，用 `break` 结束战斗计时。
+                                <br>
+                                2. **阶段二（收集）：** 收集金币直到达到 20 金，然后用 `break` 结束收集循环。
+                                <br>
+                                3. **阶段三（逃跑）：** 移动到终点。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">循环控制总结</h4>
+                                <p class="text-xs text-gray-400">
+                                    - **`break`**: 用于满足目标后**退出**循环 (如 `hero.time > 30` 或 `hero.gold > 20`)。
+                                    <br>
+                                    - **`continue`**: 用于在循环中**跳过**当前迭代中不该执行的代码 (如 `enemy.type == "burl"` )。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-step-forward text-6xl text-yellow-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Loop 1 (<span class="var">Time</span>): <span class="op-continue">Continue</span> or <span class="op-break">Break</span> <br>
+                            Move <br>
+                            Loop 2 (<span class="var">Gold</span>): <span class="op-break">Break</span> <br>
+                            Move
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-red-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 阶段 1: 战斗 (时间限制)</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation">开始无限循环</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="prop">time</span> <span class="op">></span> <span class="num">30</span>:</div><div class="code-annotation">如果超过 30 秒</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="op-break">break</span></div><div class="code-annotation">中断战斗循环</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找敌人</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"burl"</span> <span class="op-or">or </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"sand-yak"</span>:</div><div class="code-annotation">如果是树精或牦牛（不能打的）</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">            <span class="op-continue">continue</span></div><div class="code-annotation">跳过攻击代码</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击其他敌人</div></div>
+                        
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">46</span>, <span class="num">34</span>)</div><div class="code-annotation">移动到收集区域</div></div>
+                        
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="comment"># 阶段 2: 收集 (金钱限制)</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation">开始收集循环</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找物品</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果物品存在</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动收集</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="prop">gold</span> <span class="op">></span> <span class="num">20</span>:</div><div class="code-annotation">如果金钱超过 20</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">        <span class="op-break">break</span></div><div class="code-annotation">中断收集循环</div></div>
+                        
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content"></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content"><span class="comment"># 阶段 3: 逃跑</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">21</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">78</span>, <span class="num">34</span>)</div><div class="code-annotation">移动到出口逃离</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Control Flow Mastery.</p>
+    </footer>
+
+</body>
+</html>

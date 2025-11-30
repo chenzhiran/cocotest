@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第42-46关 逻辑运算符 not</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-mirror: #2c003e;      /* 深紫背景 */
+            --mirror-frame: #d4af37;   /* 镜框金 */
+            --glass-bg: #fdf6e3;       /* 镜面亮色 */
+            --magic-cyan: #00e5ff;     /* 反转青 */
+            --true-green: #00b894;     /* 真绿 */
+            --false-red: #d63031;      /* 假红 */
+            --text-main: #2d3436;
+            
+            /* 代码高亮 */
+            --code-bg: #1e272e;
+            --code-fg: #dcdde1;
+            --tok-kw: #e84393;         /* 关键字 not/and/or */
+            --tok-bool: #00d2d3;       /* 布尔值 */
+            --tok-var: #feca57;        /* 变量 */
+            --tok-op: #ff6b6b;         /* 运算符 */
+            --tok-cm: #8395a7;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
+            background-color: var(--bg-mirror);
+            /* 镜像碎片背景 */
+            background-image: 
+                linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%, rgba(255,255,255,0.05)),
+                linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%, rgba(255,255,255,0.05));
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            color: var(--text-main);
+        }
+
+        /* 漂浮的镜片动画 */
+        .shard {
+            position: absolute;
+            background: rgba(255,255,255,0.1);
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            animation: floatShard 8s infinite ease-in-out;
+            pointer-events: none;
+        }
+        @keyframes floatShard {
+            0% { transform: translateY(100vh) rotate(0deg) scale(0.5); opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { transform: translateY(-10vh) rotate(360deg) scale(1); opacity: 0; }
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 80px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 魔法按钮 (外部) --- */
+        .nav-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 15px rgba(0,229,255,0.3);
+        }
+
+        /* 左按钮：反向箭头 */
+        .btn-prev { color: var(--magic-cyan); }
+        .btn-prev::after { content: '↩️'; filter: drop-shadow(0 0 5px var(--magic-cyan)); }
+
+        /* 右按钮：正向箭头 */
+        .btn-next { color: var(--magic-cyan); }
+        .btn-next::after { content: '↪️'; filter: drop-shadow(0 0 5px var(--magic-cyan)); }
+
+        .nav-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.2); border-color: var(--magic-cyan); }
+        .nav-btn:active { transform: scale(0.95); }
+        
+        .disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 魔法镜子容器 --- */
+        .mirror-container {
+            width: 960px;
+            height: 620px;
+            background: var(--glass-bg);
+            border-radius: 100px 100px 20px 20px; /* 拱形镜子 */
+            /* 华丽镜框 */
+            border: 15px solid var(--mirror-frame);
+            box-shadow: 
+                inset 0 0 50px rgba(255,255,255,0.8),
+                0 0 0 5px #8e6e18,
+                0 30px 60px rgba(0,0,0,0.8);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 镜面光泽 */
+        .mirror-shine {
+            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.4) 45%, transparent 50%);
+            pointer-events: none; z-index: 20; animation: shineMove 8s infinite;
+        }
+        @keyframes shineMove { 0% { transform: translate(-20%, -20%); } 100% { transform: translate(20%, 20%); } }
+
+        /* 顶部装饰 */
+        .mirror-crest {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            font-size: 40px; z-index: 25; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 60px 70px 40px 70px;
+            flex-direction: column;
+            animation: reveal 0.6s ease-out;
+            overflow-y: auto;
+            z-index: 10;
+            background: rgba(255,255,255,0.8); /* 半透明以便看到光泽 */
+        }
+        .slide.active { display: flex; }
+
+        @keyframes reveal { 
+            0% { opacity: 0; transform: scale(0.95); filter: blur(5px); } 
+            100% { opacity: 1; transform: scale(1); filter: blur(0); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px double var(--mirror-frame);
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2)); }
+        h1 { margin: 0; color: #2c003e; font-size: 36px; letter-spacing: 1px; font-family: 'Georgia', serif; }
+        .page-num { 
+            margin-left: auto; background: var(--mirror-frame); color: white; 
+            padding: 5px 15px; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 20px; line-height: 1.6; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.9; 
+            background: rgba(255,255,255,0.5);
+            border: 2px solid #ddd; 
+            border-radius: 15px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 18px;
+            margin-top: 15px;
+            border-left: 5px solid var(--magic-cyan);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .kw { color: var(--tok-kw); font-weight: bold; } 
+        .b { color: var(--tok-bool); font-weight: bold; } 
+        .v { color: var(--tok-var); } 
+        .o { color: var(--tok-op); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #e0f7fa;
+            border-left: 5px solid var(--magic-cyan);
+            color: #006064;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 8px 8px 0;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 反转开关 */
+        .flip-container {
+            perspective: 1000px; width: 200px; height: 200px; cursor: pointer;
+        }
+        .flipper {
+            transition: 0.6s; transform-style: preserve-3d; position: relative; width: 100%; height: 100%;
+        }
+        .flip-front, .flip-back {
+            backface-visibility: hidden; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 20px; display: flex; justify-content: center; align-items: center; flex-direction: column;
+            font-weight: bold; font-size: 30px; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .flip-front { background: var(--true-green); color: white; transform: rotateY(0deg); }
+        .flip-back { background: var(--false-red); color: white; transform: rotateY(180deg); }
+        .flipper.flipped { transform: rotateY(180deg); }
+        
+        .not-badge {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: var(--magic-cyan); color: #000; padding: 5px 15px; border-radius: 20px;
+            font-size: 16px; font-weight: bold; z-index: 10; box-shadow: 0 0 10px var(--magic-cyan);
+        }
+
+        /* 优先级阶梯 */
+        .ladder {
+            display: flex; flex-direction: column; gap: 10px; width: 80%;
+        }
+        .step {
+            padding: 10px 20px; border-radius: 10px; text-align: center; font-weight: bold; color: white;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2); position: relative;
+        }
+        .s1 { background: #a29bfe; width: 100%; } /* () */
+        .s2 { background: var(--magic-cyan); width: 80%; align-self: center; } /* not */
+        .s3 { background: #fdcb6e; width: 60%; align-self: center; } /* and */
+        .s4 { background: #e17055; width: 40%; align-self: center; } /* or */
+        .step::after { content: '⬇️'; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); color: #ccc; font-size: 12px; }
+        .step:last-child::after { content: ''; }
+
+        /* CSI 解密面板 */
+        .csi-panel {
+            background: #2d3436; padding: 20px; border-radius: 10px; width: 90%;
+            display: flex; flex-direction: column; gap: 10px; color: white; font-family: monospace;
+        }
+        .var-row { display: flex; align-items: center; justify-content: space-between; }
+        .toggle-btn {
+            width: 60px; padding: 5px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold;
+        }
+        .t-true { background: var(--true-green); color: white; }
+        .t-false { background: var(--false-red); color: white; }
+        
+        .logic-expr { 
+            background: #000; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 14px; color: #ddd; 
+        }
+        .result-box {
+            margin-top: 10px; text-align: center; font-size: 24px; font-weight: bold;
+        }
+
+        /* 双重否定动画 */
+        .double-not {
+            font-size: 60px; display: flex; align-items: center; gap: 10px;
+        }
+        .not-icon { transition: all 0.5s; color: var(--magic-cyan); }
+        .val-icon { transition: all 0.5s; }
+        
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #dcdde1;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--magic-cyan), var(--mirror-frame));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 动画 */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    </style>
+</head>
+<body>
+
+<!-- 背景碎片 -->
+<script>
+    for(let i=0; i<10; i++) {
+        let s = document.createElement('div');
+        s.className = 'shard';
+        let size = Math.random() * 50 + 20;
+        s.style.width = size + 'px';
+        s.style.height = size + 'px';
+        s.style.left = Math.random() * 100 + 'vw';
+        s.style.animationDelay = Math.random() * 5 + 's';
+        document.body.appendChild(s);
+    }
+</script>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)"></button>
+
+    <!-- 镜子容器 -->
+    <div class="mirror-container">
+        <div class="mirror-shine"></div>
+        <div class="mirror-crest">⚜️</div>
+        
+        <div class="header" style="margin-top: 40px; border:none; padding:0;"></div> <!-- Spacer -->
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">🪞</div>
+            <h1 style="font-size: 50px; margin: 10px 0; color: #2c003e;">逻辑运算符 not</h1>
+            <h2 style="font-size: 26px; color: var(--magic-cyan); font-weight: bold; margin-top: 0;">Logical NOT Operator</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: var(--magic-cyan); color: #000; border-radius: 20px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #00b8d4;">🙃 反向思考</div>
+                <div style="padding: 15px 30px; background: #e84393; color: white; border-radius: 20px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #c2185b;">🕵️‍♂️ 解密逻辑</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 什么是 not -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎭</div>
+                <h1>反向大师：not</h1>
+                <div class="page-num">01/08</div>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>not</b> 就像一面魔法镜子！</p>
+                    <p>它会把 <b>True (真)</b> 变成 <b>False (假)</b>，反之亦然。</p>
+                    <div class="code-box">
+                        <span class="v">is_raining</span> <span class="o">=</span> <span class="b">True</span><br>
+                        <span class="v">go_out</span> <span class="o">=</span> <span class="kw">not</span> <span class="v">is_raining</span><br>
+                        <span class="c"># 结果：False (不能出去)</span>
+                    </div>
+                    <div class="card">
+                        "妈妈说：如果<b>没有</b>下雨，就可以出去玩。"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="flip-container" onclick="this.querySelector('.flipper').classList.toggle('flipped')">
+                        <div class="flipper">
+                            <div class="flip-front">
+                                <div style="font-size: 50px;">👍</div>
+                                TRUE
+                            </div>
+                            <div class="flip-back">
+                                <div style="font-size: 50px;">👎</div>
+                                FALSE
+                            </div>
+                        </div>
+                        <div class="not-badge">NOT</div>
+                    </div>
+                    <div style="position:absolute; bottom: 20px; color: #888;">点击卡片反转</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 实战 CSI 解密 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🕵️‍♀️</div>
+                <h1>实战：CSI 逻辑解密</h1>
+                <div class="page-num">02/08</div>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>Csilla 的证词逻辑很复杂：</p>
+                    <div class="code-box" style="font-size: 14px;">
+                        <span class="v">csi</span> <span class="o">=</span> (<span class="v">A</span> <span class="kw">and</span> <span class="v">B</span>) <span class="kw">or</span> (<span class="v">B</span> <span class="kw">and</span> (<span class="kw">not</span> <span class="v">C</span>))
+                    </div>
+                    <p>意思是：<br>
+                    要么 A和B 都是嫌疑人；<br>
+                    <b>或者</b> B是嫌疑人，但 C <b>不是</b>。</p>
+                </div>
+                <div class="col-visual">
+                    <div class="csi-panel">
+                        <div class="var-row">
+                            <span>Secret A:</span> <button id="btnA" class="toggle-btn t-true" onclick="toggleVar('A')">True</button>
+                        </div>
+                        <div class="var-row">
+                            <span>Secret B:</span> <button id="btnB" class="toggle-btn t-true" onclick="toggleVar('B')">True</button>
+                        </div>
+                        <div class="var-row">
+                            <span>Secret C:</span> <button id="btnC" class="toggle-btn t-false" onclick="toggleVar('C')">False</button>
+                        </div>
+                        <div class="logic-expr">
+                            (A && B) || (B && !C)
+                        </div>
+                        <div class="result-box" id="csiResult" style="color: var(--true-green);">
+                            RESULT: True
+                        </div>
+                    </div>
+                    <script>
+                        let state = {A: true, B: true, C: false};
+                        function toggleVar(v) {
+                            state[v] = !state[v];
+                            const btn = document.getElementById('btn'+v);
+                            btn.className = 'toggle-btn ' + (state[v] ? 't-true' : 't-false');
+                            btn.innerText = state[v] ? 'True' : 'False';
+                            calcCSI();
+                        }
+                        function calcCSI() {
+                            const res = (state.A && state.B) || (state.B && !state.C);
+                            const box = document.getElementById('csiResult');
+                            box.innerText = 'RESULT: ' + res;
+                            box.style.color = res ? 'var(--true-green)' : 'var(--false-red)';
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 优先级 (Precedence) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🪜</div>
+                <h1>谁先谁后？优先级</h1>
+                <div class="page-num">03/08</div>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>逻辑运算符也有“地位高低”：</p>
+                    <div class="ladder">
+                        <div class="step s1">1. ( ) 括号 - 最高</div>
+                        <div class="step s2">2. not - 取反</div>
+                        <div class="step s3">3. and - 并且</div>
+                        <div class="step s4">4. or - 或者</div>
+                    </div>
+                    <div class="card" style="margin-top: 20px;">
+                        "not 像乘法，and/or 像加减法。<br>但为了不晕，<b>请多用括号！</b>"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 80px;">🥇</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 应用场景 - 避开敌人 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🛡️</div>
+                <h1>应用：排除法</h1>
+                <div class="page-num">04/08</div>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>告诉电脑<b>“不要打谁”</b>：</p>
+                    <div class="code-box">
+                        <span class="c"># 只要不是 Burl 巨人，就打！</span><br>
+                        <span class="kw">if</span> <span class="v">enemy</span> <span class="kw">and</span> <span class="kw">not</span> <span class="v">enemy</span>.<span class="v">type</span> <span class="o">==</span> <span class="s">"burl"</span>:<br>
+                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">attack</span>(<span class="v">enemy</span>)
+                    </div>
+                    <p>这等价于：<code>enemy.type != "burl"</code></p>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px;">👾 👹 👻</div>
+                        <div style="font-size: 30px; color: var(--magic-cyan);">Attack!</div>
+                        <hr style="border: 1px dashed #ccc; margin: 10px 0;">
+                        <div style="font-size: 80px;">🌳</div>
+                        <div style="font-size: 30px; color: var(--false-red);">NOT Target</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 德摩根定律 (魔法规律) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧙‍♂️</div>
+                <h1>德摩根定律 (De Morgan)</h1>
+                <div class="page-num">05/08</div>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>这是逻辑世界的<b>变形魔法</b>：</p>
+                    <div class="code-box">
+                        <span class="kw">not</span> (<span class="v">A</span> <span class="kw">and</span> <span class="v">B</span>)<br>
+                        <span class="c"># 等价于</span><br>
+                        (<span class="kw">not</span> <span class="v">A</span>) <span class="kw">or</span> (<span class="kw">not</span> <span class="v">B</span>)
+                    </div>
+                    <p>例子：<br>
+                    "不是(又下雨又刮风)" <br>
+                    = "没下雨 <b>或者</b> 没刮风"</p>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 50px; text-align: center;">
+                        🚫(🌧️ + 🌪️)<br>
+                        ⬇️<br>
+                        🚫🌧️ <b>OR</b> 🚫🌪️
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 双重否定 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔄</div>
+                <h1>双重否定 = 肯定</h1>
+                <div class="page-num">06/08</div>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>就像数学里的“负负得正”。</p>
+                    <div class="code-box">
+                        <span class="kw">not</span> <span class="kw">not</span> <span class="b">True</span> <span class="c"># -> True</span>
+                    </div>
+                    <div class="card">
+                        "我<b>不是不</b>想去 = 我想去！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="double-not" id="dnDemo">
+                        <div class="not-icon">🚫</div>
+                        <div class="not-icon">🚫</div>
+                        <div class="val-icon">👍</div>
+                    </div>
+                    <button class="btn-prev" style="width:auto; height:40px; font-size:16px; padding:0 20px; margin-top:20px;" onclick="animDoubleNot()">抵消</button>
+                    <script>
+                        function animDoubleNot() {
+                            const icons = document.querySelectorAll('.not-icon');
+                            icons.forEach(i => {
+                                i.style.transform = 'scale(0)';
+                                i.style.opacity = 0;
+                            });
+                            setTimeout(() => {
+                                icons.forEach(i => {
+                                    i.style.transform = 'scale(1)';
+                                    i.style.opacity = 1;
+                                });
+                            }, 1500);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎓</div>
+                <h1>反转大师口诀</h1>
+                <div class="page-num">07/08</div>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: #e0f7fa; border-color: var(--magic-cyan); color: #006064;">
+                        "<b>not</b> 是反向器，<br>
+                        黑白颠倒全靠它。"
+                    </div>
+                    <div class="card" style="background: #fce4ec; border-color: #e84393; color: #880e4f; margin-top: 20px;">
+                        "括号保平安，<br>
+                        逻辑清晰不出错！"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; filter: drop-shadow(0 0 20px gold);" class="anim-pulse">🏆</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)"></button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编程小英雄挑战赛 - 智能战术篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 --- */
+        :root {
+            --primary-color: #6C5CE7;
+            --secondary-color: #A29BFE;
+            --bg-color: #DFE6E9;
+            --card-bg: #FFFFFF;
+            --text-color: #2D3436;
+            --correct-color: #00b894;
+            --wrong-color: #d63031;
+            --accent-yellow: #fdcb6e;
+            
+            /* VS Code Dark 风格配色 */
+            --code-bg: #1e1e1e;
+            --code-text: #d4d4d4;
+            --code-kw: #c586c0;  /* 关键字 (粉紫) */
+            --code-fn: #4ec9b0;  /* 类/函数 (青色) */
+            --code-method: #dcdcaa; /* 方法 (黄色) */
+            --code-num: #b5cea8; /* 数字 (浅绿) */
+            --code-str: #ce9178; /* 字符串 (红褐) */
+            --code-cmt: #6a9955; /* 注释 (绿色) */
+            --code-op: #d4d4d4;  /* 运算符 (白/灰) */
+            --code-prop: #9cdcfe; /* 属性 (浅蓝) */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 750px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目与代码 --- */
+        .question-area h2 {
+            text-align: left;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* 关键 CSS：保证代码正确换行和缩进 */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', Consolas, monospace;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 核心：保留空格和换行 */
+            word-break: break-all; /* 防止长单词撑破布局 */
+            text-align: left;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+            overflow-x: auto;
+        }
+
+        /* 高亮颜色定义 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .method { color: var(--code-method); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .op { color: var(--code-op); }
+        .prop { color: var(--code-prop); }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 0.95rem; 
+            font-family: 'Fira Code', inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #bdc3c7;
+            white-space: pre-wrap;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #aab0b3;
+        }
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析与结束 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #5649c0;
+        }
+        
+        .end-screen { display: none; padding: 20px 0; }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score { font-size: 3.5rem; font-weight: bold; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                q: "1. 题目：在for循环中，以下代码的作用是什么？",
+                code: "for friend in friends:",
+                options: [
+                    "A. 只处理第一个朋友",
+                    "B. 手动遍历每个朋友",
+                    "C. 自动遍历friends列表中的每个元素",
+                    "D. 随机选择一个朋友"
+                ],
+                correct: 2, // C
+                desc: "for循环能够自动遍历列表中的每个元素，就像训练小队长自动管理整个队伍一样。"
+            },
+            {
+                q: "2. 题目：如何获取游戏对象的当前位置？",
+                options: [
+                    "A. friend.position",
+                    "B. friend.location",
+                    "C. friend.pos",
+                    "D. friend.where"
+                ],
+                correct: 2, // C
+                desc: "根据内容描述，通过 .pos 属性可以获取对象的当前位置信息，包括 x 和 y 坐标。"
+            },
+            {
+                q: "3. 题目：以下代码中，坐标运算的作用是什么？",
+                code: "moveTo = {\"x\": friend.pos.x + 0.35, \"y\": friend.pos.y}",
+                options: [
+                    "A. 让朋友向左移动",
+                    "B. 让朋友向上移动",
+                    "C. 让朋友向右移动",
+                    "D. 让朋友向下移动"
+                ],
+                correct: 2, // C
+                desc: "在 x 坐标上加 0.35 表示向右移动，y 坐标保持不变。"
+            },
+            {
+                q: "4. 题目：在智能决策中，当以下函数返回 None 时，应该执行什么操作？",
+                code: "enemy = friend.findNearestEnemy()",
+                options: [
+                    "A. 攻击最近的敌人",
+                    "B. 停止不动",
+                    "C. 继续向前移动",
+                    "D. 返回基地"
+                ],
+                correct: 2, // C
+                desc: "根据 if-else 逻辑，没有发现敌人时（返回 None）就执行 else 分支，让士兵继续向前移动。"
+            },
+            {
+                q: "5. 题目：while True: 循环的特点是什么？",
+                code: "while True:",
+                options: [
+                    "A. 只执行一次就停止",
+                    "B. 执行固定次数后停止",
+                    "C. 永远重复执行，不会停止",
+                    "D. 只有在条件满足时执行"
+                ],
+                correct: 2, // C
+                desc: "while True: 创建一个无限循环，就像永不停歇的监控摄像头，会一直运行下去。"
+            },
+            {
+                q: "6. 题目：以下哪个代码片段实现了\"缓慢推进\"的战术？",
+                options: [
+                    "A. moveTo = {\"x\": friend.pos.x + 5.0, \"y\": friend.pos.y}",
+                    "B. moveTo = {\"x\": friend.pos.x + 0.35, \"y\": friend.pos.y}",
+                    "C. moveTo = {\"x\": friend.pos.x, \"y\": friend.pos.y + 10.0}",
+                    "D. moveTo = {\"x\": friend.pos.x - 0.35, \"y\": friend.pos.y}"
+                ],
+                correct: 1, // B
+                desc: "每次只移动 0.35 个单位，形成缓慢推进的阵型，有利于保持队形整齐和给士兵反应时间。"
+            },
+            {
+                q: "7. 题目：在自动化指挥系统中，以下代码体现了什么编程思维？",
+                code: "enemy = friend.findNearestEnemy()",
+                options: [
+                    "A. 全局感知",
+                    "B. 个体感知",
+                    "C. 随机决策",
+                    "D. 固定路径"
+                ],
+                correct: 1, // B
+                desc: "每个士兵都有自己的“眼睛”，能发现离自己最近的敌人，体现了个体感知的思维。"
+            },
+            {
+                q: "8. 题目：如果要让士兵向上移动，正确的坐标运算是什么？",
+                options: [
+                    "A. {\"x\": friend.pos.x + 0.35, \"y\": friend.pos.y}",
+                    "B. {\"x\": friend.pos.x, \"y\": friend.pos.y + 0.35}",
+                    "C. {\"x\": friend.pos.x - 0.35, \"y\": friend.pos.y}",
+                    "D. {\"x\": friend.pos.x, \"y\": friend.pos.y - 0.35}"
+                ],
+                correct: 1, // B
+                desc: "向上移动需要增加 y 坐标的值，x 坐标保持不变。"
+            },
+            {
+                q: "9. 题目：在以下代码结构中，哪个部分负责实时更新情况？",
+                code: "while True:\n    friends = hero.findFriends()\n    for friend in friends:\n        # 决策逻辑",
+                options: [
+                    "A. while True: 循环",
+                    "B. friends = hero.findFriends()",
+                    "C. for friend in friends:",
+                    "D. 决策逻辑部分"
+                ],
+                correct: 0, // A
+                desc: "while True: 循环确保系统不断重复执行，实时扫描和更新情况。"
+            },
+            {
+                q: "10. 题目：使用for循环管理多个对象的主要优势是什么？",
+                options: [
+                    "A. 代码更复杂",
+                    "B. 需要更多行代码",
+                    "C. 从微观管理升级到宏观指挥",
+                    "D. 只能处理固定数量的对象"
+                ],
+                correct: 2, // C
+                desc: "for循环让程序员从逐个管理对象升级到批量自动化管理，实现宏观指挥。"
+            },
+            {
+                q: "11. 题目：在坐标运算中，如果要让朋友向左下方移动，正确的写法是：",
+                options: [
+                    "A. {\"x\": friend.pos.x - 0.35, \"y\": friend.pos.y + 0.35}",
+                    "B. {\"x\": friend.pos.x + 0.35, \"y\": friend.pos.y - 0.35}",
+                    "C. {\"x\": friend.pos.x - 0.35, \"y\": friend.pos.y - 0.35}",
+                    "D. {\"x\": friend.pos.x + 0.35, \"y\": friend.pos.y + 0.35}"
+                ],
+                correct: 2, // C
+                desc: "向左移动需要减小 x 坐标，向下移动需要减小 y 坐标。"
+            },
+            {
+                q: "12. 题目：在智能决策系统中，当多个条件需要同时满足时，应该使用什么逻辑运算符？",
+                options: [
+                    "A. or",
+                    "B. and",
+                    "C. not",
+                    "D. xor"
+                ],
+                correct: 1, // B
+                desc: "and 运算符表示所有条件都必须满足，就像交通警察需要同时考虑多个因素才能做出决策。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                html += `<div class="code-block">${highlightCode(data.code)}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * 纯净版一次性词法分析高亮引擎 (Single-Pass Tokenizer)
+         * 绝不使用占位符，直接生成 HTML，杜绝乱码风险。
+         */
+        function highlightCode(code) {
+            // 定义Token正则表达式
+            // 1. 字符串 (str) - 支持双引号和单引号
+            // 2. 注释 (cmt)
+            // 3. 方法调用 (method) - .method
+            // 4. 数字 (num) - 支持整数和浮点数
+            // 5. 关键字 (kw)
+            // 6. 属性/变量 (prop)
+            // 7. 运算符/标点 (op)
+            
+            // 扩展说明：
+            // - 增加了对 moveTo, findNearestEnemy, findFriends 等新变量/方法的支持
+            // - 增强了对浮点数 (如 0.35) 的匹配
+            const pattern = /(".*?"|'.*?')|(#.*)|(\.[\w]+)|(\b\d+(?:\.\d+)?\b)|(\b(?:def|return|while|True|False|if|else|elif|for|in|break|continue|pass|and|or|not|is|None|range|len)\b)|(\b(?:hero|friends|friend|enemies|enemy|points|team|distanceTo|findFriends|findNearestEnemy|moveTo|command|attack|move|pos|x|y|j|point)\b)|(\+=|==|!=|<=|>=|<|>|=|\+|-|\*|\/|\[|\]|\{|\}|\(|\)|:|,|\.)/g;
+
+            let lastIndex = 0;
+            let html = "";
+            let match;
+
+            // 循环匹配所有 Token
+            while ((match = pattern.exec(code)) !== null) {
+                // 1. 获取并转义匹配内容之前的普通文本 (空格、换行等)
+                const plainText = code.slice(lastIndex, match.index);
+                html += escapeHtml(plainText);
+
+                // 2. 识别当前 Token 类型并包裹标签
+                let content = match[0];
+                let cls = "";
+
+                if (match[1]) cls = "str";      // 字符串
+                else if (match[2]) cls = "cmt"; // 注释
+                else if (match[3]) cls = "method"; // 方法
+                else if (match[4]) cls = "num"; // 数字
+                else if (match[5]) cls = "kw";  // 关键字
+                else if (match[6]) cls = "prop";// 属性/变量
+                else if (match[7]) cls = "op";  // 运算符
+
+                html += `<span class="${cls}">${escapeHtml(content)}</span>`;
+                
+                lastIndex = pattern.lastIndex;
+            }
+
+            // 3. 添加剩余的普通文本
+            html += escapeHtml(code.slice(lastIndex));
+
+            return html;
+        }
+
+        // 简单的 HTML 转义函数
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => allBtns[data.correct].classList.add('correct'), 400);
+                const chars = ["A", "B", "C", "D"];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${chars[data.correct]}`, data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none';
+            
+            let html = '';
+            const totalScore = quizData.length * 100;
+            if (score === totalScore) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 智能战术大师！ 🎉</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">太棒了！你已经完全掌握了for循环与自动化战术指挥！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score} / ${totalScore}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">做得不错！继续加油！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; padding:15px 40px; margin-top:30px">🔄 再玩一次</button>`;
+            endScreen.innerHTML = html;
+        }
+
+        function createConfetti() {
+            const colors = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#fdcb6e'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.transform = `scale(${Math.random() * 0.6 + 0.4}) rotate(${Math.random()*360}deg)`;
+                c.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2500);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>

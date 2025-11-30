@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扣哒世界 - Python 奇妙征程</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Zcool+KuaiLe&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* --- 可爱风配色 --- */
+            --bg-sky: #87CEEB;
+            --text-main: #5D4037; /* 深棕色文字 */
+            --text-light: #78909C;
+            
+            --card-white: #FFFFFF;
+            --card-bg-light: #F0F4C3; /* 浅黄信纸色 */
+            
+            /* 按钮颜色 */
+            --btn-know: #81C784;    /* 抹茶绿 - 知识 */
+            --btn-code: #64B5F6;    /* 天空蓝 - 代码 */
+            --btn-quiz: #BA68C8;    /* 葡萄紫 - 测试 */
+            
+            --btn-shadow-know: #558b2f;
+            --btn-shadow-code: #1565c0;
+            --btn-shadow-quiz: #6a1b9a;
+
+            --chapter-header-bg: #FFCC80; /* 章节标题背景 - 暖橙 */
+            --chapter-border: #FFB74D;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Zcool KuaiLe', 'Fredoka One', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-sky);
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(255,255,255,0.3) 5%, transparent 5%),
+                radial-gradient(circle at 80% 40%, rgba(255,255,255,0.2) 10%, transparent 10%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            padding-top: 100px; /* 为顶部导航留出空间 */
+            position: relative;
+        }
+
+        /* ================= 云朵背景动画 ================= */
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50px;
+            z-index: -1;
+            animation: floatCloud linear infinite;
+        }
+        .c1 { width: 120px; height: 60px; top: 10%; left: -150px; animation-duration: 25s; }
+        .c2 { width: 80px; height: 40px; top: 40%; left: -100px; animation-duration: 18s; animation-delay: 5s; }
+        .c3 { width: 160px; height: 70px; top: 80%; left: -200px; animation-duration: 30s; animation-delay: 2s; }
+
+        @keyframes floatCloud {
+            0% { transform: translateX(-200px); }
+            100% { transform: translateX(100vw); }
+        }
+
+        /* ================= 顶部导航栏 ================= */
+        .header-nav {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 4px solid #FFF;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+
+        .left-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Logo 样式 */
+        .logo-img {
+            height: 40px;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+        }
+
+        /* 返回按钮 */
+        .back-btn {
+            text-decoration: none;
+            color: #5D4037;
+            background: #FFD54F;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            border: 3px solid #FFF;
+            box-shadow: 0 4px 0 #FFA000;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 1rem;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .back-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 0 0 #FFA000;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            color: #FF7043;
+            text-shadow: 2px 2px 0 #FFF;
+            letter-spacing: 1px;
+            text-align: center;
+            flex-grow: 1; /* 让标题占据剩余空间 */
+        }
+        
+        /* 占位符，为了让标题居中 */
+        .nav-placeholder { width: 140px; }
+
+        /* ================= 章节列表容器 ================= */
+        .campaign-container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            padding-bottom: 50px;
+        }
+
+        /* ================= 章节卡片 ================= */
+        .chapter-card {
+            background: var(--card-white);
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            border: 4px solid #FFF;
+            transition: transform 0.3s;
+        }
+
+        .chapter-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 章节标题栏 */
+        .chapter-header {
+            background: #FFF8E1; /* 浅奶油色 */
+            padding: 20px 30px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px dashed #FFE082;
+            transition: background 0.3s;
+        }
+
+        .chapter-header:hover {
+            background: #FFECB3;
+        }
+
+        .chapter-title {
+            font-size: 1.4rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chapter-icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 0 rgba(0,0,0,0.1));
+            transition: transform 0.3s;
+        }
+        .chapter-header:hover .chapter-icon {
+            transform: scale(1.2) rotate(10deg);
+        }
+
+        .toggle-icon {
+            font-size: 1.2rem;
+            color: #FFB74D;
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            background: #FFF;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* 章节内容区域 */
+        .chapter-content {
+            display: none; /* 默认折叠 */
+            background: #FFF;
+            padding: 15px;
+        }
+        
+        .chapter-content.active {
+            display: block;
+            animation: popOpen 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popOpen {
+            from { opacity: 0; transform: scaleY(0.9); transform-origin: top; }
+            to { opacity: 1; transform: scaleY(1); transform-origin: top; }
+        }
+
+        /* ================= 关卡行样式 ================= */
+        .level-row {
+            display: flex;
+            flex-direction: column;
+            background: #F1F8E9; /* 浅绿底 */
+            margin-bottom: 12px;
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 2px solid #DCEDC8;
+            transition: all 0.2s;
+        }
+        
+        /* 偶数行换个颜色 */
+        .level-row:nth-child(even) {
+            background: #E1F5FE; /* 浅蓝底 */
+            border-color: #B3E5FC;
+        }
+
+        .level-row:hover {
+            transform: scale(1.01);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.05);
+        }
+
+        @media (min-width: 768px) {
+            .level-row {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .level-info {
+            flex: 1;
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 768px) {
+            .level-info {
+                margin-bottom: 0;
+                margin-right: 20px;
+            }
+        }
+
+        .level-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #F57C00; /* 橙色标题 */
+            margin-bottom: 5px;
+        }
+
+        .level-desc {
+            font-size: 0.95rem;
+            color: #78909C; /* 灰蓝描述 */
+            line-height: 1.4;
+        }
+
+        /* ================= 糖果按钮组 ================= */
+        .action-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+            transition: all 0.1s;
+            position: relative;
+            top: 0;
+            /* 3D 阴影 */
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-know { background: var(--btn-know); box-shadow: 0 4px 0 var(--btn-shadow-know); }
+        .btn-code { background: var(--btn-code); box-shadow: 0 4px 0 var(--btn-shadow-code); }
+        .btn-quiz { background: var(--btn-quiz); box-shadow: 0 4px 0 var(--btn-shadow-quiz); }
+
+        .action-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+
+        .action-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 0 0 !important; /* 按下时阴影消失 */
+            top: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .header-nav {
+                flex-direction: column;
+                border-radius: 20px;
+                gap: 10px;
+            }
+            .nav-placeholder { display: none; }
+            .left-area { width: 100%; justify-content: space-between; }
+            .page-title { font-size: 1.2rem; }
+            .chapter-title { font-size: 1.2rem; }
+            .action-btn { font-size: 0.8rem; padding: 6px 10px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="cloud c3"></div>
+
+    <header class="header-nav">
+        <div class="left-area">
+            <a href="../../menu.html" class="back-btn">⬅ 返回岛屿</a>
+            <img src="../../logo-cn.png" alt="Logo" class="logo-img" onerror="this.style.display='none'">
+        </div>
+        <div class="page-title">Python 奇妙征程</div>
+        <div class="nav-placeholder"></div>
+    </header>
+
+    <div class="campaign-container">
+
+        <div class="chapter-card">
+            <div class="chapter-header" onclick="toggleChapter(this)">
+                <div class="chapter-title"><span class="chapter-icon">🏰</span> 第一章 · 计算机科学入门</div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="chapter-content active">
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第1-6关</div>
+                        <div class="level-desc">对象、方法、参数、整数、小数、正数、负数</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch1/sec1/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch1/sec1/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch1/sec1/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第7-9关</div>
+                        <div class="level-desc">程序、编程、注释、字符串、顺序结构、bug、调试</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch1/sec2/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch1/sec2/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch1/sec2/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第9-16关</div>
+                        <div class="level-desc">循环、while True、无限循环、缩进</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch1/sec3/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch1/sec3/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch1/sec3/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第17-25关</div>
+                        <div class="level-desc">变量、赋值、赋值号、变量名、变量的值</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch1/sec4/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch1/sec4/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch1/sec4/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="chapter-card">
+            <div class="chapter-header" onclick="toggleChapter(this)">
+                <div class="chapter-title"><span class="chapter-icon">🎮</span> 第二章 · 游戏开发1</div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="chapter-content">
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">本章综合练习</div>
+                        <div class="level-desc">综合运用编程知识进行游戏创作</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch2/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch2/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch2/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chapter-card">
+            <div class="chapter-header" onclick="toggleChapter(this)">
+                <div class="chapter-title"><span class="chapter-icon">🌲</span> 第三章 · 计算机科学2</div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="chapter-content">
+                
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第1-5关</div>
+                        <div class="level-desc">笛卡尔坐标、一维数轴、二维数轴</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch3/sec1/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch3/sec1/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch3/sec1/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第6-13关</div>
+                        <div class="level-desc">单分支选择结构、if 语句、打敌人三件套</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch3/sec2/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch3/sec2/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch3/sec2/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第14-24关</div>
+                        <div class="level-desc">双分支选择结构、if-else语句</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch3/sec3/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch3/sec3/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch3/sec3/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第25关</div>
+                        <div class="level-desc">多分支选择结构、if-elif-else语句</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch3/sec4/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch3/sec4/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch3/sec4/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第26-30关</div>
+                        <div class="level-desc">嵌套选择结构</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch3/sec5/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch3/sec5/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch3/sec5/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第31-35关</div>
+                        <div class="level-desc">函数的定义与调用</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch3/sec6/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch3/sec6/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch3/sec6/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第36-42关</div>
+                        <div class="level-desc">函数参数</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch3/sec7/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch3/sec7/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch3/sec7/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第43-48关</div>
+                        <div class="level-desc">多参数函数</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch3/sec8/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch3/sec8/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch3/sec8/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第49-62关</div>
+                        <div class="level-desc">事件与事件处理机制</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch3/sec9/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch3/sec9/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch3/sec9/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="chapter-card">
+            <div class="chapter-header" onclick="toggleChapter(this)">
+                <div class="chapter-title"><span class="chapter-icon">⚔️</span> 第四章 · 游戏开发2</div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="chapter-content">
+                
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第1-2关</div>
+                        <div class="level-desc">事件处理机制</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec1/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec1/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec1/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第3-5关</div>
+                        <div class="level-desc">标准操作规程</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec2/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec2/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec2/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第6关</div>
+                        <div class="level-desc">游戏管理：计时器</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec3/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec3/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec3/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第7关</div>
+                        <div class="level-desc">用户界面</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec4/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec4/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec4/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+                
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第8关</div>
+                        <div class="level-desc">游戏管理：随机数</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec5/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec5/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec5/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第9、10关</div>
+                        <div class="level-desc">游戏事件：defeat</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec6/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec6/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec6/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第11、12关</div>
+                        <div class="level-desc">自定义游戏目标</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec7/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec7/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec7/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第13、14关</div>
+                        <div class="level-desc">游戏事件：destroy</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec8/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec8/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec8/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第15、16关</div>
+                        <div class="level-desc">游戏事件：collect</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec9/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec9/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec9/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第17、18关</div>
+                        <div class="level-desc">游戏事件：collide</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec10/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec10/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec10/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第19-20关</div>
+                        <div class="level-desc">游戏事件综合应用</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec11/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec11/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec11/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第21-25关</div>
+                        <div class="level-desc">布局、分数、敌人、能力强化、平衡</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec12/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec12/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec12/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第26关</div>
+                        <div class="level-desc">游戏项目设计与开发</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch4/sec13/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch4/sec13/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch4/sec13/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="chapter-card">
+            <div class="chapter-header" onclick="toggleChapter(this)">
+                <div class="chapter-title"><span class="chapter-icon">🐫</span> 第五章 · 计算机科学3</div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="chapter-content">
+                
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第1-8关</div>
+                        <div class="level-desc">字符串运算</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch5/sec1/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch5/sec1/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch5/sec1/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第8-13关</div>
+                        <div class="level-desc">坐标计算与位置属性</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch5/sec2/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch5/sec2/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch5/sec2/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+                
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第14-18关</div>
+                        <div class="level-desc">类型属性与相等运算符</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch5/sec3/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch5/sec3/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch5/sec3/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第18-26关</div>
+                        <div class="level-desc">函数的返回值</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch5/sec4/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch5/sec4/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch5/sec4/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第26-31关</div>
+                        <div class="level-desc">不等于运算符</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch5/sec5/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch5/sec5/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch5/sec5/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第32-37关</div>
+                        <div class="level-desc">逻辑运算符 or</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch5/sec6/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch5/sec6/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch5/sec6/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第38-41关</div>
+                        <div class="level-desc">逻辑运算符 and</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch5/sec7/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch5/sec7/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch5/sec7/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第42-46关</div>
+                        <div class="level-desc">逻辑运算 not</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch5/sec8/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch5/sec8/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch5/sec8/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第47-66关</div>
+                        <div class="level-desc">方向、坐标、生命、时间、价值、金币属性</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch5/sec9/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch5/sec9/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch5/sec9/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第67-69关</div>
+                        <div class="level-desc">循环控制：continue、break</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch5/sec10/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch5/sec10/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch5/sec10/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第70-82关</div>
+                        <div class="level-desc">事件处理机制</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch5/sec11/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch5/sec11/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch5/sec11/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="chapter-card">
+            <div class="chapter-header" onclick="toggleChapter(this)">
+                <div class="chapter-title"><span class="chapter-icon">🌋</span> 第六章 · 游戏开发3</div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="chapter-content">
+                 <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">本章综合练习</div>
+                        <div class="level-desc">高阶游戏逻辑与复杂项目开发</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch6/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch6/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch6/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chapter-card">
+            <div class="chapter-header" onclick="toggleChapter(this)">
+                <div class="chapter-title"><span class="chapter-icon">🏔️</span> 第七章 · 计算机科学4</div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="chapter-content">
+                
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第1-6关</div>
+                        <div class="level-desc">认识 while 循环</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec1/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec1/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec1/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第7-8关</div>
+                        <div class="level-desc">练习 while 循环</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec2/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec2/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec2/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第9-13关</div>
+                        <div class="level-desc">一维列表</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec3/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec3/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec3/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第14关</div>
+                        <div class="level-desc">第一单元复习</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec4/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec4/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec4/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第15-18关</div>
+                        <div class="level-desc">认识嵌套循环</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec5/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec5/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec5/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第19-20关</div>
+                        <div class="level-desc">练习嵌套循环</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec6/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec6/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec6/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第21-23关</div>
+                        <div class="level-desc">认识数组迭代</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec7/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec7/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec7/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第24-25关</div>
+                        <div class="level-desc">练习数组迭代</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec8/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec8/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec8/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+                
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第26关</div>
+                        <div class="level-desc">第二单元复习</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec9/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec9/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec9/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第27-29关</div>
+                        <div class="level-desc">认识字典</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec10/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec10/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec10/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+                
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第30-31关</div>
+                        <div class="level-desc">练习字典</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec11/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec11/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec11/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第32-34关</div>
+                        <div class="level-desc">认识 for 循环</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec12/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec12/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec12/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第35关</div>
+                        <div class="level-desc">练习 for 循环</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec13/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec13/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec13/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+                <div class="level-row">
+                    <div class="level-info">
+                        <div class="level-title">第36关</div>
+                        <div class="level-desc">第三单元复习</div>
+                    </div>
+                    <div class="action-group">
+                        <a href="ch7/sec14/knowledge.html" class="action-btn btn-know">📖 知识</a>
+                        <a href="ch7/sec14/levels.html" class="action-btn btn-code">💻 代码</a>
+                        <a href="ch7/sec14/quiz.html" class="action-btn btn-quiz">🎯 题目</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function toggleChapter(header) {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('.toggle-icon');
+            
+            if (content.classList.contains('active')) {
+                // 收起
+                content.classList.remove('active');
+                icon.style.transform = 'rotate(0deg)';
+                header.style.backgroundColor = '#FFF8E1'; // 恢复默认底色
+            } else {
+                // 展开
+                content.classList.add('active');
+                icon.style.transform = 'rotate(180deg)';
+                header.style.backgroundColor = '#FFECB3'; // 展开时高亮
+            }
+        }
+    </script>
+</body>
+</html>

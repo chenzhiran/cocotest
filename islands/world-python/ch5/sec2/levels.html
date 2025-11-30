@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：坐标与位置属性</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-spatial: #00ffff; /* 空间青色 */
+            --accent-string: #f1fa8c; 
+            --accent-math: #8be9fd; 
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; 
+            --code-func: #8be9fd;    
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* pos, x, y, id */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-spatial);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-math);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(0,255,255,0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-spatial); }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-spatial);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-map-location-dot text-cyan-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-cyan-400">坐标与位置属性</span></h1>
+                    <p class="text-xs text-gray-500">基础数据处理系列（9-13关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-location-dot text-cyan-500 mr-1"></i>item.pos</span>
+                <span><i class="fa-solid fa-compass text-yellow-500 mr-1"></i>.x / .y Access</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 9: 币屑 (嵌套属性访问) -->
+        <section id="level-9" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 9 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">币屑 (Coin Shrapnel)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-treasure-chest mr-2"></i>战术思路分析：寻宝三部曲</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                藏宝室里布满了陷阱，只有跟着硬币的轨迹才能安全逃脱。这里的硬币就像**会移动的导游**。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键概念：嵌套属性</h4>
+                                <p class="text-xs text-gray-400">
+                                    把物品看成一个装有信息的箱子。
+                                    <br>
+                                    1. 找到箱子：`item` (物品对象)
+                                    <br>
+                                    2. 找到箱子里的位置图：`item.pos` (位置对象)
+                                    <br>
+                                    3. 找到图上的坐标：`item.pos.x` 和 `item.pos.y`
+                                </p>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500 mt-3">
+                                <h4 class="font-bold text-white text-sm mb-1">步骤拆解（变量存储）：</h4>
+                                <p class="text-xs text-gray-400">
+                                    `itemPosition = item.pos` → `itemX = itemPosition.x` → `hero.moveXY(itemX, itemY)`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-map-pin text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            item → pos → x, y <br>
+                            <i class="fa-solid fa-arrow-down"></i><br>
+                            item.pos.x
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation">主循环，持续寻找硬币</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">找到最近的物品（硬币）</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果找到了物品</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="comment"># 这将物品的pos，也就是坐标，存储在变量中。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">itemPosition</span> <span class="op">=</span> <span class="var">item</span>.<span class="prop">pos</span></div><div class="code-annotation">将物品的位置对象赋值给 itemPosition</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="comment"># 将物品的 X 和 Y 坐标存入变量。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">itemX</span> <span class="op">=</span> <span class="var">itemPosition</span>.<span class="prop">x</span></div><div class="code-annotation">获取位置对象的 X 坐标</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">itemY</span> <span class="op">=</span> <span class="var">itemPosition</span>.<span class="prop">y</span></div><div class="code-annotation">获取位置对象的 Y 坐标</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="comment"># 现在，使用moveXY移动到itemX和itemY：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">itemX</span>, <span class="var">itemY</span>)</div><div class="code-annotation">移动到硬币的精确位置</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 10: 白兔 (强化属性访问) -->
+        <section id="level-10" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 10 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">白兔 (The White Rabbit)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-lightbulb mr-2"></i>战术思路分析：跟着光点跑</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                陷阱太多，跟着发光石（像爱丽丝梦游仙境的白兔一样）是唯一的生路。发光石移动很快，你需要快速锁定它的位置。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">嵌套属性的另一种写法</h4>
+                                <p class="text-xs text-gray-400">
+                                    本关的解法与上关类似，但它强调了使用**中间变量**来让代码更清晰易懂。虽然 `hero.moveXY(item.pos.x, item.pos.y)` 可以一步到位，但像下面这样分步操作，能帮助你理解数据流：
+                                    <br>
+                                    1. `position = item.pos` (找到位置图)
+                                    <br>
+                                    2. `x = position.x` (读取 X 坐标)
+                                    <br>
+                                    3. `hero.moveXY(x, y)` (移动)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-gem text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            item → position → x, y <br>
+                            <i class="fa-solid fa-arrow-down"></i><br>
+                            更容易追踪数据
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">找到最近的发光石</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果找到了</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="comment"># 使用 item.pos 将物品位置保存到一个新的变量中：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">position</span> <span class="op">=</span> <span class="var">item</span>.<span class="prop">pos</span></div><div class="code-annotation">将位置对象赋值给 position</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="comment"># 使用 pos.x 和 pos.y 保存X和Y坐标：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">x</span> <span class="op">=</span> <span class="var">position</span>.<span class="prop">x</span></div><div class="code-annotation">获取 X 坐标</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">y</span> <span class="op">=</span> <span class="var">position</span>.<span class="prop">y</span></div><div class="code-annotation">获取 Y 坐标</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="comment"># 使用 moveXY() 和 变量X、Y移动至坐标：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">x</span>, <span class="var">y</span>)</div><div class="code-annotation">移动到目标位置</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 11: 伪装者 (混合逻辑) -->
+        <section id="level-11" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 11 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">伪装者 (Impostors)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-masks-theater mr-2"></i>战术思路分析：拆穿伪装</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                食人魔伪装成了金币！你必须靠近物品来检查。这个关卡要求你同时处理两种逻辑：
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">双重逻辑链</h4>
+                                <p class="text-xs text-gray-400">
+                                    1. **安全优先：** 如果发现敌人 (`enemy = hero.findNearestEnemy()`)，立即攻击。
+                                    <br>
+                                    2. **寻宝路径：** 否则，寻找最近的物品 (`item = hero.findNearestItem()`)，然后移动过去。
+                                </p>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500 mt-3">
+                                <h4 class="font-bold text-white text-sm mb-1">精简访问</h4>
+                                <p class="text-xs text-gray-400">
+                                    你可以像下面这样直接使用 `.pos` 属性：`hero.moveXY(item.pos.x, item.pos.y)`。这是一种更简洁的写法。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-balance-scale-right text-6xl text-green-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Enemy: Attack()<br>
+                            ELSE IF Item: MoveTo(Item)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="comment"># 如果你看见了敌人，攻击它：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击敌人</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找物品</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="comment"># 如果你看见硬币或者宝石，移动到它的X和Y坐标：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果物品存在</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">pos</span> <span class="op">=</span> <span class="var">item</span>.<span class="prop">pos</span></div><div class="code-annotation">获取物品的位置对象</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">pos</span>.<span class="prop">x</span>, <span class="var">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动到物品的 X 和 Y 坐标</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 12: 富有且安全 (精简属性访问) -->
+        <section id="level-12" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 12 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 富有且安全 (Rich and Safe)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-hand-holding-dollar mr-2"></i>战术思路分析：最短路径</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                食人魔不会攻击宝石，所以捡起宝石就能躲避火焰。你需要以最简洁的方式，将英雄移动到宝石的位置。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">精简写法：直接访问</h4>
+                                <p class="text-xs text-gray-400">
+                                    这是最常用的写法！无需中间变量，直接使用点号连接属性：
+                                    <br>
+                                    `hero.moveXY(<span class="text-yellow-400">item.pos.x</span>, <span class="text-yellow-400">item.pos.y</span>)`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-code text-6xl text-purple-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            item.pos.x, item.pos.y<br>
+                            <i class="fa-solid fa-arrow-down"></i><br>
+                            Clean and Concise
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 找到物品并且移动它们的位置。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">找到最近的宝石</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果找到了</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">直接使用 item.pos.x 和 item.pos.y 移动</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 13: 风向校正 (组合挑战) -->
+        <section id="level-13" class="level-card math-accent" style="border-left-color: var(--accent-math);">
+            <div class="level-header bg-gradient-to-r from-cyan-900/20 to-transparent">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 13 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">组合挑战. 风向校正 (Wind Correction)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-wind mr-2"></i>战术思路分析：炮火计算</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                大风让炮弹偏离目标！你需要结合所有学过的知识来修正瞄准：
+                            </p>
+                            <ul class="list-disc list-inside text-gray-300 space-y-2">
+                                <li>**知识点 1 (属性访问):** 获取敌人的原始 Y 坐标：`enemy.pos.y`</li>
+                                <li>**知识点 2 (算术运算):** 修正风向：`enemy.pos.y - 4`</li>
+                                <li>**知识点 3 (字符串连接):** 拼接炮火命令：`X + "," + Y_corrected`</li>
+                            </ul>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-red-500 mt-3">
+                                <h4 class="font-bold text-white text-sm mb-1">注意分隔符！</h4>
+                                <p class="text-xs text-gray-400">
+                                    这次火炮需要的是**逗号**（`,`）作为分隔符，而不是空格。所以拼接时必须使用 `","` 字符串。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-arrows-down-to-people text-6xl text-red-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Y_correct <span class="op">=</span> Y <span class="op">-</span> 4 <br>
+                            Say(<span class="var">X</span> <span class="op">+</span> <span class="str">","</span> <span class="op">+</span> <span class="var">Y_correct</span>)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 说出食人魔的x,y坐标，格式是逗号分隔的两个数字。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="comment"># 为了能够更加精确，用y坐标值减去4，然后再说出。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找最近的敌人</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">y</span> <span class="op">=</span> <span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">-</span> <span class="num">4</span></div><div class="code-annotation">将 Y 坐标减去 4，存储在变量 y 中 (算术运算)</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">+</span> <span class="str">","</span> <span class="op">+</span> <span class="var">y</span>)</div><div class="code-annotation">连接 X 坐标、逗号字符串和修正后的 Y 坐标 (字符串连接)</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Math and Strings Mastery.</p>
+    </footer>
+
+</body>
+</html>

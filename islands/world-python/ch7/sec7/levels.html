@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：数组迭代与极值查找</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-algo: #8be9fd; /* 算法青色 */
+            --accent-loop: #ff79c6; /* 循环粉色 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; 
+            --code-func: #8be9fd;    
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* health, distanceTo */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(139, 237, 253, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 121, 198, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-algo);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-loop);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(139, 237, 253, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-algo); }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-while { color: var(--accent-loop); font-weight: bold; }
+        .op-array { color: var(--accent-array); font-weight: bold; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-square-root-variable text-cyan-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-cyan-400">数组迭代与极值查找</span></h1>
+                    <p class="text-xs text-gray-500">手动实现 `FindNearest` 和 `FindFarthest`（21-23关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-sort-amount-up text-pink-500 mr-1"></i>Min Search</span>
+                <span><i class="fa-solid fa-sort-amount-down text-yellow-500 mr-1"></i>Max Search</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 21: 沙蛇 (查找最近物品算法) -->
+        <section id="level-21" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 21 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">沙蛇 (Sand-Snakes)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-search-dollar mr-2"></i>战术思路分析：手动查找最近</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄的 `findNearest` 技能在这片峡谷中被干扰了！你需要自己编写算法，遍历所有硬币并找出**距离最小**的那一个。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-pink-500">
+                                <h4 class="font-bold text-white text-sm mb-1">Min Search 算法（最小查找）</h4>
+                                <p class="text-xs text-gray-400">
+                                    1. **初始化：** `nearestDistance = 9999` (设置一个比任何实际距离都大的起始值)。
+                                    <br>
+                                    2. **遍历与比较：** 循环遍历每个硬币，如果当前硬币的 `distance` **小于** `nearestDistance`，则更新 `nearest` 和 `nearestDistance`。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-sort-amount-up-alt text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Dist < MinDist: <br>
+                            &nbsp;&nbsp;MinDist <span class="op">=</span> Dist <br>
+                            &nbsp;&nbsp;Nearest <span class="op">=</span> Coin
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="op-while">while </span><span class="kwd">True</span>:</div><div class="code-annotation">外层无限循环</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">coins</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findItems</span>()</div><div class="code-annotation">获取硬币列表</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">coinIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化索引</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">nearest</span> <span class="op">=</span> <span class="kwd">None</span></div><div class="code-annotation">初始化最近物品为 None</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">nearestDistance</span> <span class="op">=</span> <span class="num">9999</span></div><div class="code-annotation">初始化最小距离为极大值 (9999)</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="comment"># 搜索所有的硬币，找到离你最近的那一颗。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="op-while">while </span><span class="var">coinIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">coins</span>):</div><div class="code-annotation">遍历列表</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">coin</span> <span class="op">=</span> <span class="var">coins</span>[<span class="var">coinIndex</span>]</div><div class="code-annotation">获取当前硬币</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">coinIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">索引步进</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">distance</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">coin</span>)</div><div class="code-annotation">计算距离</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="comment"># 如果硬币与你的距离小于“最近距离（nearestDistance）”</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="kwd">if </span><span class="var">distance</span> <span class="op"><</span> <span class="var">nearestDistance</span>:</div><div class="code-annotation">进行距离比较</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">            <span class="comment"># 将 nearest 设置为 coin</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">            <span class="var">nearest</span> <span class="op">=</span> <span class="var">coin</span></div><div class="code-annotation">更新最近物品</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">            <span class="comment"># 将 nearestDistance 设置为 distance</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">            <span class="var">nearestDistance</span> <span class="op">=</span> <span class="var">distance</span></div><div class="code-annotation">更新最小距离</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">            </div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">    <span class="comment"># 如果找到离你最近的硬币，移动到硬币的位置。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content">    <span class="kwd">if </span><span class="var">nearest</span>:</div><div class="code-annotation">如果找到了最近的硬币</div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">nearest</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">nearest</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动到硬币的位置</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 22: 奇数沙尘暴 (索引步进 != 1) -->
+        <section id="level-22" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 22 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">奇数沙尘暴 (Odd Sandstorm)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-shoe-prints mr-2"></i>战术思路分析：跳跃步进</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                列表中的朋友和敌人信息是**交替出现**的（偶数索引是敌人，奇数索引是朋友）。英雄只需要攻击敌人。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：索引 `+= 2`</h4>
+                                <p class="text-xs text-gray-400">
+                                    让索引从 `0` 开始，每次循环增加 `2` (`enemyIndex += 2`)，就能跳过朋友，只攻击敌人。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-arrows-to-circle text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Start <span class="op">=</span> 0 <br>
+                            Index <span class="op">+=</span> 2 <br>
+                            <i class="fa-solid fa-arrow-down text-cyan-400"></i><br>
+                            0 → 2 → 4
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">everybody</span> <span class="op">=</span> [<span class="str">'Yetu'</span>, <span class="str">'Tabitha'</span>, <span class="str">'Rasha'</span>, <span class="str">'Max'</span>, <span class="str">'Yazul'</span>, <span class="str">'Todd'</span>]</div><div class="code-annotation">数组包含朋友和兽人</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">enemyIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化索引</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="op-while">while </span><span class="var">enemyIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">everybody</span>):</div><div class="code-annotation">遍历列表</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="comment"># 使用方括号从数组中得到兽人的名字</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">everybody</span>[<span class="var">enemyIndex</span>]</div><div class="code-annotation">获取当前索引处的敌人</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="comment"># 使用存有兽人名字的变量攻击</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击敌人</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="comment"># 每次递增 2 来跳过朋友。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="var">enemyIndex</span> <span class="op">+=</span> <span class="num">2</span></div><div class="code-annotation">索引步进 **2**</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">36</span>, <span class="num">53</span>)</div><div class="code-annotation">移动到绿洲</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 23: 疯狂的 Maxer (查找最远敌人算法) -->
+        <section id="level-23" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 23 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">疯狂的 Maxer (Mad Maxer)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-infinity mr-2"></i>战术思路分析：找出最远</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                靠近的敌人是诱饵，真正有威胁的是最远的敌人。你需要实现 **Max Search** 算法，找出 **距离最远** 的敌人。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-pink-500">
+                                <h4 class="font-bold text-white text-sm mb-1">Max Search 算法（最大查找）</h4>
+                                <p class="text-xs text-gray-400">
+                                    1. **初始化：** `farthest = None`，`maxDistance = 0` (一个极小值)。
+                                    <br>
+                                    2. **遍历与比较：** 如果当前目标的 `distance` **大于** `maxDistance`，则更新 `farthest` 和 `maxDistance`。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-sort-amount-down-alt text-6xl text-yellow-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Dist > MaxDist: <br>
+                            &nbsp;&nbsp;MaxDist <span class="op">=</span> Dist <br>
+                            &nbsp;&nbsp;Farthest <span class="op">=</span> Target
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="op-while">while </span><span class="kwd">True</span>:</div><div class="code-annotation">外层无限循环</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">farthest</span> <span class="op">=</span> <span class="kwd">None</span></div><div class="code-annotation">初始化最远敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">maxDistance</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化最大距离为 0</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">enemyIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">enemies</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findEnemies</span>()</div><div class="code-annotation">获取敌人列表</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="comment"># 查看全部敌人，找出最远的那个。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="op-while">while </span><span class="var">enemyIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">enemies</span>):</div><div class="code-annotation">遍历敌人列表</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">target</span> <span class="op">=</span> <span class="var">enemies</span>[<span class="var">enemyIndex</span>]</div><div class="code-annotation">获取当前敌人</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">enemyIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">索引步进</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">distance</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">target</span>)</div><div class="code-annotation">计算距离</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="comment"># 这个敌人是不是比我们看到的最远敌人还要远？</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="kwd">if </span><span class="var">distance</span> <span class="op">></span> <span class="var">maxDistance</span>:</div><div class="code-annotation">进行距离比较</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">            <span class="var">maxDistance</span> <span class="op">=</span> <span class="var">distance</span></div><div class="code-annotation">更新 maxDistance</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">            <span class="var">farthest</span> <span class="op">=</span> <span class="var">target</span></div><div class="code-annotation">更新 farthest</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="kwd">if </span><span class="var">farthest</span>:</div><div class="code-annotation">如果找到了最远敌人</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">        <span class="comment"># 干掉最远的敌人！</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">        <span class="op-while">while </span><span class="var">farthest</span>.<span class="prop">health</span> <span class="op">></span> <span class="num">0</span>:</div><div class="code-annotation">持续攻击直到死亡</div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">farthest</span>)</div><div class="code-annotation">攻击</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Array Iteration Mastery.</p>
+    </footer>
+
+</body>
+</html>

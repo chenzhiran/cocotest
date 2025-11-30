@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第7-8关 练习while循环</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-wood: #5d4037;        /* 木纹背景 */
+            --paper-bg: #fff8e1;       /* 羊皮纸 */
+            --ink-color: #3e2723;      /* 墨水色 */
+            --gold-color: #ffb300;     /* 金币黄 */
+            --potion-green: #4caf50;   /* 菠菜绿 */
+            --alert-red: #d32f2f;      /* 警告红 */
+            --accent-blue: #1976d2;    /* 强调蓝 */
+            
+            /* 代码高亮 */
+            --code-bg: #263238;
+            --code-fg: #eceff1;
+            --tok-kw: #ff8a80;         /* 关键字 while, if */
+            --tok-func: #82b1ff;       /* 函数 */
+            --tok-var: #ffcc80;        /* 变量 */
+            --tok-num: #a5d6a7;        /* 数字 */
+            --tok-op: #80cbc4;         /* 运算符 */
+            --tok-cm: #90a4ae;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-wood);
+            /* 木地板纹理 */
+            background-image: repeating-linear-gradient(45deg, #4e342e 25%, transparent 25%, transparent 75%, #4e342e 75%, #4e342e), repeating-linear-gradient(45deg, #4e342e 25%, #5d4037 25%, #5d4037 75%, #4e342e 75%, #4e342e);
+            background-position: 0 0, 10px 10px;
+            background-size: 20px 20px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 道具按钮 (外部) --- */
+        .nav-btn {
+            width: 90px;
+            height: 90px;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+        }
+
+        /* 左：金币 */
+        .btn-prev .coin-icon {
+            width: 80px; height: 80px; background: radial-gradient(circle at 30% 30%, #ffe082, #ffb300);
+            border-radius: 50%; border: 4px solid #ff6f00;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 40px; color: #bf360c; font-weight: bold;
+            box-shadow: inset 0 0 10px #ff6f00;
+        }
+        
+        /* 右：菠菜药水 */
+        .btn-next .potion-icon {
+            width: 60px; height: 80px; background: rgba(255,255,255,0.2);
+            border: 3px solid #81c784; border-radius: 10px 10px 30px 30px;
+            position: relative; overflow: hidden; background: #e8f5e9;
+        }
+        .potion-liquid {
+            position: absolute; bottom: 0; width: 100%; height: 70%;
+            background: var(--potion-green);
+            animation: bubble 2s infinite;
+        }
+        .btn-next::after { content: '❯'; position: absolute; color: white; font-size: 30px; font-weight: bold; z-index: 2; text-shadow: 0 1px 2px black; }
+
+        .nav-btn:hover { transform: scale(1.1); }
+        .nav-btn:active { transform: scale(0.95); }
+        
+        .disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 冒险日志容器 --- */
+        .journal-container {
+            width: 960px;
+            height: 640px;
+            background: var(--paper-bg);
+            border-radius: 10px;
+            box-shadow: 
+                inset 0 0 60px rgba(0,0,0,0.1),
+                10px 10px 20px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            /* 书本装订线 */
+            border-left: 20px solid #3e2723;
+            padding-left: 20px; 
+        }
+        
+        /* 地图标签 */
+        .map-tag {
+            position: absolute; top: 20px; right: -30px; background: #3e2723; color: white;
+            padding: 5px 40px; transform: rotate(45deg); font-size: 14px; font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 20;
+        }
+        
+        /* 顶部标题 */
+        .journal-header {
+            height: 60px; border-bottom: 3px double #8d6e63;
+            display: flex; align-items: center; padding: 0 40px;
+            font-family: 'Courier New', monospace; font-weight: bold; color: var(--ink-color); font-size: 20px;
+            background: rgba(255,255,255,0.3); justify-content: space-between;
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px 60px;
+            flex-direction: column;
+            animation: pageTurn 0.6s ease-in-out;
+            overflow-y: auto;
+            background-image: linear-gradient(#e0e0e0 1px, transparent 1px);
+            background-size: 100% 30px; /* 信纸横线 */
+            line-height: 30px;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes pageTurn { 
+            0% { opacity: 0; transform: translateX(20px); } 
+            100% { opacity: 1; transform: translateX(0); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px dashed #a1887f;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2)); }
+        h1 { margin: 0; color: #5d4037; font-size: 34px; letter-spacing: 1px; font-weight: 800; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 20px; color: #3e2723; }
+        .col-visual { 
+            flex: 0.9; 
+            background: #fff;
+            border: 2px solid #8d6e63; 
+            border-radius: 10px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            padding: 20px;
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 5px;
+            font-family: 'Consolas', monospace;
+            font-size: 18px;
+            margin-top: 15px;
+            border-left: 5px solid var(--gold-color);
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.2);
+            line-height: 1.5;
+        }
+        
+        .kw { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .v { color: var(--tok-var); } 
+        .n { color: var(--tok-num); } 
+        .op { color: var(--tok-op); } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #fff;
+            border-left: 5px solid var(--accent-blue);
+            color: #1565c0;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 10px 10px 0;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 任务列表流程图 */
+        .task-list {
+            display: flex; flex-direction: column; gap: 15px; width: 80%;
+        }
+        .task-item {
+            background: #f5f5f5; padding: 15px; border-radius: 8px; border: 2px solid #ccc;
+            display: flex; align-items: center; gap: 15px; transition: all 0.3s;
+        }
+        .task-item.active { border-color: var(--gold-color); background: #fff8e1; transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .check-box { width: 20px; height: 20px; border: 2px solid #999; border-radius: 4px; display: flex; justify-content: center; align-items: center; }
+        .task-item.done .check-box::after { content: '✔'; color: green; font-weight: bold; }
+        .task-item.done { opacity: 0.6; }
+        .arrow-down { text-align: center; font-size: 20px; color: #aaa; margin: -10px 0; }
+
+        /* 金币收集演示 */
+        .gold-meter-container {
+            width: 100%; display: flex; flex-direction: column; align-items: center;
+        }
+        .money-bag {
+            font-size: 60px; position: relative; z-index: 2;
+        }
+        .gold-bar-frame {
+            width: 200px; height: 20px; border: 2px solid #333; border-radius: 10px; background: #eee; overflow: hidden; margin-top: 10px;
+        }
+        .gold-bar-fill {
+            height: 100%; width: 0%; background: var(--gold-color); transition: width 0.3s;
+        }
+        .gold-text { font-weight: bold; font-family: monospace; margin-top: 5px; font-size: 20px; }
+        
+        /* 药水计数演示 */
+        .shelf {
+            width: 100%; height: 20px; background: #8d6e63; border-radius: 5px; position: absolute; bottom: 50px;
+        }
+        .bottle-container {
+            display: flex; gap: 5px; position: absolute; bottom: 70px; align-items: flex-end;
+        }
+        .bottle {
+            width: 20px; height: 30px; background: var(--potion-green); border: 1px solid #2e7d32; border-radius: 3px 3px 0 0;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .bottle.bad { background: var(--alert-red); border-color: #b71c1c; }
+        
+        /* 天平演示 (== vs =) */
+        .scale-box {
+            width: 100%; height: 100%; position: relative; display: flex; justify-content: space-around; align-items: center;
+        }
+        .op-card {
+            width: 120px; padding: 20px; background: white; border-radius: 10px; text-align: center;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1); cursor: pointer; border: 3px solid transparent;
+            transition: transform 0.2s;
+        }
+        .op-card:hover { transform: scale(1.1); }
+        .op-symbol { font-size: 40px; font-weight: bold; display: block; margin-bottom: 10px; }
+        .op-desc { font-size: 14px; color: #666; }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #d7ccc8;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold-color), var(--potion-green));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 动画 */
+        @keyframes bubble { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
+        @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        /* 按钮 */
+        .btn-action {
+            padding: 8px 15px; border: none; border-radius: 5px; font-weight: bold; color: white; cursor: pointer; margin-top: 15px;
+            background: var(--ink-color); box-shadow: 0 4px 0 #1b1b1b;
+        }
+        .btn-action:active { transform: translateY(4px); box-shadow: none; }
+
+    </style>
+</head>
+<body>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">
+        <div class="coin-icon">$</div>
+    </button>
+
+    <!-- 日志容器 -->
+    <div class="journal-container">
+        <div class="map-tag">计算机科学 3</div>
+        
+        <div class="journal-header">
+            <span>第 7-8 关</span>
+            <span>ADVENTURE LOG</span>
+        </div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">📜</div>
+            <h1 style="font-size: 50px; margin: 10px 0; color: #3e2723;">练习 while 循环</h1>
+            <h2 style="font-size: 26px; color: var(--gold-color); font-weight: bold; margin-top: 0; text-shadow: 1px 1px 0 #000;">Practice While Loops</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: var(--gold-color); color: #3e2723; border-radius: 10px; font-weight: bold; font-size: 20px; border: 2px dashed #3e2723;">🏜️ 海市蜃楼</div>
+                <div style="padding: 15px 30px; background: var(--potion-green); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; border: 2px solid #2e7d32;">🧪 菠菜力量</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 多个 while 循环 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📚</div>
+                <h1>多重任务：一章接一章</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>程序执行就像读书，读完第一章，才读第二章。</p>
+                    <div class="code-box">
+                        <span class="c"># 第一章：攒钱</span><br>
+                        <span class="kw">while</span> <span class="v">gold</span> <span class="op"><</span> <span class="n">25</span>:<br>
+                        &nbsp;&nbsp;<span class="f">collectCoins</span>()<br>
+                        <br>
+                        <span class="c"># 第二章：买东西 (循环外)</span><br>
+                        <span class="v">hero</span>.<span class="f">build</span>(<span class="s">"decoy"</span>)<br>
+                        <br>
+                        <span class="c"># 第三章：挑衅</span><br>
+                        <span class="kw">while</span> <span class="v">health</span> <span class="op">==</span> <span class="v">max</span>:<br>
+                        &nbsp;&nbsp;<span class="f">say</span>(<span class="s">"Come on!"</span>)
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="task-list" id="taskList">
+                        <div class="task-item active" id="task1"><div class="check-box"></div> 1. 攒够 25 金币</div>
+                        <div class="arrow-down">⬇️</div>
+                        <div class="task-item" id="task2"><div class="check-box"></div> 2. 建造诱饵</div>
+                        <div class="arrow-down">⬇️</div>
+                        <div class="task-item" id="task3"><div class="check-box"></div> 3. 满血挑衅</div>
+                    </div>
+                    <button class="btn-action" style="position: absolute; bottom: 10px; right: 10px;" onclick="nextTask()">完成当前任务</button>
+                    <script>
+                        let taskStep = 1;
+                        function nextTask() {
+                            if(taskStep > 3) return;
+                            document.getElementById('task'+taskStep).classList.remove('active');
+                            document.getElementById('task'+taskStep).classList.add('done');
+                            taskStep++;
+                            if(taskStep <= 3) document.getElementById('task'+taskStep).classList.add('active');
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 条件 I - 小于号 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">💰</div>
+                <h1>第一章：金币 &lt; 25</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>条件：<code>while hero.gold < 25:</code></p>
+                    <p>意思是：“只要钱袋里的钱还<b>不到</b> 25，就继续捡。”</p>
+                    <ul style="list-style: none; padding: 0; font-size: 18px;">
+                        <li>🪙 <b>24 < 25</b> ? ✅ 是的 (继续)</li>
+                        <li>💰 <b>25 < 25</b> ? ❌ 不是 (停止)</li>
+                    </ul>
+                    <div class="card">
+                        "这就是不等式 inequality，左边小，右边大。"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="gold-meter-container">
+                        <div class="money-bag">💰</div>
+                        <div class="gold-bar-frame">
+                            <div class="gold-bar-fill" id="goldFill"></div>
+                        </div>
+                        <div class="gold-text"><span id="goldVal">0</span> / 25</div>
+                        <button class="btn-action" style="background: var(--gold-color); color: #3e2723;" onclick="addGold()">捡金币 (+5)</button>
+                    </div>
+                    <script>
+                        let gold = 0;
+                        function addGold() {
+                            if(gold >= 25) { alert("任务完成！退出循环"); return; }
+                            gold += 5;
+                            document.getElementById('goldVal').innerText = gold;
+                            document.getElementById('goldFill').style.width = (gold/25*100) + '%';
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 条件 II - 等号 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">⚖️</div>
+                <h1>第三章：相等 == 赋值 =</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>这是最容易搞混的地方！</p>
+                    <div class="scale-box" style="height: 200px; flex-direction: column; align-items: stretch; gap: 20px;">
+                        <div class="card" style="border-left-color: var(--accent-blue); background: #e3f2fd; color: #0d47a1;">
+                            <b>= (赋值)</b><br>
+                            "把右边的给左边"<br>
+                            <code>count = 0</code> (设定)
+                        </div>
+                        <div class="card" style="border-left-color: var(--alert-red); background: #ffebee; color: #b71c1c;">
+                            <b>== (比较)</b><br>
+                            "问左右两边一样吗?"<br>
+                            <code>health == max</code> (提问)
+                        </div>
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 80px; text-align: center;">
+                        🎁 vs ⚖️<br>
+                        <span style="font-size: 16px; color: #888;">送礼物 vs 称重量</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 计数器与自增 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧪</div>
+                <h1>菠菜力量：计数器</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>我们需要数数：喝了几瓶药水？</p>
+                    <div class="code-box">
+                        <span class="v">count</span> <span class="op">=</span> <span class="n">0</span> <span class="c"># 初始</span><br>
+                        <span class="kw">while</span> <span class="v">count</span> <span class="op"><</span> <span class="n">7</span>:<br>
+                        &nbsp;&nbsp;<span class="f">drinkPotion</span>()<br>
+                        &nbsp;&nbsp;<span class="v">count</span> <span class="op">+=</span> <span class="n">1</span> <span class="c"># 关键!</span>
+                    </div>
+                    <p><b>count += 1</b>：自增 (Increment)。<br>每喝一瓶，就在本子上画一道杠。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="width: 100%; height: 100%; position: relative; display: flex; justify-content: center;">
+                        <div class="shelf"></div>
+                        <div class="bottle-container" id="bottleRow">
+                            <!-- JS add bottles -->
+                        </div>
+                        <button class="btn-action" style="position: absolute; bottom: 10px; background: var(--potion-green);" onclick="addPotion()">喝一瓶 (+1)</button>
+                        <div style="position: absolute; top: 20px; font-size: 24px; font-weight: bold; color: var(--potion-green);">Count: <span id="pCount">0</span></div>
+                    </div>
+                    <script>
+                        let potions = 0;
+                        function addPotion() {
+                            if(potions >= 8) return; // visual limit
+                            potions++;
+                            document.getElementById('pCount').innerText = potions;
+                            
+                            const row = document.getElementById('bottleRow');
+                            const b = document.createElement('div');
+                            b.className = 'bottle' + (potions > 7 ? ' bad' : '');
+                            row.appendChild(b);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 差一错误 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">⚠️</div>
+                <h1>陷阱：差一错误</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>如果写成 <code>while count <= 7</code> 会怎样？</p>
+                    <div class="card" style="border-color: var(--alert-red); background: #ffebee; color: #c62828;">
+                        <p>❌ <b><= 7</b>：第 7 瓶喝完，7 <= 7 成立，还会再喝第 8 瓶！(喝多了)</p>
+                        <p>✅ <b>< 7</b>：第 7 瓶时，7 < 7 不成立，停止。(刚刚好)</p>
+                    </div>
+                    <p>这叫 <b>Off-by-one Error</b>。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px; margin-bottom: 10px;">🤢</div>
+                        <p style="font-weight: bold;">喝了第 8 瓶...</p>
+                        <div style="display: flex; gap: 5px; justify-content: center;">
+                            <span>🧪</span><span>🧪</span><span>🧪</span><span>🧪</span><span>🧪</span><span>🧪</span><span>🧪</span><span style="filter: grayscale(1);">🧪</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 无限循环 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔄</div>
+                <h1>主循环：while True</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>有些任务是<b>永远</b>做下去的，比如战斗。</p>
+                    <div class="code-box">
+                        <span class="kw">while</span> <span class="kw">True</span>:<br>
+                        &nbsp;&nbsp;<span class="v">enemy</span> <span class="op">=</span> <span class="f">findEnemy</span>()<br>
+                        &nbsp;&nbsp;<span class="kw">if</span> <span class="v">enemy</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">attack</span>(<span class="v">enemy</span>)
+                    </div>
+                    <p><b>True</b> 永远是真的，所以这个循环如果不被外力（如游戏结束）打断，会一直转下去。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="width: 150px; height: 150px; border: 5px dashed var(--accent-blue); border-radius: 50%; animation: spin 2s infinite linear; display: flex; justify-content: center; align-items: center;">
+                        <span style="font-size: 40px; animation: antiSpin 2s infinite linear;">⚔️</span>
+                    </div>
+                    <style>
+                        @keyframes spin { 100% { transform: rotate(360deg); } }
+                        @keyframes antiSpin { 100% { transform: rotate(-360deg); } }
+                    </style>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎓</div>
+                <h1>循环大师口诀</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: #e3f2fd; border-color: var(--accent-blue); color: #1565c0;">
+                        "<b>< 25</b> 小于号，条件不满继续跑。"
+                    </div>
+                    <div class="card" style="background: #fff8e1; border-color: var(--gold-color); color: #ef6c00; margin-top: 20px;">
+                        "<b>+= 1</b> 计数器，不加就会死循环！"
+                    </div>
+                    <div class="card" style="background: #e8f5e9; border-color: var(--potion-green); color: #2e7d32; margin-top: 20px;">
+                        "<b>==</b> 是问号，<b>=</b> 是句号。"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; animation: float 3s infinite;">🌟</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">
+        <div class="potion-icon"><div class="potion-liquid"></div></div>
+    </button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>

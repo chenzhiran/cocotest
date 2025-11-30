@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：位置与类型识别</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-spatial: #00ffff; /* 空间青色 */
+            --accent-logic: #8be9fd; /* 逻辑蓝 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else */
+            --code-func: #8be9fd;    /* findNearestEnemy, say */
+            --code-string: #f1fa8c;  /* "停止" */
+            --code-num: #bd93f9;     /* 4 */
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* pos, type, x, y */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-spatial);
+            transition: border-left-color 0.3s;
+        }
+        
+        .spatial-accent { border-left-color: var(--accent-spatial); }
+        .logic-accent { border-left-color: var(--accent-logic); }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-spatial); }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-logic);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-code-compare text-cyan-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-cyan-400">坐标与类型判断</span></h1>
+                    <p class="text-xs text-gray-500">基础数据处理系列（14-18关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-location-arrow text-cyan-500 mr-1"></i>pos.x / pos.y</span>
+                <span><i class="fa-solid fa-equals text-yellow-500 mr-1"></i>== Operator</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 14: 边地投弹 (pos.x/y) -->
+        <section id="level-14" class="level-card spatial-accent">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(0,255,255,0.1), transparent);">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 14 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">边地投弹 (Border Bombardment)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-location-arrow mr-2"></i>战术思路分析：精准定位</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                火炮瞄准食人魔需要它精确的坐标。敌人（和你的英雄）都有一个名为 `pos` 的**位置属性**，它本身又包含两个子属性：`x` (水平位置) 和 `y` (垂直位置)。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">坐标连接复习</h4>
+                                <p class="text-xs text-gray-400">
+                                    你需要将 `x` 和 `y` 坐标连接起来，中间用逗号 (`,`) 分隔，然后说出（Say）命令给火炮。
+                                    <br>
+                                    例如：`hero.say(enemy.pos.x + "," + enemy.pos.y)`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-bomb text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            enemy.pos.x <br>
+                            enemy.pos.y <br>
+                            <i class="fa-solid fa-arrow-down text-cyan-400"></i><br>
+                            "X,Y" String
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation">主循环</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找最近的敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="var">x</span> <span class="op">=</span> <span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">x</span></div><div class="code-annotation">将敌人的 X 坐标存入变量 x</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">y</span> <span class="op">=</span> <span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">y</span></div><div class="code-annotation">将敌人的 Y 坐标存入变量 y</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="comment"># 说出x和y位置，用逗号隔开</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="var">x</span> <span class="op">+</span> <span class="str">","</span> <span class="op">+</span> <span class="var">y</span>)</div><div class="code-annotation">拼接并说出坐标命令</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则（没有敌人）</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"停止"</span> <span class="op">+</span> <span class="str">" "</span> <span class="op">+</span> <span class="str">"开火！"</span>)</div><div class="code-annotation">说出停止开火的命令</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 15: 叫阵 (==运算符) -->
+        <section id="level-15" class="level-card logic-accent">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(139, 237, 253, 0.1), transparent);">
+                <div>
+                    <span class="bg-blue-900 text-blue-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 15 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">叫阵 (The Challenge)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-blue-400 mb-3"><i class="fa-solid fa-code-compare mr-2"></i>战术思路分析：逻辑开关</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄的嘲讽只有在 `if` 语句为 **True（真）** 时才会生效！
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">核心概念：等于运算符 (`==`)</h4>
+                                <p class="text-xs text-gray-400">
+                                    <i class="fa-solid fa-circle-exclamation text-red-400 mr-1"></i> **注意：** 赋值用单等号 (`=`)，判断是否相等用双等号 (`==`)。
+                                    <br>
+                                    `if` 语句只有在条件 `A == B` 成立（结果为 True）时，才会执行代码块。我们的任务是修正条件，让其永远为 True。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-equals text-6xl text-yellow-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF (condition <span class="op">==</span> <span class="kwd">True</span>):<br>
+                            &nbsp;&nbsp;Say("Taunt!") <br>
+                            <i class="fa-solid fa-check text-green-400"></i> <span class="text-cyan-400">True</span> = Action!
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-blue-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 只有当 if 条件为真的时候，if 语句下面的命令才会执行。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 在条件中，==表示"等于"。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="kwd">if </span><span class="num">2</span> <span class="op">+</span> <span class="num">2</span> <span class="op">==</span> <span class="num">4</span>:</div><div class="code-annotation">条件为 True (4==4)</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"嘿！"</span>)</div><div class="code-annotation">执行</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="kwd">if </span><span class="num">2</span> <span class="op">+</span> <span class="num">2</span> <span class="op">==</span> <span class="num">5</span>:</div><div class="code-annotation">条件为 False (4!=5)</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"是的，你！"</span>)</div><div class="code-annotation">不执行</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="comment"># 改变这里的条件，让英雄说 来打我啊！</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="kwd">if </span><span class="num">3</span> <span class="op">+</span> <span class="num">3</span> <span class="op">==</span> <span class="num">6</span>: <span class="comment"># ∆ 将其设为 true。</span></div><div class="code-annotation">修正为 True (6==6)</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"来打我啊！"</span>)</div><div class="code-annotation">执行</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="kwd">if </span><span class="num">20</span> <span class="op">==</span> <span class="num">20</span>: <span class="comment"># ∆ 将其设为 true。</span></div><div class="code-annotation">修正为 True (20==20)</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="comment"># 再添加一句嘲讽来引诱食人魔，来点有创意的！</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"有种你过来啊！"</span>)</div><div class="code-annotation">执行</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 16: 濒危树瘤之战 (.type属性) -->
+        <section id="level-16" class="level-card logic-accent">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(139, 237, 253, 0.1), transparent);">
+                <div>
+                    <span class="bg-blue-900 text-blue-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 16 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">濒危树瘤之战 (Endangered Burl)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-blue-400 mb-3"><i class="fa-solid fa-sitemap mr-2"></i>战术思路分析：目标分类</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                战场上的单位多种多样：友好的**树瘤（burl）**，弱小的**矮人（munchkin）**，远程的**投矛手（thrower）**，以及危险的**食人魔（ogre）**。你需要根据它们的**类型（type）**决定行动。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">类型属性 (`.type`)</h4>
+                                <p class="text-xs text-gray-400">
+                                    所有单位都有一个 `.type` 属性，它返回一个**字符串**（例如 `"thrower"`）。
+                                    <br>
+                                    通过 `if enemy.type == "munchkin":` 这样的语句，你可以为每种敌人编写专属战术。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="flex flex-col space-y-3 w-full">
+                            <div class="flex justify-between items-center text-xs text-gray-300"><i class="fa-solid fa-tree text-green-400"></i> Burl <span class="text-yellow-400">→ Ignore</span></div>
+                            <div class="flex justify-between items-center text-xs text-gray-300"><i class="fa-solid fa-skull text-red-400"></i> Munchkin <span class="text-green-400">→ Attack</span></div>
+                            <div class="flex justify-between items-center text-xs text-gray-300"><i class="fa-solid fa-gun text-cyan-400"></i> Thrower <span class="text-green-400">→ Attack</span></div>
+                            <div class="flex justify-between items-center text-xs text-gray-300"><i class="fa-solid fa-fire text-red-500"></i> Ogre <span class="text-red-400">→ Run Away</span></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-blue-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找最近的单位</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果目标存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="comment"># 记住：别攻击"burl"类型！</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"burl"</span>:</div><div class="code-annotation">判断：类型是否为 "burl"</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">            <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"I'm not attacking that Burl!"</span>)</div><div class="code-annotation">如果是，则忽略</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="comment"># "type"属性告诉你对象是什么类型。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"munchkin"</span>:</div><div class="code-annotation">判断：类型是否为 "munchkin"</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">如果是，则攻击</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="comment"># 使用"if"来来攻击"thrower"。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"thrower"</span>:</div><div class="code-annotation">判断：类型是否为 "thrower"</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">如果是，则攻击</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">        <span class="comment"># 如果是"ogre"，使用moveXY逃跑去村口！</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"ogre"</span>:</div><div class="code-annotation">判断：类型是否为 "ogre" (大食人魔)</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">41</span>, <span class="num">47</span>)</div><div class="code-annotation">如果是，则逃跑到指定安全位置</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 17: 嘲弄 (函数内类型判断) -->
+        <section id="level-17" class="level-card logic-accent">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(139, 237, 253, 0.1), transparent);">
+                <div>
+                    <span class="bg-blue-900 text-blue-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 17 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">嘲弄 (Taunt)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-blue-400 mb-3"><i class="fa-solid fa-code-commit mr-2"></i>战术思路分析：函数化决策</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                矮人（munchkin）很弱，可以直接攻击；而斗士（brawler）很强，需要用嘲讽吸引到陷阱里。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">函数内部分支 (`def dealEnemy(enemy):`)</h4>
+                                <p class="text-xs text-gray-400">
+                                    本关卡将决策逻辑封装在一个函数 `dealEnemy(enemy)` 中，这样主循环只需找到敌人并调用这个函数，代码结构更清晰。
+                                </p>
+                                <ul class="list-disc list-inside text-xs text-gray-400 ml-4 space-y-1 mt-2">
+                                    <li>`if enemy.type == "munchkin"`: **Attack**</li>
+                                    <li>`if enemy.type == "brawler"`: **Say** (嘲讽)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="text-center space-y-3">
+                            <i class="fa-solid fa-gavel text-6xl text-pink-400"></i>
+                            <p class="text-xs text-gray-300 font-code">dealEnemy(target)</p>
+                            <p class="text-xs text-gray-400">→ Check Target.type</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-blue-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 这个函数定义了英雄对敌人采取的行动。</span></div><div class="code-annotation">定义决策函数</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="kwd">def </span><span class="func">dealEnemy</span>(<span class="var">enemy</span>):</div><div class="code-annotation">函数接收敌人对象作为参数</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="comment"># 如果敌人的类型是"munchkin"：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"munchkin"</span>:</div><div class="code-annotation">判断是否为矮人</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="comment"># 那么就攻击它：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="comment"># 如果敌人的类型是"brawler"：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"brawler"</span>:</div><div class="code-annotation">判断是否为斗士</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="comment"># 那么就说些什么来呼叫斗士：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"Hey you!"</span>)</div><div class="code-annotation">嘲讽</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation">主循环</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找敌人</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果找到</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="func">dealEnemy</span>(<span class="var">enemy</span>)</div><div class="code-annotation">调用函数处理敌人</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">30</span>, <span class="num">34</span>)</div><div class="code-annotation">回到安全位置</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 18: 错误的类型 (过滤目标) -->
+        <section id="level-18" class="level-card logic-accent">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(139, 237, 253, 0.1), transparent);">
+                <div>
+                    <span class="bg-blue-900 text-blue-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 18 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 错误的类型 (Wrong Type)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-blue-400 mb-3"><i class="fa-solid fa-filter mr-2"></i>战术思路分析：目标过滤</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                战场上鱼龙混杂，`findNearestEnemy()` 可能会把**农民**、**骷髅**等不该打的单位也找出来。我们的任务是只攻击类型为 `"munchkin"` 的敌人。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">嵌套条件 (`if` 内部的 `if`)</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们使用两个连续的 `if` 语句来层层筛选：
+                                    <br>
+                                    1. `if enemy:` (确保找到了目标)
+                                    <br>
+                                    2. `if enemy.type == "munchkin":` (确保目标是矮人)
+                                    <br>
+                                    只有当两个条件都为 True 时，`hero.attack(enemy)` 才会执行。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-shield-halved text-6xl text-yellow-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Find Target <br>
+                            ↓ <br>
+                            IF Exists? <br>
+                            ↓ <br>
+                            IF Type == "Munchkin"? <br>
+                            ↓ <br>
+                            Attack!
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-blue-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 只攻击 `type` 是"munchkin"的敌人。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找最近的目标</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">第一层筛选：目标是否存在</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"munchkin"</span>:</div><div class="code-annotation">第二层筛选：类型是否为 "munchkin"</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">执行攻击</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Logic and Coordinates Mastery.</p>
+    </footer>
+
+</body>
+</html>

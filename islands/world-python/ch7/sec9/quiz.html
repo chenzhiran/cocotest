@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编程小英雄挑战赛 - 数组与算法篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 --- */
+        :root {
+            --primary-color: #6C5CE7;
+            --secondary-color: #A29BFE;
+            --bg-color: #DFE6E9;
+            --card-bg: #FFFFFF;
+            --text-color: #2D3436;
+            --correct-color: #00b894;
+            --wrong-color: #d63031;
+            --accent-yellow: #fdcb6e;
+            
+            /* VS Code Dark 风格配色 */
+            --code-bg: #1e1e1e;
+            --code-text: #d4d4d4;
+            --code-kw: #c586c0;  /* 关键字 (粉紫) */
+            --code-fn: #4ec9b0;  /* 类/函数 (青色) */
+            --code-method: #dcdcaa; /* 方法 (黄色) */
+            --code-num: #b5cea8; /* 数字 (浅绿) */
+            --code-str: #ce9178; /* 字符串 (红褐) */
+            --code-cmt: #6a9955; /* 注释 (绿色) */
+            --code-op: #d4d4d4;  /* 运算符 (白/灰) */
+            --code-prop: #9cdcfe; /* 属性 (浅蓝) */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 750px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目与代码 --- */
+        .question-area h2 {
+            text-align: left;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* 关键 CSS：保证代码正确换行和缩进 */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', Consolas, monospace;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 核心：保留空格和换行 */
+            word-break: break-all; /* 防止长单词撑破布局 */
+            text-align: left;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+            overflow-x: auto;
+        }
+
+        /* 高亮颜色定义 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .method { color: var(--code-method); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .op { color: var(--code-op); }
+        .prop { color: var(--code-prop); }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 0.95rem; 
+            font-family: 'Fira Code', inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #bdc3c7;
+            white-space: pre-wrap;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #aab0b3;
+        }
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析与结束 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #5649c0;
+        }
+        
+        .end-screen { display: none; padding: 20px 0; }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score { font-size: 3.5rem; font-weight: bold; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                q: "1. 题目：在嵌套循环结构中，内层循环和外层循环的执行关系是：",
+                options: [
+                    "A) 内层循环执行一次，外层循环执行一次",
+                    "B) 外层循环每执行一次，内层循环完整执行一遍",
+                    "C) 两个循环交替执行",
+                    "D) 只有外层循环执行完毕，内层循环才开始"
+                ],
+                correct: 1, // B
+                desc: "根据知识点一，嵌套循环的特点是外层循环每执行一次，内层循环都会完整执行一遍，就像俄罗斯套娃一样层层嵌套。"
+            },
+            {
+                q: "2. 题目：在数组迭代的标准模板中，以下循环条件的含义是：",
+                code: "while index < len(listName):",
+                options: [
+                    "A) 索引从0到列表长度（包括长度值）",
+                    "B) 索引从0到列表长度减1",
+                    "C) 索引从1到列表长度",
+                    "D) 索引可以超过列表长度"
+                ],
+                correct: 1, // B
+                desc: "由于数组索引从0开始，有效索引范围是0到len-1，所以条件 index < len(listName) 确保索引在有效范围内。"
+            },
+            {
+                q: "3. 题目：在《奇数沙尘暴》关卡中，以下代码的作用是：",
+                code: "enemyIndex += 2",
+                options: [
+                    "A) 加快程序运行速度",
+                    "B) 只访问偶数索引位置的元素",
+                    "C) 只访问奇数索引位置的元素",
+                    "D) 增加敌人数量"
+                ],
+                correct: 1, // B
+                desc: "根据知识点二，步长为2意味着每次索引增加2，这样只会访问索引0、2、4等偶数位置的元素，跳过奇数位置的朋友。"
+            },
+            {
+                q: "4. 题目：在最小值搜索算法中，初始值通常设置为一个很大的数，这是因为：",
+                options: [
+                    "A) 为了确保第一次比较时任何真实值都会更小",
+                    "B) 为了限制搜索范围",
+                    "C) 为了减少循环次数",
+                    "D) 为了计算平均值"
+                ],
+                correct: 0, // A
+                desc: "设置一个大初始值（如9999）可以确保在第一次比较时，任何真实距离或生命值都会小于这个初始值，从而正确更新最小值记录。"
+            },
+            {
+                q: "5. 题目：在《许愿井》关卡中，以下代码实现了什么功能？",
+                code: "totalValue += coins[coinIndex].value",
+                options: [
+                    "A) 比较硬币价值",
+                    "B) 累加所有硬币的价值",
+                    "C) 查找最大价值的硬币",
+                    "D) 计算硬币数量"
+                ],
+                correct: 1, // B
+                desc: "这是累加器模式的典型应用，通过遍历数组并将每个元素的值加到总和中，实现求和功能。"
+            },
+            {
+                q: "6. 题目：在条件筛选中，以下代码中的 != 表示：",
+                code: "if enemy.type != \"sand-yak\":",
+                options: [
+                    "A) 等于",
+                    "B) 不等于",
+                    "C) 大于",
+                    "D) 小于"
+                ],
+                correct: 1, // B
+                desc: "根据知识点三，!= 是 '不等于' 运算符，用于筛选出不是沙牦牛的敌人。"
+            },
+            {
+                q: "7. 题目：在最大值搜索算法中，初始值通常设置为：",
+                options: [
+                    "A) 一个很大的数",
+                    "B) 0",
+                    "C) 一个很小的数",
+                    "D) 随机数"
+                ],
+                correct: 2, // C
+                desc: "最大值搜索通常将初始值设为一个很小的数（如0），这样任何真实值都会大于初始值，便于后续比较和更新。"
+            },
+            {
+                q: "8. 题目：关于函数在数组处理中的作用，以下描述正确的是：",
+                options: [
+                    "A) 函数会让代码运行变慢",
+                    "B) 函数可以将复杂的数组操作封装起来，提高代码可读性",
+                    "C) 函数只能处理固定长度的数组",
+                    "D) 函数不能返回数组"
+                ],
+                correct: 1, // B
+                desc: "函数的主要优势在于抽象和封装，可以将复杂的数组操作（如查找最值、求和等）封装成简单的函数调用，提高代码的可读性和可维护性。"
+            },
+            {
+                q: "9. 题目：在嵌套循环中，如果内层循环的条件永远不会变为False，会导致：",
+                options: [
+                    "A) 程序运行更快",
+                    "B) 外层循环停止",
+                    "C) 死循环",
+                    "D) 程序自动修复"
+                ],
+                correct: 2, // C
+                desc: "如果内层循环的条件永远不会变为False，该循环将无限执行，导致死循环。"
+            },
+            {
+                q: "10. 题目：在数组迭代中，以下代码的作用是：",
+                code: "element = listName[index]",
+                options: [
+                    "A) 创建新的数组元素",
+                    "B) 获取当前索引位置的元素",
+                    "C) 删除数组元素",
+                    "D) 修改数组长度"
+                ],
+                correct: 1, // B
+                desc: "这是数组迭代的核心操作，通过索引访问数组中的特定元素。"
+            },
+            {
+                q: "11. 题目：在《许愿井》关卡中，以下条件检查使用了哪个比较运算符？",
+                code: "if goldAmount == requiredGold:",
+                options: [
+                    "A) 赋值运算符",
+                    "B) 相等运算符",
+                    "C) 大于运算符",
+                    "D) 不等于运算符"
+                ],
+                correct: 1, // B
+                desc: "== 是相等运算符，用于检查两个值是否相等。"
+            },
+            {
+                q: "12. 题目：关于数组迭代的\"累加器模式\"，以下描述错误的是：",
+                options: [
+                    "A) 需要一个累加器变量初始化为0",
+                    "B) 遍历数组时将每个元素的值加到累加器中",
+                    "C) 最终累加器变量包含所有元素值的总和",
+                    "D) 只能用于数值型数组，不能用于字符串数组"
+                ],
+                correct: 3, // D
+                desc: "累加器模式可以用于任何支持加法操作的数据类型，包括字符串（连接）和其他类型，不仅限于数值型数组。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                // 使用一次性词法分析高亮函数
+                html += `<div class="code-block">${highlightCode(data.code)}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * 纯净版一次性词法分析高亮引擎 (Single-Pass Tokenizer)
+         * 绝不使用占位符，直接生成 HTML，杜绝乱码风险。
+         */
+        function highlightCode(code) {
+            // 定义Token正则表达式，按优先级排序
+            // 1. 字符串 (str)
+            // 2. 注释 (cmt)
+            // 3. 方法调用 (method)
+            // 4. 数字 (num)
+            // 5. 关键字 (kw)
+            // 6. 属性/变量 (prop)
+            // 7. 运算符 (op)
+            // 扩展了 pattern 包含新题组中的变量：enemyIndex, listName, totalValue, coins, coinIndex, value, enemy, type, element, goldAmount, requiredGold, index, len
+            const pattern = /(".*?"|'.*?')|(#.*)|(\.[\w]+)|(\b\d+(?:\.\d+)?\b)|(\b(?:def|return|while|True|False|if|else|elif|for|in|break|continue|pass|and|or|not|is|None)\b)|(\b(?:hero|coins|coin|coinIndex|value|pos|x|y|len|moveXY|findItems|enemy|health|attack|findNearestItem|enemies|enemyIndex|findNearest|findEnemies|leastHealth|listName|totalValue|type|goldAmount|requiredGold|index|element)\b)|(\+=|==|!=|<=|>=|<|>|=|\+|-|\*|\/)/g;
+
+            let lastIndex = 0;
+            let html = "";
+            let match;
+
+            // 循环匹配所有 Token
+            while ((match = pattern.exec(code)) !== null) {
+                // 1. 获取并转义匹配内容之前的普通文本 (空格、换行等)
+                const plainText = code.slice(lastIndex, match.index);
+                html += escapeHtml(plainText);
+
+                // 2. 识别当前 Token 类型并包裹标签
+                let content = match[0];
+                let cls = "";
+
+                if (match[1]) cls = "str";      // 字符串
+                else if (match[2]) cls = "cmt"; // 注释
+                else if (match[3]) cls = "method"; // 方法
+                else if (match[4]) cls = "num"; // 数字
+                else if (match[5]) cls = "kw";  // 关键字
+                else if (match[6]) cls = "prop";// 属性/变量
+                else if (match[7]) cls = "op";  // 运算符
+
+                html += `<span class="${cls}">${escapeHtml(content)}</span>`;
+                
+                lastIndex = pattern.lastIndex;
+            }
+
+            // 3. 添加剩余的普通文本
+            html += escapeHtml(code.slice(lastIndex));
+
+            return html;
+        }
+
+        // 简单的 HTML 转义函数
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => allBtns[data.correct].classList.add('correct'), 400);
+                const chars = ["A", "B", "C", "D"];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${chars[data.correct]}`, data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none';
+            
+            let html = '';
+            const totalScore = quizData.length * 100;
+            if (score === totalScore) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 算法与循环大师！ 🎉</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">太棒了！你已经完全掌握了数组操作与基础算法！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score} / ${totalScore}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">做得不错！继续加油！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; padding:15px 40px; margin-top:30px">🔄 再玩一次</button>`;
+            endScreen.innerHTML = html;
+        }
+
+        function createConfetti() {
+            const colors = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#fdcb6e'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.transform = `scale(${Math.random() * 0.6 + 0.4}) rotate(${Math.random()*360}deg)`;
+                c.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2500);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>

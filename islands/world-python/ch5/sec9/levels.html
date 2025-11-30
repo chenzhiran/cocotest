@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：方向与坐标变化</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-coord: #dd6b20; /* 沙漠橙 */
+            --accent-math: #8be9fd; /* 算术蓝 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else */
+            --code-func: #8be9fd;    /* moveXY, buildXY */
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* pos, x, y */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(221, 107, 32, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(221, 107, 32, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-coord);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-math);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(221, 107, 32, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-math); }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-coord);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-math { color: var(--accent-math); font-weight: bold; }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-map-marked-alt text-orange-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-orange-400">坐标相对移动</span></h1>
+                    <p class="text-xs text-gray-500">位置属性与算术运算（47-55关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-arrows-up-down-left-right text-orange-500 mr-1"></i>pos.x +/- N</span>
+                <span><i class="fa-solid fa-ruler-horizontal text-cyan-500 mr-1"></i>Midpoint Formula</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 47: 强壮的沙牦牛 (x += 10) -->
+        <section id="level-47" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-orange-900 text-orange-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 47 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">强壮的沙牦牛 (Strong Yak)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-orange-400 mb-3"><i class="fa-solid fa-arrows-alt-h mr-2"></i>战术思路分析：相对躲避</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                沙漠里的牦牛太强壮了，不能硬碰硬。当它靠近时，我们必须**相对于当前位置**向右移动 10 米来躲避。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：获取并修改 X 坐标</h4>
+                                <p class="text-xs text-gray-400">
+                                    1. 获取当前 X：`x = hero.pos.x`
+                                    <br>
+                                    2. 计算新 X：`x = x + 10` (或简写为 `x += 10`)
+                                    <br>
+                                    3. 移动到新坐标：`hero.moveXY(x, y)` (Y 保持不变)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-bullseye text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Current X <span class="op-math">+</span> 10 <br>
+                            <i class="fa-solid fa-arrow-right text-orange-400"></i><br>
+                            Move to safety!
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-orange-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 获取英雄当前位置的x和y坐标。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">x</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span></div><div class="code-annotation">读取当前 X 坐标</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">y</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span></div><div class="code-annotation">读取当前 Y 坐标</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="comment"># 找到最近的耗牛。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="var">yak</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="comment"># 如果到牦牛的距离小于10：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">yak</span>) <span class="op"><</span> <span class="num">10</span>:</div><div class="code-annotation">如果牦牛太近</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="comment"># 向右移动，在英雄位置的x坐标值基础上加10。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">x</span> <span class="op">+=</span> <span class="num">10</span></div><div class="code-annotation">在当前 X 上增加 10 (向右移动)</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">x</span>, <span class="var">y</span>)</div><div class="code-annotation">移动到新的 X 坐标</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 48: 绿洲 (x +/- 10) -->
+        <section id="level-48" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-orange-900 text-orange-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 48 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">绿洲 (The Oasis)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-orange-400 mb-3"><i class="fa-solid fa-arrows-alt-h mr-2"></i>战术思路分析：动态平移</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄默认要向右边的绿洲前进 (`x + 10`)。但如果牦牛太近，必须反向移动 (`x - 10`) 来躲避。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：If/Else 切换方向</h4>
+                                <p class="text-xs text-gray-400">
+                                    - `if 牦牛靠近`: `x -= 10` (向左)
+                                    <br>
+                                    - `else`: `x += 10` (向右，前进)
+                                    <br>
+                                    **注意：** 移动动作 `hero.moveXY(x, y)` 放在 `if` 和 `else` 的代码块内执行。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-hand-rock text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Danger: X <span class="op-math">-</span> 10 <br>
+                            ELSE: X <span class="op-math">+</span> 10
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-orange-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">x</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span></div><div class="code-annotation">获取当前 X 坐标</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">y</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span></div><div class="code-annotation">获取当前 Y 坐标</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span> <span class="op-and">and </span><span class="var">hero</span>.<span class="func">distanceTo</span>(<span class="var">enemy</span>) <span class="op"><</span> <span class="num">10</span>:</div><div class="code-annotation">如果敌人存在且距离小于 10 米</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="comment">#  用x减10来向左移动。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">x</span> <span class="op">-=</span> <span class="num">10</span></div><div class="code-annotation">X 减 10 (向左移动)</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">x</span>, <span class="var">y</span>)</div><div class="code-annotation">移动</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则 (安全或没有敌人)</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="comment"># 用x加10来向右移动。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="var">x</span> <span class="op">+=</span> <span class="num">10</span></div><div class="code-annotation">X 加 10 (向右前进)</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">x</span>, <span class="var">y</span>)</div><div class="code-annotation">移动</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 49: Sarven路 (x+5, y+5) -->
+        <section id="level-49" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-orange-900 text-orange-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 49 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Sarven路 (Sarven Road)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-orange-400 mb-3"><i class="fa-solid fa-arrows-up-right mr-2"></i>战术思路分析：对角线移动</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                除非有敌人（食人魔侦察兵），否则英雄必须沿着对角线（右上）前进。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">同时增加 X 和 Y</h4>
+                                <p class="text-xs text-gray-400">
+                                    同时增加 X 和 Y 坐标，就能实现对角线移动：
+                                    <br>
+                                    `hero.moveXY(<span class="prop">hero.pos.x</span> + 5, <span class="prop">hero.pos.y</span> + 5)`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-diamond text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            X' <span class="op-math">=</span> X <span class="op-math">+</span> 5 <br>
+                            Y' <span class="op-math">=</span> Y <span class="op-math">+</span> 5
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-orange-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 如果有敌人，则攻击。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击敌人</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="comment"># 否则，继续向右上移动。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则 (没有敌人)</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">xPos</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span></div><div class="code-annotation">读取当前 X</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">yPos</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span></div><div class="code-annotation">读取当前 Y</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">xPos</span> <span class="op">+</span> <span class="num">5</span>, <span class="var">yPos</span> <span class="op">+</span> <span class="num">5</span>)</div><div class="code-annotation">向右上角移动 (X+5, Y+5)</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 50: 干燥灌溉 (x-6, y+4) -->
+        <section id="level-50" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-orange-900 text-orange-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 50 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 干燥灌溉 (Dry Irrigation)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-orange-400 mb-3"><i class="fa-solid fa-angles-up-left mr-2"></i>战术思路分析：左上斜移</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                你需要沿着左上方的斜线前进。这意味着 X 坐标要**减少**，Y 坐标要**增加**。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">位移量： X-6, Y+4</h4>
+                                <p class="text-xs text-gray-400">
+                                    注意，可以直接在 `moveXY` 的参数中进行算术运算，无需先将 `hero.pos.x` 存入变量。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-road text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            X' <span class="op-math">=</span> X <span class="op-math">-</span> 6 <br>
+                            Y' <span class="op-math">=</span> Y <span class="op-math">+</span> 4
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-orange-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">-</span> <span class="num">6</span>, <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">+</span> <span class="num">4</span>)</div><div class="code-annotation">向左上斜移：X 减 6，Y 加 4</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找敌人</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击敌人</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 51: Sarven间隙 (buildXY 相对敌人) -->
+        <section id="level-51" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-orange-900 text-orange-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 51 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Sarven间隙 (Sarven Gap)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-orange-400 mb-3"><i class="fa-solid fa-hammer mr-2"></i>战术思路分析：相对建造</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄向下前进 (`y - 10`)。如果看到敌人，必须在敌人的**左侧 20 米处**建造围栏，阻止它前进。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：敌人的相对 X</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们使用敌人的 X 坐标作为基准：
+                                    <br>
+                                    `x = enemy.pos.x - 20`
+                                    <br>
+                                    `y = enemy.pos.y`
+                                    <br>
+                                    这样，无论敌人在哪，围栏都会精确地出现在它的左边。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-bars text-6xl text-gray-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Build At X <span class="op-math">=</span> Enemy.X <span class="op-math">-</span> 20
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-orange-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="comment"># 在敌人左边20个单位处使用buildXY建造一段"fence"</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">x</span> <span class="op">=</span> <span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">-</span> <span class="num">20</span></div><div class="code-annotation">计算围栏 X 坐标 (敌人 X - 20)</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">y</span> <span class="op">=</span> <span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">y</span></div><div class="code-annotation">使用敌人的 Y 坐标</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"fence"</span>, <span class="var">x</span>, <span class="var">y</span>)</div><div class="code-annotation">建造围栏</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则 (没有敌人)</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="comment"># 向下使用moveXY移动10米。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">x</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span></div><div class="code-annotation">读取当前 X</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="var">y</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">-</span> <span class="num">10</span></div><div class="code-annotation">Y 减 10 (向下移动)</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">x</span>, <span class="var">y</span>)</div><div class="code-annotation">移动</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 52: 十字路口 (Positional Comparison) -->
+        <section id="level-52" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-orange-900 text-orange-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 52 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">十字路口 (The Crossroads)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-orange-400 mb-3"><i class="fa-solid fa-compass mr-2"></i>战术思路分析：四向定位</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                食人魔从东南西北四个方向进攻。英雄必须通过比较自身和敌人的坐标来确定它们的来向，并在正确的 X 标记处放置陷阱。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：判断方向</h4>
+                                <ul class="list-disc list-inside text-xs text-gray-400 ml-4 space-y-1">
+                                    <li>左边来：`enemy.pos.x < hero.pos.x`</li>
+                                    <li>右边来：`enemy.pos.x > hero.pos.x`</li>
+                                    <li>下方来：`enemy.pos.y < hero.pos.y`</li>
+                                    <li>上方来：`enemy.pos.y > hero.pos.y`</li>
+                                </ul>
+                                **注意：** 使用 `elif`（else if）确保只有满足第一个匹配的方向时才放置陷阱。
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-fire text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF X<hero.X: Trap Left <br>
+                            ELIF X>hero.X: Trap Right
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-orange-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op"><</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span>:</div><div class="code-annotation">如果敌人 X 小于英雄 X (从左边来)</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">            <span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"fire-trap"</span>, <span class="num">25</span>, <span class="num">34</span>)</div><div class="code-annotation">在左侧 X 标记处放置陷阱</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="kwd">elif </span><span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">></span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span>:</div><div class="code-annotation">否则，如果敌人 X 大于英雄 X (从右边来)</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">            <span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"fire-trap"</span>, <span class="num">55</span>, <span class="num">34</span>)</div><div class="code-annotation">在右侧 X 标记处放置陷阱</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="kwd">elif </span><span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op"><</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span>:</div><div class="code-annotation">否则，如果敌人 Y 小于英雄 Y (从下方来)</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">            <span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"fire-trap"</span>, <span class="num">40</span>, <span class="num">19</span>)</div><div class="code-annotation">在下方 X 标记处放置陷阱</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="kwd">elif </span><span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">></span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span>:</div><div class="code-annotation">否则，如果敌人 Y 大于英雄 Y (从上方来)</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">            <span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"fire-trap"</span>, <span class="num">40</span>, <span class="num">49</span>)</div><div class="code-annotation">在上方 X 标记处放置陷阱</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">40</span>, <span class="num">34</span>)</div><div class="code-annotation">英雄回到中心待命</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 53: 截断 (Midpoint Formula) -->
+        <section id="level-53" class="level-card" style="border-left-color: var(--accent-math);">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(139, 237, 253, 0.1), transparent);">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 53 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">截断 (Interception)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-bullseye mr-2"></i>战术思路分析：中点保护</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                你是保护农民的守卫，必须站在农民和敌人之间最完美的中点位置。这需要使用**求中点公式**。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-orange-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键公式：中点坐标</h4>
+                                <p class="text-xs text-gray-400">
+                                    X 坐标：`X = (A.x + B.x) / 2`
+                                    <br>
+                                    Y 坐标：`Y = (A.y + B.y) / 2`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-divide text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            X = (Friend.X <span class="op-math">+</span> Enemy.X) <span class="op-math">/</span> 2 <br>
+                            Y = (Friend.Y <span class="op-math">+</span> Enemy.Y) <span class="op-math">/</span> 2
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">找到最近的敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">friend</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>()</div><div class="code-annotation">找到最近的农民</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="comment"># 通过将friend.pos.x和enemy.pos.x相加来计算x</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">x</span> <span class="op">=</span> (<span class="var">friend</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">+</span> <span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">x</span>) <span class="op">/</span> <span class="num">2</span></div><div class="code-annotation">计算 X 轴中点</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="comment"># 现在对y做同样的事情</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="var">y</span> <span class="op">=</span> (<span class="var">friend</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">+</span> <span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">y</span>) <span class="op">/</span> <span class="num">2</span></div><div class="code-annotation">计算 Y 轴中点</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="comment"># 移动到计算得到的X和Y坐标。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">x</span>, <span class="var">y</span>)</div><div class="code-annotation">移动到中点位置</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 54: 雷蹄 (Y Comparison for Build) -->
+        <section id="level-54" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-orange-900 text-orange-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 54 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">雷蹄 (Hoofing It)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-orange-400 mb-3"><i class="fa-solid fa-arrows-alt-v mr-2"></i>战术思路分析：上下拦截</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                牦牛随机从上方或下方来袭。你需要比较 `yak.pos.y` 和 `hero.pos.y`，来决定在牦牛的上方还是下方建造围栏，引导它们走向水坑。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">Y 轴比较逻辑</h4>
+                                <p class="text-xs text-gray-400">
+                                    - `if yak.pos.y > hero.pos.y`: 牦牛在**上方** → 围栏建在 `yak.pos.y - 10` (牦牛的**下方**)
+                                    <br>
+                                    - `else`: 牦牛在**下方** → 围栏建在 `yak.pos.y + 10` (牦牛的**上方**)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-long-arrow-alt-up text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Yak.Y <span class="op-math">></span> Hero.Y ? <br>
+                            <i class="fa-solid fa-arrow-down text-orange-400"></i><br>
+                            Build Y = Yak.Y <span class="op-math">-</span> 10
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-orange-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">yak</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找最近的牦牛</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">yak</span>:</div><div class="code-annotation">如果牦牛存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="comment"># 如果yak.pos.y大于hero.pos.y</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="kwd">if </span><span class="var">yak</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">></span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span>:</div><div class="code-annotation">判断：牦牛是否在英雄**上方**</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">            <span class="comment"># 使用buildXY在牦牛下方10米处建造一段"fence"</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">            <span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"fence"</span>, <span class="var">yak</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">yak</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">-</span> <span class="num">10</span>)</div><div class="code-annotation">建造在牦牛 Y - 10 处 (下方)</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="kwd">else</span>:</div><div class="code-annotation">否则 (牦牛在下方或同高)</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">            <span class="comment"># 使用buildXY在牦牛上方10米处建造一段"fence"</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">            <span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"fence"</span>, <span class="var">yak</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">yak</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">+</span> <span class="num">10</span>)</div><div class="code-annotation">建造在牦牛 Y + 10 处 (上方)</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则 (没有牦牛)</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="comment"># 使用moveXY向右朝绿洲移动10米。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">+</span> <span class="num">10</span>, <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">向右前进 10 米</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 55: 友好的雷区 (Y Comparison for Movement) -->
+        <section id="level-55" class="level-card" style="border-left-color: var(--accent-math);">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(139, 237, 253, 0.1), transparent);">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 55 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 友好的雷区 (Friendly Mines)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-arrows-v mr-2"></i>战术思路分析：Y轴避险</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                食人魔被困在上下方的雷区中，你可以利用它们的位置来引导自己安全通过。英雄必须一直向右走，但需要根据敌人的垂直位置上下微调。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-orange-500">
+                                <h4 class="font-bold text-white text-sm mb-1">相对 Y 轴移动</h4>
+                                <p class="text-xs text-gray-400">
+                                    - `if enemy.pos.y > hero.pos.y`: 敌人在**上面** → 英雄向上微调 (`y + 4`)
+                                    <br>
+                                    - `else`: 敌人在**下面** → 英雄向下微调 (`y - 4`)
+                                    <br>
+                                    **关键：** X 轴的移动 (`x + 12`) 必须在每次循环的最后执行。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-road-lock text-6xl text-orange-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Enemy.Y <span class="op-math">></span> Hero.Y: Y <span class="op-math">+=</span> 4 <br>
+                            ELSE: Y <span class="op-math">-=</span> 4 <br>
+                            Move X <span class="op-math">+=</span> 12
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找最近的敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">></span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span>:</div><div class="code-annotation">判断：敌人是否在英雄**上方**</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">+</span> <span class="num">4</span>)</div><div class="code-annotation">向上微调 4 米</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="kwd">else</span>:</div><div class="code-annotation">否则 (敌人在下方或同高)</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">-</span> <span class="num">4</span>)</div><div class="code-annotation">向下微调 4 米</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">+</span> <span class="num">12</span>, <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">向右前进 12 米 (每次循环都会执行)</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Relative Movement Mastery.</p>
+    </footer>
+
+</body>
+</html>

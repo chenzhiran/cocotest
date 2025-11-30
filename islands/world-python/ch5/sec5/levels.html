@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：不等于运算符</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-not-equal: #ff79c6; /* != 强调色 */
+            --accent-logic: #8be9fd; /* 逻辑蓝 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, return */
+            --code-func: #8be9fd;    /* findNearestEnemy, say */
+            --code-string: #f1fa8c;  /* "peon" */
+            --code-num: #bd93f9;     /* 4 */
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* type, pos */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(139, 237, 253, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 237, 253, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-logic);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-not-equal);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(139, 237, 253, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-logic); }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-logic);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-not { color: var(--accent-not-equal); font-weight: bold; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-code-compare text-pink-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-pink-400">排除法逻辑</span></h1>
+                    <p class="text-xs text-gray-500">不等于运算符 (`!=`) 系列（27-31关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><span class="op-not">!=</span> <i class="fa-solid fa-minus text-pink-500 mr-1"></i>Not Equal</span>
+                <span><i class="fa-solid fa-filter text-cyan-500 mr-1"></i>Exclusion Logic</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 27: 穿越 (!=) -->
+        <section id="level-27" class="level-card logic-accent">
+            <div class="level-header">
+                <div>
+                    <span class="bg-blue-900 text-blue-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 27 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">穿越 (The Crossing)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-blue-400 mb-3"><i class="fa-solid fa-gem mr-2"></i>战术思路分析：尊重习俗</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                友善的兽人部落有两条规矩：**只能拿他们给的宝石**，不能碰他们的食物。你需要用 `!=` 来判断物品是否是宝石。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-pink-500">
+                                <h4 class="font-bold text-white text-sm mb-1">核心概念：不等于 (`!=`)</h4>
+                                <p class="text-xs text-gray-400">
+                                    - `item.type == "gem"`: 物品是宝石吗？（等于）
+                                    <br>
+                                    - `item.type != "gem"`: 物品**不是**宝石吗？（不等于）
+                                    <br>
+                                    如果物品不是宝石（是食物），英雄就不能去拿，而是跟着宠物走。只有当条件为 False（即是宝石）时，`else` 语句才会执行移动去拿宝石。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-gem text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">type</span> <span class="op-not">!=</span> <span class="str">"gem"</span>: <span class="var">MovePet</span>() <br>
+                            ELSE: <span class="var">MoveItem</span>()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-blue-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找最近的物品</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果物品存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="comment"># 如果item.type不等于 "gem"</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op-not">!=</span> <span class="str">"gem"</span>:</div><div class="code-annotation">判断：如果物品**不是**宝石</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">            <span class="comment"># 然后跟随你的宠物。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">pet</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">pet</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动到宠物位置（不拿食物）</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="comment"># 否则:</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="kwd">else</span>:</div><div class="code-annotation">否则（即物品是宝石）</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">            <span class="comment"># 移动到宝石的坐标。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动去拿宝石</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 28: 有用的对手 (!= 物品和敌人) -->
+        <section id="level-28" class="level-card logic-accent">
+            <div class="level-header">
+                <div>
+                    <span class="bg-blue-900 text-blue-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 28 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">有用的对手 (Helpful Opponents)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-blue-400 mb-3"><i class="fa-solid fa-filter mr-2"></i>战术思路分析：双重排除</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                战场上有两类“坏东西”需要避开：**毒药 (`"poison"`)** 和 **差役 (`"peon"`)**（它们只会偷金币，不打你）。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-pink-500">
+                                <h4 class="font-bold text-white text-sm mb-1">排除差役：</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们只攻击**非差役**的敌人：`if enemy.type != "peon"`
+                                </p>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500 mt-3">
+                                <h4 class="font-bold text-white text-sm mb-1">排除毒药：</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们只收集**非毒药**的物品：`if item.type != "poison"`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-code-compare text-6xl text-pink-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            (Enemy <span class="op-not">!=</span> Peon) <br>
+                            AND <br>
+                            (Item <span class="op-not">!=</span> Poison)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-blue-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找最近的敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="comment"># 只在敌人类型不是 "peon" 的时候攻击。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op-not">!=</span> <span class="str">"peon"</span>:</div><div class="code-annotation">排除差役（只偷东西）</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击其他类型的敌人</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找最近的物品</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果物品存在</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="comment"># 只在物品的类型不是 "poison" 的时候捡起。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op-not">!=</span> <span class="str">"poison"</span>:</div><div class="code-annotation">排除毒药</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">收集其他物品</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 29: 奇境 (!= 宝石) -->
+        <section id="level-29" class="level-card logic-accent">
+            <div class="level-header">
+                <div>
+                    <span class="bg-blue-900 text-blue-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 29 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">奇境 (The Wonderglade)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-blue-400 mb-3"><i class="fa-solid fa-filter mr-2"></i>战术思路分析：唯一的禁忌</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                奇境中有很多有用的物品，但树精保护着宝石 (`"gem"`)。拿走宝石会激怒树精。因此，你只需确保不拿宝石即可。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-pink-500">
+                                <h4 class="font-bold text-white text-sm mb-1">`!=` 的优势</h4>
+                                <p class="text-xs text-gray-400">
+                                    如果你不知道所有可收集的物品类型（硬币、药水、蘑菇...），使用 `!= "gem"` 是最安全和最简洁的方法。你无需列举所有“可以”做的事情，只需列举“不可以”做的事情。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-gem text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">type</span> <span class="op-not">!=</span> <span class="str">"gem"</span>: <span class="var">Collect</span>()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-blue-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 找到最近的物品。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="comment"># 如果那儿有一个物品：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果物品存在</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="comment"># 如果item.type不等于"gem"：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op-not">!=</span> <span class="str">"gem"</span>:</div><div class="code-annotation">如果物品不是宝石</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">            <span class="comment"># 移动到物品的位置。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动去收集</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 30: 被诅咒的梦境 (双重 !=) -->
+        <section id="level-30" class="level-card logic-accent">
+            <div class="level-header">
+                <div>
+                    <span class="bg-blue-900 text-blue-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 30 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">被诅咒的梦境 (Cursed Glade)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-blue-400 mb-3"><i class="fa-solid fa-skull-crossbones mr-2"></i>战术思路分析：攻防兼备的排除法</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这个梦境有两个禁忌：不能拿**宝石**，不能攻击**树精** (`"burl"`)。我们需要将这两个排除逻辑同时应用于代码。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-pink-500">
+                                <h4 class="font-bold text-white text-sm mb-1">分离的逻辑块</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们使用两个独立的 `if` 块处理：
+                                    <br>
+                                    1. 物品：如果存在且 **不是** 宝石，则收集。
+                                    <br>
+                                    2. 敌人：如果存在且 **不是** 树精，则攻击。
+                                    <br>
+                                    这种结构保证了两个决策互不干扰。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-ban text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">Item</span> <span class="op-not">!=</span> <span class="str">"gem"</span>: Collect() <br>
+                            IF <span class="var">Enemy</span> <span class="op-not">!=</span> <span class="str">"burl"</span>: Attack()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-blue-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找物品</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果物品存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op-not">!=</span> <span class="str">'gem'</span>:</div><div class="code-annotation">如果物品不是宝石</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动去收集</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找敌人</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op-not">!=</span> <span class="str">'burl'</span>:</div><div class="code-annotation">如果敌人不是树精</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击敌人</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 31: 概念挑战. 狂野联盟 (简单排除) -->
+        <section id="level-31" class="level-card logic-accent">
+            <div class="level-header">
+                <div>
+                    <span class="bg-blue-900 text-blue-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 31 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 狂野联盟 (Wild Alliance)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-blue-400 mb-3"><i class="fa-solid fa-user-shield mr-2"></i>战术思路分析：只排除树精</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                树精 (`"burl"`) 是这里的盟友，不能攻击它。你需要使用最简洁的 `!=` 语句来筛选掉树精。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">只关注例外</h4>
+                                <p class="text-xs text-gray-400">
+                                    只需一个简单的嵌套 `if`：如果找到目标，且 `enemy.type != "burl"`，就攻击。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-tree text-6xl text-green-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">type</span> <span class="op-not">!=</span> <span class="str">"burl"</span>: Attack()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-blue-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">type</span> <span class="op-not">!=</span> <span class="str">"burl"</span>:</div><div class="code-annotation">如果敌人不是树精</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击其他所有敌人</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Exclusion Logic Mastery.</p>
+    </footer>
+
+</body>
+</html>

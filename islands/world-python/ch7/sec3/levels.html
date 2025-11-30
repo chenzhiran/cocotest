@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：一维列表与索引</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-array: #00ffff; /* 数组青色 */
+            --accent-logic: #ff79c6; /* 逻辑粉色 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else, len */
+            --code-func: #8be9fd;    /* findItems, say, moveXY */
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     /* 0, 1 */
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* pos, x, y, id */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-array);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-logic);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(0, 255, 255, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-array); }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-while { color: var(--accent-logic); font-weight: bold; }
+        .op-array { color: var(--accent-array); font-weight: bold; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-list-ul text-cyan-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-cyan-400">一维列表与索引</span></h1>
+                    <p class="text-xs text-gray-500">列表、访问与遍历（9-13关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-square-root-variable text-pink-500 mr-1"></i>array[n] Indexing</span>
+                <span><i class="fa-solid fa-list-ol text-yellow-500 mr-1"></i>len() Method</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 9: 团队合作 (数组访问基础) -->
+        <section id="level-9" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 9 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">团队合作 (Teamwork)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-people-arrows mr-2"></i>战术思路分析：分工合作</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                三颗宝石，三个人分工收集。`hero.findItems()` 返回一个包含所有宝石的**列表（数组）**。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">核心：索引从 0 开始</h4>
+                                <p class="text-xs text-gray-400">
+                                    列表中的元素是从 **0** 数起的。
+                                    <br>
+                                    - 第一个元素：`items[0]`
+                                    <br>
+                                    - 第二个元素：`items[1]`
+                                    <br>
+                                    - 第三个元素：`items[2]`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-gem text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Items <span class="op">=</span> [Gem A, Gem B, Gem C] <br>
+                            Gem A <span class="op">=</span> Items[<span class="num">0</span>]
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># findItems() 返回一个项目数组。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">items</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findItems</span>()</div><div class="code-annotation">获取所有物品的列表</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="comment"># 从数组中获取第一颗宝石。索引是 0。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="var">gem0</span> <span class="op">=</span> <span class="var">items</span>[<span class="num">0</span>]</div><div class="code-annotation">获取第一个元素（索引 0）</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><span class="comment"># 告诉 Bruno 拿到 gem0</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="str">"Bruno "</span> <span class="op">+</span> <span class="var">gem0</span>)</div><div class="code-annotation">向 Bruno 发送取第一个宝石的命令</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="comment"># 告诉 Matilda 拿到第二个宝石 (items[1])。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="str">"Matilda "</span> <span class="op">+</span> <span class="var">items</span>[<span class="num">1</span>])</div><div class="code-annotation">使用列表索引直接访问第二个元素（索引 1）</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="comment"># 为最后一个宝石 items[2] 创建一个变量：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="var">gem2</span> <span class="op">=</span> <span class="var">items</span>[<span class="num">2</span>]</div><div class="code-annotation">获取第三个元素（索引 2）</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content"><span class="comment"># 使用 moveXY() 移至该宝石的位置</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">gem2</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">gem2</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">英雄自己去拿第三个宝石</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 10: 协助防御 (数组长度检查 len()) -->
+        <section id="level-10" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 10 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">协助防御 (Assisted Defense)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-shield-alt mr-2"></i>战术思路分析：避免空列表错误</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄只负责攻击列表中的**第一个敌人** (`enemies[0]`)。如果列表是空的，直接读取 `enemies[0]` 会导致程序崩溃。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">核心：检查列表长度 (`len()`)</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们使用 `if len(enemies) > 0:` 来确保列表中至少有一个元素。
+                                    <br>
+                                    `len()` 函数返回列表的长度。一个空列表的长度为 0。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-clipboard-list text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="func">len</span>(<span class="var">Enemies</span>) <span class="op">></span> <span class="num">0</span>: <br>
+                            &nbsp;&nbsp;<span class="func">Attack</span>(<span class="var">Enemies</span>[<span class="num">0</span>])
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="op-while">while </span><span class="kwd">True</span>:</div><div class="code-annotation">外层无限循环</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 得到一个敌人的数组。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">enemies</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findEnemies</span>()</div><div class="code-annotation">获取所有敌人的列表</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="comment"># 如果数组不为空。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="kwd">if </span><span class="func">len</span>(<span class="var">enemies</span>) <span class="op">></span> <span class="num">0</span>:</div><div class="code-annotation">判断列表长度是否大于 0</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="comment"># 攻击 "enemies" 数组中的第一个敌人。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemies</span>[<span class="num">0</span>])</div><div class="code-annotation">攻击第一个元素（索引 0）</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="comment"># 返回到起始位置。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">40</span>, <span class="num">20</span>)</div><div class="code-annotation">返回到防御点</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 11: 招募队伍 (循环内更新列表) -->
+        <section id="level-11" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 11 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">招募队伍 (Recrut)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-arrows-rotate mr-2"></i>战术思路分析：动态更新列表</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                农民（被检测为敌人）一旦被招募，就会从列表中消失。英雄必须在每次循环中**更新**农民列表。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">核心：循环末尾的 `findEnemies()`</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们必须在 `while` 循环的**末尾**重新调用 `neutrals = hero.findEnemies()`。这样，每次新的迭代开始时，`neutrals` 列表都是最新的。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-retweet text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            WHILE ...: <br>
+                            &nbsp;&nbsp;Say Name <br>
+                            &nbsp;&nbsp;<span class="var">List</span> <span class="op">=</span> <span class="func">FindEnemies</span>()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 中立单位被检测为敌人。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">neutrals</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findEnemies</span>()</div><div class="code-annotation">首次获取中立农民列表</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="op-while">while </span><span class="kwd">True</span>:</div><div class="code-annotation">外层无限循环</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="func">len</span>(<span class="var">neutrals</span>):</div><div class="code-annotation">如果列表非空</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="comment"># 说出 neutrals 数组中的第一个元素</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="var">neutrals</span>[<span class="num">0</span>])</div><div class="code-annotation">呼叫第一个农民</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"没有人在这儿"</span>)</div><div class="code-annotation">如果没有可招募的农民</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="comment"># 使用 findEnemies() 给 neutrals 变量重新赋值</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="var">neutrals</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findEnemies</span>()</div><div class="code-annotation">**关键：** 更新列表以检查下一次迭代</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 12: 第二宝石 (索引 1 访问) -->
+        <section id="level-12" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 12 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">第二宝石 (Second Gem)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-gem mr-2"></i>战术思路分析：排除陷阱</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                第一个宝石是陷阱，**第二个宝石**才是安全的。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：索引 1</h4>
+                                <p class="text-xs text-gray-400">
+                                    - 第二个宝石的索引是 **`1`**。
+                                    <br>
+                                    - 访问前，必须检查 `len(items) >= 2`，以防止访问不存在的元素而导致程序崩溃。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-square-xmark text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="func">len</span>(<span class="var">Items</span>) <span class="op">>=</span> <span class="num">2</span>: <br>
+                            &nbsp;&nbsp;<span class="func">Move</span>(<span class="var">Items</span>[<span class="num">1</span>])
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="op-while">while </span><span class="kwd">True</span>:</div><div class="code-annotation">外层无限循环</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">items</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findItems</span>()</div><div class="code-annotation">获取物品列表</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="comment"># 如果 items 数组元素个数大于或等于 2：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="func">len</span>(<span class="var">items</span>) <span class="op">>=</span> <span class="num">2</span>:</div><div class="code-annotation">确保列表中有第二个元素</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="comment"># 移动到 items 数组中的第二项</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">items</span>[<span class="num">1</span>].<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">items</span>[<span class="num">1</span>].<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动到安全宝石（索引 1）</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="comment"># 否则：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="comment"># 移动到中心标记。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">40</span>, <span class="num">34</span>)</div><div class="code-annotation">回到待命点</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 13: Sarven 救世主 (数组遍历) -->
+        <section id="level-13" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 13 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Sarven 救世主 (Sarven Savior)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-list-ol mr-2"></i>战术思路分析：列表遍历</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄有朋友名字的列表，需要**逐个**呼叫他们回家。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">遍历三要素</h4>
+                                <ul class="list-disc list-inside text-xs text-gray-400 space-y-1">
+                                    <li>**初始化：** `friendIndex = 0`</li>
+                                    <li>**条件：** `while friendIndex < len(friendNames):` (索引小于列表长度)</li>
+                                    <li>**步进：** `friendIndex += 1` (每次循环后索引加 1)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-clipboard-list text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            WHILE Index < len(List): <br>
+                            &nbsp;&nbsp;Say(List[Index]) <br>
+                            &nbsp;&nbsp;Index <span class="op">+=</span> 1
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">friendNames</span> <span class="op">=</span> [<span class="str">'Joan'</span>, <span class="str">'Ronan'</span>, <span class="str">'Nikita'</span>, <span class="str">'Augustus'</span>]</div><div class="code-annotation">朋友名字列表</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="var">friendIndex</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化索引为 0</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="op-while">while </span><span class="var">friendIndex</span> <span class="op"><</span> <span class="func">len</span>(<span class="var">friendNames</span>):</div><div class="code-annotation">循环条件：索引小于列表长度</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="var">friendName</span> <span class="op">=</span> <span class="var">friendNames</span>[<span class="var">friendIndex</span>]</div><div class="code-annotation">获取当前索引对应的名字</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="var">hero</span>.<span class="func">say</span>(<span class="var">friendName</span> <span class="op">+</span> <span class="str">', go home!'</span>)</div><div class="code-annotation">发出命令</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="var">friendIndex</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">索引步进 +1</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    </div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">22</span>, <span class="num">30</span>)</div><div class="code-annotation">移动到绿洲</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"fence"</span>, <span class="num">30</span>, <span class="num">30</span>)</div><div class="code-annotation">建造围栏</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Array and Index Mastery.</p>
+    </footer>
+
+</body>
+</html>

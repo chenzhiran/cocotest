@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：事件处理与宠物编程</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-event: #00ffff; /* 事件青色 */
+            --accent-pet: #ffc94d; /* 宠物黄色 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; 
+            --code-func: #8be9fd;    
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 201, 77, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-event);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-pet);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(0, 255, 255, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-pet); }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-event);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .pet-accent { color: var(--accent-pet); }
+        .event-accent { color: var(--accent-event); }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-paw text-yellow-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-yellow-400">事件与宠物编程</span></h1>
+                    <p class="text-xs text-gray-500">Event Handling & Parallel Actions（70-81关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-microchip text-cyan-500 mr-1"></i>pet.on("event", fn)</span>
+                <span><i class="fa-solid fa-message text-pink-500 mr-1"></i>event.message/speaker</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 70: 快速赛跑 (并行执行) -->
+        <section id="level-70" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 70 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">快速赛跑 (Fast Race)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-arrows-turn-right mr-2"></i>战术思路分析：并行行动</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                正常情况下，代码是**按顺序**执行的（英雄跑完，宠物才开始跑）。但赛跑需要英雄和宠物**同时**出发！
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">核心：事件处理器 (Event Handler)</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们使用 `pet.on("spawn", petMove)` 来将宠物的移动代码设置为一个**事件处理器**。当宠物一生成（"spawn"事件），`petMove` 函数就会被触发，并与英雄的代码**并行**运行。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-layer-group text-6xl text-purple-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Hero: Move (Sequential) <br>
+                            Pet: On "Spawn" (Parallel)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">petMove</span>(<span class="var">event</span>):</div><div class="code-annotation">定义宠物移动函数</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">pet</span>.<span class="func">moveXY</span>(<span class="num">50</span>, <span class="num">21</span>)</div><div class="code-annotation">宠物移动到终点</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="comment"># 使用pet.on("spawn", petMove)替换petMove()</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="var">pet</span>.<span class="func">on</span>(<span class="str">"spawn"</span>, <span class="var">petMove</span>)</div><div class="code-annotation">将 petMove 绑定到宠物的 "spawn" 事件</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">50</span>, <span class="num">12</span>)</div><div class="code-annotation">英雄开始移动（与宠物同时进行）</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 71: 沙漠蘑菇 (pet.findNearestByType) -->
+        <section id="level-71" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 71 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">沙漠蘑菇 (Desert Mushrooms)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-prescription-bottle-alt mr-2"></i>战术思路分析：安全收集</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                蘑菇有毒，英雄必须在安全血量时才能收集。宠物可以帮忙取回药水。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">宠物技能：`findNearestByType()`</h4>
+                                <p class="text-xs text-gray-400">
+                                    宠物可以根据类型（字符串）查找最近的单位或物品：
+                                    <br>
+                                    `potion = pet.findNearestByType("potion")`
+                                    <br>
+                                    然后使用 `pet.fetch(potion)` 将药水带回给英雄。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-syringe text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Pet: <span class="func">findNearestByType</span>(<span class="str">"potion"</span>)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">onSpawn</span>(<span class="var">event</span>):</div><div class="code-annotation">宠物生成事件处理器</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation">宠物循环，持续检查药水</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">        <span class="comment"># 宠物可以根据类型找到最近的物品。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="var">potion</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"potion"</span>)</div><div class="code-annotation">寻找最近的药水</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="comment"># 如果存在药水则让宠物取回：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="kwd">if </span><span class="var">potion</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">            <span class="var">pet</span>.<span class="func">fetch</span>(<span class="var">potion</span>)</div><div class="code-annotation">宠物取回药水</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="var">pet</span>.<span class="func">on</span>(<span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div><div class="code-annotation">绑定事件</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="comment"># 蘑菇有毒，不要太快收集。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation">英雄主循环</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="var">someItem</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="kwd">if </span><span class="var">someItem</span> <span class="op-and">and </span><span class="var">hero</span>.<span class="prop">health</span> <span class="op">></span> <span class="var">hero</span>.<span class="prop">maxHealth</span> <span class="op">/</span> <span class="num">3</span>:</div><div class="code-annotation">只有血量安全 (大于 1/3) 时才收集</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="comment"># 收集someItem：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">someItem</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">someItem</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动收集</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 72: 蘑菇之声 (pet.findNearestByType and fetch multiple) -->
+        <section id="level-72" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 72 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">蘑菇之声 (Mushroom Minder)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-key mr-2"></i>战术思路分析：多目标取回</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄需要打败骷髅并打开宝箱，宠物负责取回药水和金钥匙。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：连续 `pet.fetch()`</h4>
+                                <p class="text-xs text-gray-400">
+                                    宠物可以连续接收多个 `fetch` 命令，它会排队执行：先找药水并取回，再找金钥匙并取回。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-truck-ramp-box text-6xl text-orange-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Fetch(Potion) → Fetch(Key)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">onSpawn</span> (<span class="var">event</span>):</div><div class="code-annotation">宠物生成事件处理器</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 宠物要找到生命药水（类型是 "potion"）：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">potion</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"potion"</span>)</div><div class="code-annotation">寻找药水</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="comment"># 并将它取回：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">pet</span>.<span class="func">fetch</span>(<span class="var">potion</span>)</div><div class="code-annotation">取回药水</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="comment"># 宠物要找到金钥匙（类型是"gold-key"）：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="var">goldKey</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"gold-key"</span>)</div><div class="code-annotation">寻找金钥匙</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="comment"># 并将它取回：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="var">pet</span>.<span class="func">fetch</span>(<span class="var">goldKey</span>)</div><div class="code-annotation">取回金钥匙</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="comment"># 宠物可以发现的不仅仅是物品：</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">skeleton</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"skeleton"</span>)</div><div class="code-annotation">宠物也可以用来找敌人</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="var">pet</span>.<span class="func">on</span>(<span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div><div class="code-annotation">绑定事件</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation">英雄主循环</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="kwd">if </span><span class="var">skeleton</span>.<span class="prop">health</span> <span class="op">></span> <span class="num">0</span>:</div><div class="code-annotation">如果骷髅活着</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">skeleton</span>)</div><div class="code-annotation">攻击骷髅</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则（骷髅已死）</div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">31</span>, <span class="num">38</span>)</div><div class="code-annotation">移动到宝箱位置</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 73: 钥匙陷阱 (pet.fetch multiple keys) -->
+        <section id="level-73" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 73 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">钥匙陷阱 (Key Trap)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-hand-sparkles mr-2"></i>战术思路分析：宠物代劳</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                钥匙附近是陷阱，英雄不能亲自去拿！必须让宠物完成所有取回任务。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">取回所有钥匙</h4>
+                                <p class="text-xs text-gray-400">
+                                    宠物将按顺序执行 **铜钥匙、银钥匙和金钥匙** 的取回任务，无需英雄操心。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-key text-6xl text-yellow-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Fetch(Bronze) → Fetch(Silver) → Fetch(Gold)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">onSpawn</span>(<span class="var">event</span>):</div><div class="code-annotation">宠物生成事件处理器</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 宠物需要找到并拿回3把钥匙。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">pet</span>.<span class="func">fetch</span>(<span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"bronze-key"</span>))</div><div class="code-annotation">取回铜钥匙</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">pet</span>.<span class="func">fetch</span>(<span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"silver-key"</span>))</div><div class="code-annotation">取回银钥匙</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">pet</span>.<span class="func">fetch</span>(<span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"gold-key"</span>))</div><div class="code-annotation">取回金钥匙</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><span class="var">pet</span>.<span class="func">on</span>(<span class="str">"spawn"</span>, <span class="var">onSpawn</span>)</div><div class="code-annotation">绑定事件</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation">英雄主循环：负责战斗</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span> <span class="op-and">and </span><span class="var">enemy</span>.<span class="prop">team</span> <span class="op">==</span> <span class="str">"ogres"</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="prop">health</span> <span class="op"><</span> <span class="num">300</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="var">potion</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"potion"</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="kwd">if </span><span class="var">potion</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">potion</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">potion</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 74: 命令链 (event.speaker) -->
+        <section id="level-74" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 74 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">命令链 (Chain of Command)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-user-tag mr-2"></i>战术思路分析：识别发令者</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                宠物只能回应**英雄**的命令。你需要从事件数据中提取说话者（`event.speaker`）并进行身份验证。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">事件属性：`event.speaker`</h4>
+                                <p class="text-xs text-gray-400">
+                                    在 `onHear(event)` 函数中，`event.speaker` 存储了说话者的单位对象。
+                                    <br>
+                                    判断条件：`if event.speaker == hero:`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-microphone-lines text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">event.speaker</span> <span class="op">==</span> <span class="var">hero</span>: <span class="var">pet.say</span>()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">onHear</span>(<span class="var">event</span>):</div><div class="code-annotation">宠物监听事件</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># "hear"事件设置event.speaker属性。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="comment"># 检查宠物是否听到了英雄的话：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">event</span>.<span class="prop">speaker</span> <span class="op">==</span> <span class="var">hero</span>:</div><div class="code-annotation">检查说话者是否是英雄</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">pet</span>.<span class="func">say</span>(<span class="str">"WOOF"</span>)</div><div class="code-annotation">宠物回应，唤醒巫师</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><span class="var">pet</span>.<span class="func">on</span>(<span class="str">"hear"</span>, <span class="var">onHear</span>)</div><div class="code-annotation">绑定事件</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation">英雄主循环</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="comment"># 如果有敌人：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">        <span class="comment"># 使用hero.say()提醒你的宠物</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"Ogres!"</span>)</div><div class="code-annotation">英雄发出指令</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="comment"># 移动到营地内的X处。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">30</span>, <span class="num">33</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">        <span class="comment"># 然后返回营地外的X处。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">30</span>, <span class="num">15</span>)</div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 75: 宠物工程师 (event.speaker comparison) -->
+        <section id="level-75" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 75 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">宠物工程师 (Pet Engineer)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-robot mr-2"></i>战术思路分析：兵种区分</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                宠物需要根据不同的呼救者（`archer` 或 `soldier`）移动到不同的按钮（控制机器人或大炮）。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：`event.speaker` 与 `elif`</h4>
+                                <p class="text-xs text-gray-400">
+                                    首先找到两个发出指令的单位对象 (`archer`, `soldier`)，然后在 `onHear` 中用 `if/elif` 结构比较 `event.speaker`。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-arrows-split-up-and-merge text-6xl text-purple-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Speaker <span class="op">==</span> Archer: Left Button <br>
+                            ELIF Speaker <span class="op">==</span> Soldier: Right Button
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">onHear</span>(<span class="var">event</span>):</div><div class="code-annotation">宠物监听事件</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 找到门卫</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">archer</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"archer"</span>)</div><div class="code-annotation">找到弓箭手对象</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">soldier</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"soldier"</span>)</div><div class="code-annotation">找到士兵对象</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="comment"># 如果"event.speaker"参数是 `archer`：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="kwd">if </span><span class="var">event</span>.<span class="prop">speaker</span> <span class="op">==</span> <span class="var">archer</span>:</div><div class="code-annotation">如果说话者是弓箭手</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="comment"># 移动到左边的按钮。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">pet</span>.<span class="func">moveXY</span>(<span class="num">32</span>, <span class="num">30</span>)</div><div class="code-annotation">移动到左按钮 (机器人)</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="comment"># 如果"event.speaker"参数是`soldier`：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="kwd">elif </span><span class="var">event</span>.<span class="prop">speaker</span> <span class="op">==</span> <span class="var">soldier</span>:</div><div class="code-annotation">否则，如果说话者是士兵</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="comment"># 移动到右边的按钮。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="var">pet</span>.<span class="func">moveXY</span>(<span class="num">48</span>, <span class="num">30</span>)</div><div class="code-annotation">移动到右按钮 (大炮)</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="var">pet</span>.<span class="func">on</span>(<span class="str">"hear"</span>, <span class="var">onHear</span>)</div><div class="code-annotation">绑定事件</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content"><span class="comment"># 您不必更改下面的代码。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation">英雄主循环</div></div>
+                        <div class="code-row"><div class="line-num">18-20</div><div class="code-content"><span class="comment"># ... 英雄防御逻辑 ...</span></div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 76: 宠物翻译家 (event.message) -->
+        <section id="level-76" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 76 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">宠物翻译家 (Pet Translator)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-language mr-2"></i>战术思路分析：解密指令</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                炮兵说的是反向词！宠物必须将听到的消息（`event.message`）解密，然后说出正确的反向词。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">事件属性：`event.message`</h4>
+                                <p class="text-xs text-gray-400">
+                                    在 `onHear` 函数中，`event.message` 存储了说出的字符串。宠物需要检查这个字符串来决定说什么：
+                                    <br>
+                                    `if message == "North": pet.say("Htron")`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-code-pull-request text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Message: "North" <br>
+                            Pet Say: "Htron"
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">onHear</span>(<span class="var">event</span>):</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 宠物听到的消息在event.message中</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">message</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">message</span></div><div class="code-annotation">获取听到的消息</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="comment"># 如果消息是 "North"：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="kwd">if </span><span class="var">message</span> <span class="op">==</span> <span class="str">"North"</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="comment"># 宠物说 "Htron"。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">pet</span>.<span class="func">say</span>(<span class="str">"Htron"</span>)</div><div class="code-annotation">翻译并说出</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="comment"># 如果消息是 "South"：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="kwd">if </span><span class="var">message</span> <span class="op">==</span> <span class="str">"South"</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="comment"># 宠物说 "Htuos"。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="var">pet</span>.<span class="func">say</span>(<span class="str">"Htuos"</span>)</div><div class="code-annotation">翻译并说出</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="comment"># 如果消息是 "East"：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="kwd">if </span><span class="var">message</span> <span class="op">==</span> <span class="str">"East"</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="comment"># 宠物说 "Tsae"。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="var">pet</span>.<span class="func">say</span>(<span class="str">"Tsae"</span>)</div><div class="code-annotation">翻译并说出</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"><span class="var">pet</span>.<span class="func">on</span>(<span class="str">"hear"</span>, <span class="var">onHear</span>)</div><div class="code-annotation">绑定事件</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">19-22</div><div class="code-content"><span class="comment"># ... 英雄主循环 ...</span></div><div class="code-annotation">英雄负责战斗，确保不攻击斗士</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 77: 宠物副官 (event.message and pet.moveXY) -->
+        <section id="level-77" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 77 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">宠物副官 (Pet Lieutenant)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-comments mr-2"></i>战术思路分析：语音控制</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄通过喊话来命令宠物移动到治疗点或火炮点。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">IF/ELIF 语音命令</h4>
+                                <p class="text-xs text-gray-400">
+                                    - `if event.message == "Fire"`: 宠物移动到火炮点 (`64, 16`)。
+                                    <br>
+                                    - `elif event.message == "Heal"`: 宠物移动到治疗点 (`64, 52`)。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-bullhorn text-6xl text-orange-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Say("Fire") → Pet Moves to (64, 16)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">onHear</span>(<span class="var">event</span>):</div><div class="code-annotation">宠物监听事件</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># event.message包含所听到的文本。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="comment"># 如果有人说 "Fire"</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">event</span>.<span class="prop">message</span> <span class="op">==</span> <span class="str">"Fire"</span>:</div><div class="code-annotation">如果听到 Fire</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="comment"># 用pet.moveXY（）移动到底部的X标记</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">pet</span>.<span class="func">moveXY</span>(<span class="num">64</span>, <span class="num">16</span>)</div><div class="code-annotation">移动到下方 (火炮)</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">pet</span>.<span class="func">say</span>(<span class="str">"MEAW"</span>)</div><div class="code-annotation">宠物回应</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="comment"># 如果有人说 "Heal"</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="kwd">elif </span><span class="var">event</span>.<span class="prop">message</span> <span class="op">==</span> <span class="str">"Heal"</span>:</div><div class="code-annotation">否则如果听到 Heal</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="comment"># 用pet.moveXY（）移动到顶部的X标记</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="var">pet</span>.<span class="func">moveXY</span>(<span class="num">64</span>, <span class="num">52</span>)</div><div class="code-annotation">移动到上方 (治疗)</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="var">pet</span>.<span class="func">say</span>(<span class="str">"MEAW"</span>)</div><div class="code-annotation">宠物回应</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="var">pet</span>.<span class="func">on</span>(<span class="str">"hear"</span>, <span class="var">onHear</span>)</div><div class="code-annotation">绑定事件</div></div>
+                        <div class="code-row"><div class="line-num">15-25</div><div class="code-content"><span class="comment"># ... 英雄主循环 ...</span></div><div class="code-annotation">英雄负责战斗和呼叫</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 78: 炼金术 (event.message and pet.fetch) -->
+        <section id="level-78" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 78 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">炼金术 (Alchemy)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-hand-holding-medical mr-2"></i>战术思路分析：送药待命</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                宠物必须在听到炼金术师说 `"Fetch"` 时才去拿药水；听到其他任何话时，都应回到待命点（红色标记）。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">IF/ELSE 决策</h4>
+                                <p class="text-xs text-gray-400">
+                                    - `if message == "Fetch"`: 拿药水 (`pet.fetch()`)。
+                                    <br>
+                                    - `else`: 回到待命点 (`pet.moveXY(54, 34)`)。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-reply-all text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF "Fetch": <span class="func">Fetch</span>() <br>
+                            ELSE: <span class="func">Move</span>(<span class="var">Red X</span>)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">onHear</span>(<span class="var">event</span>):</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 找到最近的药水。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">potion</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"potion"</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">message</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">message</span></div><div class="code-annotation">获取消息</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="comment"># 如果事件的消息是 "Fetch"</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="kwd">if </span><span class="var">message</span> <span class="op">==</span> <span class="str">"Fetch"</span>:</div><div class="code-annotation">如果听到 "Fetch"</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="comment"># 让宠物拿取药水。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">pet</span>.<span class="func">fetch</span>(<span class="var">potion</span>)</div><div class="code-annotation">去拿药水</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="comment"># 其他（对于任何其他消息）：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则（任何其他消息）</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="comment"># 用pet.moveXY 让宠物回到红色标记。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="var">pet</span>.<span class="func">moveXY</span>(<span class="num">54</span>, <span class="num">34</span>)</div><div class="code-annotation">回到待命点</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="var">pet</span>.<span class="func">on</span>(<span class="str">"hear"</span>, <span class="var">onHear</span>)</div><div class="code-annotation">绑定事件</div></div>
+                        <div class="code-row"><div class="line-num">15-20</div><div class="code-content"><span class="comment"># ... 英雄主循环 ...</span></div><div class="code-annotation">英雄负责战斗和移动</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 79: 概念挑战. 宠物探索者 (event.speaker AND event.message) -->
+        <section id="level-79" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 79 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 宠物探索者 (Pet Explorer)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-user-check mr-2"></i>战术思路分析：双重认证</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                宠物必须确保：**说话者是探索者** (`event.speaker == explorer`) **AND** **说的是正确的数字** (`event.message == "1"`)。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">AND 与嵌套 IF</h4>
+                                <p class="text-xs text-gray-400">
+                                    首先用 `if event.speaker == explorer:` 排除农民。然后在内部嵌套 `if/elif` 来检查 `event.message`。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-key text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Speaker <span class="op">==</span> Explorer: <br>
+                            &nbsp;&nbsp;IF Message <span class="op">==</span> "1": Move
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">explorer</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>()</div><div class="code-annotation">找到探索者对象</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="kwd">def </span><span class="func">onHear</span>(<span class="var">event</span>):</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">event</span>.<span class="prop">speaker</span> <span class="op">==</span> <span class="var">explorer</span>:</div><div class="code-annotation">如果说话者是探索者 (排除了农民)</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="kwd">if </span><span class="var">event</span>.<span class="prop">message</span> <span class="op">==</span> <span class="str">"1"</span>:</div><div class="code-annotation">如果消息是 "1"</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">            <span class="var">pet</span>.<span class="func">moveXY</span>(<span class="num">8</span>, <span class="num">26</span>)</div><div class="code-annotation">移动到按钮 1</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="kwd">elif </span><span class="var">event</span>.<span class="prop">message</span> <span class="op">==</span> <span class="str">"2"</span>:</div><div class="code-annotation">如果消息是 "2"</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">            <span class="var">pet</span>.<span class="func">moveXY</span>(<span class="num">26</span>, <span class="num">39</span>)</div><div class="code-annotation">移动到按钮 2</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="kwd">elif </span><span class="var">event</span>.<span class="prop">message</span> <span class="op">==</span> <span class="str">"3"</span>:</div><div class="code-annotation">如果消息是 "3"</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">            <span class="var">pet</span>.<span class="func">moveXY</span>(<span class="num">26</span>, <span class="num">13</span>)</div><div class="code-annotation">移动到按钮 3</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">pet</span>.<span class="func">on</span>(<span class="str">"hear"</span>, <span class="var">onHear</span>)</div><div class="code-annotation">绑定事件</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 80: 危险钥匙 (Multiple findNearestByType and fetch) -->
+        <section id="level-80" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 80 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">危险钥匙 (Dangerous Keys)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-lock-open mr-2"></i>战术思路分析：精确取钥匙</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                只有圣骑士（`paladin`）知道哪把钥匙是安全的。宠物必须听从圣骑士的命令，并使用 `findNearestByType` 找到正确的钥匙取回。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">多重查找与 IF/ELIF</h4>
+                                <p class="text-xs text-gray-400">
+                                    宠物首先需要预先找到所有三种钥匙的对象。然后，在 `onHear` 中，通过检查 `event.speaker` 和 `event.message` 来精确地执行 `fetch`。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-shield-alt text-6xl text-yellow-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Speaker <span class="op">==</span> Paladin: <br>
+                            &nbsp;&nbsp;IF Message <span class="op">==</span> "Gold": Fetch(GoldKey)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">onHear</span>(<span class="var">event</span>):</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 宠物可以找到圣骑士和钥匙。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">paladinUnit</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"paladin"</span>)</div><div class="code-annotation">找到圣骑士对象</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">goldKey</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"gold-key"</span>)</div><div class="code-annotation">预先找到所有钥匙</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">silverKey</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"silver-key"</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="var">bronzeKey</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"bronze-key"</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="comment"># 如果event.speaker是paladinUnit：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="kwd">if </span><span class="var">event</span>.<span class="prop">speaker</span> <span class="op">==</span> <span class="var">paladinUnit</span>:</div><div class="code-annotation">第一层检查：说话者必须是圣骑士</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="comment"># 如果event.message是"Gold"：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="kwd">if </span><span class="var">event</span>.<span class="prop">message</span> <span class="op">==</span> <span class="str">"Gold"</span>:</div><div class="code-annotation">如果命令是 Gold</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">            <span class="comment"># 宠物需要取金钥匙。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">            <span class="var">pet</span>.<span class="func">fetch</span>(<span class="var">goldKey</span>)</div><div class="code-annotation">取金钥匙</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">        <span class="comment"># 如果event.message是 "Silver"：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="kwd">elif </span><span class="var">event</span>.<span class="prop">message</span> <span class="op">==</span> <span class="str">"Silver"</span>:</div><div class="code-annotation">如果命令是 Silver</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">            <span class="comment"># 宠物需要取银钥匙。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">            <span class="var">pet</span>.<span class="func">fetch</span>(<span class="var">silverKey</span>)</div><div class="code-annotation">取银钥匙</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">        <span class="comment"># 如果event.message是"Bronze"：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">        <span class="kwd">elif </span><span class="var">event</span>.<span class="prop">message</span> <span class="op">==</span> <span class="str">"Bronze"</span>:</div><div class="code-annotation">如果命令是 Bronze</div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content">            <span class="comment"># 宠物需要取青铜钥匙。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content">            <span class="var">pet</span>.<span class="func">fetch</span>(<span class="var">bronzeKey</span>)</div><div class="code-annotation">取铜钥匙</div></div>
+                        <div class="code-row"><div class="line-num">21</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">22</div><div class="code-content"><span class="var">pet</span>.<span class="func">on</span>(<span class="str">"hear"</span>, <span class="var">onHear</span>)</div><div class="code-annotation">绑定事件</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 81: 奥林匹克比赛 (event.speaker AND event.message combo) -->
+        <section id="level-81" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 81 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">奥林匹克比赛 (Olympic Race)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-flag-checkered mr-2"></i>战术思路分析：发令枪</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                比赛开始的条件非常严格：**必须是裁判** (`wizard`) **AND** **说的必须是 `"Start"`**。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">AND 组合判断</h4>
+                                <p class="text-xs text-gray-400">
+                                    `if event.speaker == referee and event.message == "Start":`
+                                    <br>
+                                    只有当两个条件都为真时，宠物才能开始比赛，否则就是抢跑！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-trophy text-6xl text-orange-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Speaker <span class="op-and">AND</span> Message: <span class="func">Run</span>!
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">onHear</span>(<span class="var">event</span>):</div><div class="code-annotation">宠物监听事件</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">referee</span> <span class="op">=</span> <span class="var">pet</span>.<span class="func">findNearestByType</span>(<span class="str">"wizard"</span>)</div><div class="code-annotation">找到裁判员（巫师）对象</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="comment"># 如果说话的人是裁判员referee并且说的是"Start"：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">event</span>.<span class="prop">speaker</span> <span class="op">==</span> <span class="var">referee</span> <span class="op-and">and </span><span class="var">event</span>.<span class="prop">message</span> <span class="op">==</span> <span class="str">"Start"</span>:</div><div class="code-annotation">双重条件：裁判 AND Start</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="comment"># 让宠物跑到红色标记。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">pet</span>.<span class="func">moveXY</span>(<span class="num">53</span>, <span class="num">27</span>)</div><div class="code-annotation">跑到队伍标记</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="comment"># 然后跑回来。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">pet</span>.<span class="func">moveXY</span>(<span class="num">6</span>, <span class="num">27</span>)</div><div class="code-annotation">跑过终点线</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="comment"># 指派onHear函数来处理"hear"事件。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="var">pet</span>.<span class="func">on</span>(<span class="str">"hear"</span>, <span class="var">onHear</span>)</div><div class="code-annotation">绑定事件</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Event Handling Mastery.</p>
+    </footer>
+
+</body>
+</html>

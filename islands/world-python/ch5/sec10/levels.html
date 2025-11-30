@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：状态、循环与自定义函数</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-state: #68d391; /* 状态绿 */
+            --accent-control: #fc8181; /* 控制红 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if, else, break */
+            --code-func: #8be9fd;    /* moveXY, findNearestEnemy */
+            --code-string: #f1fa8c;  /* "Heal please!" */
+            --code-num: #bd93f9;     /* 10 */
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* health, maxHealth, pos, x, y */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(104, 211, 145, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(104, 211, 145, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-state);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-control);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(104, 211, 145, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-state); }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-state);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-break { color: var(--accent-control); font-weight: bold; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-heart-pulse text-green-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-green-400">状态与循环控制</span></h1>
+                    <p class="text-xs text-gray-500">函数、生命值、金钱与中断（56-66关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-heart text-red-400 mr-1"></i>hero.health</span>
+                <span><i class="fa-solid fa-hand-fist text-yellow-500 mr-1"></i>hero.maxHealth</span>
+                <span><i class="fa-solid fa-circle-xmark text-red-500 mr-1"></i>break</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 56: Kithgard附魔师 (自定义函数定义) -->
+        <section id="level-56" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-green-900 text-green-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 56 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Kithgard附魔师 (Kithgard Enchanter)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-3"><i class="fa-solid fa-scroll mr-2"></i>战术思路分析：定义魔法咒语</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄失去了靴子！你必须定义自己的移动函数，就像是给英雄施加了一个“移动咒语”。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：函数定义 (`def`)</h4>
+                                <p class="text-xs text-gray-400">
+                                    定义函数使用 `def 函数名():` 结构。函数体内的代码描述了移动逻辑：读取当前位置，计算新位置 (`+ 12` 或 `- 12`)，然后使用 `hero.moveXY` 移动。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-code-merge text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            <span class="kwd">def </span><span class="func">moveRight</span>():<br>
+                            &nbsp;&nbsp;x <span class="op">+=</span> 12
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-green-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">moveRight</span>():</div><div class="code-annotation">定义向右移动 12 米的函数</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">x</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">+</span> <span class="num">12</span></div><div class="code-annotation">计算新的 X 坐标</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">y</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span></div><div class="code-annotation">Y 坐标保持不变</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">x</span>, <span class="var">y</span>)</div><div class="code-annotation">移动到新位置</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><span class="kwd">def </span><span class="func">moveUp</span>():</div><div class="code-annotation">定义向上移动 12 米的函数</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="var">x</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span></div><div class="code-annotation">X 坐标保持不变</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="var">y</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">+</span> <span class="num">12</span></div><div class="code-annotation">计算新的 Y 坐标</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">x</span>, <span class="var">y</span>)</div><div class="code-annotation">移动到新位置</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="kwd">def </span><span class="func">moveDown</span>():</div><div class="code-annotation">定义向下移动 12 米的函数</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="var">x</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span></div><div class="code-annotation">X 坐标保持不变</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="var">y</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">-</span> <span class="num">12</span></div><div class="code-annotation">计算新的 Y 坐标</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">x</span>, <span class="var">y</span>)</div><div class="code-annotation">移动到新位置</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content"><span class="func">moveRight</span>()</div><div class="code-annotation">调用函数，执行右移</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"><span class="func">moveDown</span>()</div><div class="code-annotation">调用函数，执行下移</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content"><span class="func">moveUp</span>()</div><div class="code-annotation">调用函数，执行上移</div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content"><span class="func">moveUp</span>()</div><div class="code-annotation">调用函数，执行上移</div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content"><span class="func">moveRight</span>()</div><div class="code-annotation">调用函数，执行右移</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 57: 扫雷 (health < maxHealth / 2) -->
+        <section id="level-57" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-green-900 text-green-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 57 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">扫雷 (Mine Field)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-3"><i class="fa-solid fa-heart-pulse mr-2"></i>战术思路分析：生命值比例</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄必须用身体引爆地雷，但生命值不能太低。当生命值低于**最大生命值的一半**时，必须撤退治疗。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：`hero.health` 和 `hero.maxHealth`</h4>
+                                <p class="text-xs text-gray-400">
+                                    - **健康阈值：** `healingThreshold = hero.maxHealth / 2`
+                                    <br>
+                                    - **判断：** `if hero.health < healingThreshold:`
+                                    <br>
+                                    这是一种经典的**状态判断**，英雄根据自身状态决定行动（战斗或撤退）。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-gauge-high text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Health <span class="op"><</span> MaxHealth <span class="op">/</span> 2: <span class="func">Heal</span>!
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-green-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">coin</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找硬币（地雷的位置）</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">healingThreshold</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">maxHealth</span> <span class="op">/</span> <span class="num">2</span></div><div class="code-annotation">计算生命值阈值</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="comment"># 检查你是否身受重伤。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="prop">health</span> <span class="op"><</span> <span class="var">healingThreshold</span>:</div><div class="code-annotation">如果当前生命值低于阈值</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="comment"># 向左移动10米。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">x</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span></div><div class="code-annotation">读取当前 X</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">y</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span></div><div class="code-annotation">读取当前 Y</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">x</span> <span class="op">-</span> <span class="num">10</span>, <span class="var">y</span>)</div><div class="code-annotation">向左移动 10 米</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="comment"># 请求治疗。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"Can I get a heal?"</span>)</div><div class="code-annotation">呼叫医生</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="comment"># 否则，移动到下一枚硬币。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="kwd">elif </span><span class="var">coin</span>:</div><div class="code-annotation">否则，如果找到了硬币</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">coin</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">coin</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">继续前进（引爆地雷）</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 58: 'Killdeer'操作 (return health comparison) -->
+        <section id="level-58" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-green-900 text-green-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 58 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">'Killdeer'操作 (Killdeer Operation)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-3"><i class="fa-solid fa-bullseye mr-2"></i>战术思路分析：诱敌深入</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                食人魔只有在你看起来“受伤严重”时才会追击你。你需要利用这个机制，假装受伤，将他们引入陷阱（红色 X 标记处）。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">shouldRun() 函数</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们用 `shouldRun()` 函数来判断英雄是否“看起来很弱”（生命值低于一半）。当函数返回 `True` 时，英雄就该跑了！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-user-injured text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="func">shouldRun</span>(): <span class="func">moveXY</span>(<span class="var">Trap</span>)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-green-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">shouldRun</span>():</div><div class="code-annotation">定义逃跑决策函数</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="prop">health</span> <span class="op"><</span> <span class="var">hero</span>.<span class="prop">maxHealth</span> <span class="op">/</span> <span class="num">2</span>:</div><div class="code-annotation">如果血量低于一半</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">        <span class="kwd">return </span><span class="kwd">True</span></div><div class="code-annotation">返回 True (应该跑)</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="kwd">return </span><span class="kwd">False</span></div><div class="code-annotation">返回 False (继续战斗)</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="comment"># 只有当shouldRun（）返回True时才移动到X.  True</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="kwd">if </span><span class="func">shouldRun</span>():</div><div class="code-annotation">如果函数返回 True</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">75</span>, <span class="num">37</span>)</div><div class="code-annotation">逃到陷阱位置</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">    <span class="comment"># 否则，攻击！</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">        <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找敌人</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">战斗</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 59: 医疗护理 (health < maxHealth / 2) -->
+        <section id="level-59" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-green-900 text-green-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 59 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">医疗护理 (Medical Care)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-3"><i class="fa-solid fa-clinic-medical mr-2"></i>战术思路分析：即时治疗</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这次你没有诱敌深入的计划，只是纯粹的生死存亡。当血量低于一半时，必须立即去治疗师那里喊话治疗。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：`if / else` 结构</h4>
+                                <p class="text-xs text-gray-400">
+                                    英雄只有两种选择：`if` (受伤去治疗) 或者 `else` (继续战斗)。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-hospital text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Health <span class="op"><</span> Threshold: <span class="func">moveXY</span>(<span class="var">Healer</span>)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-green-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">currentHealth</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">health</span></div><div class="code-annotation">读取当前生命值</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">healingThreshold</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">maxHealth</span> <span class="op">/</span> <span class="num">2</span></div><div class="code-annotation">计算治疗阈值 (MaxHealth / 2)</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="prop">health</span> <span class="op"><</span> <span class="var">healingThreshold</span>:</div><div class="code-annotation">如果生命值低于阈值</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">65</span>, <span class="num">46</span>)</div><div class="code-annotation">移动到治疗点</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"Heal please!"</span>)</div><div class="code-annotation">请求治疗</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则 (健康时)</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找敌人</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 60: 概念挑战. 王之谷 (enemy.health > enemy.maxHealth / 3) -->
+        <section id="level-60" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-green-900 text-green-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 60 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 王之谷 (Valley of the Kings)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-3"><i class="fa-solid fa-skull-crossbones mr-2"></i>战术思路分析：生命值阈值</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这次我们不是看英雄的血量，而是看**敌人的血量**。只有当骷髅的血量**高于**最大生命值的三分之一时，才攻击它。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">公式：目标血量 > 阈值</h4>
+                                <p class="text-xs text-gray-400">
+                                    攻击条件：`enemy.health > enemy.maxHealth / 3`
+                                    <br>
+                                    一旦低于这个阈值，敌人就太弱了，不值得攻击，我们跑开！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-percent text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Enemy.Health <span class="op">></span> <span class="num">1</span> <span class="op">/</span> <span class="num">3</span>: <span class="func">Attack</span>()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-green-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>.<span class="prop">health</span> <span class="op">></span> <span class="var">enemy</span>.<span class="prop">maxHealth</span> <span class="op">/</span> <span class="num">3</span>:</div><div class="code-annotation">如果敌人血量高于 MaxHealth 的 1/3</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="kwd">else</span>:</div><div class="code-annotation">否则 (敌人太弱)</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">35</span>, <span class="num">16</span>)</div><div class="code-annotation">逃跑</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 61: 组合挑战. 千岩谷 (health, pos, comparison) -->
+        <section id="level-61" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-green-900 text-green-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 61 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">组合挑战. 千岩谷 (Thousand Lashes)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-3"><i class="fa-solid fa-cogs mr-2"></i>战术思路分析：多重状态决策</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这个终极挑战要求英雄同时处理三件事：
+                                <br>
+                                1. **生命值比例：** `health < maxHealth / 3` (决定是否呼叫治疗)
+                                <br>
+                                2. **物品位置：** `item.pos.x > hero.pos.x` (决定向右移动)
+                                <br>
+                                3. **物品位置：** `item.pos.y > hero.pos.y` (决定向上移动)
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">不相关 If 语句的顺序</h4>
+                                <p class="text-xs text-gray-400">
+                                    **治疗呼叫**和**移动决策**是相互独立的，因此它们使用平级的 `if` 语句。移动决策中的 X 和 Y 也是独立判断的。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-heart-crack text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">Low HP</span>: <span class="func">Say</span>("Heal!") <br>
+                            IF <span class="var">Item Right</span>: X <span class="op">+=</span> 8 <br>
+                            IF <span class="var">Item Up</span>: Y <span class="op">+=</span> 8
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-green-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="prop">health</span> <span class="op"><</span> <span class="var">hero</span>.<span class="prop">maxHealth</span> <span class="op">/</span> <span class="num">3</span>:</div><div class="code-annotation">判断：如果血量低于 1/3</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"治疗！"</span>)</div><div class="code-annotation">呼叫治疗师</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找物品</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果物品存在</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="kwd">if </span><span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">></span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span>:</div><div class="code-annotation">如果物品在右边</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">+</span> <span class="num">8</span>, <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">向右移动 8 米</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="kwd">if </span><span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">></span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span>:</div><div class="code-annotation">如果物品在上方</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">+</span> <span class="num">8</span>)</div><div class="code-annotation">向上移动 8 米</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 62: 守时 (time property and elif) -->
+        <section id="level-62" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-green-900 text-green-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 62 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">守时 (On Time)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-3"><i class="fa-solid fa-clock mr-2"></i>战术思路分析：时间分配</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄必须根据游戏时间切换任务：前 10 秒战斗，10 到 35 秒收集硬币，35 秒后再次战斗。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：`hero.time` 与 `elif`</h4>
+                                <p class="text-xs text-gray-400">
+                                    - **`hero.time`:** 获取游戏开始后的秒数。
+                                    <br>
+                                    - **`elif`:** 确保时间段是互斥的。如果 `time < 10` 为 True，后面的 `elif` 即使条件满足也不会执行。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-timeline text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">Time</span> <span class="op"><</span> 10: Fight <br>
+                            ELIF <span class="var">Time</span> <span class="op"><</span> 35: Collect <br>
+                            ELSE: Fight Again
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-green-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># 如果是前十秒，攻击。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="prop">time</span> <span class="op"><</span> <span class="num">10</span>:</div><div class="code-annotation">前 10 秒</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击敌人</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="comment"># 否则，如果是前35秒，收集硬币。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="kwd">elif </span><span class="var">hero</span>.<span class="prop">time</span> <span class="op"><</span> <span class="num">35</span>:</div><div class="code-annotation">否则，如果在 10 到 35 秒之间</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">coin</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="kwd">if </span><span class="var">coin</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">            <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">coin</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">coin</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">收集硬币</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="comment"># 35秒后，再次发起攻击！</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则 (35 秒之后)</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">            <span class="var">hero</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation">攻击敌人</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 63: 沙漠十字 (quadrant movement) -->
+        <section id="level-63" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-green-900 text-green-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 63 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">沙漠十字 (Desert Cross)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-3"><i class="fa-solid fa-arrows-alt-v mr-2"></i>战术思路分析：四象限攻击</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                食人魔从对角线（四个象限）进攻。你需要用布尔变量 (`isLeft`, `isAbove`) 来简化 `and` 运算的复杂逻辑，快速定位并放置陷阱。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">布尔变量的应用</h4>
+                                <p class="text-xs text-gray-400">
+                                    先将复杂的比较结果存入布尔变量：
+                                    <br>
+                                    `isLeft = hero.pos.x > enemy.pos.x`
+                                    <br>
+                                    然后组合它们：`if isLeft and isAbove:`
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-map-pin text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF Left <span class="op-math">AND</span> Above: Trap(TopLeft)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-green-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="comment"># 左边：enemy.pos.x小于hero.pos.x</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">isLeft</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">></span> <span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">x</span></div><div class="code-annotation">判断是否来自左边</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="comment"># 上方：enemy.pos.y大于hero.pos.y</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">isAbove</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op"><</span> <span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">y</span></div><div class="code-annotation">判断是否来自上方</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="comment"># 右边：enemy.pos.x大于hero.pos.x</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">isRight</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op"><</span> <span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">x</span></div><div class="code-annotation">判断是否来自右边</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="comment"># 下方：enemy.pos.y小于hero.pos.y</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="var">isBelow</span> <span class="op">=</span> <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">></span> <span class="var">enemy</span>.<span class="prop">pos</span>.<span class="prop">y</span></div><div class="code-annotation">判断是否来自下方</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">        <span class="comment"># 左上角</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">        <span class="kwd">if </span><span class="var">isLeft</span> <span class="op-and">and </span><span class="var">isAbove</span>:</div><div class="code-annotation">左上角：isLeft AND isAbove</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">            <span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"fire-trap"</span>, <span class="num">20</span>, <span class="num">51</span>)</div><div class="code-annotation">建造陷阱</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="comment"># 右上角</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">        <span class="kwd">if </span><span class="var">isRight</span> <span class="op-and">and </span><span class="var">isAbove</span>:</div><div class="code-annotation">右上角：isRight AND isAbove</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">            <span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"fire-trap"</span>, <span class="num">60</span>, <span class="num">51</span>)</div><div class="code-annotation">建造陷阱</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">        <span class="comment"># 左下角</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content">        <span class="kwd">if </span><span class="var">isLeft</span> <span class="op-and">and </span><span class="var">isBelow</span>:</div><div class="code-annotation">左下角：isLeft AND isBelow</div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content">            <span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"fire-trap"</span>, <span class="num">20</span>, <span class="num">17</span>)</div><div class="code-annotation">建造陷阱</div></div>
+                        <div class="code-row"><div class="line-num">21</div><div class="code-content">        <span class="comment"># 右下角</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">22</div><div class="code-content">        <span class="kwd">if </span><span class="var">isRight</span> <span class="op-and">and </span><span class="var">isBelow</span>:</div><div class="code-annotation">右下角：isRight AND isBelow</div></div>
+                        <div class="code-row"><div class="line-num">23</div><div class="code-content">            <span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"fire-trap"</span>, <span class="num">60</span>, <span class="num">17</span>)</div><div class="code-annotation">建造陷阱</div></div>
+                        <div class="code-row"><div class="line-num">24</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">40</span>, <span class="num">34</span>)</div><div class="code-annotation">英雄回到中心</div></div>
+                        <div class="code-row"><div class="line-num">25</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则</div></div>
+                        <div class="code-row"><div class="line-num">26</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">40</span>, <span class="num">34</span>)</div><div class="code-annotation">回到中心待命</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 64: 囤积黄金 (break 语句) -->
+        <section id="level-64" class="level-card" style="border-left-color: var(--accent-control);">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(252, 129, 129, 0.1), transparent);">
+                <div>
+                    <span class="bg-red-900 text-red-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 64 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">囤积黄金 (Hoard)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-red-400 mb-3"><i class="fa-solid fa-circle-xmark mr-2"></i>战术思路分析：及时退出</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                收集到 25 金后，必须立即停止，否则你会被沙漠困住！你需要用 `break` 语句来强制退出无限循环。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：`break`</h4>
+                                <p class="text-xs text-gray-400">
+                                    - `if totalGold >= 25:`
+                                    <br>
+                                    - <span class="op-break">break</span>
+                                    <br>
+                                    `break` 会立即终止当前的 `while` 循环，程序跳转到循环后的第一条语句（即移动并报告）。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-stop-circle text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">Goal Reached</span>: <span class="op-break">break</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-red-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">totalGold</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化总金币数</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">coin</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找硬币</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">coin</span>:</div><div class="code-annotation">如果硬币存在</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">coin</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">coin</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动收集</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">totalGold</span> <span class="op">+=</span> <span class="var">coin</span>.<span class="prop">value</span></div><div class="code-annotation">累加金币价值</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="kwd">if </span><span class="var">totalGold</span> <span class="op">>=</span> <span class="num">25</span>:</div><div class="code-annotation">如果达到 25 金的目标</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="op-break">break</span></div><div class="code-annotation">立即中断循环</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">58</span>, <span class="num">33</span>)</div><div class="code-annotation">循环结束后，移动到 Naria</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">totalGold</span>)</div><div class="code-annotation">报告总数</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 65: 诱饵演习 (hero.gold and build) -->
+        <section id="level-65" class="level-card" style="border-left-color: var(--accent-control);">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(252, 129, 129, 0.1), transparent);">
+                <div>
+                    <span class="bg-red-900 text-red-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 65 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">诱饵演习 (Decoy Drill)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-red-400 mb-3"><i class="fa-solid fa-clone mr-2"></i>战术思路分析：资源管理与建造</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄需要收集金币，然后花费 25 金来建造一个诱饵 (`"decoy"`)。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：`hero.gold` 属性</h4>
+                                <p class="text-xs text-gray-400">
+                                    - 检查资源：`if hero.gold >= 25:`
+                                    <br>
+                                    - 建造：`hero.buildXY("decoy", x, y)`
+                                    <br>
+                                    我们使用 `decoysBuilt` 计数器来跟踪已建造的数量，当达到 4 个时，使用 `break` 退出。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-hammer text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">hero.gold</span> <span class="op">>=</span> 25: <span class="func">buildDecoy</span>()
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-red-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">decoysBuilt</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">诱饵计数器</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="var">coin</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找硬币</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="kwd">if </span><span class="var">coin</span>:</div><div class="code-annotation">如果硬币存在</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">coin</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">coin</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">收集硬币</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="comment"># 每个诱饵消费25金。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="prop">gold</span> <span class="op">>=</span> <span class="num">25</span>:</div><div class="code-annotation">如果金钱达到 25</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="comment"># 用buildXY建造一个"decoy"</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">hero</span>.<span class="func">buildXY</span>(<span class="str">"decoy"</span>, <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">hero</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">建造诱饵（花费 25 金）</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content">        <span class="comment"># 为decoysBuilt计数值加1。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content">        <span class="var">decoysBuilt</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation">计数 + 1</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="kwd">if </span><span class="var">decoysBuilt</span> <span class="op">==</span> <span class="num">4</span>:</div><div class="code-annotation">如果建造了 4 个诱饵</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">        <span class="comment"># 建造了4个诱饵后跳出循环。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">        <span class="op-break">break</span></div><div class="code-annotation">中断循环</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">    <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"Done building decoys!"</span>)</div><div class="code-annotation">报告建造完成</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">14</span>, <span class="num">36</span>)</div><div class="code-annotation">移动到报告点</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">decoysBuilt</span>)</div><div class="code-annotation">报告总数</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 66: 概念挑战. 贪婪保护 (break on gold) -->
+        <section id="level-66" class="level-card" style="border-left-color: var(--accent-control);">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(252, 129, 129, 0.1), transparent);">
+                <div>
+                    <span class="bg-red-900 text-red-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 66 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 贪婪保护 (Greedy Protection)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-red-400 mb-3"><i class="fa-solid fa-money-bill-wave mr-2"></i>战术思路分析：见好就收</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这个区域太危险了！收集到 99 金后，英雄必须立即使用 `break` 语句逃到南部的红色 X 标记处。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">循环退出条件</h4>
+                                <p class="text-xs text-gray-400">
+                                    使用 `hero.gold` 属性与 `maxGold` 目标进行比较：`if hero.gold >= maxGold:`
+                                    <br>
+                                    达到目标后，`break` 是唯一的出路。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-door-open text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF <span class="var">Gold >= 99</span>: <span class="op-break">break</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-red-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">maxGold</span> <span class="op">=</span> <span class="num">99</span></div><div class="code-annotation">定义目标金币数量</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找硬币</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果硬币存在</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">        <span class="var">hero</span>.<span class="func">moveXY</span>(<span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span>, <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span>)</div><div class="code-annotation">移动收集</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="kwd">if </span><span class="var">hero</span>.<span class="prop">gold</span> <span class="op">>=</span> <span class="var">maxGold</span>:</div><div class="code-annotation">如果当前金币大于等于目标值</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="op-break">break</span></div><div class="code-annotation">中断循环，逃跑</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">30</span>, <span class="num">8</span>)</div><div class="code-annotation">移动到红色 X 标记的安全区</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Function, State, and Control Flow Mastery.</p>
+    </footer>
+
+</body>
+</html>

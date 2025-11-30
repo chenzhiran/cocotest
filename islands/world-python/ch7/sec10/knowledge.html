@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第27-29关 认识字典</title>
+    <style>
+        :root {
+            --primary: #FF6B6B; /* 珊瑚红 */
+            --secondary: #4ECDC4; /* 蒂芙尼蓝 */
+            --accent: #FFE66D; /* 柠檬黄 */
+            --dark: #292F36; /* 深灰 */
+            --light: #F7FFF7; /* 象牙白 */
+            --code-bg: #282C34; /* 代码背景 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Varela Round", "Microsoft YaHei", "Rounded Mplus 1c", sans-serif;
+            background-color: #A8D8EA;
+            background-image: 
+                radial-gradient(#fff 20%, transparent 20%),
+                radial-gradient(#fff 20%, transparent 20%);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: var(--dark);
+        }
+
+        /* 布局容器 */
+        .layout-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            width: 100%;
+            height: 100%;
+            max-width: 1400px;
+        }
+
+        /* 舞台区域 */
+        .stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 85vw;
+            max-width: 1100px;
+        }
+
+        /* 顶部标题栏 */
+        .header-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 15px;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        .map-badge {
+            background: var(--dark);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 15px 15px 0 0;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .level-info {
+            background: var(--primary);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 3px 0 #c44d4d;
+            transition: background 0.3s;
+        }
+
+        /* PPT 屏幕 (16:9 比例) */
+        .ppt-screen {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: var(--light);
+            border-radius: 25px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15), 0 0 0 12px rgba(255,255,255,0.6);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 幻灯片页面 */
+        .slide {
+            flex: 1;
+            display: none;
+            padding: 40px 50px;
+            box-sizing: border-box;
+            flex-direction: column;
+            justify-content: center;
+            animation: fadeIn 0.5s ease-out;
+            height: 100%;
+            position: relative;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 排版样式 */
+        h1 { font-size: 2.5rem; margin: 0 0 20px 0; color: #333; text-align: center; }
+        h2 { font-size: 1.6rem; color: var(--secondary); margin: 15px 0; }
+        p { font-size: 1.2rem; line-height: 1.6; margin-bottom: 15px; color: #555; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 10px; font-size: 1.1rem; }
+
+        /* 双栏布局 */
+        .two-columns {
+            display: flex;
+            gap: 40px;
+            height: 100%;
+            align-items: center;
+        }
+        .col { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+        /* 代码编辑器样式 */
+        .code-window {
+            background: var(--code-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            font-family: 'Consolas', 'Monaco', monospace;
+            overflow: hidden;
+            width: 100%;
+            border: 2px solid #333;
+            margin: 10px 0;
+        }
+
+        .window-header {
+            background: #21252b;
+            padding: 8px 15px;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid #181a1f;
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .red { background: #ff5f56; }
+        .yellow { background: #ffbd2e; }
+        .green { background: #27c93f; }
+
+        .code-content {
+            padding: 20px;
+            color: #abb2bf;
+            margin: 0;
+            white-space: pre; /* 保留缩进 */
+            font-size: 1.1rem;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        /* 语法高亮 */
+        .kw { color: #c678dd; font-weight: bold; } /* keyword */
+        .func { color: #61afef; } /* function */
+        .str { color: #98c379; } /* string */
+        .num { color: #d19a66; } /* number */
+        .comment { color: #7f848e; font-style: italic; } /* comment */
+        .obj { color: #e06c75; } /* object */
+        .prop { color: #e5c07b; } /* property */
+        .key { color: #e5c07b; } /* dict key */
+
+        /* 装饰元素 */
+        .highlight-box {
+            background: #FFF8E1;
+            border-left: 6px solid var(--accent);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .emoji-icon {
+            font-size: 3rem;
+            margin-right: 15px;
+            vertical-align: middle;
+        }
+
+        /* 按钮样式 */
+        .nav-btn {
+            background: white;
+            border: 4px solid var(--secondary);
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            font-size: 2.5rem;
+            color: var(--secondary);
+            cursor: pointer;
+            box-shadow: 0 8px 0 rgba(78, 205, 196, 0.3), 0 15px 20px rgba(0,0,0,0.1);
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover { background: var(--secondary); color: white; transform: translateY(-3px); box-shadow: 0 12px 0 rgba(78, 205, 196, 0.3), 0 20px 30px rgba(0,0,0,0.1); }
+        .nav-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(78, 205, 196, 0.3); }
+        .nav-btn:disabled { border-color: #ccc; color: #ccc; background: #eee; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 10px;
+            background: #eee;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        /* 比较表格 */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .compare-table th { background: var(--secondary); color: white; padding: 10px; }
+        .compare-table td { background: white; padding: 10px; border: 1px solid #eee; text-align: center; }
+
+    </style>
+</head>
+<body>
+
+<div class="layout-container">
+    <!-- 左按钮 -->
+    <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">❮</button>
+
+    <div class="stage">
+        <div class="header-bar">
+            <div class="map-badge">🗺️ 计算机科学 4</div>
+            <div class="level-info" id="levelInfo">Loading...</div>
+        </div>
+
+        <div class="ppt-screen">
+            
+            <!-- Slide 1: 封面 -->
+            <div class="slide active" data-title="第 27-29 关">
+                <div style="text-align: center;">
+                    <span style="font-size: 5rem; display: block; margin-bottom: 20px; animation: float 3s ease-in-out infinite;">🗝️ 📦 📍</span>
+                    <h1 style="font-size: 3.5rem; color: var(--primary);">认识字典</h1>
+                    <h2 style="text-align:center; border:none; color: #888;">(Dictionary / Object)</h2>
+                    <p style="font-size: 1.5rem; margin-top: 30px;">
+                        我们将告别单纯的数字，<br>
+                        学会使用<strong>“带标签的资料袋”</strong>！
+                    </p>
+                    <style>@keyframes float { 0%, 100% {transform: translateY(0);} 50% {transform: translateY(-15px);} }</style>
+                </div>
+            </div>
+
+            <!-- Slide 2: 关卡 27 - 新的移动方式 -->
+            <div class="slide" data-title="#27 峭壁追逐">
+                <h1>一、新的走路方式：Move(pos)</h1>
+                <div class="two-columns">
+                    <div class="col">
+                        <div class="highlight-box">
+                            <h3 style="margin-top:0;">🗣️ 以前：MoveXY(x, y)</h3>
+                            <p>像老师大喊：<br>“走到 <strong>10, 20</strong> 这个格子！”<br>(需要两个数字)</p>
+                        </div>
+                        <div class="highlight-box" style="border-color: var(--primary);">
+                            <h3 style="margin-top:0;">🃏 现在：Move(pos)</h3>
+                            <p>像老师给你一张<strong>“地址卡”</strong>：<br>“拿着这张卡走过去。”<br>(需要一个对象/字典)</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="code-window">
+                            <div class="window-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                            <pre class="code-content">
+<span class="comment"># 旧方法 (2个参数)</span>
+<span class="obj">hero</span>.<span class="func">moveXY</span>(<span class="num">10</span>, <span class="num">20</span>)
+
+<span class="comment"># 新方法 (1个对象参数)</span>
+<span class="comment"># pender.pos 是一张“地址卡”</span>
+<span class="obj">hero</span>.<span class="func">move</span>(<span class="obj">pender</span>.<span class="prop">pos</span>)</pre>
+                        </div>
+                        <p style="text-align: center; color: #666;">move(pos) 更加高级哦！</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: 什么是字典 -->
+            <div class="slide" data-title="什么是字典？">
+                <h1>二、什么是“字典” (Dictionary)？</h1>
+                <div class="two-columns">
+                    <div class="col">
+                        <p>想象一个<strong>“有标签的抽屉柜”</strong>。</p>
+                        <ul>
+                            <li><strong>Key (键)</strong>: 抽屉上的标签 (如 "name", "hp")</li>
+                            <li><strong>Value (值)</strong>: 抽屉里的东西 (如 "Hero", 100)</li>
+                        </ul>
+                        <div class="highlight-box" style="background: #E3F2FD; border-left-color: #2196F3;">
+                            <span class="emoji-icon">🗝️</span><strong>键值对 (Key-Value Pair)</strong><br>
+                            就是“一把钥匙开一把锁”，标签和内容是绑定的。
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="code-window">
+                            <div class="window-header"><span class="dot red"></span></div>
+                            <pre class="code-content">
+<span class="obj">player</span> <span class="op">=</span> {
+    <span class="key">"name"</span>: <span class="str">"Hero"</span>,
+    <span class="key">"hp"</span>: <span class="num">100</span>,
+    <span class="key">"gold"</span>: <span class="num">20</span>
+}</pre>
+                        </div>
+                        <div style="text-align: center; margin-top: 10px;">
+                            <span style="background: #eee; padding: 5px 10px; border-radius: 5px;">{} 花括号表示字典</span>
+                            <span style="background: #eee; padding: 5px 10px; border-radius: 5px;">: 冒号连接键和值</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 4: 关卡 28 - 创造字典 -->
+            <div class="slide" data-title="#28 激流回旋">
+                <h1>三、自己造一张“地址卡”</h1>
+                <div class="two-columns">
+                    <div class="col">
+                        <p>有时候我们没有现成的 <code>pos</code>，需要自己手写一个！</p>
+                        <p>这就是<strong>字典字面量</strong> (Object Literal)。</p>
+                        <div class="highlight-box" style="border-color: #9C27B0;">
+                            <strong>翻译一下：</strong><br>
+                            “我要造一个位置对象：<br>
+                            x 是 20，y 是 35。”
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="code-window">
+                            <div class="window-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                            <pre class="code-content">
+<span class="kw">while</span> <span class="obj">hero</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">&lt;</span> <span class="num">20</span>:
+    <span class="comment"># 手写一个字典作为参数</span>
+    <span class="comment"># {'x': 20, 'y': 35}</span>
+    
+    <span class="obj">hero</span>.<span class="func">move</span>({<span class="key">'x'</span>: <span class="num">20</span>, <span class="key">'y'</span>: <span class="num">35</span>})</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5: 属性访问 -->
+            <div class="slide" data-title="访问属性">
+                <h1>四、怎么读取字典里的信息？</h1>
+                <div class="two-columns">
+                    <div class="col">
+                        <p>我们用<strong>点 (Dot Notation)</strong> 来打开抽屉。</p>
+                        <div style="font-size: 1.5rem; margin: 20px 0;">
+                            <code>hero.pos.x</code>
+                        </div>
+                        <p>这句话的意思是：</p>
+                        <ol>
+                            <li>找到 <code>hero</code> (英雄)</li>
+                            <li>拿它的 <code>pos</code> (位置抽屉柜)</li>
+                            <li>打开 <code>x</code> (横坐标抽屉) 看看里面的数字</li>
+                        </ol>
+                    </div>
+                    <div class="col" style="display:flex; justify-content:center;">
+                         <div style="background: white; padding: 30px; border-radius: 20px; border: 3px solid var(--dark); box-shadow: 10px 10px 0 rgba(0,0,0,0.1);">
+                             <h3>📍 pos 对象</h3>
+                             <div style="border: 2px solid #ddd; padding: 10px; margin: 10px; border-radius: 8px;">
+                                 <strong>x:</strong> 20
+                             </div>
+                             <div style="border: 2px solid #ddd; padding: 10px; margin: 10px; border-radius: 8px;">
+                                 <strong>y:</strong> 35
+                             </div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 6: 关卡 29 - 组合技 -->
+            <div class="slide" data-title="#29 兽人山谷挖宝">
+                <h1>五、组合技：数组 + 字典 + 函数</h1>
+                <p>这一关把之前学的“最值算法”和“字典”结合起来了！</p>
+                <div class="code-window">
+                    <div class="window-header"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                    <pre class="code-content">
+<span class="comment"># 1. 数组 + 函数：找到最近的硬币</span>
+<span class="obj">coin</span> <span class="op">=</span> <span class="obj">hero</span>.<span class="func">findNearest</span>(<span class="obj">hero</span>.<span class="func">findItems</span>())
+
+<span class="comment"># 2. 字典：使用硬币自带的“地址卡”</span>
+<span class="obj">hero</span>.<span class="func">move</span>(<span class="obj">coin</span>.<span class="prop">pos</span>)
+
+<span class="comment"># 3. 字典字面量：手动指定位置撤退</span>
+<span class="obj">hero</span>.<span class="func">move</span>({<span class="key">"x"</span>: <span class="num">15</span>, <span class="key">"y"</span>: <span class="num">38</span>})</pre>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <span style="background: #FFE66D; padding: 5px 15px; border-radius: 15px;">coin.pos 是硬币自带的</span>
+                    <span style="background: #FF6B6B; color:white; padding: 5px 15px; border-radius: 15px;">{"x":15, "y":38} 是我们手写的</span>
+                </div>
+            </div>
+
+            <!-- Slide 7: 列表 vs 字典 -->
+            <div class="slide" data-title="对比总结">
+                <h1>六、List (列表) vs Dict (字典)</h1>
+                <div class="two-columns">
+                    <div class="col">
+                        <table class="compare-table">
+                            <thead>
+                                <tr>
+                                    <th>特性</th>
+                                    <th>List / Array (列表)</th>
+                                    <th>Dict / Object (字典)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>像什么</strong></td>
+                                    <td>一排排队的同学 🚶🚶🚶</td>
+                                    <td>带标签的资料袋 🗂️</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>特点</strong></td>
+                                    <td>有顺序 (0, 1, 2...)</td>
+                                    <td>无顺序，有名字 (x, y)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>怎么查</strong></td>
+                                    <td>用编号: <code>gems[0]</code></td>
+                                    <td>用名字: <code>pos.x</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="highlight-box" style="margin-top: 30px; text-align: center;">
+                    <span class="emoji-icon">📐</span><strong>数学小知识：坐标系 (Coordinate System)</strong><br>
+                    <strong>x</strong> 是水平方向 (左右)，<strong>y</strong> 是垂直方向 (上下)。<br>
+                    <code>{"x": 20, "y": 35}</code> 就是地图上的一个点！
+                </div>
+            </div>
+
+            <!-- 底部进度条 -->
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">❯</button>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const levelInfo = document.getElementById('levelInfo');
+    const progressFill = document.getElementById('progressFill');
+
+    // 初始化
+    updateUI();
+
+    // 键盘支持
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') changeSlide(1);
+        if (e.key === 'ArrowLeft') changeSlide(-1);
+    });
+
+    function changeSlide(direction) {
+        const nextSlide = currentSlide + direction;
+        
+        if (nextSlide >= 0 && nextSlide < totalSlides) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = nextSlide;
+            slides[currentSlide].classList.add('active');
+            updateUI();
+        }
+    }
+
+    function updateUI() {
+        // 更新按钮状态
+        prevBtn.disabled = currentSlide === 0;
+        nextBtn.disabled = currentSlide === totalSlides - 1;
+
+        // 更新标题
+        const activeSlide = slides[currentSlide];
+        levelInfo.textContent = activeSlide.getAttribute('data-title');
+
+        // 更新进度条
+        const percent = ((currentSlide + 1) / totalSlides) * 100;
+        progressFill.style.width = `${percent}%`;
+
+        // 颜色动态变化
+        const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#FF9F1C'];
+        levelInfo.style.backgroundColor = colors[currentSlide % colors.length];
+        if (currentSlide % colors.length === 2) {
+            levelInfo.style.color = "#333"; // 黄色背景用深色字
+        } else {
+            levelInfo.style.color = "white";
+        }
+    }
+</script>
+
+</body>
+</html>

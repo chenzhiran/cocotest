@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：游戏开发基础与Update事件</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-update: #00ffff; /* Update 青色 */
+            --accent-control: #ff79c6; /* 逻辑红 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; 
+            --code-func: #8be9fd;    
+            --code-string: #f1fa8c;  
+            --code-num: #bd93f9;     
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-update);
+            transition: border-left-color 0.3s;
+        }
+        
+        .level-card:hover {
+            border-left-color: var(--accent-control);
+        }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            background: linear-gradient(90deg, rgba(0, 255, 255, 0.1), transparent);
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-update); }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-update);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+        .op-event { color: var(--accent-update); font-weight: bold; }
+        .op-control { color: var(--accent-control); font-weight: bold; }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-sync-alt text-cyan-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-cyan-400">游戏系统与动态更新</span></h1>
+                    <p class="text-xs text-gray-500">Update 事件与 Positional Hacks（1-11 & 47-55 综合）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-bolt text-cyan-500 mr-1"></i>game.on("update")</span>
+                <span><i class="fa-solid fa-arrows-left-right text-pink-500 mr-1"></i>unit.pos.x += N</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 1: 方形规则 (Update Event + AND/OR) -->
+        <section id="level-1" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 1 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">方形规则 (The Square Rule)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-bolt mr-2"></i>战术思路分析：每帧决策</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                我们需要实现一个“石头剪刀布”式的战斗逻辑。这次不用 `while True`，而是使用全新的 **`update` 事件**。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">Update 事件 vs While True</h4>
+                                <p class="text-xs text-gray-400">
+                                    `unit.on("update", fn)`：该函数每秒运行约 30 次（每帧），这比 `while True` 更加精确和高效。
+                                </p>
+                                <h4 class="font-bold text-white text-sm mt-3 mb-1">双重逻辑：攻击或移动</h4>
+                                <p class="text-xs text-gray-400">
+                                    `if shouldAttack(...): attack() else: move()`。单位需要不断检查是否应该攻击它的“克星”，否则就向边界移动（最终销毁，避免性能浪费）。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-sync text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Game Loop: <span class="op-event">game.on("update")</span> <br>
+                            Unit Logic: <span class="op-event">unit.on("update")</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">def </span><span class="func">shouldAttack</span>(<span class="var">who</span>, <span class="var">target</span>):</div><div class="code-annotation">定义攻击克星的函数</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="comment"># "scout"不喜欢"soldier"。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">who</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"scout"</span> <span class="op-control">and </span><span class="var">target</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"soldier"</span>:</div><div class="code-annotation">侦察兵攻击士兵</div></div>
+                        <div class="code-row"><div class="line-num">4-8</div><div class="code-content"><span class="comment"># ... 其他三组克制关系 ...</span></div><div class="code-annotation">士兵攻击投矛手，投矛手攻击弓箭手，弓箭手攻击侦察兵</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">    <span class="kwd">return </span><span class="kwd">False</span></div><div class="code-annotation">默认不攻击</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdateUnit</span>(<span class="var">event</span>):</div><div class="code-annotation">单位的每帧更新处理器</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div><div class="code-annotation">获取当前单位</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">unit</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span> <span class="op-control">and </span><span class="func">shouldAttack</span>(<span class="var">unit</span>, <span class="var">enemy</span>):</div><div class="code-annotation">如果找到克星，则攻击</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content">        <span class="var">unit</span>.<span class="func">attack</span>(<span class="var">enemy</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="kwd">else</span>:</div><div class="code-annotation">否则，向边界移动</div></div>
+                        <div class="code-row"><div class="line-num">17-21</div><div class="code-content"><span class="comment"># ... 敌对阵营向左，友方阵营向右移动 ...</span></div><div class="code-annotation">移动 unit.pos.x +/- 3</div></div>
+                        <div class="code-row"><div class="line-num">22</div><div class="code-content">    <span class="comment"># 我们不需要屏幕之外的单位，因此对它们使用destroy()。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">23</div><div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">></span> <span class="num">80</span> <span class="op-control">or </span><span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op"><</span> <span class="num">0</span>:</div><div class="code-annotation">如果单位移出地图</div></div>
+                        <div class="code-row"><div class="line-num">24</div><div class="code-content">        <span class="var">unit</span>.<span class="func">destroy</span>()</div><div class="code-annotation">销毁单位</div></div>
+                        
+                        <div class="code-row"><div class="line-num">25</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">26-29</div><div class="code-content"><span class="comment"># ... 绑定 update 事件到所有单位 ...</span></div><div class="code-annotation">设置所有单位使用 onUpdateUnit 处理器</div></div>
+                        <div class="code-row"><div class="line-num">30-33</div><div class="code-content"><span class="comment"># ... 游戏设置和 spawnRandomUnit 函数 ...</span></div><div class="code-annotation">设置计时器和随机生成函数</div></div>
+                        
+                        <div class="code-row"><div class="line-num">34</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdateGame</span>(<span class="var">event</span>):</div><div class="code-annotation">主游戏循环 (Update)</div></div>
+                        <div class="code-row"><div class="line-num">35-39</div><div class="code-content"><span class="comment"># ... 检查计时器并生成敌人 ...</span></div><div class="code-annotation">按时间间隔生成友方和敌方单位</div></div>
+                        <div class="code-row"><div class="line-num">40</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">41</div><div class="code-content"><span class="var">game</span>.<span class="func">on</span>(<span class="str">"update"</span>, <span class="var">onUpdateGame</span>)</div><div class="code-annotation">将 onUpdateGame 绑定到游戏的 "update" 事件</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 2: 大家伙 (health / maxHealth for power up) -->
+        <section id="level-2" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 2 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">大家伙 (Big Guy)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-heart-crack mr-2"></i>战术思路分析：遇强则强</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                英雄是一个巨人，当他受伤越重时（血量低于 1/3），他就会越愤怒，变得更强大！
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">Update 事件的另一个用法</h4>
+                                <p class="text-xs text-gray-400">
+                                    `player.on("update", onUpdatePlayer)`：这个事件处理器用于持续检查英雄的**内在状态**（生命值）。
+                                </p>
+                                <h4 class="font-bold text-white text-sm mt-3 mb-1">关键：状态增强</h4>
+                                <p class="text-xs text-gray-400">
+                                    判断条件：`if unit.health < unit.maxHealth / 3:`
+                                    <br>
+                                    如果满足，英雄的 `maxHealth`，`health`，`scale`，`attackDamage` 都会增加（*遇强则强*）。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-gauge text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF HP <span class="op"><</span> 1/3: <br>
+                            &nbsp;&nbsp;Scale *<span class="op-math">=</span> 1.2
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1-11</div><div class="code-content"><span class="comment"># ... 游戏设置、计时器和目标 ...</span></div><div class="code-annotation">设置初始分数和目标</div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="kwd">def </span><span class="func">onDefeat</span>(<span class="var">event</span>):</div><div class="code-annotation">食人魔被击败时，增加计数</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content">    <span class="var">game</span>.<span class="var">ogresDefeated</span> <span class="op">+=</span> <span class="num">1</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"ogre"</span>, <span class="str">"defeat"</span>, <span class="var">onDefeat</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdatePlayer</span>(<span class="var">event</span>):</div><div class="code-annotation">玩家的每帧更新逻辑</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content">    <span class="comment"># 如果玩家的生命值不到三分之一。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">health</span> <span class="op"><</span> <span class="var">unit</span>.<span class="prop">maxHealth</span> <span class="op">/</span> <span class="num">3</span>:</div><div class="code-annotation">判断：血量低于 1/3</div></div>
+                        <div class="code-row"><div class="line-num">21</div><div class="code-content">        <span class="var">unit</span>.<span class="prop">maxHealth</span> <span class="op">*=</span> <span class="num">1.2</span></div><div class="code-annotation">最大血量增加 20%</div></div>
+                        <div class="code-row"><div class="line-num">22</div><div class="code-content">        <span class="var">unit</span>.<span class="prop">health</span> <span class="op">=</span> <span class="var">unit</span>.<span class="prop">maxHealth</span></div><div class="code-annotation">当前血量补满</div></div>
+                        <div class="code-row"><div class="line-num">23</div><div class="code-content">        <span class="var">unit</span>.<span class="prop">scale</span> <span class="op">*=</span> <span class="num">1.2</span></div><div class="code-annotation">体型增大 20%</div></div>
+                        <div class="code-row"><div class="line-num">24</div><div class="code-content">        <span class="var">unit</span>.<span class="prop">attackDamage</span> <span class="op">*=</span> <span class="num">1.2</span></div><div class="code-annotation">伤害增加 20%</div></div>
+                        <div class="code-row"><div class="line-num">25</div><div class="code-content">        <span class="var">unit</span>.<span class="func">say</span>(<span class="str">"粉碎！"</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">26</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">27</div><div class="code-content"><span class="var">player</span>.<span class="func">on</span>(<span class="str">"update"</span>, <span class="var">onUpdatePlayer</span>)</div><div class="code-annotation">绑定事件</div></div>
+                        
+                        <div class="code-row"><div class="line-num">28-41</div><div class="code-content"><span class="comment"># ... checkTimers, checkGoals 等函数 ...</span></div><div class="code-annotation">负责按时间生成单位和检查目标状态</div></div>
+                        
+                        <div class="code-row"><div class="line-num">42</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdateGame</span>(<span class="var">event</span>):</div><div class="code-annotation">主游戏循环处理器</div></div>
+                        <div class="code-row"><div class="line-num">43</div><div class="code-content">    <span class="var">checkTimers</span>()</div><div class="code-annotation">检查生成计时器</div></div>
+                        <div class="code-row"><div class="line-num">44</div><div class="code-content">    <span class="var">checkGoals</span>()</div><div class="code-annotation">检查目标状态</div></div>
+                        <div class="code-row"><div class="line-num">45</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">46</div><div class="code-content"><span class="var">game</span>.<span class="func">on</span>(<span class="str">"update"</span>, <span class="var">onUpdateGame</span>)</div><div class="code-annotation">绑定主循环事件</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 3: 量子跃迁 (pos.x/y position setting) -->
+        <section id="level-3" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 3 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">量子跃迁 (Quantum Leap)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-arrows-alt-h mr-2"></i>战术思路分析：瞬移控制</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                我们不使用 `moveXY`，而是直接修改单位的 `pos.x` 和 `pos.y` 属性来实现**即时定位**，甚至可以瞬移围栏！
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">修改位置属性</h4>
+                                <p class="text-xs text-gray-400">
+                                    - **连续移动（每帧）：** `unit.pos.y += 5`
+                                    <br>
+                                    - **瞬间传送：** `unit.pos.y = 0` (当单位超出屏幕时)
+                                    <br>
+                                    - **碰撞跳跃：** `unit.pos.x += 6` (英雄碰到围栏时横向瞬移)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-truck-ramp-box text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            unit.pos.y <span class="op">=</span> 0 <br>
+                            unit.pos.x <span class="op">+=</span> 6
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1-21</div><div class="code-content"><span class="comment"># ... 游戏设置和单位生成 ...</span></div><div class="code-annotation">生成玩家、敌人和特殊的围栏</div></div>
+                        <div class="code-row"><div class="line-num">22</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdateMunchkin</span>(<span class="var">event</span>):</div><div class="code-annotation">矮人的每帧逻辑</div></div>
+                        <div class="code-row"><div class="line-num">23</div><div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">24</div><div class="code-content">    <span class="comment"># 矮人总是往上移动。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">25</div><div class="code-content">    <span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">+=</span> <span class="num">5</span></div><div class="code-annotation">向上移动 5 (连续)</div></div>
+                        <div class="code-row"><div class="line-num">26</div><div class="code-content">    <span class="comment"># 如果单位已经移动超出了地图的顶部。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">27</div><div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">></span> <span class="num">68</span>:</div><div class="code-annotation">如果移出顶部</div></div>
+                        <div class="code-row"><div class="line-num">28</div><div class="code-content">        <span class="comment"># 把它移到地图的底部。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">29</div><div class="code-content">        <span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">瞬移到底部</div></div>
+                        
+                        <div class="code-row"><div class="line-num">30</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdateScout</span>(<span class="var">event</span>):</div><div class="code-annotation">侦察兵的每帧逻辑</div></div>
+                        <div class="code-row"><div class="line-num">31-35</div><div class="code-content"><span class="comment"># ... 侦察兵向下移动并循环 ...</span></div><div class="code-annotation">向下移动，移出底部后瞬移到顶部 (pos.y = 68)</div></div>
+                        
+                        <div class="code-row"><div class="line-num">36-40</div><div class="code-content"><span class="comment"># ... 绑定 spawn 和 update 事件 ...</span></div><div class="code-annotation"></div></div>
+
+                        <div class="code-row"><div class="line-num">41</div><div class="code-content"><span class="kwd">def </span><span class="func">onCollide</span>(<span class="var">event</span>):</div><div class="code-annotation">玩家碰撞事件</div></div>
+                        <div class="code-row"><div class="line-num">42-47</div><div class="code-content"><span class="comment"># ... 玩家被敌人击败的逻辑 ...</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">48</div><div class="code-content">    <span class="kwd">if </span><span class="var">other</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"fence"</span>:</div><div class="code-annotation">如果撞到围栏</div></div>
+                        <div class="code-row"><div class="line-num">49</div><div class="code-content">        <span class="comment"># 使用unit.pos.x来改变玩家的x坐标。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">50</div><div class="code-content">        <span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">+=</span> <span class="num">6</span></div><div class="code-annotation">玩家向右瞬移 6 (跳过围栏)</div></div>
+                        <div class="code-row"><div class="line-num">51</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">52-54</div><div class="code-content"><span class="comment"># ... 绑定碰撞事件和目标 ...</span></div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 4: 循环森林 (地图折回) -->
+        <section id="level-4" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 4 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">循环森林 (The Looping Forest)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-infinity mr-2"></i>战术思路分析：地图折回</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                食人魔逃跑时可能会跑出地图。我们需要实现一个 **地图折回（Wraparound）** 机制：单位跑到一边，就从对面的另一边出现。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">四向传送逻辑</h4>
+                                <p class="text-xs text-gray-400">
+                                    对 X 和 Y 坐标都需要进行检查和重置。
+                                    <br>
+                                    - `if unit.pos.x < 10`: `unit.pos.x = 68` (左边 → 传送到右边)
+                                    <br>
+                                    - `if unit.pos.y > 58`: `unit.pos.y = 12` (顶边 → 传送到底边)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-arrows-spin text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF X < 10: X <span class="op">=</span> 68 <br>
+                            IF Y > 58: Y <span class="op">=</span> 12
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1-14</div><div class="code-content"><span class="comment"># ... 游戏设置、生成器、目标和 UI ...</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdate</span>(<span class="var">event</span>):</div><div class="code-annotation">单位更新处理器</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">    <span class="comment"># 如果单位通过左边太远。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op"><</span> <span class="num">10</span>:</div><div class="code-annotation">如果移出左边界</div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content">        <span class="comment"># 那就把它传送到右边。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content">        <span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">=</span> <span class="num">68</span></div><div class="code-annotation">传送到右侧</div></div>
+                        <div class="code-row"><div class="line-num">21</div><div class="code-content">    <span class="comment"># 如果unit.pos.x大于70：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">22</div><div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">></span> <span class="num">70</span>:</div><div class="code-annotation">如果移出右边界</div></div>
+                        <div class="code-row"><div class="line-num">23</div><div class="code-content">        <span class="comment"># 将unit.pos.x设为12：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">24</div><div class="code-content">        <span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">=</span> <span class="num">12</span></div><div class="code-annotation">传送到左侧</div></div>
+                        <div class="code-row"><div class="line-num">25</div><div class="code-content">    <span class="comment"># 如果单位的Y坐标小于10：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">26</div><div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op"><</span> <span class="num">10</span>:</div><div class="code-annotation">如果移出下边界</div></div>
+                        <div class="code-row"><div class="line-num">27</div><div class="code-content">        <span class="comment"># 将unit.pos.y设为56：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">28</div><div class="code-content">        <span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">=</span> <span class="num">56</span></div><div class="code-annotation">传送到顶部</div></div>
+                        <div class="code-row"><div class="line-num">29</div><div class="code-content">    <span class="comment"># 如果单位的Y坐标大于58：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">30</div><div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">></span> <span class="num">58</span>:</div><div class="code-annotation">如果移出上边界</div></div>
+                        <div class="code-row"><div class="line-num">31</div><div class="code-content">        <span class="comment"># 将单位的Y坐标设为12：</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">32</div><div class="code-content">        <span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">=</span> <span class="num">12</span></div><div class="code-annotation">传送到底部</div></div>
+                        <div class="code-row"><div class="line-num">33</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">34-37</div><div class="code-content"><span class="comment"># ... 绑定 update 和 defeat 事件 ...</span></div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 5: 平稳移动 (平滑帧移动) -->
+        <section id="level-5" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 5 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">平稳移动 (Smooth Moving)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-arrows-up-down-left-right mr-2"></i>战术思路分析：米每帧</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                要让物体平滑移动，需要在每帧（`update`）中只移动一个非常小的距离。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键公式：位置 + (速度 * 方向)</h4>
+                                <p class="text-xs text-gray-400">
+                                    `unit.pos.y += fenceSpeed * unit.dir`
+                                    <br>
+                                    其中 `fenceSpeed` 是一个小数（米/帧），`unit.dir` 是 `1` 或 `-1`（方向）。当物体碰到边界时，将 `unit.dir *= -1` 来实现方向反转。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-wave-square text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            pos.y <span class="op">+=</span> speed <span class="op">*</span> dir <br>
+                            IF <span class="var">Boundary</span>: dir <span class="op">*=</span> <span class="op">-</span>1
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1-21</div><div class="code-content"><span class="comment"># ... 游戏设置和围栏/喷火器生成 ...</span></div><div class="code-annotation">设置了 fenceSpeed = 0.4 和 spewerSpeed = 0.5</div></div>
+                        <div class="code-row"><div class="line-num">22</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdateSpewer</span>(<span class="var">event</span>):</div><div class="code-annotation">喷火器横向移动逻辑</div></div>
+                        <div class="code-row"><div class="line-num">23</div><div class="code-content">    <span class="var">spewer</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">24</div><div class="code-content">    <span class="var">dist</span> <span class="op">=</span> <span class="var">spewerSpeed</span> <span class="op">*</span> <span class="var">spewer</span>.<span class="prop">dir</span></div><div class="code-annotation">计算移动距离（速度 * 方向）</div></div>
+                        <div class="code-row"><div class="line-num">25</div><div class="code-content">    <span class="var">spewer</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">+=</span> <span class="var">dist</span></div><div class="code-annotation">更新 X 坐标</div></div>
+                        <div class="code-row"><div class="line-num">26</div><div class="code-content">    <span class="kwd">if </span><span class="var">spewer</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">></span> <span class="num">70</span> <span class="op-control">or </span><span class="var">spewer</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op"><</span> <span class="num">10</span>:</div><div class="code-annotation">如果超出边界</div></div>
+                        <div class="code-row"><div class="line-num">27</div><div class="code-content">        <span class="var">spewer</span>.<span class="prop">dir</span> <span class="op">*=</span> <span class="op">-</span><span class="num">1</span></div><div class="code-annotation">反转方向</div></div>
+                        <div class="code-row"><div class="line-num">28</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">29</div><div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"fire-spewer"</span>, <span class="str">"update"</span>, <span class="var">onUpdateSpewer</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">30</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">31</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdateFence</span>(<span class="var">event</span>):</div><div class="code-annotation">围栏纵向移动逻辑</div></div>
+                        <div class="code-row"><div class="line-num">32</div><div class="code-content">    <span class="var">fence</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">33</div><div class="code-content">    <span class="var">dist</span> <span class="op">=</span> <span class="var">fenceSpeed</span> <span class="op">*</span> <span class="var">fence</span>.<span class="prop">dir</span></div><div class="code-annotation">计算移动距离（速度 * 方向）</div></div>
+                        <div class="code-row"><div class="line-num">34</div><div class="code-content">    <span class="var">fence</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">+=</span> <span class="var">dist</span></div><div class="code-annotation">更新 Y 坐标</div></div>
+                        <div class="code-row"><div class="line-num">35</div><div class="code-content">    <span class="kwd">if </span><span class="var">fence</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">></span> <span class="num">56</span> <span class="op-control">or </span><span class="var">fence</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op"><</span> <span class="num">10</span>:</div><div class="code-annotation">如果超出边界</div></div>
+                        <div class="code-row"><div class="line-num">36</div><div class="code-content">        <span class="var">fence</span>.<span class="prop">dir</span> <span class="op">*=</span> <span class="op">-</span><span class="num">1</span></div><div class="code-annotation">反转方向</div></div>
+                        <div class="code-row"><div class="line-num">37</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">38</div><div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"fence"</span>, <span class="str">"update"</span>, <span class="var">onUpdateFence</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">39-44</div><div class="code-content"><span class="comment"># ... 玩家碰撞和目标设置 ...</span></div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 6: 发狂的宝石 (二维平滑移动) -->
+        <section id="level-6" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 6 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">发狂的宝石 (Crazy Gems)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-gem mr-2"></i>战术思路分析：台球运动</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                宝石会像台球一样在地图上反弹。我们需要分别管理 X 轴和 Y 轴的运动。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">X/Y 独立控制</h4>
+                                <p class="text-xs text-gray-400">
+                                    1. **计算位移：** `diffX = item.dirX * gemSpeed`
+                                    <br>
+                                    2. **更新位置：** `item.pos.x += diffX`
+                                    <br>
+                                    3. **边界反弹：** 当 X 坐标超出边界时，`item.dirX *= -1`
+                                    <br>
+                                    对 Y 轴进行完全相同的处理。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-arrows-up-down-left-right text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            X-Axis <span class="op-control">AND</span> Y-Axis <br>
+                            <i class="fa-solid fa-shuffle text-pink-400"></i> Independent Bounce
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1-13</div><div class="code-content"><span class="comment"># ... 宝石生成函数 spawnRandomGem ...</span></div><div class="code-annotation">随机生成宝石，并初始化 gem.dirX 和 gem.dirY (-1, 0, 或 1)</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="var">gemSpeed</span> <span class="op">=</span> <span class="num">0.6</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdate</span>(<span class="var">event</span>):</div><div class="code-annotation">宝石的更新逻辑</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content">    <span class="var">diffX</span> <span class="op">=</span> <span class="var">item</span>.<span class="prop">dirX</span> <span class="op">*</span> <span class="var">gemSpeed</span></div><div class="code-annotation">计算 X 轴位移</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content">    <span class="var">diffY</span> <span class="op">=</span> <span class="var">item</span>.<span class="prop">dirY</span> <span class="op">*</span> <span class="var">gemSpeed</span></div><div class="code-annotation">计算 Y 轴位移</div></div>
+                        <div class="code-row"><div class="line-num">19</div><div class="code-content">    <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">+=</span> <span class="var">diffX</span></div><div class="code-annotation">更新 X 坐标</div></div>
+                        <div class="code-row"><div class="line-num">20</div><div class="code-content">    <span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">+=</span> <span class="var">diffY</span></div><div class="code-annotation">更新 Y 坐标</div></div>
+                        <div class="code-row"><div class="line-num">21</div><div class="code-content">    <span class="comment"># X 轴边界检查</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">22</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">></span> <span class="num">70</span> <span class="op-control">or </span><span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op"><</span> <span class="num">10</span>:</div><div class="code-annotation">如果超出 X 边界</div></div>
+                        <div class="code-row"><div class="line-num">23</div><div class="code-content">        <span class="var">item</span>.<span class="prop">dirX</span> <span class="op">*=</span> <span class="op">-</span><span class="num">1</span></div><div class="code-annotation">反转 X 方向</div></div>
+                        <div class="code-row"><div class="line-num">24</div><div class="code-content">    <span class="comment"># Y 轴边界检查</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">25</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op">></span> <span class="num">58</span> <span class="op-control">or </span><span class="var">item</span>.<span class="prop">pos</span>.<span class="prop">y</span> <span class="op"><</span> <span class="num">10</span>:</div><div class="code-annotation">如果超出 Y 边界</div></div>
+                        <div class="code-row"><div class="line-num">26</div><div class="code-content">        <span class="var">item</span>.<span class="prop">dirY</span> <span class="op">*=</span> <span class="op">-</span><span class="num">1</span></div><div class="code-annotation">反转 Y 方向</div></div>
+                        <div class="code-row"><div class="line-num">27</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">28</div><div class="code-content"><span class="var">game</span>.<span class="func">setActionFor</span>(<span class="str">"gem"</span>, <span class="str">"update"</span>, <span class="var">onUpdate</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">29-32</div><div class="code-content"><span class="comment"># ... 玩家和目标设置 ...</span></div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- RUNNER SERIES START -->
+
+        <!-- LEVEL 7: 跑酷第1步：环境 (地图移动) -->
+        <section id="level-7" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 7 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">跑酷第1步：环境 (Runner Environment)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-mountain mr-2"></i>战术思路分析：制作无尽地图</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                要制作无尽跑酷游戏，玩家不动，但**整个世界都在向后移动**。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：背景折回</h4>
+                                <p class="text-xs text-gray-400">
+                                    1. **背景移动：** 每帧 `thing.pos.x -= 0.8`。
+                                    <br>
+                                    2. **背景重生：** 当森林图块移出左边界 (`pos.x < -4`) 时，将其传送到右边界 (`pos.x = 84`)，形成无缝循环。
+                                    <br>
+                                    3. **障碍物销毁：** 围栏移出边界后直接 `thing.destroy()`，等待重生。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-arrows-rotate text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            IF X < -4: X <span class="op">=</span> 84
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1-26</div><div class="code-content"><span class="comment"># ... 边界森林生成 ...</span></div><div class="code-annotation">生成顶部和底部边界（部分在屏幕外）</div></div>
+                        <div class="code-row"><div class="line-num">27</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdateStatic</span>(<span class="var">event</span>):</div><div class="code-annotation">环境对象的更新逻辑</div></div>
+                        <div class="code-row"><div class="line-num">28</div><div class="code-content">    <span class="var">thing</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">29</div><div class="code-content">    <span class="var">thing</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">-=</span> <span class="num">0.8</span></div><div class="code-annotation">每帧向左移动 0.8</div></div>
+                        <div class="code-row"><div class="line-num">30</div><div class="code-content">    <span class="kwd">if </span><span class="var">thing</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op"><</span> <span class="op">-</span><span class="num">4</span>:</div><div class="code-annotation">如果移出左边界</div></div>
+                        <div class="code-row"><div class="line-num">31</div><div class="code-content">        <span class="kwd">if </span><span class="var">thing</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"forest"</span>:</div><div class="code-annotation">如果是森林（背景）</div></div>
+                        <div class="code-row"><div class="line-num">32</div><div class="code-content">            <span class="var">thing</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">=</span> <span class="num">84</span></div><div class="code-annotation">传送到右边界</div></div>
+                        <div class="code-row"><div class="line-num">33</div><div class="code-content">        <span class="kwd">else</span>:</div><div class="code-annotation">否则（是围栏等障碍）</div></div>
+                        <div class="code-row"><div class="line-num">34</div><div class="code-content">            <span class="var">thing</span>.<span class="func">destroy</span>()</div><div class="code-annotation">销毁障碍物</div></div>
+                        <div class="code-row"><div class="line-num">35</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">36-54</div><div class="code-content"><span class="comment"># ... 障碍物生成和游戏循环设置 ...</span></div><div class="code-annotation">设置玩家位置锁定、障碍物生成和碰撞逻辑</div></div>
+                        <div class="code-row"><div class="line-num">55</div><div class="code-content"><span class="kwd">def </span><span class="func">checkPlayer</span>():</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">56</div><div class="code-content">    <span class="comment"># 玩家应该沿着X轴静止，因此我们将其X位置设为一个常数。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">57</div><div class="code-content">    <span class="var">player</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">=</span> <span class="num">20</span></div><div class="code-annotation">锁定玩家的 X 轴位置</div></div>
+                        <div class="code-row"><div class="line-num">58-64</div><div class="code-content"><span class="comment"># ... checkTimers 和 onUpdateGame ...</span></div><div class="code-annotation">主循环调用 checkPlayer 和 checkTimers</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 8: 跑酷步骤2：得分 (deltaTime scoring) -->
+        <section id="level-8" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 8 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">跑酷步骤2：得分 (Runner Scoring)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-trophy mr-2"></i>战术思路分析：动态计分</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                分数系统由两部分组成：**生存时间** 和 **收集宝石**。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：`event.deltaTime`</h4>
+                                <p class="text-xs text-gray-400">
+                                    在 `onUpdateGame(event)` 中，使用 `game.score += event.deltaTime` 可以确保分数根据游戏流逝的**实际时间**准确增加，而不是每帧固定增加。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-stopwatch text-6xl text-cyan-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Score <span class="op">+=</span> event.deltaTime <br>
+                            Gem Collect: Score <span class="op">+=</span> 5
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1-41</div><div class="code-content"><span class="comment"># ... 环境和生成函数 ...</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">42</div><div class="code-content"><span class="var">game</span>.<span class="var">score</span> <span class="op">=</span> <span class="num">0</span></div><div class="code-annotation">初始化分数</div></div>
+                        <div class="code-row"><div class="line-num">43-50</div><div class="code-content"><span class="comment"># ... UI Track 和目标设置 ...</span></div><div class="code-annotation">跟踪最高分、设置手动生存目标</div></div>
+                        <div class="code-row"><div class="line-num">51</div><div class="code-content"><span class="kwd">def </span><span class="func">onCollect</span>(<span class="var">event</span>):</div><div class="code-annotation">收集事件处理器</div></div>
+                        <div class="code-row"><div class="line-num">52</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">other</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">53</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>.<span class="prop">type</span> <span class="op">==</span> <span class="str">"gem"</span>:</div><div class="code-annotation">如果是宝石</div></div>
+                        <div class="code-row"><div class="line-num">54</div><div class="code-content">        <span class="var">game</span>.<span class="var">score</span> <span class="op">+=</span> <span class="num">5</span></div><div class="code-annotation">分数 +5</div></div>
+                        <div class="code-row"><div class="line-num">55-73</div><div class="code-content"><span class="comment"># ... 碰撞、玩家失败、检查和生成计时器等函数 ...</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">74</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdateGame</span>(<span class="var">event</span>):</div><div class="code-annotation">主游戏循环处理器</div></div>
+                        <div class="code-row"><div class="line-num">75</div><div class="code-content">    <span class="var">checkPlayer</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">76</div><div class="code-content">    <span class="var">checkSpawns</span>()</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">77</div><div class="code-content">    <span class="comment"># 得分随着游戏时间的增加而增加。event.deltaTime是自上次"update"更新发生后所经历的时间量。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">78</div><div class="code-content">    <span class="var">game</span>.<span class="var">score</span> <span class="op">+=</span> <span class="var">event</span>.<span class="prop">deltaTime</span></div><div class="code-annotation">分数随时间准确增加</div></div>
+                        <div class="code-row"><div class="line-num">79</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">80</div><div class="code-content"><span class="var">game</span>.<span class="func">on</span>(<span class="str">"update"</span>, <span class="var">onUpdateGame</span>)</div><div class="code-annotation">绑定事件</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 9: 跑酷步骤3：敌人 (敌人追逐和引诱) -->
+        <section id="level-9" class="level-card">
+            <div class="level-header">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 9 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">跑酷步骤3：敌人 (Runner Enemies)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-ghost mr-2"></i>战术思路分析：追逐与引诱</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                玩家不能停下，但敌人会追上来。玩家必须将敌人**引诱**到移动的围栏上，才能消灭它们。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：锁定位置 (`unit.baseX`)</h4>
+                                <p class="text-xs text-gray-400">
+                                    敌人追击玩家，但不能跑得太靠前。我们使用自定义属性 `unit.baseX` 来跟踪敌人应有的 X 轴位置，然后每帧让它向玩家靠近一点：
+                                    <br>
+                                    `unit.baseX += 0.1`，并确保 `unit.pos.x = unit.baseX`。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-arrows-to-circle text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Ogre.X <span class="op">+=</span> 0.1 <br>
+                            Goal X: <span class="var">Player.BaseX</span> <span class="op">-</span> 2
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1-45</div><div class="code-content"><span class="comment"># ... 环境和生成函数 (与步骤2相同) ...</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">46</div><div class="code-content"><span class="var">game</span>.<span class="var">spawnOgreTime</span> <span class="op">=</span> <span class="num">1</span></div><div class="code-annotation">新增食人魔生成计时器</div></div>
+                        <div class="code-row"><div class="line-num">47-66</div><div class="code-content"><span class="comment"># ... 游戏设置和玩家/碰撞函数 (与步骤2相同) ...</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">67</div><div class="code-content"><span class="kwd">def </span><span class="func">onDefeatOgre</span>(<span class="var">event</span>):</div><div class="code-annotation">食人魔被击败的逻辑</div></div>
+                        <div class="code-row"><div class="line-num">68</div><div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">69</div><div class="code-content">    <span class="var">game</span>.<span class="var">score</span> <span class="op">+=</span> <span class="num">10</span></div><div class="code-annotation">得分 +10</div></div>
+                        <div class="code-row"><div class="line-num">70</div><div class="code-content">    <span class="comment"># 被击败的食人魔应该向左移动，就像其他环境对象一样。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">71</div><div class="code-content">    <span class="var">unit</span>.<span class="func">on</span>(<span class="str">"update"</span>, <span class="var">onUpdateStatic</span>)</div><div class="code-annotation">让它加入背景移动序列（尸体移动）</div></div>
+
+                        <div class="code-row"><div class="line-num">72</div><div class="code-content"><span class="kwd">def </span><span class="func">onUpdateOgre</span>(<span class="var">event</span>):</div><div class="code-annotation">食人魔追逐逻辑</div></div>
+                        <div class="code-row"><div class="line-num">73</div><div class="code-content">    <span class="var">unit</span> <span class="op">=</span> <span class="var">event</span>.<span class="prop">target</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">74</div><div class="code-content">    <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">health</span> <span class="op">></span> <span class="num">0</span>:</div><div class="code-annotation">只对活着的食人魔执行</div></div>
+                        <div class="code-row"><div class="line-num">75</div><div class="code-content">        <span class="var">unit</span>.<span class="prop">baseX</span> <span class="op">+=</span> <span class="num">0.1</span></div><div class="code-annotation">每帧向右侧（玩家方向）移动 0.1</div></div>
+                        <div class="code-row"><div class="line-num">76</div><div class="code-content">        <span class="comment"># 限制食人魔不要超过玩家</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">77</div><div class="code-content">        <span class="kwd">if </span><span class="var">unit</span>.<span class="prop">baseX</span> <span class="op">></span> <span class="num">18</span>:</div><div class="code-annotation">如果跑得太靠前</div></div>
+                        <div class="code-row"><div class="line-num">78</div><div class="code-content">            <span class="var">unit</span>.<span class="prop">baseX</span> <span class="op">=</span> <span class="num">18</span></div><div class="code-annotation">锁定最大 X 坐标 (在玩家身后)</div></div>
+                        <div class="code-row"><div class="line-num">79</div><div class="code-content">        <span class="var">unit</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">=</span> <span class="var">unit</span>.<span class="prop">baseX</span></div><div class="code-annotation">更新实际 X 坐标</div></div>
+
+                        <div class="code-row"><div class="line-num">80-92</div><div class="code-content"><span class="comment"># ... spawnOgre 函数和主循环 checkSpawns ...</span></div><div class="code-annotation">设置食人魔初始 X=0，并绑定 update 事件</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 10: 跑酷步骤4：平衡 (参数常量化) -->
+        <section id="level-10" class="level-card" style="border-left-color: var(--accent-control);">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(255, 121, 198, 0.1), transparent);">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 10 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">跑酷步骤4：平衡 (Runner Balance)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-scale-balanced mr-2"></i>战术思路分析：参数调优</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                游戏功能已完成，现在进入最后的**平衡阶段**。所有影响难度的数值都被抽象为顶部的**常量**（大写字母）。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">通过常量控制难度</h4>
+                                <p class="text-xs text-gray-400">
+                                    例如：`GAME_SPEED = 0.6`，`OGRE_SPEED_INC = 0.1`。调整这些常量可以改变玩家和世界的相对速度、得分奖励和生成频率，从而找到游戏的最佳挑战点。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-sliders text-6xl text-yellow-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            <span class="prop">CONSTANTS</span> at Top <br>
+                            <i class="fa-solid fa-arrow-down text-cyan-400"></i><br>
+                            Clean Global Control
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 跑酷游戏教程的步骤4。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="comment"># 游戏参数</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="var">GAME_SPEED</span> <span class="op">=</span> <span class="num">0.6</span> <span class="comment"># ∆ 静态对象运动的速度有多快。</span></div><div class="code-annotation">游戏世界移动速度</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="var">PLAYER_SPEED</span> <span class="op">=</span> <span class="num">20</span> <span class="comment"># ∆ 玩家速度。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="var">OGRE_SPEED_INC</span> <span class="op">=</span> <span class="num">0.1</span> <span class="comment"># ∆ 食人魔接近玩家的速度有多快。</span></div><div class="code-annotation">食人魔的追击速度</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><span class="var">PLAYER_BASE_X</span> <span class="op">=</span> <span class="num">20</span> <span class="comment"># ∆ 将玩家放置到离左边多远。</span></div><div class="code-annotation">锁定玩家 X 轴位置</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><span class="var">GEM_SCORE</span> <span class="op">=</span> <span class="num">5</span> <span class="comment"># ∆ 收集一枚宝石得多少分。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="var">DEFEATED_OGRE_SCORE</span> <span class="op">=</span> <span class="num">10</span> <span class="comment"># ∆ 击败一个食人魔得多少分。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="var">WIN_TIME</span> <span class="op">=</span> <span class="num">20</span> <span class="comment"># ∆ 最小存活时间。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">FENCE_INTERVAL</span> <span class="op">=</span> <span class="num">1</span> <span class="comment"># ∆ 生成围栏之间的时间间隔。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="var">GEM_INTERVAL</span> <span class="op">=</span> <span class="num">1</span> <span class="comment"># ∆ 生成宝石之间的时间间隔。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">OGRE_INTERVAL</span> <span class="op">=</span> <span class="num">2</span> <span class="comment"># ∆ 生成食人魔之间的时间间隔。</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">13-107</div><div class="code-content"><span class="comment"># ... 所有函数和环境生成，均已替换为常量 ...</span></div><div class="code-annotation">所有数值变量已替换为顶部的常量</div></div>
+                        <div class="code-row"><div class="line-num">108</div><div class="code-content"><span class="kwd">def </span><span class="func">checkPlayer</span>():</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">109</div><div class="code-content">    <span class="kwd">if </span><span class="var">game</span>.<span class="prop">time</span> <span class="op">==</span> <span class="var">WIN_TIME</span>:</div><div class="code-annotation">使用 WIN_TIME</div></div>
+                        <div class="code-row"><div class="line-num">110</div><div class="code-content">        <span class="var">player</span>.<span class="func">say</span>(<span class="str">"获得胜利！奖励时间！"</span>)</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">111</div><div class="code-content">    <span class="var">player</span>.<span class="prop">pos</span>.<span class="prop">x</span> <span class="op">=</span> <span class="var">PLAYER_BASE_X</span></div><div class="code-annotation">使用 PLAYER_BASE_X</div></div>
+                        <div class="code-row"><div class="line-num">112-127</div><div class="code-content"><span class="comment"># ... 其他函数和主循环 ...</span></div><div class="code-annotation">所有计时器和分数逻辑均使用顶部常量</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 11: 游戏开发3最终的项目 (最终自由创作) -->
+        <section id="level-11" class="level-card" style="border-left-color: var(--accent-control);">
+            <div class="level-header" style="background: linear-gradient(90deg, rgba(255, 121, 198, 0.1), transparent);">
+                <div>
+                    <span class="bg-pink-900 text-pink-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 11 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">游戏开发3最终的项目 (Final Project)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-pink-400 mb-3"><i class="fa-solid fa-code-merge mr-2"></i>项目分析：整合与创意</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这是你自己的舞台！学生应运用所有学过的概念（函数、事件、`and`/`or`/`not`、`break`/`continue`、`pos.x`修改、状态检查）来创建一个独特的游戏体验。
+                            </p>
+                            <ul class="list-disc list-inside text-gray-300 space-y-2">
+                                <li>**挑战：** 创造一个独特的目标或机制（例如：一个只有在夜晚才出现的 Boss，一个只有用特定顺序才能收集的物品）。</li>
+                                <li>**目标：** 代码的清晰度和创造力是评估的重点。</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-lightbulb text-6xl text-yellow-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            GO BUILD YOUR GAME!
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-pink-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="comment"># 这一关是自由创作。学生应该在这里写下自己的独特游戏代码。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="comment"># 鼓励学生使用所有的编程技巧。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="comment"># 示例代码 (通常留白供学生填写):</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="comment"># ... 创造性的代码示例 ...</span></div><div class="code-annotation"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Game Development Mastery.</p>
+    </footer>
+
+</body>
+</html>

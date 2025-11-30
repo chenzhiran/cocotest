@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCombat攻略：字符串与数学运算</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 保持一致的暗色调和代码风格 */
+        :root {
+            --bg-dark: #1e1e1e;
+            --card-bg: #2d2d2d;
+            --code-bg: #1a1b26;
+            --accent-string: #f1fa8c; /* 字符串黄 */
+            --accent-math: #8be9fd; /* 数学蓝 */
+            --text-main: #e2e8f0;
+            --text-muted: #a0aec0;
+            
+            /* Python 代码高亮配色 */
+            --code-keyword: #ff79c6; /* def, while, if */
+            --code-func: #8be9fd;    /* findNearestFriend, say */
+            --code-string: #f1fa8c;  /* "去战斗, " */
+            --code-num: #bd93f9;     /* 10 */
+            --code-comment: #6272a4;
+            --code-prop: #ffb86c;    /* friend.id */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .font-code { font-family: 'Fira Code', monospace; }
+
+        /* 关卡卡片 */
+        .level-card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 3rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border-left: 4px solid var(--accent-string);
+            transition: border-left-color 0.3s;
+        }
+
+        /* 字符串运算强调黄色 */
+        .string-accent { border-left-color: var(--accent-string); }
+        /* 数学运算强调蓝色 */
+        .math-accent { border-left-color: var(--accent-math); }
+
+        .level-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+        }
+
+        /* 故事板 */
+        .story-board {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed #555;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        /* 代码编辑器 UI (保持一致) */
+        .code-container {
+            background-color: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-row { display: flex; min-height: 24px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.05); }
+
+        .line-num {
+            width: 45px;
+            text-align: right;
+            padding-right: 12px;
+            color: #555;
+            background-color: #15161e;
+            border-right: 1px solid #333;
+            font-size: 0.85rem;
+            padding-top: 2px;
+            user-select: none;
+        }
+
+        .code-content {
+            flex: 1;
+            padding-left: 12px;
+            padding-top: 2px;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-annotation {
+            width: 38%;
+            padding-left: 15px;
+            border-left: 1px dashed #444;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0,0,0,0.1);
+        }
+        .code-annotation i { color: var(--accent-math); }
+
+        @media (max-width: 768px) {
+            .code-row { flex-direction: column; }
+            .code-annotation {
+                width: 100%;
+                border-left: none;
+                padding-left: 57px; 
+                padding-bottom: 4px;
+                color: var(--accent-string);
+            }
+            .line-num { height: auto; position: absolute; }
+        }
+
+        /* 语法高亮类 */
+        .kwd { color: var(--code-keyword); }
+        .func { color: var(--code-func); }
+        .str { color: var(--code-string); }
+        .num { color: var(--code-num); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .op { color: #ff79c6; }
+        .prop { color: var(--code-prop); }
+        .var { color: var(--code-var); }
+
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 顶部导航 -->
+    <header class="bg-black/90 backdrop-blur sticky top-0 z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-code text-yellow-500 text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">CodeCombat <span class="text-cyan-400">字符串与数学运算</span></h1>
+                    <p class="text-xs text-gray-500">基础数据处理系列（1-8关）</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs font-code text-gray-400">
+                <span class="mr-4"><i class="fa-solid fa-plus text-yellow-500 mr-1"></i>String Concatenation</span>
+                <span><i class="fa-solid fa-calculator text-cyan-500 mr-1"></i>Arithmetic Operations</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-10">
+
+        <!-- LEVEL 1: 友和敌 (字符串连接) -->
+        <section id="level-1" class="level-card string-accent">
+            <div class="level-header bg-gradient-to-r from-yellow-900/20 to-transparent">
+                <div>
+                    <span class="bg-yellow-900 text-yellow-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 1 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">友和敌 (Friend or Foe)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-yellow-400 mb-3"><i class="fa-solid fa-lightbulb mr-2"></i>战术思路分析：命令拼接</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                在这场小冲突中，你的英雄就像一位**通信兵**。你不能只喊“战斗！”，也不能只喊“农民ID-123！”，你需要把完整的命令**连接**起来发送出去。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键技能：字符串连接（String Concatenation）</h4>
+                                <p class="text-xs text-gray-400">
+                                    就像搭积木一样，我们使用 **`+`** 符号将不同的文字块（字符串）和单位的身份信息（`friend.id`）拼接起来，形成一个完整的、可执行的命令。
+                                    <br>
+                                    <code class="font-code text-yellow-300">"去战斗, " <span class="text-white">+</span> friend.id <span class="text-white">+</span> "!"</code>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-link text-6xl text-yellow-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            "Go" + " " + ID + "!"<br>
+                            <i class="fa-solid fa-arrow-down"></i><br>
+                            "Go ID-42!"
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-yellow-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation">主循环，持续寻找目标</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">friend</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>()</div><div class="code-annotation">寻找最近的农民朋友</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">friend</span>:</div><div class="code-annotation">如果找到了朋友</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"去战斗, "</span> <span class="op">+</span> <span class="var">friend</span>.<span class="prop">id</span> <span class="op">+</span> <span class="str">"!"</span>)</div><div class="code-annotation">说出 "去战斗, " 连接朋友的 ID 和 "!"</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找最近的差役敌人</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果找到了敌人</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"快滚开, "</span> <span class="op">+</span> <span class="var">enemy</span>.<span class="prop">id</span>)</div><div class="code-annotation">说出 "快滚开, " 连接敌人的 ID</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 2: 似曾相识的味道 (字符串+数字连接) -->
+        <section id="level-2" class="level-card string-accent">
+            <div class="level-header bg-gradient-to-r from-yellow-900/20 to-transparent">
+                <div>
+                    <span class="bg-yellow-900 text-yellow-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 2 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">似曾相识的味道 (Déjà Vu)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-yellow-400 mb-3"><i class="fa-solid fa-music mr-2"></i>战术思路分析：用数字唱歌</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                你要和朋友们一起唱一首关于药水的歌谣。歌词里不断变化的数字（药水数量）必须和固定的歌词（字符串）连接在一起。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-purple-500">
+                                <h4 class="font-bold text-white text-sm mb-1">难点突破：字符串 + 数字</h4>
+                                <p class="text-xs text-gray-400">
+                                    Python 非常智能，可以直接使用 `+` 符号将数字（如 `10`）和字符串（如 `"药水"`）连接起来。计算机会自动将数字变成文字，然后拼接。
+                                </p>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500 mt-3">
+                                <h4 class="font-bold text-white text-sm mb-1">秘诀：更新变量</h4>
+                                <p class="text-xs text-gray-400">
+                                    每次唱完“拿走一个”后，别忘了用 `potionsOnTheWall -= numToTakeDown` 来更新剩余药水的数量，这样下一句歌词才是正确的！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-flask text-6xl text-purple-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            10 + " potions..." <br>
+                            ↓ <br>
+                            9 + " potions..."
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-yellow-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">potionsOnTheWall</span> <span class="op">=</span> <span class="num">10</span></div><div class="code-annotation">墙上的药水数量</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">numToTakeDown</span> <span class="op">=</span> <span class="num">1</span></div><div class="code-annotation">每次拿走的数量</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">    <span class="var">hero</span>.<span class="func">say</span>(<span class="var">potionsOnTheWall</span> <span class="op">+</span> <span class="str">" potions of health on the wall!"</span>)</div><div class="code-annotation">第1句歌词：数字 + 字符串</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">hero</span>.<span class="func">say</span>(<span class="var">potionsOnTheWall</span> <span class="op">+</span> <span class="str">" potions of health!"</span>)</div><div class="code-annotation">第2句歌词</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"Take "</span> <span class="op">+</span> <span class="var">numToTakeDown</span> <span class="op">+</span> <span class="str">" down, pass it around!"</span>)</div><div class="code-annotation">第3句歌词</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="var">potionsOnTheWall</span> <span class="op">-=</span> <span class="var">numToTakeDown</span></div><div class="code-annotation">药水数量减一</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">    <span class="var">hero</span>.<span class="func">say</span>(<span class="var">potionsOnTheWall</span> <span class="op">+</span> <span class="str">" potions of health on the wall."</span>)</div><div class="code-annotation">第4句歌词（数字已更新）</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 3: 罪与罚 (位置连接) -->
+        <section id="level-3" class="level-card string-accent">
+            <div class="level-header bg-gradient-to-r from-yellow-900/20 to-transparent">
+                <div>
+                    <span class="bg-yellow-900 text-yellow-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 3 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">罪与罚 (Crime and Punishment)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-yellow-400 mb-3"><i class="fa-solid fa-bullseye mr-2"></i>战术思路分析：火炮定位</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                火炮手只听懂一种语言：**坐标字符串**！
+                                你必须把目标的 X 坐标、一个空格、和 Y 坐标连接起来，组成一个形如 `"45 30"` 的字符串，火炮才能发射。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-purple-500">
+                                <h4 class="font-bold text-white text-sm mb-1">三段式拼接</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们使用 **`+`** 符号将三个部分连接起来：
+                                    <br>
+                                    1. 目标的 X 坐标 (`enemy.pos.x`)
+                                    <br>
+                                    2. 固定的空格字符串 (`" "`)
+                                    <br>
+                                    3. 目标的 Y 坐标 (`enemy.pos.y`)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-crosshairs text-6xl text-red-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            X <span class="text-white">+</span> " " <span class="text-white">+</span> Y <br>
+                            <i class="fa-solid fa-arrow-down"></i><br>
+                            "30 45"
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-yellow-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找最近的敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="var">enemyPos</span> <span class="op">=</span> <span class="var">enemy</span>.<span class="prop">pos.x</span> <span class="op">+</span> <span class="str">" "</span> <span class="op">+</span> <span class="var">enemy</span>.<span class="prop">pos.y</span></div><div class="code-annotation">将 X, 空格, Y 连接起来，存入变量</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"敌人的位置在： "</span> <span class="op">+</span> <span class="var">enemyPos</span>)</div><div class="code-annotation">说出完整的坐标命令（火炮目标）</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="var">item</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestItem</span>()</div><div class="code-annotation">寻找最近的宝石</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">    <span class="kwd">if </span><span class="var">item</span>:</div><div class="code-annotation">如果宝石存在</div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content">        <span class="var">itemPos</span> <span class="op">=</span> <span class="var">item</span>.<span class="prop">pos.x</span> <span class="op">+</span> <span class="str">" "</span> <span class="op">+</span> <span class="var">item</span>.<span class="prop">pos.y</span></div><div class="code-annotation">将宝石的 X, 空格, Y 连接起来</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"Item at "</span> <span class="op">+</span> <span class="var">itemPos</span>)</div><div class="code-annotation">说出宝石坐标，命令火炮攻击并收集宝石</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 4: 空中救援行动 (字符串连接复习) -->
+        <section id="level-4" class="level-card string-accent">
+            <div class="level-header bg-gradient-to-r from-yellow-900/20 to-transparent">
+                <div>
+                    <span class="bg-yellow-900 text-yellow-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 4 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 空中救援行动 (Air Rescue)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-yellow-400 mb-3"><i class="fa-solid fa-helicopter mr-2"></i>战术思路分析：复习与应用</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                救援队只接收两种指令：`"Friend "` + 朋友ID (疏散) 或 `"Enemy "` + 敌人ID (消灭)。
+                                这是一次字符串连接的快速实战测验！你需要熟练地将命令关键词和目标的身份信息连接起来。
+                            </p>
+                            <ul class="list-disc list-inside text-gray-300 space-y-2">
+                                <li>**救援命令：** `"Friend " + friend.id`</li>
+                                <li>**攻击命令：** `"Enemy " + enemy.id`</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-helicopter text-6xl text-cyan-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Say("Friend " + ID)<br>
+                            Say("Enemy " + ID)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-yellow-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="kwd">while </span><span class="kwd">True</span>:</div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content">    <span class="var">enemy</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestEnemy</span>()</div><div class="code-annotation">寻找敌人</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content">    <span class="kwd">if </span><span class="var">enemy</span>:</div><div class="code-annotation">如果敌人存在</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"Enemy "</span> <span class="op">+</span> <span class="var">enemy</span>.<span class="prop">id</span>)</div><div class="code-annotation">发出消灭命令</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content">    <span class="var">friend</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>()</div><div class="code-annotation">寻找朋友</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content">    <span class="kwd">if </span><span class="var">friend</span>:</div><div class="code-annotation">如果朋友存在</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content">        <span class="var">hero</span>.<span class="func">say</span>(<span class="str">"Friend "</span> <span class="op">+</span> <span class="var">friend</span>.<span class="prop">id</span>)</div><div class="code-annotation">发出救援命令</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 5: 巫师之门 (基础数学运算) -->
+        <section id="level-5" class="level-card math-accent" style="border-left-color: var(--accent-math);">
+            <div class="level-header bg-gradient-to-r from-cyan-900/20 to-transparent">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 5 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">巫师之门 (Wizard's Gate)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-calculator mr-2"></i>战术思路分析：魔法公式</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                巫师们用神秘的数字锁住了大门。你需要用**数学公式**来解密！每个巫师的数字都依赖于前一个巫师的数字。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">编程数学符号</h4>
+                                <ul class="list-disc list-inside text-xs text-gray-400 ml-4 space-y-1">
+                                    <li>加法：`+`</li>
+                                    <li>减法：`-`</li>
+                                    <li>乘法：`*` (不是 x)</li>
+                                    <li>除法：`/`</li>
+                                    <li>求余：`%` (取余数，例如 `10 % 3` 结果是 1)</li>
+                                </ul>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-purple-500 mt-3">
+                                <h4 class="font-bold text-white text-sm mb-1">变量接力棒</h4>
+                                <p class="text-xs text-gray-400">
+                                    你需要用变量（如 `las`, `erz`, `sim`）存储每个巫师的秘密数字，然后用这些变量来计算下一个巫师的数字，就像接力跑一样！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-person-chalkboard text-6xl text-purple-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            A = 10 <br>
+                            B = A <span class="text-white">*</span> 3 <br>
+                            C = B <span class="text-white">+</span> A
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">30</span>, <span class="num">13</span>)</div><div class="code-annotation">移动到第一个巫师 'Laszlo'</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">las</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>().<span class="func">getSecret</span>()</div><div class="code-annotation">获取 Laszlo 的神秘数字并存储在变量 las 中</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="var">erz</span> <span class="op">=</span> <span class="var">las</span> <span class="op">+</span> <span class="num">7</span></div><div class="code-annotation">用 Laszlo 的数字 **加 7** 得到 Erzsebet 的数字</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">17</span>, <span class="num">26</span>)</div><div class="code-annotation">移动到 Erzsebet</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">erz</span>)</div><div class="code-annotation">说出计算出的数字</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="var">sim</span> <span class="op">=</span> <span class="var">erz</span> <span class="op">/</span> <span class="num">4</span></div><div class="code-annotation">用 Erzsebet 的数字 **除以 4** 得到 Simonyi 的数字</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">30</span>, <span class="num">39</span>)</div><div class="code-annotation">移动到 Simonyi</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">sim</span>)</div><div class="code-annotation">说出计算出的数字</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">aga</span> <span class="op">=</span> <span class="var">sim</span> <span class="op">*</span> <span class="var">las</span></div><div class="code-annotation">用 Simonyi 的数字 **乘以** Laszlo 的数字得到 Agata 的数字</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">43</span>, <span class="num">26</span>)</div><div class="code-annotation">移动到 Agata</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">aga</span>)</div><div class="code-annotation">说出计算出的数字</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 6: 巫师出没 (数学运算复习) -->
+        <section id="level-6" class="level-card math-accent" style="border-left-color: var(--accent-math);">
+            <div class="level-header bg-gradient-to-r from-cyan-900/20 to-transparent">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 6 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">巫师出没 (Wizards Haunt)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-puzzle-piece mr-2"></i>战术思路分析：数字接龙</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                你来到了巫师的密室，这里的数字谜题依然是**接力赛**。这次的重点是**除法**：你必须确保每次计算都基于前一个巫师提供的数字。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500">
+                                <h4 class="font-bold text-white text-sm mb-1">关键：除法 `/`</h4>
+                                <p class="text-xs text-gray-400">
+                                    注意，在编程中，除法 (`/`) 结果可能是小数。但在 CodeCombat 中，只要公式正确，系统就会接受你计算出的结果。
+                                    <br>
+                                    例如：`10 / 4` 结果是 `2.5`。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-divide text-6xl text-cyan-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            Step 1: ZSO = 100 <br>
+                            Step 2: MIH = ZSO / 4 <br>
+                            Step 3: BEA = MIH / 5 <br>
+                            Step 4: SAN = MIH - BEA
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">18</span>, <span class="num">20</span>)</div><div class="code-annotation">移动到 Zsofia</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">zso</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>().<span class="func">getSecret</span>()</div><div class="code-annotation">获取并存储 Zsofia 的秘密数字</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="var">mih</span> <span class="op">=</span> <span class="var">zso</span> <span class="op">/</span> <span class="num">4</span></div><div class="code-annotation">Zsofia 的数字 **除以 4** 得到 Mihaly 的数字</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">30</span>, <span class="num">15</span>)</div><div class="code-annotation">移动到 Mihaly</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">mih</span>)</div><div class="code-annotation">说出计算结果</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="var">bea</span> <span class="op">=</span> <span class="var">mih</span> <span class="op">/</span> <span class="num">5</span></div><div class="code-annotation">Mihaly 的数字 **除以 5** 得到 Beata 的数字</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">42</span>, <span class="num">20</span>)</div><div class="code-annotation">移动到 Beata</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">bea</span>)</div><div class="code-annotation">说出计算结果</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">san</span> <span class="op">=</span> <span class="var">mih</span> <span class="op">-</span> <span class="var">bea</span></div><div class="code-annotation">Mihaly 的数字 **减去** Beata 的数字得到 Sandor 的数字</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">38</span>, <span class="num">37</span>)</div><div class="code-annotation">移动到 Sandor</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">san</span>)</div><div class="code-annotation">说出计算结果</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 7: 巫师天际层 (运算顺序和括号) -->
+        <section id="level-7" class="level-card math-accent" style="border-left-color: var(--accent-math);">
+            <div class="level-header bg-gradient-to-r from-cyan-900/20 to-transparent">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 7 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">巫师天际层 (Wizard Sky-layer)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-brackets-curly mr-2"></i>战术思路分析：括号的力量</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                这里的巫师法术非常复杂！如果运算顺序错了，数字就会错，大门就不会打开。
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">运算优先级</h4>
+                                <p class="text-xs text-gray-400">
+                                    默认规则是：**乘、除**优先于**加、减**。
+                                    <br>
+                                    例如：`5 + 2 * 3` 结果是 `11` (先算 `2*3=6`)。
+                                </p>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500 mt-3">
+                                <h4 class="font-bold text-white text-sm mb-1">控制顺序：括号 `()`</h4>
+                                <p class="text-xs text-gray-400">
+                                    我们使用 **括号 `()`** 来强制计算机先进行括号内的运算。
+                                    <br>
+                                    例如：`(5 + 2) * 3` 结果是 `21` (先算 `5+2=7`)。这是解开本关卡的关键！
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-code-branch text-6xl text-pink-400 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            (A + B) * (C - D) <br>
+                            <i class="fa-solid fa-arrow-down"></i><br>
+                            保证先算加减，再算乘法
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">16</span>, <span class="num">32</span>)</div><div class="code-annotation">移动到 Eszter</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">esz</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>().<span class="func">getSecret</span>()</div><div class="code-annotation">获取 Eszter 的神秘数字</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="var">tam</span> <span class="op">=</span> (<span class="var">esz</span> <span class="op">*</span> <span class="num">3</span>) <span class="op">-</span> <span class="num">2</span></div><div class="code-annotation">**(乘以3，减去2)**，括号保证先乘法</div></div>
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">24</span>, <span class="num">28</span>)</div><div class="code-annotation">移动到 Tamas</div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">tam</span>)</div><div class="code-annotation">说出 Tamas 的数字</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="var">zso</span> <span class="op">=</span> (<span class="var">tam</span> <span class="op">-</span> <span class="num">1</span>) <span class="op">*</span> <span class="num">4</span></div><div class="code-annotation">**(减去1然后乘4)**，括号保证先减法</div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">32</span>, <span class="num">24</span>)</div><div class="code-annotation">移动到 Zsofi</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">zso</span>)</div><div class="code-annotation">说出 Zsofi 的数字</div></div>
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">ist</span> <span class="op">=</span> (<span class="var">tam</span> <span class="op">+</span> <span class="var">zso</span>) <span class="op">/</span> <span class="num">2</span></div><div class="code-annotation">**(相加，然后除以2)**，括号保证先加法</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">40</span>, <span class="num">20</span>)</div><div class="code-annotation">移动到 Istvan</div></div>
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">ist</span>)</div><div class="code-annotation">说出 Istvan 的数字</div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content"><span class="var">csi</span> <span class="op">=</span> (<span class="var">tam</span> <span class="op">+</span> <span class="var">zso</span>) <span class="op">*</span> (<span class="var">zso</span> <span class="op">-</span> <span class="var">ist</span>)</div><div class="code-annotation">**(相加) 乘以 (Zsofi 减 Istvan)**，两个括号是关键</div></div>
+                        <div class="code-row"><div class="line-num">17</div><div class="code-content"><span class="var">hero</span>.<span class="func">moveXY</span>(<span class="num">48</span>, <span class="num">16</span>)</div><div class="code-annotation">移动到 Csilla</div></div>
+                        <div class="code-row"><div class="line-num">18</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">csi</span>)</div><div class="code-annotation">说出 Csilla 的数字</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 8: 概念挑战. 真炼金术 (数学应用) -->
+        <section id="level-8" class="level-card math-accent" style="border-left-color: var(--accent-math);">
+            <div class="level-header bg-gradient-to-r from-cyan-900/20 to-transparent">
+                <div>
+                    <span class="bg-cyan-900 text-cyan-200 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">第 8 关</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">概念挑战. 真炼金术 (True Alchemy)</h2>
+                </div>
+            </div>
+            <div class="p-6 md:p-8">
+                <!-- 思路分析 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-bold text-cyan-400 mb-3"><i class="fa-solid fa-flask mr-2"></i>战术思路分析：步步为营</h3>
+                        <div class="story-board">
+                            <p class="text-gray-300 mb-4 leading-relaxed">
+                                炼金术师需要你帮忙计算魔法药水配方。这个挑战的关键在于：**每一步的计算结果都要说出来，并且作为下一步计算的输入。**
+                            </p>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-white text-sm mb-1">变量复用</h4>
+                                <p class="text-xs text-gray-400">
+                                    你不能只写一个总公式。你需要将每一步的结果存入一个新变量 (`sum`, `sub`, `div`, `mult`)，然后用 `hero.say()` 将其结果输出。
+                                </p>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded border-l-4 border-cyan-500 mt-3">
+                                <h4 class="font-bold text-white text-sm mb-1">公式接力</h4>
+                                <p class="text-xs text-gray-400">
+                                    步骤 2 必须使用步骤 1 的结果（`sum`），步骤 3 必须使用步骤 2 的结果（`sub`），以此类推。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 视觉图示 -->
+                    <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <i class="fa-solid fa-arrow-down-long text-6xl text-green-500 mb-4"></i>
+                        <p class="text-xs text-gray-400 mt-2 font-code">
+                            R1 = Gold + Silver <br>
+                            Say(R1) <br>
+                            R2 = R1 - Bronze <br>
+                            Say(R2)
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 代码解法区 -->
+                <h3 class="text-lg font-bold text-cyan-400 mb-4"><i class="fa-solid fa-code mr-2"></i>Python 程序解法</h3>
+                <div class="code-container font-code text-sm">
+                    <div class="code-body">
+                        <div class="code-row"><div class="line-num">1</div><div class="code-content"><span class="var">wizard</span> <span class="op">=</span> <span class="var">hero</span>.<span class="func">findNearestFriend</span>()</div><div class="code-annotation">找到巫师朋友</div></div>
+                        <div class="code-row"><div class="line-num">2</div><div class="code-content"><span class="var">goldCoins</span> <span class="op">=</span> <span class="var">wizard</span>.<span class="prop">goldCoins</span></div><div class="code-annotation">获取金币数量</div></div>
+                        <div class="code-row"><div class="line-num">3</div><div class="code-content"><span class="var">silverCoins</span> <span class="op">=</span> <span class="var">wizard</span>.<span class="prop">silverCoins</span></div><div class="code-annotation">获取银币数量</div></div>
+                        <div class="code-row"><div class="line-num">4</div><div class="code-content"><span class="var">bronzeCoins</span> <span class="op">=</span> <span class="var">wizard</span>.<span class="prop">bronzeCoins</span></div><div class="code-annotation">获取铜币数量</div></div>
+                        
+                        <div class="code-row"><div class="line-num">5</div><div class="code-content"><span class="comment"># 步骤 1: 将金币和银币的数目相加，然后说出结果。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">6</div><div class="code-content"><span class="var">sum</span> <span class="op">=</span> <span class="var">goldCoins</span> <span class="op">+</span> <span class="var">silverCoins</span></div><div class="code-annotation">执行加法运算</div></div>
+                        <div class="code-row"><div class="line-num">7</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">sum</span>)</div><div class="code-annotation">说出第一个结果</div></div>
+                        
+                        <div class="code-row"><div class="line-num">8</div><div class="code-content"><span class="comment"># 步骤 2: 用前一个结果减去铜币的数量，然后说出新的结果。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">9</div><div class="code-content"><span class="var">sub</span> <span class="op">=</span> <span class="var">sum</span> <span class="op">-</span> <span class="var">bronzeCoins</span></div><div class="code-annotation">使用 sum 减去铜币数量</div></div>
+                        <div class="code-row"><div class="line-num">10</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">sub</span>)</div><div class="code-annotation">说出第二个结果</div></div>
+                        
+                        <div class="code-row"><div class="line-num">11</div><div class="code-content"><span class="comment"># 步骤 3: 将前一个结果除以3，然后说出新的结果。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">12</div><div class="code-content"><span class="var">div</span> <span class="op">=</span> <span class="var">sub</span> <span class="op">/</span> <span class="num">3</span></div><div class="code-annotation">使用 sub 除以 3</div></div>
+                        <div class="code-row"><div class="line-num">13</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">div</span>)</div><div class="code-annotation">说出第三个结果</div></div>
+                        
+                        <div class="code-row"><div class="line-num">14</div><div class="code-content"><span class="comment"># 步骤 4: 将前一个结果乘以2，然后说出新的结果。</span></div><div class="code-annotation"></div></div>
+                        <div class="code-row"><div class="line-num">15</div><div class="code-content"><span class="var">mult</span> <span class="op">=</span> <span class="var">div</span> <span class="op">*</span> <span class="num">2</span></div><div class="code-annotation">使用 div 乘以 2</div></div>
+                        <div class="code-row"><div class="line-num">16</div><div class="code-content"><span class="var">hero</span>.<span class="func">say</span>(<span class="var">mult</span>)</div><div class="code-annotation">说出最终结果</div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center text-gray-600 text-sm mt-10 pb-10">
+        <p>© 2023 CodeCombat Teaching Department. Math and Strings Mastery.</p>
+    </footer>
+
+</body>
+</html>

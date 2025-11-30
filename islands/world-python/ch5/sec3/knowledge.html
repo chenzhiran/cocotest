@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第14-18关 类型属性与相等运算符</title>
+    <style>
+        /* --- 1. 基础设置 --- */
+        :root {
+            --bg-castle: #2d3436;      /* 城堡深灰 */
+            --stone-light: #636e72;    /* 石头浅灰 */
+            --magic-gold: #ffeaa7;     /* 魔法金 */
+            --magic-purple: #a29bfe;   /* 魔法紫 */
+            --alert-red: #ff7675;      /* 警示红 */
+            --safe-green: #55efc4;     /* 安全绿 */
+            --text-main: #2d3436;
+            
+            /* 代码高亮 */
+            --code-bg: #1e272e;
+            --code-fg: #d2dae2;
+            --tok-kw: #ff7675;         /* 关键字 if/else */
+            --tok-func: #74b9ff;       /* 函数 */
+            --tok-prop: #ffeaa7;       /* 属性 .type */
+            --tok-str: #55efc4;        /* 字符串 */
+            --tok-op: #a29bfe;         /* 运算符 == */
+            --tok-cm: #b2bec3;         /* 注释 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
+            background-color: var(--bg-castle);
+            /* 砖块背景 */
+            background-image: 
+                linear-gradient(335deg, rgba(0,0,0,0.2) 23px, transparent 23px),
+                linear-gradient(155deg, rgba(0,0,0,0.2) 23px, transparent 23px),
+                linear-gradient(335deg, rgba(0,0,0,0.2) 23px, transparent 23px),
+                linear-gradient(155deg, rgba(0,0,0,0.2) 23px, transparent 23px);
+            background-size: 58px 58px;
+            background-position: 0px 2px, 4px 35px, 29px 31px, 34px 6px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            color: var(--text-main);
+        }
+
+        /* 漂浮的魔法符文 */
+        .rune {
+            position: absolute;
+            font-size: 24px;
+            color: rgba(255, 234, 167, 0.2);
+            animation: floatUp 8s infinite linear;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* --- 2. 舞台布局 --- */
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+            width: 98vw;
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- 3. 魔法按钮 (外部) --- */
+        .nav-btn {
+            width: 90px;
+            height: 90px;
+            background: #333;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
+        }
+
+        /* 左按钮：魔法钥匙 */
+        .btn-prev {
+            background: radial-gradient(circle, #fdcb6e, #e17055);
+            border-radius: 50% 50% 5px 5px; /* 钥匙头形状 */
+            clip-path: polygon(20% 0%, 80% 0%, 100% 20%, 100% 100%, 0% 100%, 0% 20%);
+        }
+        .btn-prev::after { content: '🔑'; filter: drop-shadow(1px 1px 0 #333); }
+
+        /* 右按钮：通关令牌 */
+        .btn-next {
+            background: radial-gradient(circle, #74b9ff, #0984e3);
+            border-radius: 50%;
+            border: 4px solid #fff;
+        }
+        .btn-next::after { content: '🛡️'; filter: drop-shadow(1px 1px 0 #333); }
+
+        .nav-btn:hover { transform: scale(1.1); filter: brightness(1.2); }
+        .nav-btn:active { transform: scale(0.95); }
+        
+        .disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
+
+        /* --- 4. 城堡终端容器 --- */
+        .castle-container {
+            width: 960px;
+            height: 620px;
+            background: #dfe6e9;
+            border-radius: 20px;
+            /* 石头边框效果 */
+            border: 15px solid #636e72;
+            box-shadow: 
+                inset 0 0 50px rgba(0,0,0,0.2),
+                0 0 0 5px #2d3436,
+                0 30px 60px rgba(0,0,0,0.7);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部城墙装饰 */
+        .battlement {
+            position: absolute; top: -15px; left: 20px; right: 20px; height: 20px;
+            background-image: linear-gradient(to right, #636e72 50%, transparent 50%);
+            background-size: 40px 100%;
+            z-index: 20;
+        }
+        
+        /* 顶部信息栏 */
+        .info-bar {
+            height: 60px;
+            background: #2d3436;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            color: var(--magic-gold);
+            font-family: 'Courier New', monospace;
+            font-size: 20px;
+            font-weight: bold;
+            border-bottom: 4px solid #636e72;
+            z-index: 15;
+        }
+        .map-tag {
+            background: var(--magic-purple); color: #2d3436; padding: 4px 12px; border-radius: 5px;
+        }
+
+        /* 幻灯片 */
+        .slide {
+            display: none;
+            flex: 1;
+            padding: 40px 60px;
+            flex-direction: column;
+            animation: gateOpen 0.6s ease-out;
+            overflow-y: auto;
+            background-color: #f5f6fa;
+        }
+        .slide.active { display: flex; }
+
+        @keyframes gateOpen { 
+            0% { opacity: 0; transform: translateY(20px); } 
+            100% { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* 内容布局 */
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 3px dashed #b2bec3;
+            padding-bottom: 10px;
+        }
+        .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1)); }
+        h1 { margin: 0; color: #2d3436; font-size: 34px; letter-spacing: 1px; }
+
+        .layout { display: flex; gap: 40px; height: 100%; }
+        .col-text { flex: 1.1; font-size: 19px; line-height: 1.6; color: var(--text-main); }
+        .col-visual { 
+            flex: 0.9; 
+            background: #fff;
+            border: 2px solid #b2bec3; 
+            border-radius: 10px;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 代码块 */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-fg);
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 18px;
+            margin-top: 15px;
+            border-left: 5px solid var(--magic-purple);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .kw { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .p { color: var(--tok-prop); font-weight: bold; } 
+        .s { color: var(--tok-str); } 
+        .o { color: var(--tok-op); font-weight: bold; } 
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+
+        /* 卡片 */
+        .card {
+            background: #fff8e1;
+            border-left: 5px solid var(--magic-gold);
+            color: #d35400;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 0 5px 5px 0;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- 5. 视觉化组件 --- */
+        
+        /* 身份扫描仪 */
+        .scanner-box {
+            width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #2d3436; position: relative;
+        }
+        .scan-line {
+            position: absolute; top: 20%; width: 80%; height: 2px; background: var(--magic-gold);
+            box-shadow: 0 0 10px var(--magic-gold);
+            animation: scan 2s infinite ease-in-out; z-index: 5;
+        }
+        .monster-display {
+            font-size: 80px; transition: all 0.3s; cursor: pointer; z-index: 1; position: relative;
+        }
+        .monster-display:hover { transform: scale(1.1); }
+        .type-tag {
+            margin-top: 20px; font-family: monospace; font-size: 24px; color: var(--magic-gold);
+            border: 2px solid var(--magic-gold); padding: 5px 15px; border-radius: 5px;
+            background: rgba(0,0,0,0.5);
+        }
+        .char-options {
+            position: absolute; bottom: 20px; display: flex; gap: 10px;
+        }
+        .char-btn {
+            font-size: 24px; background: #636e72; border: none; border-radius: 5px; cursor: pointer; padding: 5px;
+            transition: transform 0.2s;
+        }
+        .char-btn:hover { transform: scale(1.2); background: #b2bec3; }
+
+        /* 天平对比 */
+        .scale-container {
+            width: 100%; height: 100%; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 20px;
+        }
+        .scale-base {
+            width: 10px; height: 100px; background: #2d3436; position: relative;
+        }
+        .scale-base::after {
+            content: ''; position: absolute; bottom: 0; left: -40px; width: 80px; height: 10px; background: #2d3436; border-radius: 5px 5px 0 0;
+        }
+        .scale-beam {
+            position: absolute; top: -10px; left: -100px; width: 200px; height: 8px; background: #636e72;
+            border-radius: 4px; transition: transform 0.5s cubic-bezier(0.4, 2, 0.5, 1);
+        }
+        .pan {
+            width: 60px; height: 40px; border: 2px solid #636e72; border-radius: 0 0 30px 30px;
+            position: absolute; top: 8px; display: flex; justify-content: center; align-items: center; font-size: 20px;
+            background: rgba(255,255,255,0.5);
+        }
+        .pan-l { left: 0; } .pan-r { right: 0; }
+        .result-led {
+            position: absolute; top: -50px; width: 30px; height: 30px; border-radius: 50%; background: #444;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.5); transition: background 0.3s;
+        }
+        .result-led.true { background: var(--safe-green); box-shadow: 0 0 15px var(--safe-green); }
+        .result-led.false { background: var(--alert-red); box-shadow: 0 0 15px var(--alert-red); }
+
+        /* 嵌套门 */
+        .gate-container {
+            width: 100%; height: 100%; position: relative; perspective: 1000px;
+            background-image: linear-gradient(#e0e0e0 1px, transparent 1px), linear-gradient(90deg, #e0e0e0 1px, transparent 1px); background-size: 20px 20px;
+        }
+        .gate {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            width: 200px; height: 150px; border: 5px solid #636e72; background: rgba(255,255,255,0.8);
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 10px;
+            font-weight: bold; color: #2d3436; transition: opacity 0.5s;
+        }
+        .gate-1 { z-index: 3; }
+        .gate-2 { top: 80px; width: 160px; height: 120px; z-index: 2; border-color: var(--magic-purple); color: var(--magic-purple); opacity: 0.3; }
+        .gate-pass {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            font-size: 40px; opacity: 0; transition: opacity 0.5s;
+        }
+        .person {
+            font-size: 40px; position: absolute; bottom: 10px; left: 20px; transition: all 1s;
+        }
+        
+        /* 开关演示 */
+        .switch-box {
+            width: 120px; height: 60px; background: #ccc; border-radius: 30px; position: relative; cursor: pointer;
+            transition: background 0.3s; border: 4px solid #aaa;
+        }
+        .switch-box.on { background: var(--safe-green); border-color: #2ecc71; }
+        .switch-box.off { background: var(--alert-red); border-color: #e74c3c; }
+        .toggle {
+            width: 50px; height: 50px; background: white; border-radius: 50%; position: absolute; top: 1px; left: 1px;
+            transition: left 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .switch-box.on .toggle { left: 61px; }
+        .switch-label {
+            text-align: center; font-size: 24px; font-weight: bold; margin-top: 20px; font-family: monospace;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #b2bec3;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--magic-purple), var(--magic-gold));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* 动画 */
+        @keyframes scan { 
+            0% { top: 20%; opacity: 0.5; } 
+            50% { top: 80%; opacity: 1; } 
+            100% { top: 20%; opacity: 0.5; } 
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        /* 按钮 */
+        .btn-action {
+            padding: 5px 15px; border: none; border-radius: 5px; font-weight: bold; color: white; cursor: pointer; margin-top: 10px;
+            background: var(--text-main); box-shadow: 0 4px 0 #000;
+        }
+        .btn-action:active { transform: translateY(4px); box-shadow: none; }
+
+    </style>
+</head>
+<body>
+
+<!-- 背景符文 -->
+<script>
+    const runes = ['🔍', '🆔', '❓', '✅', '❌', '🛡️', '👾'];
+    for(let i=0; i<15; i++) {
+        let r = document.createElement('div');
+        r.className = 'rune';
+        r.innerText = runes[Math.floor(Math.random() * runes.length)];
+        r.style.left = Math.random() * 100 + 'vw';
+        r.style.animationDelay = Math.random() * 5 + 's';
+        document.body.appendChild(r);
+    }
+</script>
+
+<div class="stage">
+    <!-- 左按钮 -->
+    <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)"></button>
+
+    <!-- 终端容器 -->
+    <div class="castle-container">
+        <div class="battlement"></div>
+        <div class="info-bar">
+            <span class="map-tag">计算机科学 3</span>
+            <span>第 14-18 关</span>
+        </div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="font-size: 100px; margin-bottom: 20px; filter: drop-shadow(0 10px 0 rgba(0,0,0,0.2));">🆔</div>
+            <h1 style="font-size: 48px; margin: 10px 0; color: var(--text-main);">类型属性 & 相等运算符</h1>
+            <h2 style="font-size: 24px; color: var(--magic-purple); font-weight: bold; margin-top: 0;">Type Attribute & Equality</h2>
+            <div style="margin-top: 40px; display: flex; gap: 30px;">
+                <div style="padding: 15px 30px; background: var(--magic-gold); color: #d35400; border-radius: 10px; font-weight: bold; font-size: 20px; border: 3px solid #d35400;">🔍 身份识别</div>
+                <div style="padding: 15px 30px; background: var(--magic-purple); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; border: 3px solid #6c5ce7;">⚖️ 逻辑判断</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 类型属性 type -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🏷️</div>
+                <h1>类型属性 (Type Attribute)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>每个角色都有一个 <b>type</b> 属性，就像它的<b>“身份证”</b>。</p>
+                    <div class="code-box">
+                        <span class="v">enemy</span> <span class="o">=</span> <span class="v">hero</span>.<span class="f">findNearestEnemy</span>()<br>
+                        <span class="c"># 检查衣服标签(类型)</span><br>
+                        <span class="kw">if</span> <span class="v">enemy</span>.<span class="p">type</span> <span class="o">==</span> <span class="s">"munchkin"</span>:<br>
+                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">attack</span>(<span class="v">enemy</span>)
+                    </div>
+                    <div class="card">
+                        "通过 type，我们可以区分朋友、敌人、小怪兽还是大Boss！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="scanner-box">
+                        <div class="scan-line"></div>
+                        <div class="monster-display" id="scanTarget">👾</div>
+                        <div class="type-tag" id="typeTag">type: "munchkin"</div>
+                        <div class="char-options">
+                            <button class="char-btn" onclick="scan('👾', 'munchkin')">👾</button>
+                            <button class="char-btn" onclick="scan('👹', 'ogre')">👹</button>
+                            <button class="char-btn" onclick="scan('🏹', 'archer')">🏹</button>
+                        </div>
+                    </div>
+                    <script>
+                        function scan(emoji, type) {
+                            document.getElementById('scanTarget').innerText = emoji;
+                            const tag = document.getElementById('typeTag');
+                            tag.innerText = 'scanning...';
+                            tag.style.color = '#fff';
+                            setTimeout(() => {
+                                tag.innerText = `type: "${type}"`;
+                                tag.style.color = 'var(--magic-gold)';
+                            }, 500);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 相等运算符 == -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">⚖️</div>
+                <h1>相等运算符 (Equality Operator)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>==</b> 是身份检查官，它问：“这两边一样吗？”</p>
+                    <div class="code-box">
+                        <span class="c"># 赋值 (贴标签)</span><br>
+                        <span class="v">name</span> <span class="o">=</span> <span class="s">"Alice"</span><br>
+                        <br>
+                        <span class="c"># 比较 (问问题)</span><br>
+                        <span class="kw">if</span> <span class="v">name</span> <span class="o">==</span> <span class="s">"Alice"</span>:<br>
+                        &nbsp;&nbsp;<span class="f">print</span>(<span class="s">"Hi Alice!"</span>)
+                    </div>
+                    <p style="color: var(--alert-red); font-weight: bold;">⚠️ 注意：= 是赋值，== 是比较！</p>
+                </div>
+                <div class="col-visual">
+                    <div style="width: 100%; height: 100%; position: relative;">
+                        <div class="result-led" id="scaleLed" style="left: 50%; transform: translateX(-50%);"></div>
+                        <div class="scale-container">
+                            <div class="scale-base">
+                                <div class="scale-beam" id="scaleBeam">
+                                    <div class="pan pan-l" id="panL">A</div>
+                                    <div class="pan pan-r" id="panR">B</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="position: absolute; bottom: 10px; width: 100%; text-align: center;">
+                            <button class="btn-action" onclick="weigh('A', 'A')">A == A</button>
+                            <button class="btn-action" onclick="weigh('A', 'B')">A == B</button>
+                        </div>
+                    </div>
+                    <script>
+                        function weigh(l, r) {
+                            document.getElementById('panL').innerText = l;
+                            document.getElementById('panR').innerText = r;
+                            const beam = document.getElementById('scaleBeam');
+                            const led = document.getElementById('scaleLed');
+                            
+                            if(l === r) {
+                                beam.style.transform = 'rotate(0deg)';
+                                led.className = 'result-led true';
+                            } else {
+                                beam.style.transform = 'rotate(15deg)';
+                                led.className = 'result-led false';
+                            }
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 嵌套条件 (Nested Conditionals) -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🚪</div>
+                <h1>多重检查 (Nested)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>像过安检一样，一层层检查。</p>
+                    <div class="code-box">
+                        <span class="kw">if</span> <span class="v">enemy</span>:<br>
+                        &nbsp;&nbsp;<span class="c"># 第一重：有人吗？</span><br>
+                        &nbsp;&nbsp;<span class="kw">if</span> <span class="v">enemy</span>.<span class="p">type</span> <span class="o">==</span> <span class="s">"munchkin"</span>:<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 第二重：是小矮人吗？</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">hero</span>.<span class="f">attack</span>(<span class="v">enemy</span>)
+                    </div>
+                    <div class="card">
+                        只有所有门都打开，才能执行最后的动作！
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div class="gate-container">
+                        <div class="gate gate-1">1. enemy?</div>
+                        <div class="gate gate-2">2. munchkin?</div>
+                        <div class="gate-pass" id="gatePass">⚔️</div>
+                        <div class="person" id="gatePerson">🤠</div>
+                    </div>
+                    <button class="btn-action" style="position: absolute; bottom: 10px; right: 10px;" onclick="runCheck()">检查</button>
+                    <script>
+                        function runCheck() {
+                            const p = document.getElementById('gatePerson');
+                            const pass = document.getElementById('gatePass');
+                            const g2 = document.querySelector('.gate-2');
+                            
+                            p.style.left = '20px'; p.style.opacity = 1; pass.style.opacity = 0; g2.style.opacity = 0.3;
+                            
+                            setTimeout(() => {
+                                p.style.left = '50%'; p.style.transform = 'translateX(-50%) translateY(-50px)'; // Gate 1
+                                setTimeout(() => {
+                                    g2.style.opacity = 1; // Gate 2 Open visual
+                                    p.style.transform = 'translateX(-50%) translateY(-100px) scale(0.8)';
+                                    setTimeout(() => {
+                                        pass.style.opacity = 1;
+                                    }, 500);
+                                }, 800);
+                            }, 500);
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 字符串比较 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🔤</div>
+                <h1>字符串比较</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>检查文字是否<b>完全</b>一样。</p>
+                    <ul style="list-style: none; padding: 0; font-size: 18px;">
+                        <li style="margin-bottom: 10px; color: var(--safe-green);">✅ "apple" == "apple"</li>
+                        <li style="margin-bottom: 10px; color: var(--alert-red);">❌ "Apple" == "apple" (大小写不同)</li>
+                        <li style="color: var(--alert-red);">❌ "app" == "apple" (长度不同)</li>
+                    </ul>
+                    <div class="code-box">
+                        <span class="kw">if</span> <span class="v">password</span> <span class="o">==</span> <span class="s">"OpenSesame"</span>:<br>
+                        &nbsp;&nbsp;<span class="v">door</span>.<span class="f">open</span>()
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px; text-align: center;">
+                        🅰️ <span style="color: var(--alert-red);">≠</span> ⓐ
+                        <p style="font-size: 16px; color: #636e72; margin-top: 20px;">电脑对大小写很敏感！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 布尔值 Boolean -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">💡</div>
+                <h1>布尔值 (Boolean)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>只有两个值：<b>True (真)</b> 和 <b>False (假)</b>。</p>
+                    <p>比较的结果就是布尔值：</p>
+                    <div class="code-box">
+                        <span class="v">result</span> <span class="o">=</span> (<span class="n">5</span> <span class="o">==</span> <span class="n">5</span>)<br>
+                        <span class="c"># result 现在是 True</span>
+                    </div>
+                    <p>就像开关，只有“开”和“关”两种状态。</p>
+                </div>
+                <div class="col-visual">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="switch-box on" id="boolSwitch" onclick="toggleBool()">
+                            <div class="toggle"></div>
+                        </div>
+                        <div class="switch-label" id="boolLabel" style="color: var(--safe-green);">True</div>
+                    </div>
+                    <script>
+                        let isTrue = true;
+                        function toggleBool() {
+                            isTrue = !isTrue;
+                            const sw = document.getElementById('boolSwitch');
+                            const lb = document.getElementById('boolLabel');
+                            if(isTrue) {
+                                sw.className = 'switch-box on';
+                                lb.innerText = 'True';
+                                lb.style.color = 'var(--safe-green)';
+                            } else {
+                                sw.className = 'switch-box off';
+                                lb.innerText = 'False';
+                                lb.style.color = 'var(--alert-red)';
+                            }
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 扩展应用 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🚀</div>
+                <h1>扩展应用 (Or / Else)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p><b>1. 攻击多种敌人 (or)</b></p>
+                    <div class="code-box" style="font-size: 16px;">
+                        <span class="kw">if</span> <span class="v">type</span> <span class="o">==</span> <span class="s">"munchkin"</span> <span class="kw">or</span> <span class="v">type</span> <span class="o">==</span> <span class="s">"thrower"</span>:<br>
+                        &nbsp;&nbsp;<span class="f">attack</span>()
+                    </div>
+                    <p style="margin-top: 15px;"><b>2. 避开强者 (else)</b></p>
+                    <div class="code-box" style="font-size: 16px;">
+                        <span class="kw">if</span> <span class="v">type</span> <span class="o">==</span> <span class="s">"ogre"</span>:<br>
+                        &nbsp;&nbsp;<span class="f">runAway</span>()<br>
+                        <span class="kw">else</span>:<br>
+                        &nbsp;&nbsp;<span class="f">attack</span>()
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 50px;">👾 / 👹</div>
+                        <div style="font-weight: bold; margin-top: 10px; color: var(--text-main);">分类处理</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 实战分析 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🎮</div>
+                <h1>实战：选择性攻击</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>这就是你的 AI 逻辑：</p>
+                    <ol style="font-size: 18px; line-height: 1.8;">
+                        <li>👀 <b>持续监控</b> (while True)</li>
+                        <li>🔍 <b>寻找目标</b> (findNearestEnemy)</li>
+                        <li>🛡️ <b>安全检查</b> (if enemy)</li>
+                        <li>🆔 <b>身份确认</b> (if type == "munchkin")</li>
+                        <li>⚔️ <b>执行攻击</b> (attack)</li>
+                    </ol>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 80px;">👮‍♂️</div>
+                    <div style="position: absolute; bottom: 10px; color: #636e72; font-weight: bold;">保安巡逻中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">✨</div>
+                <h1>魔法小贴士</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card" style="background: #e3f2fd; border-color: var(--magic-purple); color: #2d3436;">
+                        "<b>==</b> 是问问题，<b>=</b> 是贴标签。"
+                    </div>
+                    <div class="card" style="background: #fff0f6; border-color: var(--alert-red); color: #2d3436; margin-top: 20px;">
+                        "先检查 <b>if enemy:</b>，<br>
+                        再检查 <b>type</b>，<br>
+                        防止程序崩溃！"
+                    </div>
+                </div>
+                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
+                    <div style="font-size: 120px; filter: drop-shadow(0 0 20px gold);">🏆</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部进度条 -->
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+
+    </div>
+
+    <!-- 右按钮 -->
+    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)"></button>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progressBar');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+
+    function updateUI() {
+        slides.forEach((slide, index) => {
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+
+        btnPrev.classList.toggle('disabled', currentSlide === 0);
+        btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
+
+        const percentage = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function moveSlide(dir) {
+        const nextIndex = currentSlide + dir;
+        if (nextIndex >= 0 && nextIndex < totalSlides) {
+            currentSlide = nextIndex;
+            updateUI();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') moveSlide(-1);
+        if (e.key === 'ArrowRight') moveSlide(1);
+    });
+
+    updateUI();
+</script>
+
+</body>
+</html>
