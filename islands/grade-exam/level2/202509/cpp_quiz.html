@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一级大纲大冒险 | Python & C++</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Nunito:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', 'ZCOOL KuaiLe', cursive, sans-serif;
+            background-color: #FFF9C4; /* 默认暖黄背景 */
+            transition: background-color 0.5s ease;
+        }
+
+        /* 两种模式的背景色 */
+        body.python-mode { background-color: #FFF9C4; } /* 暖黄 */
+        body.cpp-mode { background-color: #E3F2FD; }   /* 冷蓝 */
+
+        .tab-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .tab-btn.active {
+            transform: scale(1.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+
+        .knowledge-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-radius: 20px;
+        }
+        .knowledge-card:hover {
+            transform: translateY(-5px) rotate(1deg);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* 标签胶囊样式 */
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+            margin-right: 5px;
+        }
+
+        /* 代码块样式 */
+        .code-snippet {
+            font-family: 'Courier New', Courier, monospace;
+            background: #2d3748;
+            color: #a3bffa;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        .code-snippet::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, #ff7eb3, #ff758c);
+        }
+
+        /* 浮动动画 */
+        .float-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+    </style>
+</head>
+<body class="python-mode min-h-screen pb-10">
+
+    <!-- 顶部导航与切换 -->
+    <header class="pt-8 pb-4 text-center px-4">
+        <h1 class="text-4xl md:text-5xl font-black text-gray-800 mb-2 drop-shadow-sm">
+            🗺️ 知识点大冒险
+        </h1>
+        <p class="text-gray-600 font-bold text-lg mb-6">点击下方按钮，切换你的冒险装备！</p>
+
+        <!-- 切换开关 -->
+        <div class="flex justify-center items-center gap-4 md:gap-8 max-w-xl mx-auto bg-white/50 p-2 rounded-full backdrop-blur-sm">
+            <button onclick="switchMode('python')" id="btn-python" class="tab-btn active flex-1 bg-yellow-400 text-yellow-900 py-3 rounded-full font-black text-lg md:text-xl border-4 border-yellow-200 flex justify-center items-center gap-2">
+                <span>🐍</span> Python 魔法
+            </button>
+            <button onclick="switchMode('cpp')" id="btn-cpp" class="tab-btn flex-1 bg-gray-200 text-gray-500 py-3 rounded-full font-black text-lg md:text-xl border-4 border-gray-100 hover:bg-blue-100 flex justify-center items-center gap-2">
+                <span>🤖</span> C++ 机甲
+            </button>
+        </div>
+    </header>
+
+    <!-- 内容区域 -->
+    <main class="container mx-auto px-4 mt-6">
+        
+        <!-- 欢迎横幅 -->
+        <div id="intro-banner" class="bg-white rounded-3xl p-6 shadow-lg mb-8 text-center border-dashed border-4 border-yellow-300">
+            <h2 class="text-2xl font-bold text-yellow-600 mb-2">👋 欢迎来到 Python 魔法学院！</h2>
+            <p class="text-gray-600">这里充满了神奇的咒语，我们还可以指挥小海龟画画哦！</p>
+        </div>
+
+        <!-- 知识点网格 -->
+        <div id="content-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- 卡片内容将由 JS 渲染 -->
+        </div>
+
+    </main>
+
+    <!-- 底部返回按钮 -->
+    <div class="fixed bottom-6 right-6">
+        <button onclick="window.history.back()" class="bg-white text-blue-500 font-bold py-3 px-6 rounded-full shadow-xl hover:scale-105 transition-transform border-4 border-blue-100 flex items-center gap-2">
+            ↩️ 返回乐园
+        </button>
+    </div>
+
+    <script>
+        // === 数据源 ===
+        
+        // 共同的知识点结构 (稍微不同的描述)
+        const commonTopics = [
+            {
+                title: "🖥️ 计算机的秘密",
+                tag: "基础与历史",
+                desc: "不仅要会玩电脑，还要知道它是怎么来的！从巨大的房间那么大的机器，到手里的小手机，计算机进化史超有趣！",
+                pythonDetail: "还要安装 Python 环境，那是我们的魔法书！",
+                cppDetail: "搭建 C++ 编译环境，那是我们的机甲组装台！"
+            },
+            {
+                title: "📦 神奇收纳盒 (变量)",
+                tag: "变量",
+                desc: "想象你有好多小盒子，每个盒子贴个名字，里面可以放玩具(数据)。这就叫变量！",
+                pythonCode: "score = 100\nname = '小明'",
+                cppCode: "int score = 100;\nstring name = \"小明\";"
+            },
+            {
+                title: "🔣 数据的四种形状",
+                tag: "数据类型",
+                desc: "魔法能量有四种形态：",
+                details: [
+                    "🔢 <b>整型 (int)</b>: 完整的苹果，比如 1, 100",
+                    "🍰 <b>浮点型 (float)</b>: 切开的蛋糕，带小数点的，比如 3.14",
+                    "🔤 <b>字符型 (str/char)</b>: 字母积木，比如 'A' 或 'Hello'",
+                    "💡 <b>布尔型 (bool)</b>: 真假开关，只有 True(真) 和 False(假)"
+                ]
+            },
+            {
+                title: "🧮 数学魔法棒 (运算)",
+                tag: "基本运算",
+                desc: "让计算机帮我们算数！",
+                details: [
+                    "➕ 算术：加减乘除，还有取余数 (%)",
+                    "⚖️ 关系：比大小！大于 >，小于 <，等于 ==",
+                    "🧠 逻辑：并且 (and/&&)，或者 (or/||)，不 (not/!)"
+                ]
+            },
+            {
+                title: "🚦 红绿灯与岔路口",
+                tag: "选择结构",
+                desc: "如果(if)下雨了，就带伞；否则(else)就戴帽子。计算机也会做选择题哦！",
+                pythonCode: "if age >= 10:\n  print('长大啦')",
+                cppCode: "if (age >= 10) {\n  cout << \"长大啦\";\n}"
+            },
+            {
+                title: "🔄 永不疲倦的跑步机",
+                tag: "循环结构",
+                desc: "重复做一件事，计算机最擅长啦！",
+                details: [
+                    "🏃 for 循环：跑规定的圈数",
+                    "🔁 while 循环：只要不喊停，就一直跑"
+                ]
+            },
+            {
+                title: "🗣️ 只有我们要说话",
+                tag: "输入输出",
+                desc: "怎么告诉计算机你的想法？它怎么回答你？",
+                pythonDetail: "用 <code>input()</code> 听你说，用 <code>print()</code> 告诉你。",
+                cppDetail: "用 <code>cin >></code> 像吸管一样吸入数据，用 <code>cout <<</code> 像喇叭一样广播数据。"
+            }
+        ];
+
+        // Python 独有
+        const pythonExclusive = {
+            title: "🐢 小海龟画家 (Turtle)",
+            tag: "绘图特技",
+            desc: "召唤一只机械小海龟，指挥它在屏幕上爬行。它爬过的地方会留下彩色的线条！可以画出五角星、圆圈甚至是复杂的图案哦！",
+            pythonCode: "import turtle\nt = turtle.Pen()\nt.forward(100)\nt.left(90)"
+        };
+
+        // === 逻辑控制 ===
+
+        let currentMode = 'python'; // 'python' or 'cpp'
+
+        function render() {
+            const grid = document.getElementById('content-grid');
+            const intro = document.getElementById('intro-banner');
+            grid.innerHTML = '';
+
+            // 1. 设置颜色主题
+            const body = document.body;
+            const btnPy = document.getElementById('btn-python');
+            const btnCpp = document.getElementById('btn-cpp');
+
+            if (currentMode === 'python') {
+                body.className = 'python-mode';
+                
+                btnPy.className = 'tab-btn active flex-1 bg-yellow-400 text-yellow-900 py-3 rounded-full font-black text-lg md:text-xl border-4 border-yellow-200 flex justify-center items-center gap-2 shadow-lg';
+                btnCpp.className = 'tab-btn flex-1 bg-gray-200 text-gray-500 py-3 rounded-full font-black text-lg md:text-xl border-4 border-gray-100 hover:bg-blue-100 flex justify-center items-center gap-2 opacity-60 hover:opacity-100';
+                
+                intro.className = 'bg-white rounded-3xl p-6 shadow-lg mb-8 text-center border-dashed border-4 border-yellow-300';
+                intro.innerHTML = `<h2 class="text-2xl font-bold text-yellow-600 mb-2">👋 欢迎来到 Python 魔法学院！</h2><p class="text-gray-600">这里充满了神奇的咒语，还有一只会画画的小海龟！</p>`;
+            } else {
+                body.className = 'cpp-mode';
+                
+                btnCpp.className = 'tab-btn active flex-1 bg-blue-500 text-white py-3 rounded-full font-black text-lg md:text-xl border-4 border-blue-300 flex justify-center items-center gap-2 shadow-lg';
+                btnPy.className = 'tab-btn flex-1 bg-gray-200 text-gray-500 py-3 rounded-full font-black text-lg md:text-xl border-4 border-gray-100 hover:bg-yellow-100 flex justify-center items-center gap-2 opacity-60 hover:opacity-100';
+
+                intro.className = 'bg-white rounded-3xl p-6 shadow-lg mb-8 text-center border-dashed border-4 border-blue-300';
+                intro.innerHTML = `<h2 class="text-2xl font-bold text-blue-600 mb-2">🤖 欢迎来到 C++ 机甲基地！</h2><p class="text-gray-600">这里是严谨的工程师乐园，我们将学习构建最坚固的代码！</p>`;
+            }
+
+            // 2. 渲染通用卡片
+            commonTopics.forEach(topic => {
+                const isPython = currentMode === 'python';
+                const themeColor = isPython ? 'yellow' : 'blue';
+                const detailText = isPython ? (topic.pythonDetail || '') : (topic.cppDetail || '');
+                const codeSnippet = isPython ? topic.pythonCode : topic.cppCode;
+
+                let listHtml = '';
+                if (topic.details) {
+                    listHtml = `<ul class="text-sm text-gray-600 mt-2 space-y-1 text-left bg-gray-50 p-3 rounded-lg">` + 
+                        topic.details.map(d => `<li>${d}</li>`).join('') + 
+                        `</ul>`;
+                }
+
+                let codeHtml = '';
+                if (codeSnippet) {
+                    codeHtml = `<div class="code-snippet"><pre>${codeSnippet}</pre></div>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = `knowledge-card bg-white p-6 shadow-sm border-l-8 border-${themeColor}-400 relative overflow-hidden`;
+                card.innerHTML = `
+                    <div class="flex items-center mb-3">
+                        <span class="text-3xl mr-3 float-icon">${topic.title.split(' ')[0]}</span>
+                        <h3 class="text-xl font-black text-gray-800">${topic.title.split(' ').slice(1).join(' ')}</h3>
+                    </div>
+                    <span class="tag bg-${themeColor}-400 mb-3">${topic.tag}</span>
+                    <p class="text-gray-600 leading-relaxed font-bold">${topic.desc}</p>
+                    ${detailText ? `<p class="text-${themeColor}-600 text-sm mt-2 font-bold bg-${themeColor}-50 p-2 rounded">${detailText}</p>` : ''}
+                    ${listHtml}
+                    ${codeHtml}
+                `;
+                grid.appendChild(card);
+            });
+
+            // 3. 渲染 Python 独有的 Turtle
+            if (currentMode === 'python') {
+                const t = pythonExclusive;
+                const card = document.createElement('div');
+                card.className = `knowledge-card bg-green-50 p-6 shadow-sm border-l-8 border-green-400 relative overflow-hidden`;
+                card.innerHTML = `
+                    <div class="absolute -right-5 -top-5 text-8xl opacity-10">🐢</div>
+                    <div class="flex items-center mb-3">
+                        <span class="text-3xl mr-3 float-icon">🎨</span>
+                        <h3 class="text-xl font-black text-green-800">${t.title.split(' ')[1]}</h3>
+                    </div>
+                    <span class="tag bg-green-500 mb-3">${t.tag}</span>
+                    <p class="text-green-900 leading-relaxed font-bold">${t.desc}</p>
+                    <div class="code-snippet border-green-200"><pre>${t.pythonCode}</pre></div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            render();
+        }
+
+        // 初始化
+        render();
+
+    </script>
+</body>
+</html>
