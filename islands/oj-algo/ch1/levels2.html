@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>趣味算法题解展示</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-main: #e0e0e0;
+            --text-dim: #a0a0a0;
+            --accent-python: #ffd700; /* Yellow */
+            --accent-cpp: #007acc;    /* Blue */
+            --highlight: #4caf50;     /* Green */
+            --code-bg: #151515;
+            --border: #444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* 布局容器 */
+        .slide {
+            min-height: 100vh;
+            width: 100vw;
+            padding: 30px 50px;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 3px solid #000;
+            position: relative;
+        }
+
+        /* 标题区域 */
+        .header {
+            margin-bottom: 20px;
+            border-left: 6px solid var(--highlight);
+            padding-left: 20px;
+        }
+        .header h1 { font-size: 2.2em; margin-bottom: 8px; color: #fff; }
+        .header p { color: var(--text-dim); font-size: 1.1em; }
+        .tag {
+            display: inline-block;
+            background: #333;
+            color: var(--highlight);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        /* 思路分析区域 */
+        .analysis-box {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        .analysis-text { flex: 1; }
+        .analysis-text h3 { color: var(--highlight); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .analysis-text p, .analysis-text li { line-height: 1.6; margin-bottom: 8px; color: #ccc; }
+        
+        /* CSS可视化图解 */
+        .visual-aid {
+            min-width: 250px;
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px dashed #555;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .grid-visual { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; text-align: center; }
+        .grid-cell { background: #444; padding: 5px; border-radius: 3px; }
+        .grid-cell.crossed { background: #552222; color: #888; text-decoration: line-through; }
+        .grid-cell.prime { background: #225522; color: #fff; font-weight: bold; border: 1px solid #4caf50; }
+
+        /* 代码对比区域 */
+        .code-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 200px 1fr; /* 左 中 右 */
+            gap: 15px;
+            min-height: 0; /* 防止溢出 */
+        }
+
+        .lang-col {
+            background: var(--code-bg);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .lang-col.python { border-top: 4px solid var(--accent-python); }
+        .lang-col.cpp { border-top: 4px solid var(--accent-cpp); }
+
+        .lang-header {
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            background: #222;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+
+        .code-content {
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            overflow-y: auto;
+            color: #dcdcdc;
+            white-space: pre;
+        }
+
+        /* 代码高亮 */
+        .kw { color: #569cd6; } /* 关键字 */
+        .type { color: #4ec9b0; } /* 类型 */
+        .str { color: #ce9178; } /* 字符串 */
+        .num { color: #b5cea8; } /* 数字 */
+        .func { color: #dcdcaa; } /* 函数 */
+        .cmt { color: #6a9955; font-style: italic; } /* 注释 */
+
+        /* 中间逻辑列 */
+        .logic-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 40px;
+            gap: 15px;
+        }
+
+        .logic-step {
+            background: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            text-align: center;
+            width: 100%;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
+            border-left: 4px solid #777;
+        }
+        .logic-step:hover { transform: scale(1.05); background: #444; }
+        
+        /* 逻辑块颜色分类 */
+        .step-input { border-color: #f39c12; }
+        .step-core { border-color: #3498db; }
+        .step-out { border-color: #2ecc71; }
+
+        /* 连接线效果 */
+        .logic-step::before {
+            content: "↓";
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #555;
+            font-size: 14px;
+        }
+        .logic-step:first-child::before { display: none; }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #666; }
+
+    </style>
+</head>
+<body>
+
+    <div class="slide">
+        <div class="header">
+            <span class="tag">#倍数统计</span> <span class="tag">#调和级数</span>
+            <h1>200004 拍头游戏</h1>
+            <p>描述：统计每个小朋友头上的数字是其他多少人数字的倍数。</p>
+        </div>
+
+        <div class="analysis-box">
+            <div class="analysis-text">
+                <h3>💡 思路分析</h3>
+                <p>1. <strong>暴力法不行：</strong> 如果两层循环比对，时间复杂度是 O(n^2)，当 n=10^5 时会超时。</p>
+                <p>2. <strong>逆向思维（桶排序思想）：</strong></p>
+                <ul>
+                    <li>我们可以先统计每个数字出现的次数，记在 <code>cnt</code> 数组里。</li>
+                    <li>然后，让每个数字 i 主动去“找”它的倍数。比如数字 2 出现了，就给 2, 4, 6, 8... 的桶都加分。</li>
+                    <li>这叫做<strong>“我为人人”</strong>法。每个数把贡献加给它的倍数。</li>
+                </ul>
+            </div>
+            <div class="visual-aid">
+                <div style="margin-bottom:5px; color:#aaa;">数字贡献示意图:</div>
+                <div style="display:flex; gap:5px; align-items:center;">
+                    <span style="background:#007acc; padding:5px; border-radius:3px;">数字2</span>
+                    <span>➡ 贡献给:</span>
+                    <span style="border:1px solid #555; padding:3px;">2</span>
+                    <span style="border:1px solid #555; padding:3px;">4</span>
+                    <span style="border:1px solid #555; padding:3px;">6</span>
+                    <span style="border:1px solid #555; padding:3px;">8...</span>
+                </div>
+                <div style="margin-top:10px; font-size:0.8em; color:#888;">
+                    注意：最后答案要减去自己本身的一次（w[a[i]] - 1）。
+                </div>
+            </div>
+        </div>
+
+        <div class="code-container">
+            <div class="lang-col python">
+                <div class="lang-header">🐍 Python</div>
+                <div class="code-content">
+<span class="kw">import</span> sys
+
+<span class="var">MAXV</span> = <span class="num">1000000</span>
+<span class="cmt"># 1. 读入所有数据</span>
+<span class="var">data</span> = sys.stdin.read().split()
+<span class="var">n</span> = <span class="type">int</span>(<span class="var">data</span>[<span class="num">0</span>])
+<span class="var">a</span> = [<span class="type">int</span>(x) <span class="kw">for</span> x <span class="kw">in</span> <span class="var">data</span>[<span class="num">1</span>:]]
+
+<span class="var">cnt</span> = [<span class="num">0</span>] * (<span class="var">MAXV</span> + <span class="num">1</span>)
+<span class="var">w</span> = [<span class="num">0</span>] * (<span class="var">MAXV</span> + <span class="num">1</span>)
+
+<span class="cmt"># 2. 统计每个数字出现的次数</span>
+<span class="kw">for</span> <span class="var">val</span> <span class="kw">in</span> <span class="var">a</span>:
+    <span class="var">cnt</span>[<span class="var">val</span>] += <span class="num">1</span>
+
+<span class="cmt"># 3. 核心：倍数贡献传递</span>
+<span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span>, <span class="var">MAXV</span> + <span class="num">1</span>):
+    <span class="kw">if</span> <span class="var">cnt</span>[<span class="var">i</span>] == <span class="num">0</span>: <span class="kw">continue</span>
+    <span class="cmt"># i 的所有倍数 j 都加上 cnt[i]</span>
+    <span class="kw">for</span> <span class="var">j</span> <span class="kw">in</span> <span class="func">range</span>(<span class="var">i</span>, <span class="var">MAXV</span> + <span class="num">1</span>, <span class="var">i</span>):
+        <span class="var">w</span>[<span class="var">j</span>] += <span class="var">cnt</span>[<span class="var">i</span>]
+
+<span class="cmt"># 4. 输出结果（减去自己）</span>
+<span class="var">ans</span> = []
+<span class="kw">for</span> <span class="var">val</span> <span class="kw">in</span> <span class="var">a</span>:
+    <span class="var">ans</span>.append(<span class="func">str</span>(<span class="var">w</span>[<span class="var">val</span>] - <span class="num">1</span>))
+
+<span class="func">print</span>(<span class="str">" "</span>.join(<span class="var">ans</span>))
+                </div>
+            </div>
+
+            <div class="logic-col">
+                <div class="logic-step step-input">
+                    📥 <strong>快速读入</strong><br>数据量大，需一次性读入
+                </div>
+                <div class="logic-step step-core">
+                    📊 <strong>统计频率</strong><br>记录每个数出现了几次<br>cnt[val]++
+                </div>
+                <div class="logic-step step-core">
+                    🔄 <strong>倍数循环</strong><br>i 从 1 到 MAXV<br>j 从 i, 2i, 3i...<br>复杂度优化 O(V log V)
+                </div>
+                <div class="logic-step step-out">
+                    📤 <strong>输出修正</strong><br>查询 w[val]<br>减去1(排除自己)<br>
+                </div>
+            </div>
+
+            <div class="lang-col cpp">
+                <div class="lang-header">⚡ C++</div>
+                <div class="code-content">
+<span class="kw">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> <span class="var">std</span>;
+<span class="kw">const int</span> <span class="var">MAXV</span> = <span class="num">1000000</span>;
+<span class="type">int</span> <span class="var">cnt</span>[<span class="var">MAXV</span> + <span class="num">1</span>], <span class="var">w</span>[<span class="var">MAXV</span> + <span class="num">1</span>];
+
+<span class="type">int</span> <span class="func">main</span>() {
+    <span class="type">int</span> <span class="var">n</span>;
+    <span class="var">cin</span> >> <span class="var">n</span>;
+    <span class="type">vector</span>&lt;<span class="type">int</span>&gt; <span class="var">a</span>(<span class="var">n</span> + <span class="num">1</span>);
+    
+    <span class="cmt">// 2. 统计每个数字出现的次数</span>
+    <span class="kw">for</span> (<span class="type">int</span> <span class="var">i</span> = <span class="num">1</span>; <span class="var">i</span> &lt;= <span class="var">n</span>; ++<span class="var">i</span>) {
+        <span class="var">cin</span> >> <span class="var">a</span>[<span class="var">i</span>];
+        <span class="var">cnt</span>[<span class="var">a</span>[<span class="var">i</span>]]++;
+    }
+
+    <span class="cmt">// 3. 核心：倍数贡献传递</span>
+    <span class="kw">for</span> (<span class="type">int</span> <span class="var">i</span> = <span class="num">1</span>; <span class="var">i</span> &lt;= <span class="var">MAXV</span>; ++<span class="var">i</span>) {
+        <span class="kw">if</span> (<span class="var">cnt</span>[<span class="var">i</span>] == <span class="num">0</span>) <span class="kw">continue</span>;
+        <span class="kw">for</span> (<span class="type">int</span> <span class="var">j</span> = <span class="var">i</span>; <span class="var">j</span> &lt;= <span class="var">MAXV</span>; <span class="var">j</span> += <span class="var">i</span>) {
+            <span class="var">w</span>[<span class="var">j</span>] += <span class="var">cnt</span>[<span class="var">i</span>];
+        }
+    }
+
+    <span class="cmt">// 4. 输出结果</span>
+    <span class="kw">for</span> (<span class="type">int</span> <span class="var">i</span> = <span class="num">1</span>; <span class="var">i</span> &lt;= <span class="var">n</span>; ++<span class="var">i</span>) {
+        <span class="var">cout</span> << <span class="var">w</span>[<span class="var">a</span>[<span class="var">i</span>]] - <span class="num">1</span> << <span class="str">" "</span>;
+    }
+    <span class="var">cout</span> << <span class="var">endl</span>;
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <div class="header">
+            <span class="tag">#质数筛法</span> <span class="tag">#埃氏筛</span>
+            <h1>200005 1～N 之间有多少质数？</h1>
+            <p>描述：统计 1 到 N 之间质数的个数，并输出它们。</p>
+        </div>
+
+        <div class="analysis-box">
+            <div class="analysis-text">
+                <h3>💡 思路分析</h3>
+                <p>1. <strong>定义：</strong> 质数是只能被 1 和它自己整除的数（1 不是质数）。</p>
+                <p>2. <strong>筛法原理（埃拉托斯特尼筛）：</strong></p>
+                <ul>
+                    <li>拿一张纸写下所有数字。</li>
+                    <li>从 2 开始，2 是质数，然后划掉所有 2 的倍数（4,6,8...这些肯定不是质数了）。</li>
+                    <li>下一个没被划掉的数是 3，3 是质数，划掉 3 的倍数。</li>
+                    <li>重复这个过程，剩下的就是质数！</li>
+                </ul>
+            </div>
+            <div class="visual-aid">
+                <div style="margin-bottom:5px;">埃氏筛法演示 (N=10):</div>
+                <div class="grid-visual">
+                    <div class="grid-cell crossed">1</div>
+                    <div class="grid-cell prime">2</div>
+                    <div class="grid-cell prime">3</div>
+                    <div class="grid-cell crossed">4</div>
+                    <div class="grid-cell prime">5</div>
+                    <div class="grid-cell crossed">6</div>
+                    <div class="grid-cell prime">7</div>
+                    <div class="grid-cell crossed">8</div>
+                    <div class="grid-cell crossed">9</div>
+                    <div class="grid-cell crossed">10</div>
+                </div>
+                <div style="margin-top:5px; font-size:0.8em; color:#bbb;">绿色=质数，红色划线=被筛除</div>
+            </div>
+        </div>
+
+        <div class="code-container">
+            <div class="lang-col python">
+                <div class="lang-header">🐍 Python</div>
+                <div class="code-content">
+<span class="var">n</span> = <span class="type">int</span>(<span class="func">input</span>())
+<span class="var">is_composite</span> = [<span class="kw">False</span>] * (<span class="var">n</span> + <span class="num">1</span>)
+
+<span class="cmt"># 0和1不是质数</span>
+<span class="var">is_composite</span>[<span class="num">0</span>] = <span class="kw">True</span>
+<span class="var">is_composite</span>[<span class="num">1</span>] = <span class="kw">True</span>
+
+<span class="cmt"># 1. 埃氏筛核心逻辑</span>
+<span class="cmt"># 只需要枚举到 sqrt(n)</span>
+<span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>, <span class="type">int</span>(<span class="var">n</span>**<span class="num">0.5</span>) + <span class="num">1</span>):
+    <span class="kw">if</span> <span class="kw">not</span> <span class="var">is_composite</span>[<span class="var">i</span>]: <span class="cmt"># i 是质数</span>
+        <span class="cmt"># 将 i 的倍数标记为合数</span>
+        <span class="cmt"># 从 i*i 开始优化，步长为 i</span>
+        <span class="kw">for</span> <span class="var">j</span> <span class="kw">in</span> <span class="func">range</span>(<span class="var">i</span> * <span class="var">i</span>, <span class="var">n</span> + <span class="num">1</span>, <span class="var">i</span>):
+            <span class="var">is_composite</span>[<span class="var">j</span>] = <span class="kw">True</span>
+
+<span class="cmt"># 2. 收集结果</span>
+<span class="var">primes</span> = []
+<span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>, <span class="var">n</span> + <span class="num">1</span>):
+    <span class="kw">if</span> <span class="kw">not</span> <span class="var">is_composite</span>[<span class="var">i</span>]:
+        <span class="var">primes</span>.append(<span class="var">i</span>)
+
+<span class="func">print</span>(<span class="func">len</span>(<span class="var">primes</span>))
+<span class="func">print</span>(*<span class="var">primes</span>)
+                </div>
+            </div>
+
+            <div class="logic-col">
+                <div class="logic-step step-input">
+                    📥 <strong>初始化</strong><br>标记数组 all false<br>0,1 标记为 true
+                </div>
+                <div class="logic-step step-core">
+                    🧹 <strong>筛法循环</strong><br>枚举 i 到 sqrt(N)<br>如果是质数，划掉倍数
+                </div>
+                <div class="logic-step step-core">
+                    🚀 <strong>优化细节</strong><br>从 i*i 开始划掉<br>避免重复标记
+                </div>
+                <div class="logic-step step-out">
+                    📝 <strong>统计输出</strong><br>遍历数组<br>未被标记的就是质数
+                </div>
+            </div>
+
+            <div class="lang-col cpp">
+                <div class="lang-header">⚡ C++</div>
+                <div class="code-content">
+<span class="kw">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> <span class="var">std</span>;
+
+<span class="kw">const int</span> <span class="var">MAXN</span> = <span class="num">1000000</span>;
+<span class="type">bool</span> <span class="var">is_composite</span>[<span class="var">MAXN</span> + <span class="num">1</span>];
+
+<span class="type">int</span> <span class="func">main</span>() {
+    <span class="type">int</span> <span class="var">N</span>;
+    <span class="var">cin</span> >> <span class="var">N</span>;
+    <span class="cmt">// 0和1不是质数</span>
+    <span class="var">is_composite</span>[<span class="num">0</span>] = <span class="var">is_composite</span>[<span class="num">1</span>] = <span class="kw">true</span>;
+
+    <span class="cmt">// 1. 埃氏筛核心逻辑</span>
+    <span class="kw">for</span> (<span class="type">int</span> <span class="var">i</span> = <span class="num">2</span>; <span class="var">i</span> * <span class="var">i</span> &lt;= <span class="var">N</span>; ++<span class="var">i</span>) {
+        <span class="kw">if</span> (!<span class="var">is_composite</span>[<span class="var">i</span>]) { <span class="cmt">// i 是质数</span>
+            <span class="cmt">// 标记倍数为合数</span>
+            <span class="kw">for</span> (<span class="type">int</span> <span class="var">j</span> = <span class="var">i</span> * <span class="var">i</span>; <span class="var">j</span> &lt;= <span class="var">N</span>; <span class="var">j</span> += <span class="var">i</span>) {
+                <span class="var">is_composite</span>[<span class="var">j</span>] = <span class="kw">true</span>;
+            }
+        }
+    }
+
+    <span class="type">vector</span>&lt;<span class="type">int</span>&gt; <span class="var">primes</span>;
+    <span class="kw">for</span> (<span class="type">int</span> <span class="var">i</span> = <span class="num">2</span>; <span class="var">i</span> &lt;= <span class="var">N</span>; ++<span class="var">i</span>) {
+        <span class="kw">if</span> (!<span class="var">is_composite</span>[<span class="var">i</span>]) 
+            <span class="var">primes</span>.push_back(<span class="var">i</span>);
+    }
+
+    <span class="var">cout</span> << <span class="var">primes</span>.size() << <span class="str">"\n"</span>;
+    <span class="kw">for</span> (<span class="type">int</span> <span class="var">x</span> : <span class="var">primes</span>) <span class="var">cout</span> << <span class="var">x</span> << <span class="str">" "</span>;
+    <span class="var">cout</span> << <span class="str">"\n"</span>;
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <div class="header">
+            <span class="tag">#数学</span> <span class="tag">#GCD与LCM</span>
+            <h1>200006 木棍大作战</h1>
+            <p>描述：求两根木棍的最大公约数（最大切割长度）和最小公倍数（最小拼接长度）。</p>
+        </div>
+
+        <div class="analysis-box">
+            <div class="analysis-text">
+                <h3>💡 思路分析</h3>
+                <p>1. <strong>最大公约数 (GCD)：</strong> 
+                    用<strong>辗转相除法</strong>（欧几里得算法）。原理是：gcd(a, b) = gcd(b, a \% b)，一直算到余数为0，此时的除数就是 GCD。
+                </p>
+                <p>2. <strong>最小公倍数 (LCM)：</strong> 
+                    有一个重要公式：a \times b = gcd(a, b) \times lcm(a, b)。
+                    所以 lcm(a, b) = (a \times b) / gcd(a, b)。
+                    <br><em>注意：编程时先做除法再做乘法 `a / gcd * b`，防止 a \times b 太大导致溢出。</em>
+                </p>
+            </div>
+            <div class="visual-aid">
+                <div style="margin-bottom:10px;">例如 a=10, b=16:</div>
+                <div style="background:#333; height:10px; width:100px; margin-bottom:5px; border-right:2px solid red;">10</div>
+                <div style="background:#555; height:10px; width:160px; margin-bottom:10px; border-right:2px solid red;">16</div>
+                <div style="font-size:0.8em; color:#ddd;">
+                    GCD(10,16) = 2 (切成2cm小段)<br>
+                    LCM(10,16) = 80 (拼成80cm长棍)
+                </div>
+            </div>
+        </div>
+
+        <div class="code-container">
+            <div class="lang-col python">
+                <div class="lang-header">🐍 Python</div>
+                <div class="code-content">
+<span class="cmt"># 手写 GCD 函数（递归版）</span>
+<span class="kw">def</span> <span class="func">gcd_func</span>(<span class="var">x</span>, <span class="var">y</span>):
+    <span class="kw">if</span> <span class="var">y</span> == <span class="num">0</span>:
+        <span class="kw">return</span> <span class="var">x</span>
+    <span class="kw">return</span> <span class="func">gcd_func</span>(<span class="var">y</span>, <span class="var">x</span> % <span class="var">y</span>)
+
+<span class="var">a</span>, <span class="var">b</span> = <span class="func">map</span>(<span class="type">int</span>, <span class="func">input</span>().<span class="func">split</span>())
+
+<span class="cmt"># 1. 计算最大公约数</span>
+<span class="var">g</span> = <span class="func">gcd_func</span>(<span class="var">a</span>, <span class="var">b</span>)
+
+<span class="cmt"># 2. 计算最小公倍数</span>
+<span class="cmt"># 使用整除 // 防止得到浮点数</span>
+<span class="var">l</span> = (<span class="var">a</span> // <span class="var">g</span>) * <span class="var">b</span>
+
+<span class="func">print</span>(<span class="var">g</span>)
+<span class="func">print</span>(<span class="var">l</span>)
+                </div>
+            </div>
+
+            <div class="logic-col">
+                <div class="logic-step step-input">
+                    📥 <strong>输入</strong><br>两个整数 a, b
+                </div>
+                <div class="logic-step step-core">
+                    🔄 <strong>GCD 算法</strong><br>反复取余<br>直到 y=0
+                </div>
+                <div class="logic-step step-core">
+                    🧮 <strong>LCM 公式</strong><br>a * b / gcd<br>先除后乘防溢出
+                </div>
+                <div class="logic-step step-out">
+                    📤 <strong>输出</strong><br>一行一个结果
+                </div>
+            </div>
+
+            <div class="lang-col cpp">
+                <div class="lang-header">⚡ C++</div>
+                <div class="code-content">
+<span class="kw">#include</span> <span class="str">&lt;bits/stdc++.h&gt;</span>
+<span class="kw">using namespace</span> <span class="var">std</span>;
+
+<span class="cmt">// 1. 欧几里得算法求 gcd</span>
+<span class="type">long long</span> <span class="func">gcd_ll</span>(<span class="type">long long</span> <span class="var">x</span>, <span class="type">long long</span> <span class="var">y</span>) {
+    <span class="kw">return</span> <span class="var">y</span> == <span class="num">0</span> ? <span class="var">x</span> : <span class="func">gcd_ll</span>(<span class="var">y</span>, <span class="var">x</span> % <span class="var">y</span>);
+}
+
+<span class="cmt">// 2. 利用 gcd 求 lcm</span>
+<span class="type">long long</span> <span class="func">lcm_ll</span>(<span class="type">long long</span> <span class="var">a</span>, <span class="type">long long</span> <span class="var">b</span>) {
+    <span class="cmt">// 先除后乘，防止溢出</span>
+    <span class="kw">return</span> <span class="var">a</span> / <span class="func">gcd_ll</span>(<span class="var">a</span>, <span class="var">b</span>) * <span class="var">b</span>; 
+}
+
+<span class="type">int</span> <span class="func">main</span>() {
+    <span class="type">long long</span> <span class="var">a</span>, <span class="var">b</span>;
+    <span class="var">cin</span> >> <span class="var">a</span> >> <span class="var">b</span>;
+
+    <span class="type">long long</span> <span class="var">g</span> = <span class="func">gcd_ll</span>(<span class="var">a</span>, <span class="var">b</span>);
+    <span class="type">long long</span> <span class="var">l</span> = <span class="func">lcm_ll</span>(<span class="var">a</span>, <span class="var">b</span>);
+
+    <span class="var">cout</span> << <span class="var">g</span> << <span class="str">"\n"</span>;
+    <span class="var">cout</span> << <span class="var">l</span> << <span class="str">"\n"</span>;
+
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
