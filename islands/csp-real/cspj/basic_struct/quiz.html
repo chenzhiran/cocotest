@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 编程小勇士闯关练习（完美修复版）</title>
+    <style>
+        :root {
+            --bg-color: #F3F8FC;
+            --card-bg: #FFFFFF;
+            --primary-color: #4834d4; /* 深蓝紫 */
+            --accent-color: #686de0; /* 浅紫 */
+            --text-color: #2c3e50;
+            --code-bg: #282c34; /* 代码块深色背景 */
+            --level1: #badc58; /* 简单-绿 */
+            --level2: #f6e58d; /* 中等-黄 */
+            --level3: #ffbe76; /* 困难-橙 */
+            --level4: #ff7979; /* 挑战-红 */
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+        }
+
+        /* 头部 */
+        header {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #686de0, #4834d4);
+            border-radius: 20px;
+            color: white;
+            box-shadow: 0 10px 25px rgba(72, 52, 212, 0.3);
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::after {
+            content: "🚀";
+            font-size: 10rem;
+            position: absolute;
+            right: -20px;
+            bottom: -30px;
+            opacity: 0.2;
+            transform: rotate(-20deg);
+        }
+
+        h1 { margin: 0; font-size: 2.4rem; text-shadow: 2px 2px 0px rgba(0,0,0,0.2); }
+        .intro { margin-top: 10px; font-size: 1.1rem; opacity: 0.9; }
+
+        /* 难度分界线 */
+        .level-header {
+            display: flex;
+            align-items: center;
+            margin: 50px 0 25px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #dfe6e9;
+        }
+        .level-badge {
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            color: #2d3436;
+            margin-right: 15px;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* 题目卡片 */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: 1px solid #f1f2f6;
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--accent-color); }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px dashed #eee;
+        }
+        .q-title { font-size: 1.25rem; font-weight: bold; color: #2c3e50; }
+        .tag { background: #dfe6e9; padding: 5px 12px; border-radius: 8px; font-size: 0.85rem; color: #636e72; font-weight: bold; }
+
+        /* --- 代码块样式 (关键修复点) --- */
+        pre {
+            background-color: var(--code-bg);
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto; /* 横向滚动 */
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 1rem;
+            line-height: 1.5;
+            position: relative;
+            white-space: pre; /* 保持格式 */
+            tab-size: 4;
+        }
+        
+        /* 语法高亮颜色 */
+        .hljs-keyword { color: #c678dd; font-weight: bold; } /* int, if, return */
+        .hljs-built_in { color: #e5c07b; } /* cin, cout, printf */
+        .hljs-string { color: #98c379; } /* "hello" */
+        .hljs-comment { color: #7f848e; font-style: italic; } /* // 注释 */
+        .hljs-number { color: #d19a66; } /* 123 */
+        .hljs-meta { color: #61afef; } /* #include */
+        .hljs-symbol { color: #56b6c2; } /* {} ; */
+        .hljs-placeholder { color: #ff6b6b; font-weight: bold; border-bottom: 2px solid #ff6b6b; } /* 填空位 */
+
+        /* 按钮与解析区 */
+        .toggle-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            outline: none;
+        }
+        .toggle-btn:hover { background: var(--primary-color); box-shadow: 0 4px 12px rgba(104, 109, 224, 0.4); }
+
+        .answer-panel {
+            display: none; /* 默认隐藏 */
+            margin-top: 20px;
+            background: #f1faff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #dff9fb;
+            animation: fadeIn 0.4s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .answer-key {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #00b894;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            display: inline-block;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* 可视化图解框 */
+        .visual-box {
+            border: 2px dashed #b2bec3;
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .box-row { display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;}
+        .var-box { border: 2px solid #2d3436; padding: 10px 15px; border-radius: 8px; font-family: monospace; font-weight: bold;}
+        .arrow { font-size: 1.5rem; color: #b2bec3; }
+        .changed { border-color: #ff7675; background: #ffeaa7; animation: pulse 1s infinite; }
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* 表格样式 */
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; background: white; font-size: 0.95rem; }
+        th, td { border: 1px solid #dfe6e9; padding: 8px; text-align: center; }
+        th { background: #f1f2f6; color: #2d3436; }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .card { padding: 20px; }
+            pre { font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🎮 C++ 编程小勇士闯关</h1>
+        <p class="intro">20道精选关卡，代码已修复完整！<br>先读题，再思考，最后点按钮看答案哦！✨</p>
+    </header>
+
+    <div class="level-header">
+        <span class="level-badge" style="background: var(--level1);">LEVEL 1</span>
+        <h2>🌱 入门村：基础运算与变量</h2>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">1. 整数除法大坑</div>
+            <span class="tag">选择题</span>
+        </div>
+        <div class="q-content">
+            <p>在C++中，表达式 <code>5 / 2</code> 的结果是？</p>
+            <ul>
+                <li>A) 2.5</li>
+                <li>B) 2</li>
+                <li>C) 3</li>
+                <li>D) 2.0</li>
+            </ul>
+        </div>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 正确答案：B</div>
+            <div class="visual-box">
+                <p><strong>🍪 分饼干图解</strong></p>
+                <div style="font-size: 1.5rem;">🍪🍪🍪🍪🍪 ÷ 👶👶</div>
+                <p>5块饼干分给2个人，每人分2块。</p>
+                <p style="color: #636e72;">多出来的1块被“扔掉”了（向下取整）。</p>
+            </div>
+            <p><strong>解析：</strong> C++中整数除以整数，结果必须是整数（自动舍弃小数部分）。</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">2. 2013年第23题（输出格式）</div>
+            <span class="tag">阅读程序</span>
+        </div>
+<pre class="code-source">
+#include &lt;iostream&gt;
+using namespace std;
+int main()
+{
+    int a, b;
+    cin >> a >> b; // 输入：3 5
+    cout << a << "+" << b << "=" << a + b << endl;
+}
+</pre>
+        <div class="q-content">
+            <p>输入：3 5，输出结果是？</p>
+            <ul>
+                <li>A) 3</li>
+                <li>B) 5</li>
+                <li>C) 8</li>
+                <li>D) 3+5=8</li>
+            </ul>
+        </div>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 正确答案：D</div>
+            <p><strong>解析：</strong> 程序像搭积木一样输出：</p>
+            <p><code>a(3)</code> + <code>"+"</code> + <code>b(5)</code> + <code>"="</code> + <code>结果(8)</code></p>
+            <p>拼接起来就是 <strong>3+5=8</strong>。</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">3. 2012年第23题（简单累加）</div>
+            <span class="tag">阅读程序</span>
+        </div>
+<pre class="code-source">
+#include &lt;iostream&gt;
+using namespace std;
+int a, b, c, d, e, ans;
+int main()
+{
+    cin >> a >> b >> c; // 输入：1 2 5
+    d = a + b;
+    e = b + c;
+    ans = d + e;
+    cout << ans << endl;
+    return 0;
+}
+</pre>
+        <p>输出结果是？ (A) 3 (B) 7 (C) 10 (D) 编译错误</p>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 正确答案：C</div>
+            <p><strong>计算步骤：</strong></p>
+            <ul>
+                <li>d = 1 + 2 = 3</li>
+                <li>e = 2 + 5 = 7</li>
+                <li>ans = 3 + 7 = 10</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">4. 2014年第23题（变量覆盖）</div>
+            <span class="tag">顺序结构</span>
+        </div>
+<pre class="code-source">
+#include &lt;iostream&gt;
+using namespace std;
+int main()
+{
+ int a, b, c, d, ans;
+ cin >> a >> b >> c; // 输入：2 3 4
+ d = a - b;
+ a = d + c; // 注意！a在这里变身了
+ ans = a * b;
+ cout << "Ans = " << ans << endl; 
+ return(0);
+}
+</pre>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 答案：9</div>
+            <div class="visual-box">
+                <p><strong>📦 变量变化图</strong></p>
+                <div class="box-row">
+                    <div class="var-box">a:2</div>
+                    <span class="arrow">➡️</span>
+                    <div class="var-box">d:-1</div>
+                    <span class="arrow">➡️</span>
+                    <div class="var-box changed">a:3<br><small>(被覆盖)</small></div>
+                </div>
+            </div>
+            <p><strong>解析：</strong> 
+            1. d = 2 - 3 = -1<br>
+            2. <strong>a = -1 + 4 = 3</strong> (旧值2消失)<br>
+            3. ans = 3 * 3 = 9</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">5. 2014年第19题（循环本质）</div>
+            <span class="tag">循环理解</span>
+        </div>
+<pre class="code-source">
+// s, a, b, c 均为整型，c > 0
+s = a;   
+for(b = 1; b <= c; b++)   
+    s += 1;
+// 功能等价于？
+</pre>
+        <p>(A) s=a+b (B) s=a+c (C) s=s+c (D) s=b+c</p>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 正确答案：B</div>
+            <p><strong>解析：</strong> 初始有 <code>a</code>，循环执行了 <code>c</code> 次，每次加 1。相当于一共加了 c。所以 s = a + c。</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">6. 2019年第4题（循环减法）</div>
+            <span class="tag">循环理解</span>
+        </div>
+<pre class="code-source">
+s = a;
+for (b = 1; b <= c; b++) 
+    s = s - 1;
+// 功能等价于？
+</pre>
+        <p>(A) s=a-c (B) s=a-b ...</p>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 正确答案：A</div>
+            <p><strong>解析：</strong> 同理，循环 c 次，每次减 1，一共减去 c。结果是 s = a - c。</p>
+        </div>
+    </div>
+
+    <div class="level-header">
+        <span class="level-badge" style="background: var(--level2);">LEVEL 2</span>
+        <h2>🌲 进阶林：逻辑判断与循环</h2>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">7. 2015年第23题（Else匹配陷阱）</div>
+            <span class="tag">选择结构</span>
+        </div>
+<pre class="code-source">
+#include &lt;iostream&gt; 
+using namespace std;
+int main() 
+{
+    int a, b, c; a = 1; b = 2; c = 3;
+    if(a > b)      // 1 > 2 为假
+        if(a > c)
+            cout << a << ' ';
+        else       // 这个else属于内层if
+        cout << b << ' '; 
+    cout << c << endl; // 这一句一定执行
+    return 0;
+}
+</pre>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 答案：3</div>
+            <div class="visual-box">
+                <p><strong>🚧 路线图</strong></p>
+                <p><code>if(a > b)</code> 判断为 <strong>False</strong> ❌</p>
+                <p>⬇️</p>
+                <p>跳过整个内部代码块（包括里面的if和else）</p>
+                <p>⬇️</p>
+                <p>执行 <code>cout << c</code></p>
+            </div>
+            <p><strong>避坑：</strong> 缩进是骗人的！<code>else</code> 总是和最近的未匹配 <code>if</code> 结合。</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">8. 2011年第23题（累加求和）</div>
+            <span class="tag">While循环</span>
+        </div>
+<pre class="code-source">
+#include&lt;iostream&gt;
+using namespace std;
+int main()
+{
+    int i,n,m,ans;
+    cin>>n>>m; // 输入：10 20
+    i=n;
+    ans=0;
+    while(i<=m){
+       ans+=i;
+       i++;
+    }
+    cout<<ans<<endl;
+    return 0;
+}
+</pre>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 答案：165</div>
+            <p><strong>解析：</strong> 计算 10+11+...+20 的和。</p>
+            <p>公式：(首项+末项)×项数÷2 = (10+20)×11÷2 = 165。</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">9. 2014年第13题（浮点数陷阱）</div>
+            <span class="tag">数据类型</span>
+        </div>
+<pre class="code-source">
+#include &lt;iostream&gt;  
+using namespace std;  
+int main()  
+{ 
+    int n;     
+    float s;     
+    s = 1.0; 
+    for(n = 10; n > 1; n--)       
+        s = s + 1 / n;  // 哪一行代码导致结果错误？
+    cout << s << endl;    
+    return 0;   
+} 
+</pre>
+        <p>(A) s=1.0 (B) for... (C) s=s+1/n (D) cout...</p>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 正确答案：C</div>
+            <p><strong>解析：</strong> <code>1</code> 和 <code>n</code> 都是整数。</p>
+            <p>当 n=10 时，<code>1 / 10</code> 在C++整数运算中等于 <strong>0</strong>，小数部分被丢弃。</p>
+            <p><strong>改正：</strong> 应写成 <code>1.0 / n</code>。</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">10. 2013年第24题（整除计数）</div>
+            <span class="tag">条件计数</span>
+        </div>
+<pre class="code-source">
+// 输入：1 100 15
+for (i = a; i <= b; i++) 
+    if ((i % u) == 0)
+        num++;
+</pre>
+        <p>计算 1 到 100 之间能被 15 整除的数有多少个？</p>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 正确答案：C (6个)</div>
+            <p><strong>列举：</strong> 15, 30, 45, 60, 75, 90。</p>
+            <p>共 6 个。</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">11. 2014年第15题（倒推法）</div>
+            <span class="tag">Do-While循环</span>
+        </div>
+<pre class="code-source">
+s= 0; a= 1;
+do {
+  s+= 1;
+  a-= 2;
+} while ( a != n );
+</pre>
+        <p>若输出 s=2，则输入 n 应该是多少？ (A)-1 (B)-3 (C)-5 (D)0</p>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 正确答案：B (-3)</div>
+            <p><strong>解析：</strong> 输出s=2说明循环了2次。</p>
+            <ul>
+                <li>第1次：s=1, a=1-2 = -1</li>
+                <li>第2次：s=2, a=-1-2 = <strong>-3</strong></li>
+            </ul>
+            <p>循环结束条件是 a==n，所以 n 就是 -3。</p>
+        </div>
+    </div>
+
+    <div class="level-header">
+        <span class="level-badge" style="background: var(--level3);">LEVEL 3</span>
+        <h2>⛰️ 高手山：复杂逻辑与嵌套</h2>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">12. 2016年第13题（Continue跳跃）</div>
+            <span class="tag">流程控制</span>
+        </div>
+<pre class="code-source">
+#include &lt;iostream&gt;
+using namespace std;
+int main()
+{
+    int k = 4, n = 0;
+    while (n < k)
+    {
+        n++;
+        if (n % 3 != 0) // 如果n不是3的倍数
+            continue;   // 跳过后面，直接开始下一次循环
+        k--;
+    }
+    cout << k << "," << n << endl;
+    return 0;
+}
+</pre>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 正确答案：D (3,3)</div>
+            <div class="visual-box">
+                <p><strong>🏃‍♂️ 循环记录</strong></p>
+                <p>1. n=1 (跳过 k--) k=4</p>
+                <p>2. n=2 (跳过 k--) k=4</p>
+                <p>3. n=3 (是3的倍数! 执行 k--) k=3</p>
+                <p>判断：n < k? (3 < 3) ➡️ <strong>False</strong>，结束</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">13. 2007年第13题（死循环的传说）</div>
+            <span class="tag">概念理解</span>
+        </div>
+        <div class="q-content">
+            <p>关于“死循环”，下列说法正确的是：</p>
+            <ul>
+                <li>A. 任何编译系统都无法完全检查出死循环</li>
+                <li>B. 编译器能查出来</li>
+                <li>C. 死循环是语法错误</li>
+                <li>D. 类似死锁，可以检测</li>
+            </ul>
+        </div>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 正确答案：A</div>
+            <p><strong>解析：</strong> 这是一个著名的计算机原理（停机问题）。电脑无法在运行前百分百预测程序是否会永远停不下来。</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">14. 2018年第19题（模运算循环）</div>
+            <span class="tag">数学应用</span>
+        </div>
+<pre class="code-source">
+#include <stdio.h>
+int main() {
+    int x;
+    scanf("%d", &x); // 输入：15
+    int res = 0;
+    for (int i = 0; i < x; ++i) {
+        if (i * i % x == 1) {
+            ++res;
+        }
+    }
+    printf("%d", res);
+    return 0;
+}
+</pre>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 答案：4</div>
+            <p><strong>解析：</strong> 寻找 0~14 之间，平方后除以 15 余 1 的数。</p>
+            <ul>
+                <li>1*1 = 1 (余1) ✅</li>
+                <li>4*4 = 16 (16÷15余1) ✅</li>
+                <li>11*11 = 121 (121÷15余1) ✅</li>
+                <li>14*14 = 196 (196÷15余1) ✅</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">15. 2010年第24题（回文数）</div>
+            <span class="tag">函数逻辑</span>
+        </div>
+<pre class="code-source">
+// rSum函数会将数字反转 (例 123 -> 321)
+int main()
+{
+    int n, m, i;        
+    cin>>n>>m; // 输入：90 120
+    for (i = n; i < m; i++)
+        if (i == rSum(i)) // 如果数字和它的反转相等
+           cout<<i<<' ';
+    return 0;
+}
+</pre>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 答案：99 101 111</div>
+            <p><strong>解析：</strong> 找 90 到 119 之间的“回文数”。</p>
+            <ul>
+                <li>99 -> 反转还是99 (是)</li>
+                <li>100 -> 反转是001 (否)</li>
+                <li>101 -> 反转是101 (是)</li>
+                <li>111 -> 反转是111 (是)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">16. 2010年第23题（交换与排序）</div>
+            <span class="tag">排序逻辑</span>
+        </div>
+<pre class="code-source">
+    cin>>a1>>a2>>a3; // 输入：91 2 20
+    // 三次swap交换，其实是在做排序
+    if (a1 > a2) swap(a1, a2);
+    if (a2 > a3) swap(a2, a3);
+    if (a1 > a2) swap(a1, a2);
+    // 此时 a1, a2, a3 已经从小到大排好了
+    
+    cin>>x; // 输入 77
+    // 下面的if是在找x应该插在哪里
+</pre>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 答案：A (2 20 77 91)</div>
+            <p><strong>解析：</strong></p>
+            <p>1. 排序前三个数：2, 20, 91。</p>
+            <p>2. 插入 77：它比 20 大，比 91 小。</p>
+            <p>3. 结果：2, 20, 77, 91。</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">17. 2012年第24题（找因子）</div>
+            <span class="tag">循环计数</span>
+        </div>
+<pre class="code-source">
+#include <iostream>
+using namespace std;
+int n, i, ans;
+int main()
+{
+    cin >> n; // 输入：18
+    ans = 0;
+    for (i = 1; i <= n; i++)
+        if (n % i == 0) ans++;
+    cout << ans << endl;
+    return 0;
+}
+</pre>
+        <p>输出结果是？ (A) 4 (B) 5 (C) 6 (D) 7</p>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 正确答案：C</div>
+            <p><strong>解析：</strong> 找 18 的所有因数。</p>
+            <p>1, 2, 3, 6, 9, 18。共 6 个。</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">18. 2013年第19题（1加到100）</div>
+            <span class="tag">循环控制</span>
+        </div>
+        <div class="q-content">
+            <p>哪个程序能正确计算 1+2+...+100？</p>
+            <ul>
+                <li>A. <code>i=1; do{ sum+=i; i++; }while(i<=100);</code></li>
+                <li>B. <code>while(i > 100)</code></li>
+                <li>C. <code>while(i < 100)</code></li>
+                <li>D. <code>while(i >= 100)</code></li>
+            </ul>
+        </div>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 正确答案：A</div>
+            <p><strong>解析：</strong> A选项do-while先执行后判断，能覆盖到100。C选项当i=100时就不执行了，会少加一个数。</p>
+        </div>
+    </div>
+
+    <div class="level-header">
+        <span class="level-badge" style="background: var(--level4);">LEVEL 4</span>
+        <h2>🏰 挑战塔：算法填空 (Boss战)</h2>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">19. 2020年第19题（质因数分解）</div>
+            <span class="tag">算法填空</span>
+        </div>
+        <div class="q-content">
+            <p>功能：输入 120，输出 2 2 2 3 5。<br>请补全代码：</p>
+<pre class="code-source">
+#include <cstdio>
+using namespace std;
+int n, i;
+int main() {
+    scanf("%d", &n);
+    for (i = 【①】; 【②】 <= n; i++) {   
+        【③】 {           
+            printf("%d ", i);
+            n = n / i;               
+        }
+    }
+    if (【④】)                        
+        printf("%d ", 【⑤】);            
+    return 0;
+}
+</pre>
+            <p>选项参考：①初始值 ②循环条件 ③判断方式 ④剩余判断 ⑤输出剩余</p>
+        </div>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 答案：C C C A C</div>
+            <div class="visual-box">
+                <p><strong>🔪 切蛋糕算法</strong></p>
+                <p>1. 从最小质数 <strong>2</strong> 开始切 (①选C)</p>
+                <p>2. 只要试到 <strong>i*i <= n</strong> 就够了 (②选C)</p>
+                <p>3. 如果能切动，要<strong>一直切</strong>（用while），比如120含有三个2 (③选C)</p>
+                <p>4. 最后如果剩下一块 (n > 1)，说明剩下的就是个大质数，直接输出 (④⑤)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="q-title">20. 2022年第19题（枚举因数）</div>
+            <span class="tag">Vector应用</span>
+        </div>
+<pre class="code-source">
+#include <bits/stdc++.h>
+using namespace std;
+int main() {
+    int n; cin >> n;
+    vector<int> fac;
+    // ...省略部分...
+    for (i = 1; i * i < n; ++i) {
+        if (【①】) {   
+            fac.push_back(i);
+        }
+    }
+    // ...输出前半部分...
+    // ...输出后半部分...
+}
+</pre>
+        <p>这是一道完善程序题，考察如何高效找出所有因数。</p>
+        <button class="toggle-btn" onclick="toggleAns(this)">👀 显示答案与解析</button>
+        <div class="answer-panel">
+            <div class="answer-key">✅ 答案：A B C D A</div>
+            <p><strong>核心思路：</strong> 只找 <code>i * i < n</code> 的小因数（比如36，只找1, 2, 3, 4），存进 vector。</p>
+            <p>① <code>n % i == 0</code>：是因数才存。</p>
+            <p>大因数可以通过 <code>n / 小因数</code> 算出来。</p>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 50px; color: #636e72; padding-bottom: 20px;">
+        <p>🎉 恭喜你完成了所有挑战！你是最棒的！ 🌟</p>
+    </div>
+</div>
+
+<script>
+    // 1. 答案切换功能
+    function toggleAns(btn) {
+        var panel = btn.nextElementSibling;
+        if (panel.style.display === "block") {
+            panel.style.display = "none";
+            btn.innerHTML = "👀 显示答案与解析";
+            btn.style.background = "#686de0";
+        } else {
+            panel.style.display = "block";
+            btn.innerHTML = "🙈 隐藏答案";
+            btn.style.background = "#b2bec3";
+        }
+    }
+
+    // 2. 强大的代码高亮引擎（加载时运行一次，不再依赖点击）
+    function highlightCode() {
+        const codes = document.querySelectorAll('.code-source');
+        
+        codes.forEach(block => {
+            // 获取纯文本，避免HTML标签干扰
+            let html = block.innerText;
+            
+            // 1. 转义HTML特殊字符
+            html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            // 2. 字符串保护：把 "..." 替换成占位符
+            const strings = [];
+            html = html.replace(/(".*?"|'.*?')/g, function(match) {
+                strings.push(match);
+                return '___STR' + (strings.length - 1) + '___';
+            });
+
+            // 3. 正则替换语法高亮
+            // 注释 (//)
+            html = html.replace(/(\/\/.*$)/gm, '<span class="hljs-comment">$1</span>');
+            
+            // 预处理 (#include)
+            html = html.replace(/(#include\s*(?:&lt;.*?&gt;|___STR\d+___))/g, '<span class="hljs-meta">$1</span>');
+
+            // 关键字
+            const keywords = "\\b(int|float|double|char|void|if|else|for|while|do|break|continue|return|using|namespace|vector)\\b";
+            html = html.replace(new RegExp(keywords, 'g'), '<span class="hljs-keyword">$1</span>');
+
+            // 内置函数/对象
+            const builtins = "\\b(cin|cout|endl|printf|scanf|sqrt|ceil|push_back|size)\\b";
+            html = html.replace(new RegExp(builtins, 'g'), '<span class="hljs-built_in">$1</span>');
+
+            // 数字
+            html = html.replace(/\b(\d+)\b/g, '<span class="hljs-number">$1</span>');
+
+            // 填空题的特殊标记 【①】
+            html = html.replace(/(【.*?】)/g, '<span class="hljs-placeholder">$1</span>');
+
+            // 4. 还原字符串
+            strings.forEach((str, index) => {
+                const placeholder = '___STR' + index + '___';
+                const coloredStr = '<span class="hljs-string">' + str + '</span>';
+                html = html.split(placeholder).join(coloredStr);
+            });
+
+            block.innerHTML = html;
+        });
+    }
+
+    // 页面加载完成后立即执行高亮
+    window.onload = function() {
+        highlightCode();
+    };
+</script>
+
+</body>
+</html>
