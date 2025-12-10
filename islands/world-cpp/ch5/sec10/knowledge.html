@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第56-66关 生命、时间、价值、金币属性</title>
+    <title>C++ 第56-66关：属性与流程控制</title>
     <style>
         /* --- 1. 基础设置 --- */
         :root {
@@ -12,39 +12,35 @@
             --paper-bg: #efebe9;       /* 羊皮纸 */
             --hp-red: #e53935;         /* 生命红 */
             --mana-blue: #1e88e5;      /* 魔法蓝 */
-            --gold-yellow: #ffb300;    /* 金币黄 */
+            --gold-yellow: #fbc02d;    /* 金币黄 */
             --time-purple: #8e24aa;    /* 时间紫 */
             --text-main: #3e2723;
             --text-light: #d7ccc8;
             
-            /* 代码高亮 */
+            /* C++ 代码高亮 (Earth Theme) */
             --code-bg: #263238;
             --code-fg: #eceff1;
-            --tok-kw: #ff8a80;         /* 关键字 if/else */
-            --tok-func: #82b1ff;       /* 函数 */
-            --tok-prop: #ffb74d;       /* 属性 .health */
-            --tok-num: #b9f6ca;        /* 数字 */
+            --tok-kw: #ff8a80;         /* 关键字 void, if, else, break */
+            --tok-func: #82b1ff;       /* 函数 attack, moveXY */
+            --tok-prop: #ffcc80;       /* 属性 .health, .time */
+            --tok-num: #a5d6a7;        /* 数字 */
             --tok-var: #80cbc4;        /* 变量 */
-            --tok-op: #a1887f;         /* 运算符 */
+            --tok-op: #b0bec5;         /* 运算符 */
             --tok-cm: #546e7a;         /* 注释 */
+            --tok-str: #ce93d8;        /* 字符串 */
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', 'Consolas', sans-serif;
             background-color: var(--bg-wood);
-            /* 木地板背景 */
             background-image: 
                 linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
             background-size: 100px 100px;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            user-select: none;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; user-select: none; color: var(--text-main);
         }
 
         /* 漂浮金币动画 */
@@ -59,30 +55,15 @@
 
         /* --- 2. 舞台布局 --- */
         .stage {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 60px;
-            width: 98vw;
-            max-width: 1400px;
-            position: relative;
-            z-index: 10;
+            display: flex; align-items: center; justify-content: center; gap: 60px;
+            width: 98vw; max-width: 1400px; position: relative; z-index: 10;
         }
 
         /* --- 3. 道具按钮 (外部) --- */
         .nav-btn {
-            width: 90px;
-            height: 110px;
-            border: none;
-            cursor: pointer;
-            position: relative;
-            transition: transform 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: transparent;
-            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+            width: 90px; height: 110px; border: none; cursor: pointer; position: relative;
+            transition: transform 0.2s; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; background: transparent; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
         }
 
         /* 左：红药水 */
@@ -97,8 +78,7 @@
         }
         .potion-neck {
             width: 20px; height: 20px; background: rgba(255,255,255,0.2);
-            border: 3px solid rgba(255,255,255,0.8); border-bottom: none;
-            position: absolute; top: 0;
+            border: 3px solid rgba(255,255,255,0.8); border-bottom: none; position: absolute; top: 0;
         }
         .btn-prev .arrow { font-size: 30px; color: white; position: absolute; z-index: 2; text-shadow: 0 2px 2px black; }
 
@@ -108,97 +88,47 @@
             border-radius: 10px 10px 30px 30px; border: 3px solid #bf8f1b;
             position: relative; display: flex; justify-content: center; align-items: center;
         }
-        .money-bag::before { /* 绳子 */
-            content: ''; position: absolute; top: 20px; width: 100%; height: 4px; background: #5d4037;
-        }
+        .money-bag::before { content: ''; position: absolute; top: 20px; width: 100%; height: 4px; background: #5d4037; }
         .btn-next .arrow { font-size: 30px; color: #5d4037; font-weight: bold; z-index: 2; }
 
-        .nav-btn:hover { transform: scale(1.1); }
-        .nav-btn:active { transform: scale(0.95); }
-        
+        .nav-btn:hover { transform: scale(1.1); } .nav-btn:active { transform: scale(0.95); }
         .disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
-
-        @keyframes wave {
-            0% { transform: translateX(-20px); }
-            100% { transform: translateX(0px); }
-        }
+        @keyframes wave { 0% { transform: translateX(-20px); } 100% { transform: translateX(0px); } }
 
         /* --- 4. 状态面板容器 --- */
         .hud-container {
-            width: 960px;
-            height: 620px;
-            background: var(--panel-bg);
-            border-radius: 15px;
-            /* 金边 */
+            width: 960px; height: 620px; background: var(--panel-bg); border-radius: 15px;
             border: 8px solid #bcaaa4;
-            box-shadow: 
-                inset 0 0 50px rgba(0,0,0,0.8),
-                0 0 0 5px #3e2723,
-                0 30px 60px rgba(0,0,0,0.7);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 0 0 5px #3e2723, 0 30px 60px rgba(0,0,0,0.7);
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
         }
 
-        /* 顶部状态条 (Health/Gold) */
+        /* 顶部状态条 */
         .status-bar {
-            height: 60px;
-            background: #212121;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-            border-bottom: 4px solid #bcaaa4;
-            z-index: 20;
+            height: 60px; background: #212121; display: flex; justify-content: space-between;
+            align-items: center; padding: 0 30px; border-bottom: 4px solid #bcaaa4; z-index: 20;
             box-shadow: 0 5px 10px rgba(0,0,0,0.5);
         }
-        
         .stat-group { display: flex; align-items: center; gap: 10px; color: white; font-family: monospace; font-size: 18px; font-weight: bold; }
-        
-        /* HP 条 */
         .hp-bar-frame { width: 150px; height: 20px; background: #424242; border: 2px solid #757575; border-radius: 10px; overflow: hidden; position: relative; }
         .hp-fill { height: 100%; width: 80%; background: linear-gradient(90deg, #ff5252, #e53935); transition: width 0.3s; }
-        
-        /* 关卡标签 */
         .map-badge {
-            position: absolute;
-            top: 60px; left: 30px;
-            background: var(--gold-yellow); color: #3e2723;
-            padding: 5px 15px;
-            border-radius: 0 0 10px 10px;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            z-index: 15;
-            font-size: 14px;
+            position: absolute; top: 60px; left: 30px; background: var(--gold-yellow); color: #3e2723;
+            padding: 5px 15px; border-radius: 0 0 10px 10px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 15; font-size: 14px;
         }
 
         /* 幻灯片 */
         .slide {
-            display: none;
-            flex: 1;
-            padding: 50px 70px 40px 70px;
-            flex-direction: column;
-            animation: slideDown 0.5s ease-out;
-            overflow-y: auto;
-            background: var(--paper-bg);
-            /* 羊皮纸纹理 */
+            display: none; flex: 1; padding: 50px 70px 40px 70px; flex-direction: column;
+            animation: slideDown 0.5s ease-out; overflow-y: auto; background: var(--paper-bg);
             background-image: url('data:image/svg+xml;utf8,<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.1"/></svg>');
         }
         .slide.active { display: flex; }
-
-        @keyframes slideDown { 
-            0% { opacity: 0; transform: translateY(-20px); } 
-            100% { opacity: 1; transform: translateY(0); } 
-        }
+        @keyframes slideDown { 0% { opacity: 0; transform: translateY(-20px); } 100% { opacity: 1; transform: translateY(0); } }
 
         /* 内容布局 */
         .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 3px double #8d6e63;
-            padding-bottom: 10px;
+            display: flex; align-items: center; margin-bottom: 20px; border-bottom: 3px double #8d6e63; padding-bottom: 10px;
         }
         .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2)); }
         h1 { margin: 0; color: var(--text-main); font-size: 34px; letter-spacing: 1px; font-family: 'Georgia', serif; }
@@ -206,30 +136,17 @@
         .layout { display: flex; gap: 40px; height: 100%; }
         .col-text { flex: 1.1; font-size: 19px; line-height: 1.6; color: var(--text-main); }
         .col-visual { 
-            flex: 0.9; 
-            background: rgba(0,0,0,0.05);
-            border: 2px solid #bcaaa4; 
-            border-radius: 10px;
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            flex: 0.9; background: rgba(0,0,0,0.05); border: 2px solid #bcaaa4; border-radius: 10px;
+            display: flex; justify-content: center; align-items: center; position: relative;
+            overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
         }
 
-        /* 代码块 */
+        /* C++ 代码块优化 */
         .code-box {
-            background: var(--code-bg);
-            color: var(--code-fg);
-            padding: 15px 20px;
-            border-radius: 8px;
-            font-family: 'Consolas', monospace;
-            font-size: 17px;
-            margin-top: 15px;
-            border-left: 5px solid var(--gold-yellow);
-            box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
-            position: relative;
+            background: var(--code-bg); color: var(--code-fg); padding: 15px 20px; border-radius: 8px;
+            font-family: 'Consolas', monospace; font-size: 17px; margin-top: 15px;
+            border-left: 5px solid var(--gold-yellow); box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+            white-space: pre; line-height: 1.5; overflow-x: auto; tab-size: 4;
         }
         
         .k { color: var(--tok-kw); font-weight: bold; } 
@@ -238,109 +155,42 @@
         .n { color: var(--tok-num); } 
         .v { color: var(--tok-var); } 
         .o { color: var(--tok-op); } 
-        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+        .c { color: var(--tok-cm); font-style: italic; }
+        .s { color: var(--tok-str); }
 
         /* 卡片 */
         .card {
-            background: #fff3e0;
-            border-left: 5px solid var(--gold-yellow);
-            color: #e65100;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 0 5px 5px 0;
-            font-size: 18px;
-            font-weight: bold;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            background: #fff3e0; border-left: 5px solid var(--gold-yellow); color: #e65100;
+            padding: 15px 20px; margin-bottom: 15px; border-radius: 0 5px 5px 0;
+            font-size: 18px; font-weight: bold; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* --- 5. 视觉化组件 --- */
-        
         /* 交互式血条演示 */
-        .health-demo {
-            width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
-        }
-        .big-hp-bar {
-            width: 200px; height: 200px; border-radius: 50%; border: 10px solid #ddd;
-            position: relative; overflow: hidden; background: white;
-        }
-        .big-hp-fill {
-            position: absolute; bottom: 0; width: 100%; height: 50%;
-            background: var(--hp-red); transition: height 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            opacity: 0.8;
-        }
-        .big-hp-text {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 40px; font-weight: bold; color: #333; text-shadow: 0 0 5px white; z-index: 5;
-        }
-        .hp-controls { display: flex; gap: 10px; }
-        .btn-action {
-            padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-        }
-        .btn-dmg { background: #d32f2f; }
-        .btn-heal { background: #388e3c; }
-        .btn-action:active { transform: translateY(4px); box-shadow: none; }
+        .health-demo { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+        .big-hp-bar { width: 200px; height: 200px; border-radius: 50%; border: 10px solid #ddd; position: relative; overflow: hidden; background: white; }
+        .big-hp-fill { position: absolute; bottom: 0; width: 100%; height: 50%; background: var(--hp-red); transition: height 0.5s; opacity: 0.8; }
+        .big-hp-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; font-weight: bold; color: #333; text-shadow: 0 0 5px white; z-index: 5; }
+        .btn-action { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
+        .btn-dmg { background: #d32f2f; } .btn-heal { background: #388e3c; } .btn-action:active { transform: translateY(4px); box-shadow: none; }
 
         /* 时钟演示 */
-        .clock-box {
-            position: relative; width: 200px; height: 200px; border: 8px solid var(--time-purple); border-radius: 50%;
-            background: white; display: flex; justify-content: center; align-items: center;
-        }
-        .clock-hand {
-            position: absolute; top: 50%; left: 50%; width: 4px; height: 80px; background: #333;
-            transform-origin: top center; transform: rotate(180deg); transition: transform 0.5s linear;
-        }
-        .time-phase {
-            position: absolute; width: 100%; height: 100%; border-radius: 50%;
-            background: conic-gradient(
-                var(--hp-red) 0deg 60deg,     /* 0-10s (10/60 * 360 = 60) */
-                var(--gold-yellow) 60deg 210deg, /* 10-35s (25/60 * 360 = 150) */
-                var(--hp-red) 210deg 360deg      /* 35s+ */
-            );
-            opacity: 0.2;
-        }
-        
+        .clock-box { position: relative; width: 200px; height: 200px; border: 8px solid var(--time-purple); border-radius: 50%; background: white; display: flex; justify-content: center; align-items: center; }
+        .clock-hand { position: absolute; top: 50%; left: 50%; width: 4px; height: 80px; background: #333; transform-origin: top center; transform: rotate(180deg); transition: transform 0.5s linear; }
+        .time-phase { position: absolute; width: 100%; height: 100%; border-radius: 50%; opacity: 0.2; background: conic-gradient(var(--hp-red) 0deg 60deg, var(--gold-yellow) 60deg 210deg, var(--hp-red) 210deg 360deg); }
+
         /* 存钱罐演示 */
-        .bank-box {
-            width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .piggy { font-size: 80px; position: relative; cursor: pointer; transition: transform 0.1s; }
-        .piggy:active { transform: scale(0.9); }
+        .bank-box { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .piggy { font-size: 80px; position: relative; cursor: pointer; transition: transform 0.1s; } .piggy:active { transform: scale(0.9); }
         .coin-anim { position: absolute; font-size: 30px; animation: dropIn 0.5s forwards; top: -50px; }
-        
         @keyframes dropIn { 0% { top: -50px; opacity: 0; } 100% { top: 0; opacity: 1; } }
 
-        /* 建筑大师演示 */
-        .build-ground {
-            width: 100%; height: 100%; position: relative; background: #8d6e63;
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 10px;
-            align-items: center; justify-items: center;
-        }
-        .decoy { font-size: 40px; animation: pop 0.3s; }
-        
         /* 进度条 */
-        .progress-bar {
-            height: 8px;
-            background: #d7ccc8;
-            width: 100%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--hp-red), var(--gold-yellow));
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        @keyframes pop { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
-
+        .progress-bar { height: 8px; background: #d7ccc8; width: 100%; position: absolute; bottom: 0; left: 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--hp-red), var(--gold-yellow)); width: 0%; transition: width 0.3s; }
     </style>
 </head>
 <body>
 
-<!-- 金币背景 -->
 <script>
     for(let i=0; i<10; i++) {
         let c = document.createElement('div');
@@ -353,16 +203,13 @@
 </script>
 
 <div class="stage">
-    <!-- 左按钮 -->
     <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">
         <div class="potion-neck"></div>
         <div class="potion-bottle"><div class="potion-liquid"></div></div>
         <div class="arrow">❮</div>
     </button>
 
-    <!-- 面板容器 -->
     <div class="hud-container">
-        <!-- 顶部状态条 -->
         <div class="status-bar">
             <div class="stat-group">
                 <span>❤️</span>
@@ -377,19 +224,48 @@
         
         <div class="map-badge">计算机科学 3 | 第 56-66 关</div>
 
-        <!-- Slide 1: 封面 -->
         <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
-            <div style="font-size: 100px; margin-bottom: 20px; text-shadow: 2px 2px 5px rgba(0,0,0,0.2);">📊</div>
-            <h1 style="font-size: 48px; margin: 10px 0; color: var(--text-main);">英雄属性面板</h1>
-            <h2 style="font-size: 24px; color: var(--hp-red); font-weight: bold; margin-top: 0;">Hero Properties</h2>
+            <div style="font-size: 100px; margin-bottom: 20px;">📊</div>
+            <h1 style="font-size: 48px; margin: 10px 0; color: var(--text-main);">英雄属性与流程控制</h1>
+            <h2 style="font-size: 24px; color: var(--hp-red); font-weight: bold; margin-top: 0;">Properties & Control Flow</h2>
             <div style="margin-top: 40px; display: flex; gap: 30px;">
-                <div style="padding: 15px 30px; background: var(--hp-red); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #b71c1c;">❤️ 生命</div>
-                <div style="padding: 15px 30px; background: var(--time-purple); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #4a148c;">⏰ 时间</div>
-                <div style="padding: 15px 30px; background: var(--gold-yellow); color: #3e2723; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #ff8f00;">💰 财富</div>
+                <div style="padding: 15px 30px; background: var(--hp-red); color: white; border-radius: 10px; font-weight: bold; font-size: 20px;">❤️ 生命</div>
+                <div style="padding: 15px 30px; background: var(--time-purple); color: white; border-radius: 10px; font-weight: bold; font-size: 20px;">⏰ 时间</div>
+                <div style="padding: 15px 30px; background: var(--gold-yellow); color: #3e2723; border-radius: 10px; font-weight: bold; font-size: 20px;">💰 财富</div>
             </div>
         </div>
 
-        <!-- Slide 2: 生命属性 Health -->
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🪄</div>
+                <h1>定义函数 (Define Function)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    
+
+[Image of code encapsulation diagram]
+
+                    <p>将重复的动作打包成一个<b>函数</b>，让代码更整洁。</p>
+                    <p>使用 <code>void</code> 定义一个不返回值的动作函数。</p>
+                    <div class="code-box"><span class="c">// 定义向右移动的函数</span>
+<span class="k">void</span> <span class="f">moveRight</span>() {
+    <span class="k">float</span> <span class="v">x</span> <span class="o">=</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">x</span> <span class="o">+</span> <span class="n">12</span>;
+    <span class="k">float</span> <span class="v">y</span> <span class="o">=</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">y</span>;
+    <span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">x</span>, <span class="v">y</span>);
+}
+
+<span class="k">int</span> <span class="f">main</span>() {
+    <span class="f">moveRight</span>(); <span class="c">// 直接调用！</span>
+    <span class="k">return</span> <span class="n">0</span>;
+}</div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 80px; text-align: center;">📦<br>Package Code</div>
+                </div>
+            </div>
+        </div>
+
         <div class="slide">
             <div class="header">
                 <div class="icon">❤️</div>
@@ -398,17 +274,22 @@
             <div class="layout">
                 <div class="col-text">
                     <p><b>hero.health</b>：当前的生命值。<br>
-                    <b>hero.maxHealth</b>：满血时的生命值（杯子容量）。</p>
-                    <div class="code-box">
-                        <span class="c"># 如果血量少于 1/3</span><br>
-                        <span class="kw">if</span> <span class="v">hero</span>.<span class="p">health</span> <span class="tok-op"><</span> <span class="v">hero</span>.<span class="p">maxHealth</span> <span class="tok-op">/</span> <span class="tok-num">3</span>:<br>
-                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">say</span>(<span class="s">"治疗！"</span>)
-                    </div>
+                    <b>hero.maxHealth</b>：满血时的生命值上限。</p>
+                    <div class="code-box"><span class="c">// 计算半血阈值</span>
+<span class="k">float</span> <span class="v">limit</span> <span class="o">=</span> <span class="v">hero</span>.<span class="p">maxHealth</span> <span class="o">/</span> <span class="n">2</span>;
+
+<span class="c">// 如果受伤严重</span>
+<span class="k">if</span> (<span class="v">hero</span>.<span class="p">health</span> <span class="o">&lt;</span> <span class="v">limit</span>) {
+    <span class="v">hero</span>.<span class="f">say</span>(<span class="s">"Heal me!"</span>);
+} <span class="k">else</span> {
+    <span class="v">hero</span>.<span class="f">attack</span>(<span class="v">enemy</span>);
+}</div>
                     <div class="card">
-                        "像看血条一样，变红了就该跑了！"
+                        "像看血条一样，变红了就该跑去治疗了！"
                     </div>
                 </div>
                 <div class="col-visual">
+                    
                     <div class="health-demo">
                         <div class="big-hp-bar">
                             <div class="big-hp-fill" id="demoHp"></div>
@@ -425,17 +306,13 @@
                             curHp += val;
                             if(curHp > 100) curHp = 100;
                             if(curHp < 0) curHp = 0;
-                            
                             const fill = document.getElementById('demoHp');
                             const txt = document.getElementById('demoHpText');
                             fill.style.height = curHp + '%';
                             txt.innerText = curHp + '%';
-                            
-                            // Top bar sync
                             document.getElementById('topHp').style.width = curHp + '%';
                             document.getElementById('topHpText').innerText = curHp;
-                            
-                            if(curHp < 33) fill.style.background = "#c62828"; // Dark red
+                            if(curHp < 33) fill.style.background = "#c62828"; 
                             else fill.style.background = "#e53935";
                         }
                     </script>
@@ -443,7 +320,6 @@
             </div>
         </div>
 
-        <!-- Slide 3: 时间属性 Time -->
         <div class="slide">
             <div class="header">
                 <div class="icon">⏰</div>
@@ -451,16 +327,24 @@
             </div>
             <div class="layout">
                 <div class="col-text">
-                    <p><b>hero.time</b>：游戏时钟，从 0 开始一直走。</p>
-                    <div class="code-box">
-                        <span class="kw">if</span> <span class="v">hero</span>.<span class="p">time</span> <span class="tok-op"><</span> <span class="tok-num">10</span>:<br>
-                        &nbsp;&nbsp;<span class="c"># 前10秒：攻击</span><br>
-                        <span class="kw">elif</span> <span class="v">hero</span>.<span class="p">time</span> <span class="tok-op"><</span> <span class="tok-num">35</span>:<br>
-                        &nbsp;&nbsp;<span class="c"># 10-35秒：收集</span><br>
-                        <span class="kw">else</span>:<br>
-                        &nbsp;&nbsp;<span class="c"># 35秒后：决战</span>
-                    </div>
-                    <p>像课程表一样，不同时间做不同的事。</p>
+                    
+
+[Image of timeline Gantt chart]
+
+                    <p><b>hero.time</b>：游戏开始后经过的秒数。</p>
+                    <div class="code-box"><span class="c">// 使用 else if 分阶段行动</span>
+<span class="k">if</span> (<span class="v">hero</span>.<span class="p">time</span> <span class="o">&lt;</span> <span class="n">10</span>) {
+    <span class="c">// 前10秒：全力攻击</span>
+    <span class="v">hero</span>.<span class="f">attack</span>(<span class="v">enemy</span>);
+} 
+<span class="k">else</span> <span class="k">if</span> (<span class="v">hero</span>.<span class="p">time</span> <span class="o">&lt;</span> <span class="n">35</span>) {
+    <span class="c">// 10-35秒：收集资源</span>
+    <span class="v">hero</span>.<span class="f">moveXY</span>(<span class="n">30</span>, <span class="n">40</span>);
+} 
+<span class="k">else</span> {
+    <span class="c">// 35秒后：最后决战</span>
+    <span class="v">hero</span>.<span class="f">attack</span>(<span class="s">"Boss"</span>);
+}</div>
                 </div>
                 <div class="col-visual">
                     <div style="display: flex; flex-direction: column; align-items: center;">
@@ -477,10 +361,9 @@
                     </div>
                     <script>
                         function updateClock(val) {
-                            const deg = val * 6 + 180; // 6 deg per sec
+                            const deg = val * 6 + 180;
                             document.getElementById('clockHand').style.transform = `rotate(${deg}deg)`;
                             const lbl = document.getElementById('clockLabel');
-                            
                             if(val < 10) { lbl.innerText = "Phase 1: Attack (Red)"; lbl.style.color = "#e53935"; }
                             else if(val < 35) { lbl.innerText = "Phase 2: Collect (Yellow)"; lbl.style.color = "#ffb300"; }
                             else { lbl.innerText = "Phase 3: Final (Red)"; lbl.style.color = "#e53935"; }
@@ -490,26 +373,30 @@
             </div>
         </div>
 
-        <!-- Slide 4: 价值与金币 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">💰</div>
-                <h1>价值 (Value) & 金币 (Gold)</h1>
+                <h1>金币与跳出 (Gold & Break)</h1>
             </div>
             <div class="layout">
                 <div class="col-text">
-                    <ul style="list-style: none; padding: 0; font-size: 18px;">
-                        <li style="margin-bottom: 15px;">🏷️ <b>item.value</b>：物品值多少钱。<br>(金币=1, 宝石=10)</li>
-                        <li>👛 <b>hero.gold</b>：你钱包里有多少钱。</li>
-                    </ul>
-                    <div class="code-box">
-                        <span class="c"># 累加价值</span><br>
-                        <span class="v">totalGold</span> <span class="tok-op">+=</span> <span class="v">coin</span>.<span class="p">value</span><br>
-                        <br>
-                        <span class="c"># 检查钱包</span><br>
-                        <span class="kw">if</span> <span class="v">hero</span>.<span class="p">gold</span> <span class="tok-op">>=</span> <span class="tok-num">25</span>:<br>
-                        &nbsp;&nbsp;<span class="f">build</span>(<span class="s">"decoy"</span>)
-                    </div>
+                    <p><b>hero.gold</b>：当前拥有的金币数。<br><b>item.value</b>：地上金币的价值。</p>
+                    <p>使用 <b>break</b> 可以随时跳出循环。</p>
+                    <div class="code-box"><span class="k">int</span> <span class="v">totalGold</span> <span class="o">=</span> <span class="n">0</span>;
+<span class="k">while</span>(<span class="k">true</span>) {
+    <span class="k">auto</span> <span class="v">coin</span> <span class="o">=</span> <span class="v">hero</span>.<span class="f">findNearestItem</span>();
+    <span class="k">if</span> (<span class="v">coin</span>) {
+        <span class="c">// 累加价值</span>
+        <span class="v">totalGold</span> <span class="o">+=</span> <span class="v">coin</span>.<span class="p">value</span>;
+        <span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">coin</span>.<span class="p">pos</span>.<span class="p">x</span>, <span class="v">coin</span>.<span class="p">pos</span>.<span class="p">y</span>);
+    }
+    
+    <span class="c">// 存够 25 金币就停手</span>
+    <span class="k">if</span> (<span class="v">totalGold</span> <span class="o">&gt;=</span> <span class="n">25</span>) {
+        <span class="k">break</span>; <span class="c">// 跳出循环！</span>
+    }
+}
+<span class="v">hero</span>.<span class="f">say</span>(<span class="s">"收工！"</span>);</div>
                 </div>
                 <div class="col-visual">
                     <div class="bank-box">
@@ -517,7 +404,7 @@
                         <div style="font-size: 24px; font-weight: bold; color: var(--gold-yellow); margin-top: 10px;">
                             Total: <span id="bankTotal">0</span>
                         </div>
-                        <p style="font-size: 12px; color: #999;">点击存钱罐</p>
+                        <p style="font-size: 12px; color: #999;">点击存钱罐 (Break at 25)</p>
                     </div>
                     <script>
                         let bank = 0;
@@ -533,82 +420,10 @@
                             c.innerText = val === 10 ? '💎' : '🪙';
                             pig.appendChild(c);
                             setTimeout(() => c.remove(), 500);
-                        }
-                    </script>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 5: 实战1 - 战术战士 -->
-        <div class="slide">
-            <div class="header">
-                <div class="icon">🛡️</div>
-                <h1>实战 I：智能战术</h1>
-            </div>
-            <div class="layout">
-                <div class="col-text">
-                    <p>根据敌人强弱决定战术。</p>
-                    <div class="code-box">
-                        <span class="kw">if</span> <span class="v">enemy</span>.<span class="p">health</span> <span class="tok-op">></span> <span class="v">enemy</span>.<span class="p">maxHealth</span> <span class="tok-op">/</span> <span class="tok-num">3</span>:<br>
-                        &nbsp;&nbsp;<span class="f">attack</span>(<span class="v">enemy</span>) <span class="c"># 血多就打</span><br>
-                        <span class="kw">else</span>:<br>
-                        &nbsp;&nbsp;<span class="f">moveXY</span>(<span class="tok-num">35</span>, <span class="tok-num">16</span>) <span class="c"># 血少(发狂?)撤退</span>
-                    </div>
-                    <div class="card">
-                        <b>百分比计算：</b><br>
-                        maxHealth / 3 = 33% 的血量。
-                    </div>
-                </div>
-                <div class="col-visual">
-                    <div style="text-align: center;">
-                        <div style="font-size: 60px;">👹</div>
-                        <div style="width: 150px; height: 10px; background: #ccc; margin: 10px auto; border-radius: 5px; position: relative;">
-                            <div style="width: 40%; height: 100%; background: red; border-radius: 5px;"></div>
-                            <div style="position: absolute; left: 33%; top: -5px; height: 20px; width: 2px; background: black;"></div>
-                        </div>
-                        <div>> 33% : ⚔️ Attack</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 6: 实战2 - 建筑大师 -->
-        <div class="slide">
-            <div class="header">
-                <div class="icon">🏗️</div>
-                <h1>实战 II：建筑大师</h1>
-            </div>
-            <div class="layout">
-                <div class="col-text">
-                    <p>存钱造东西，造够了就停。</p>
-                    <div class="code-box">
-                        <span class="v">built</span> <span class="tok-op">=</span> <span class="tok-num">0</span><br>
-                        <span class="kw">while</span> <span class="k">True</span>:<br>
-                        &nbsp;&nbsp;<span class="c"># ... 收集金币 ...</span><br>
-                        &nbsp;&nbsp;<span class="kw">if</span> <span class="v">hero</span>.<span class="p">gold</span> <span class="tok-op">>=</span> <span class="tok-num">25</span>:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">buildXY</span>(<span class="s">"decoy"</span>, ...)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">built</span> <span class="tok-op">+=</span> <span class="tok-num">1</span><br>
-                        &nbsp;&nbsp;<span class="kw">if</span> <span class="v">built</span> <span class="tok-op">==</span> <span class="tok-num">4</span>:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">break</span> <span class="c"># 停止</span>
-                    </div>
-                </div>
-                <div class="col-visual">
-                    <div class="build-ground" id="buildArea">
-                        <!-- JS fill -->
-                    </div>
-                    <button class="btn-action" style="position: absolute; bottom: 10px; background: var(--gold-yellow); color: black;" onclick="buildDecoy()">建造 (25g)</button>
-                    <script>
-                        let decoys = 0;
-                        function buildDecoy() {
-                            if(decoys >= 4) return;
-                            const area = document.getElementById('buildArea');
-                            const d = document.createElement('div');
-                            d.className = 'decoy';
-                            d.innerText = '🪵';
-                            area.appendChild(d);
-                            decoys++;
-                            if(decoys === 4) {
-                                setTimeout(() => alert("任务完成！break"), 100);
+                            
+                            if (bank >= 25) {
+                                setTimeout(() => alert("Break! 目标达成"), 200);
+                                bank = 0; // reset for demo
                             }
                         }
                     </script>
@@ -616,30 +431,6 @@
             </div>
         </div>
 
-        <!-- Slide 7: 编程思维扩展 -->
-        <div class="slide">
-            <div class="header">
-                <div class="icon">🧠</div>
-                <h1>编程思维：状态机</h1>
-            </div>
-            <div class="layout">
-                <div class="col-text">
-                    <p>用 <code>if/elif/else</code> + <code>time</code> 可以制作简单的<b>状态机 (State Machine)</b>。</p>
-                    <ul style="list-style: none; padding: 0;">
-                        <li>🟢 <b>状态 1</b>：收集模式 (0-10s)</li>
-                        <li>🔴 <b>状态 2</b>：攻击模式 (10-30s)</li>
-                        <li>🔵 <b>状态 3</b>：逃跑模式 (>30s)</li>
-                    </ul>
-                    <p>行为随时间自动切换，就像自动售货机一样！</p>
-                </div>
-                <div class="col-visual">
-                    <div style="font-size: 80px;">🤖</div>
-                    <div style="font-weight: bold; margin-top: 10px;">Mode: AUTO</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 8: 总结 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">📜</div>
@@ -653,7 +444,7 @@
                     </div>
                     <div class="card" style="background: #fff8e1; border-color: var(--gold-yellow); color: #ff6f00; margin-top: 20px;">
                         "<b>time</b> 像闹钟，分段做任务。<br>
-                        <b>gold</b> 像钱包，存够买东西。"
+                        <b>break</b> 是紧急出口，达成目标就撤退。"
                     </div>
                 </div>
                 <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
@@ -662,12 +453,10 @@
             </div>
         </div>
 
-        <!-- 底部进度条 -->
         <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
 
     </div>
 
-    <!-- 右按钮 -->
     <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">
         <div class="money-bag"><div class="arrow">❯</div></div>
     </button>

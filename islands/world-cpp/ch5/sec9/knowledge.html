@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第47-55关 方向与坐标变化</title>
+    <title>C++ 第47-55关：方向与坐标</title>
     <style>
         /* --- 1. 基础设置 --- */
         :root {
@@ -15,36 +15,30 @@
             --neon-yellow: #feca57;    /* 警告黄 */
             --text-main: #c8d6e5;      /* 文本灰白 */
             
-            /* 代码高亮 */
+            /* C++ 代码高亮 (Space Theme) */
             --code-bg: #1e272e;
             --code-fg: #d2dae2;
-            --tok-kw: #ff6b81;         /* 关键字 */
-            --tok-func: #48dbfb;       /* 函数 */
-            --tok-prop: #ff9f43;       /* 属性 .pos */
-            --tok-var: #feca57;        /* 变量 */
-            --tok-num: #1dd1a1;        /* 数字 */
-            --tok-op: #ff9ff3;         /* 运算符 */
-            --tok-cm: #8395a7;         /* 注释 */
+            --tok-kw: #ff6b81;         /* 关键字 (红粉) */
+            --tok-func: #48dbfb;       /* 函数 (亮蓝) */
+            --tok-prop: #ff9f43;       /* 属性 .pos (橙) */
+            --tok-var: #feca57;        /* 变量 (黄) */
+            --tok-num: #1dd1a1;        /* 数字 (绿) */
+            --tok-op: #ff9ff3;         /* 运算符 (粉) */
+            --tok-cm: #8395a7;         /* 注释 (灰) */
+            --tok-type: #54a0ff;       /* 类型 float/auto (蓝) */
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', 'Consolas', sans-serif;
             background-color: var(--bg-space);
-            /* 星空背景 */
             background-image: 
                 radial-gradient(white 1px, transparent 1px),
-                radial-gradient(white 1px, transparent 1px);
+                radial-gradient(rgba(255,255,255,0.3) 1px, transparent 1px);
             background-size: 50px 50px;
-            background-position: 0 0, 25px 25px;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            user-select: none;
-            color: var(--text-main);
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; user-select: none; color: var(--text-main);
         }
 
         /* 闪烁星星 */
@@ -56,113 +50,63 @@
 
         /* --- 2. 舞台布局 --- */
         .stage {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 70px;
-            width: 98vw;
-            max-width: 1400px;
-            position: relative;
-            z-index: 10;
+            display: flex; align-items: center; justify-content: center; gap: 70px;
+            width: 98vw; max-width: 1400px; position: relative; z-index: 10;
         }
 
         /* --- 3. 推进器按钮 (外部) --- */
         .nav-btn {
-            width: 80px;
-            height: 120px;
-            background: #2f3640;
-            border: 2px solid #576574;
-            border-radius: 10px;
-            cursor: pointer;
-            position: relative;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            transition: transform 0.1s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            padding-bottom: 10px;
+            width: 80px; height: 120px; background: #2f3640; border: 2px solid #576574;
+            border-radius: 10px; cursor: pointer; position: relative;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5); transition: transform 0.1s;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 10px;
         }
         
-        /* 喷射火焰 */
         .thruster-flame {
             position: absolute; bottom: -20px; width: 40px; height: 40px;
             background: linear-gradient(to bottom, var(--neon-blue), transparent);
             border-radius: 50%; filter: blur(5px); opacity: 0.6;
-            animation: flame 0.1s infinite alternate;
-            z-index: -1;
+            animation: flame 0.1s infinite alternate; z-index: -1;
         }
         
-        .nav-btn::after {
-            font-size: 40px; color: white; margin-bottom: 20px;
-        }
+        .nav-btn::after { font-size: 40px; color: white; margin-bottom: 20px; }
         .btn-prev::after { content: '◀'; }
         .btn-next::after { content: '▶'; }
 
         .nav-btn:hover { transform: scale(1.05); border-color: var(--neon-blue); }
         .nav-btn:active { transform: scale(0.95); }
-        
-        @keyframes flame { from { height: 30px; opacity: 0.6; } to { height: 50px; opacity: 0.8; } }
-
         .disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+        @keyframes flame { from { height: 30px; opacity: 0.6; } to { height: 50px; opacity: 0.8; } }
 
         /* --- 4. 仪表盘容器 --- */
         .dashboard-container {
-            width: 960px;
-            height: 620px;
-            background: var(--panel-bg);
-            border-radius: 30px;
-            /* 全息边框 */
-            box-shadow: 
-                0 0 0 5px #2f3640,
-                0 0 20px var(--neon-blue),
-                inset 0 0 100px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            width: 960px; height: 620px; background: var(--panel-bg); border-radius: 30px;
+            box-shadow: 0 0 0 5px #2f3640, 0 0 20px var(--neon-blue), inset 0 0 100px rgba(0,0,0,0.5);
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
             border: 2px solid var(--neon-blue);
         }
 
         /* 顶部 HUD */
         .hud-bar {
-            height: 50px;
-            background: rgba(0,0,0,0.3);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-            border-bottom: 1px solid var(--neon-blue);
-            z-index: 20;
-            font-family: 'Courier New', monospace;
+            height: 50px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between;
+            align-items: center; padding: 0 30px; border-bottom: 1px solid var(--neon-blue);
+            z-index: 20; font-family: 'Courier New', monospace;
         }
-        .map-info {
-            color: var(--neon-blue); font-weight: bold; font-size: 18px;
-            text-shadow: 0 0 5px var(--neon-blue);
-        }
-        .coord-display {
-            color: var(--neon-pink); font-weight: bold;
-        }
+        .map-info { color: var(--neon-blue); font-weight: bold; font-size: 18px; text-shadow: 0 0 5px var(--neon-blue); }
+        .coord-display { color: var(--neon-pink); font-weight: bold; }
 
         /* 幻灯片 */
         .slide {
-            display: none;
-            flex: 1;
-            padding: 40px 60px;
-            flex-direction: column;
+            display: none; flex: 1; padding: 40px 60px; flex-direction: column;
             animation: hologram 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            overflow-y: auto;
-            background: var(--screen-bg);
-            position: relative;
+            overflow-y: auto; background: var(--screen-bg); position: relative;
         }
-        /* 扫描线 */
         .slide::before {
             content: " "; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 210, 211, 0.05) 50%);
             background-size: 100% 4px; pointer-events: none; z-index: 5;
         }
         .slide.active { display: flex; }
-
         @keyframes hologram { 
             0% { opacity: 0; transform: scaleY(0.1); filter: hue-rotate(90deg); } 
             100% { opacity: 1; transform: scaleY(1); filter: hue-rotate(0deg); } 
@@ -170,138 +114,69 @@
 
         /* 内容布局 */
         .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 25px;
-            border-bottom: 2px dashed #576574;
-            padding-bottom: 10px;
+            display: flex; align-items: center; margin-bottom: 25px;
+            border-bottom: 2px dashed #576574; padding-bottom: 10px;
         }
         .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(0 0 10px var(--neon-blue)); }
         h1 { margin: 0; color: var(--neon-blue); font-size: 34px; letter-spacing: 2px; text-transform: uppercase; }
 
         .layout { display: flex; gap: 40px; height: 100%; }
-        .col-text { flex: 1.2; font-size: 19px; line-height: 1.6; color: var(--text-main); }
+        .col-text { flex: 1.2; font-size: 18px; line-height: 1.6; color: var(--text-main); }
         .col-visual { 
-            flex: 0.8; 
-            background: #000;
-            border: 1px solid #576574; 
-            border-radius: 10px;
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+            flex: 0.8; background: #000; border: 1px solid #576574; border-radius: 10px;
+            display: flex; justify-content: center; align-items: center; position: relative;
+            overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
         }
 
-        /* 代码块 */
+        /* C++ 代码块优化 */
         .code-box {
-            background: var(--code-bg);
-            color: var(--code-fg);
-            padding: 15px 20px;
-            border-radius: 5px;
-            font-family: 'Consolas', monospace;
-            font-size: 17px;
-            margin-top: 15px;
-            border-left: 4px solid var(--neon-pink);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            position: relative;
+            background: var(--code-bg); color: var(--code-fg); padding: 15px 20px; border-radius: 5px;
+            font-family: 'Consolas', monospace; font-size: 16px; margin-top: 15px;
+            border-left: 4px solid var(--neon-pink); box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            white-space: pre; line-height: 1.5; overflow-x: auto; tab-size: 4;
         }
         
         .k { color: var(--tok-kw); font-weight: bold; } 
         .f { color: var(--tok-func); } 
         .v { color: var(--tok-var); } 
         .p { color: var(--tok-prop); font-weight: bold; } 
-        .n { color: var(--tok-num); }
+        .n { color: var(--tok-num); } 
         .o { color: var(--tok-op); } 
-        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+        .c { color: var(--tok-cm); font-style: italic; } 
+        .t { color: var(--tok-type); }
 
-        /* 卡片 */
+        /* 组件 */
         .card {
-            background: rgba(0, 210, 211, 0.1);
-            border-left: 4px solid var(--neon-blue);
-            color: var(--neon-blue);
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            background: rgba(0, 210, 211, 0.1); border-left: 4px solid var(--neon-blue);
+            color: var(--neon-blue); padding: 15px 20px; margin-bottom: 15px;
+            font-size: 16px; font-weight: bold; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
 
-        /* --- 5. 视觉化组件 --- */
-        
-        /* 星图网格演示 */
+        /* 星图演示 */
         .star-map {
             width: 100%; height: 100%; position: relative; cursor: crosshair;
-            background-image: 
-                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-image: linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
             background-size: 40px 40px;
         }
         .axis-x { position: absolute; bottom: 20px; left: 20px; width: 300px; height: 2px; background: var(--neon-blue); }
         .axis-y { position: absolute; bottom: 20px; left: 20px; width: 2px; height: 300px; background: var(--neon-blue); }
-        .ship {
-            font-size: 40px; position: absolute; transform: translate(-50%, 50%); transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            filter: drop-shadow(0 0 10px var(--neon-blue));
-        }
-        .target-point {
-            width: 20px; height: 20px; border: 2px dashed var(--neon-pink); border-radius: 50%;
-            position: absolute; transform: translate(-50%, 50%); animation: pulse 1s infinite;
-        }
+        .ship { font-size: 40px; position: absolute; transform: translate(-50%, 50%); transition: all 0.5s; filter: drop-shadow(0 0 10px var(--neon-blue)); }
         
-        /* 方向控制面板 */
-        .ctrl-panel {
-            position: absolute; bottom: 20px; right: 20px; display: grid; grid-template-columns: repeat(3, 40px); gap: 5px;
-        }
+        /* 控制面板 */
+        .ctrl-panel { position: absolute; bottom: 20px; right: 20px; display: grid; grid-template-columns: repeat(3, 40px); gap: 5px; }
         .d-btn {
             width: 40px; height: 40px; background: #333; border: 1px solid #555; color: white; cursor: pointer;
             display: flex; justify-content: center; align-items: center; font-weight: bold;
         }
         .d-btn:active { background: var(--neon-blue); color: black; }
-        
-        /* 相对位置雷达 */
-        .radar-screen {
-            width: 200px; height: 200px; border: 2px solid var(--neon-blue); border-radius: 50%; position: relative;
-            background: radial-gradient(circle, transparent 20%, rgba(0, 210, 211, 0.1) 21%, transparent 22%, transparent 40%, rgba(0, 210, 211, 0.1) 41%, transparent 42%);
-        }
-        .scan-line {
-            width: 100px; height: 100px; border-bottom: 2px solid var(--neon-blue); position: absolute; top: 0; left: 0;
-            transform-origin: bottom right; animation: scan 2s infinite linear;
-            background: linear-gradient(to top, rgba(0, 210, 211, 0.2), transparent);
-        }
-        .radar-hero { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: white; border-radius: 50%; transform: translate(-50%, -50%); }
-        .radar-enemy {
-            position: absolute; width: 8px; height: 8px; background: var(--neon-pink); border-radius: 50%;
-            box-shadow: 0 0 5px var(--neon-pink);
-        }
 
         /* 进度条 */
-        .progress-bar {
-            height: 6px;
-            background: #2f3640;
-            width: 100%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
-            width: 0%;
-            transition: width 0.3s;
-            box-shadow: 0 0 10px var(--neon-blue);
-        }
-
-        /* 动画 */
-        @keyframes scan { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0% { transform: translate(-50%, 50%) scale(1); opacity: 1; } 50% { transform: translate(-50%, 50%) scale(1.5); opacity: 0.5; } 100% { transform: translate(-50%, 50%) scale(1); opacity: 1; } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
+        .progress-bar { height: 6px; background: #2f3640; width: 100%; position: absolute; bottom: 0; left: 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink)); width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--neon-blue); }
     </style>
 </head>
 <body>
 
-<!-- 星星背景生成 -->
 <script>
     for(let i=0; i<50; i++) {
         let s = document.createElement('div');
@@ -316,12 +191,10 @@
 </script>
 
 <div class="stage">
-    <!-- 左按钮 -->
     <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">
         <div class="thruster-flame"></div>
     </button>
 
-    <!-- 仪表盘容器 -->
     <div class="dashboard-container">
         <div class="hud-bar">
             <div class="map-info">
@@ -330,18 +203,16 @@
             <div class="coord-display" id="hudCoord">X: 0, Y: 0</div>
         </div>
 
-        <!-- Slide 1: 封面 -->
         <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
-            <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">🚀</div>
+            <div style="font-size: 100px; margin-bottom: 20px;">🚀</div>
             <h1 style="font-size: 50px; margin: 10px 0; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue);">方向与坐标变化</h1>
-            <h2 style="font-size: 26px; color: var(--text-main); font-weight: normal; margin-top: 0;">Direction & Coordinate Changes</h2>
+            <h2 style="font-size: 26px; color: var(--text-main); font-weight: normal; margin-top: 0;">Direction & Coordinates</h2>
             <div style="margin-top: 40px; display: flex; gap: 30px;">
                 <div style="padding: 15px 30px; background: rgba(0, 210, 211, 0.2); border: 2px solid var(--neon-blue); color: var(--neon-blue); border-radius: 10px; font-weight: bold; font-size: 20px;">🗺️ 坐标导航</div>
                 <div style="padding: 15px 30px; background: rgba(255, 159, 243, 0.2); border: 2px solid var(--neon-pink); color: var(--neon-pink); border-radius: 10px; font-weight: bold; font-size: 20px;">📐 相对运动</div>
             </div>
         </div>
 
-        <!-- Slide 2: 坐标系 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🌐</div>
@@ -349,16 +220,16 @@
             </div>
             <div class="layout">
                 <div class="col-text">
+                    
                     <p>游戏世界是一张巨大的网格地图。</p>
                     <ul style="list-style: none; padding: 0; font-size: 18px;">
                         <li style="margin-bottom: 10px;">➡️ <b>X 坐标</b>：横向地址 (Left - Right)</li>
                         <li>⬆️ <b>Y 坐标</b>：纵向地址 (Up - Down)</li>
                     </ul>
-                    <div class="code-box">
-                        <span class="v">hero</span>.<span class="f">moveXY</span>(<span class="n">30</span>, <span class="n">40</span>)
-                    </div>
+                    <div class="code-box"><span class="c">// 移动到绝对坐标 (X=30, Y=40)</span>
+<span class="v">hero</span>.<span class="f">moveXY</span>(<span class="n">30</span>, <span class="n">40</span>);</div>
                     <div class="card">
-                        "X=30, Y=40，就像宇宙中的导航坐标！"
+                        "hero.pos.x 是我当前的横坐标，hero.pos.y 是纵坐标。"
                     </div>
                 </div>
                 <div class="col-visual">
@@ -382,26 +253,30 @@
             </div>
         </div>
 
-        <!-- Slide 3: 方向与变化 (控制台) -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🕹️</div>
-                <h1>方向控制台</h1>
+                <h1>相对移动 (Relative Move)</h1>
             </div>
             <div class="layout">
                 <div class="col-text">
-                    <p>移动就像在做加减法：</p>
-                    <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 20px;">
-                        <tr style="border-bottom: 1px solid #555;"><th style="color:var(--neon-blue)">方向</th><th style="color:var(--neon-pink)">X 变化</th><th style="color:var(--neon-pink)">Y 变化</th></tr>
-                        <tr><td>⬆️ 上</td><td>不变</td><td>+ 增加</td></tr>
-                        <tr><td>⬇️ 下</td><td>不变</td><td>- 减少</td></tr>
-                        <tr><td>➡️ 右</td><td>+ 增加</td><td>不变</td></tr>
-                        <tr><td>⬅️ 左</td><td>- 减少</td><td>不变</td></tr>
-                    </table>
-                    <div class="code-box">
-                        <span class="c"># 向右上方飞</span><br>
-                        <span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">hero</span>.<span class="p">pos</span>.<span class="p">x</span> <span class="o">+</span> <span class="n">10</span>, <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">y</span> <span class="o">+</span> <span class="n">10</span>)
-                    </div>
+                    
+
+[Image of vector addition diagram]
+
+                    <p>在当前位置的基础上进行加减，实现“向左走”或“向右走”。</p>
+                    <div class="code-box"><span class="k">while</span>(<span class="k">true</span>) {
+    <span class="t">float</span> <span class="v">x</span> <span class="o">=</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">x</span>;
+    <span class="t">float</span> <span class="v">y</span> <span class="o">=</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">y</span>;
+    
+    <span class="c">// 向右走：X + 10</span>
+    <span class="v">x</span> <span class="o">+=</span> <span class="n">10</span>; 
+    
+    <span class="c">// 向左走：X - 10</span>
+    <span class="c">// x -= 10; </span>
+    
+    <span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">x</span>, <span class="v">y</span>);
+}</div>
                 </div>
                 <div class="col-visual">
                     <div class="star-map">
@@ -421,14 +296,10 @@
                     <script>
                         let shipX = 50, shipY = 50;
                         function moveShip(dx, dy) {
-                            shipX += dx; shipY += dy;
-                            // Limit
-                            if(shipX < 10) shipX = 10; if(shipX > 90) shipX = 90;
-                            if(shipY < 10) shipY = 10; if(shipY > 90) shipY = 90;
-                            
+                            shipX = Math.max(10, Math.min(90, shipX + dx));
+                            shipY = Math.max(10, Math.min(90, shipY + dy));
                             const s = document.getElementById('ctrlShip');
-                            s.style.left = shipX + '%';
-                            s.style.bottom = shipY + '%';
+                            s.style.left = shipX + '%'; s.style.bottom = shipY + '%';
                             s.style.transform = `translate(-50%, 50%) rotate(${dx>0?10:dx<0?-10:0}deg)`;
                         }
                         function resetShip() { shipX = 50; shipY = 50; moveShip(0,0); }
@@ -437,43 +308,40 @@
             </div>
         </div>
 
-        <!-- Slide 4: 实战 - 斜线移动 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">📉</div>
-                <h1>实战 I：斜线飞行</h1>
+                <h1>斜线飞行 (Diagonal)</h1>
             </div>
             <div class="layout">
                 <div class="col-text">
                     <p>同时改变 X 和 Y，就能走出斜线！</p>
-                    <div class="code-box">
-                        <span class="k">while</span> <span class="k">True</span>:<br>
-                        &nbsp;&nbsp;<span class="c"># 向左上飞: X减, Y加</span><br>
-                        &nbsp;&nbsp;<span class="v">newX</span> <span class="o">=</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">x</span> <span class="o">-</span> <span class="n">6</span><br>
-                        &nbsp;&nbsp;<span class="v">newY</span> <span class="o">=</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">y</span> <span class="o">+</span> <span class="n">4</span><br>
-                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">newX</span>, <span class="v">newY</span>)
-                    </div>
-                    <p style="color: var(--neon-yellow);">轨迹：↖️ 左上角</p>
+                    <div class="code-box"><span class="k">while</span>(<span class="k">true</span>) {
+    <span class="c">// 向右上方飞: X加, Y加</span>
+    <span class="k">auto</span> <span class="v">newX</span> <span class="o">=</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">x</span> <span class="o">+</span> <span class="n">5</span>;
+    <span class="k">auto</span> <span class="v">newY</span> <span class="o">=</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">y</span> <span class="o">+</span> <span class="n">5</span>;
+    
+    <span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">newX</span>, <span class="v">newY</span>);
+}</div>
+                    <p style="color: var(--neon-yellow);">轨迹：↗️ 右上角</p>
                 </div>
                 <div class="col-visual">
                     <div class="star-map">
-                        <div class="ship" id="diagShip" style="left: 80%; bottom: 20%;">🚀</div>
-                        <!-- 轨迹点 -->
-                        <div style="position:absolute; left:74%; bottom:24%; width:4px; height:4px; background:#555; border-radius:50%;"></div>
-                        <div style="position:absolute; left:68%; bottom:28%; width:4px; height:4px; background:#555; border-radius:50%;"></div>
-                        <div style="position:absolute; left:62%; bottom:32%; width:4px; height:4px; background:#555; border-radius:50%;"></div>
+                        <div class="ship" id="diagShip" style="left: 20%; bottom: 20%;">🚀</div>
+                        <div style="position:absolute; left:25%; bottom:25%; width:4px; height:4px; background:#555; border-radius:50%;"></div>
+                        <div style="position:absolute; left:30%; bottom:30%; width:4px; height:4px; background:#555; border-radius:50%;"></div>
+                        <div style="position:absolute; left:35%; bottom:35%; width:4px; height:4px; background:#555; border-radius:50%;"></div>
                         <button class="d-btn" style="position:absolute; bottom:10px; right:10px; width:auto; padding:0 10px;" onclick="runDiag()">发射</button>
                     </div>
                     <script>
                         function runDiag() {
                             const s = document.getElementById('diagShip');
                             s.style.transition = 'all 2s linear';
-                            s.style.left = '20%';
-                            s.style.bottom = '60%';
-                            s.style.transform = 'translate(-50%, 50%) rotate(-33deg)';
+                            s.style.left = '80%'; s.style.bottom = '80%';
+                            s.style.transform = 'translate(-50%, 50%) rotate(45deg)';
                             setTimeout(() => {
                                 s.style.transition = 'none';
-                                s.style.left = '80%'; s.style.bottom = '20%'; s.style.transform = 'translate(-50%, 50%)';
+                                s.style.left = '20%'; s.style.bottom = '20%'; s.style.transform = 'translate(-50%, 50%)';
                             }, 2500);
                         }
                     </script>
@@ -481,110 +349,125 @@
             </div>
         </div>
 
-        <!-- Slide 5: 实战 - 垂直追踪 -->
         <div class="slide">
             <div class="header">
-                <div class="icon">📡</div>
-                <h1>实战 II：垂直追踪</h1>
+                <div class="icon">🏗️</div>
+                <h1>相对建造 (Relative Build)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>不仅可以移动自己，还可以在<b>别人</b>旁边造东西。</p>
+                    <div class="code-box"><span class="k">if</span> (<span class="v">enemy</span>) {
+    <span class="c">// 在敌人左边 20 米处造围栏</span>
+    <span class="t">float</span> <span class="v">buildX</span> <span class="o">=</span> <span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">x</span> <span class="o">-</span> <span class="n">20</span>;
+    <span class="t">float</span> <span class="v">buildY</span> <span class="o">=</span> <span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">y</span>;
+    
+    <span class="v">hero</span>.<span class="f">buildXY</span>(<span class="s">"fence"</span>, <span class="v">buildX</span>, <span class="v">buildY</span>);
+}</div>
+                    <div class="card">
+                        "拦截敌人的必经之路！"
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 50px;">
+                        🚧 ⬅️ 20m ⬅️ 👾
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="header">
+                <div class="icon">🧭</div>
+                <h1>方向判断 (Compare Coords)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>比较坐标大小，就能知道敌人的方位：</p>
+                    <div class="code-box"><span class="k">if</span> (<span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">x</span> <span class="o">&lt;</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">x</span>) {
+    <span class="c">// 敌人的X更小 -> 敌人在左边</span>
+    <span class="v">hero</span>.<span class="f">buildXY</span>(<span class="s">"fire-trap"</span>, <span class="n">25</span>, <span class="n">34</span>);
+}
+<span class="k">else</span> <span class="k">if</span> (<span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">x</span> <span class="o">&gt;</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">x</span>) {
+    <span class="c">// 敌人的X更大 -> 敌人在右边</span>
+    <span class="v">hero</span>.<span class="f">buildXY</span>(<span class="s">"fire-trap"</span>, <span class="n">55</span>, <span class="n">34</span>);
+}</div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 30px; text-align: center; color: var(--text-main);">
+                        <div>👆 Y > Hero.Y</div>
+                        <div style="display: flex; justify-content: space-between; margin: 20px 0;">
+                            <span>👈 X < Hero.X</span>
+                            <span style="color: var(--neon-blue);">🤖</span>
+                            <span>👉 X > Hero.X</span>
+                        </div>
+                        <div>👇 Y < Hero.Y</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="header">
+                <div class="icon">➗</div>
+                <h1>中点计算 (Midpoint)</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    
+                    <p>想站在朋友和敌人中间？用平均数公式！</p>
+                    <div class="code-box"><span class="c">// 计算 X 的中点</span>
+<span class="t">float</span> <span class="v">midX</span> <span class="o">=</span> (<span class="v">friend</span>.<span class="p">pos</span>.<span class="p">x</span> <span class="o">+</span> <span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">x</span>) <span class="o">/</span> <span class="n">2</span>;
+
+<span class="c">// 计算 Y 的中点</span>
+<span class="t">float</span> <span class="v">midY</span> <span class="o">=</span> (<span class="v">friend</span>.<span class="p">pos</span>.<span class="p">y</span> <span class="o">+</span> <span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">y</span>) <span class="o">/</span> <span class="n">2</span>;
+
+<span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">midX</span>, <span class="v">midY</span>);</div>
+                    <div class="card">
+                        数学原理：(A + B) / 2 = 中间值
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 40px; height: 100%; position: relative;">
+                        <span style="font-size: 40px;">👨‍🌾</span>
+                        <span style="font-size: 40px; color: var(--neon-blue);">🛡️</span>
+                        <span style="font-size: 40px;">👹</span>
+                        <div style="position: absolute; bottom: 30%; width: 80%; left: 10%; border-bottom: 2px dashed #fff; text-align: center;">
+                            Midpoint
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="header">
+                <div class="icon">↕️</div>
+                <h1>垂直追踪 (Vertical Logic)</h1>
             </div>
             <div class="layout">
                 <div class="col-text">
                     <p>根据敌人的高度 (Y坐标) 来调整自己的位置。</p>
-                    <div class="code-box">
-                        <span class="k">if</span> <span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">y</span> <span class="o">></span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">y</span>:<br>
-                        &nbsp;&nbsp;<span class="c"># 敌人在上，我也向上</span><br>
-                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">x</span>, <span class="v">y</span> <span class="o">+</span> <span class="n">4</span>)<br>
-                        <span class="k">else</span>:<br>
-                        &nbsp;&nbsp;<span class="c"># 敌人在下，我也向下</span><br>
-                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">x</span>, <span class="v">y</span> <span class="o">-</span> <span class="n">4</span>)
-                    </div>
-                    <div class="card">
-                        "就像电梯一样，跟着目标上下移动。"
-                    </div>
+                    <div class="code-box"><span class="k">if</span> (<span class="v">yak</span>.<span class="p">pos</span>.<span class="p">y</span> <span class="o">&gt;</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">y</span>) {
+    <span class="c">// 敌人在上方，我要往下建墙</span>
+    <span class="v">hero</span>.<span class="f">buildXY</span>(<span class="s">"fence"</span>, <span class="v">x</span>, <span class="v">y</span> <span class="o">-</span> <span class="n">10</span>);
+} 
+<span class="k">else</span> {
+    <span class="c">// 敌人在下方，我要往上建墙</span>
+    <span class="v">hero</span>.<span class="f">buildXY</span>(<span class="s">"fence"</span>, <span class="v">x</span>, <span class="v">y</span> <span class="o">+</span> <span class="n">10</span>);
+}</div>
                 </div>
                 <div class="col-visual">
-                    <div class="star-map">
-                        <div class="ship" id="trackShip" style="left: 30%; bottom: 50%;">🛸</div>
-                        <div class="ship" id="targetEnemy" style="left: 70%; bottom: 80%; filter:hue-rotate(180deg);">👾</div>
-                        <button class="d-btn" style="position:absolute; bottom:10px; right:10px; width:auto; padding:0 10px;" onclick="toggleEnemyPos()">移动敌人</button>
-                    </div>
-                    <script>
-                        let ePos = 80;
-                        function toggleEnemyPos() {
-                            ePos = (ePos === 80) ? 20 : 80;
-                            const e = document.getElementById('targetEnemy');
-                            const h = document.getElementById('trackShip');
-                            e.style.bottom = ePos + '%';
-                            // 简单的追踪模拟
-                            setTimeout(() => {
-                                h.style.bottom = (ePos === 80 ? 70 : 30) + '%';
-                            }, 300);
-                        }
-                    </script>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 6: 相对位置判断 -->
-        <div class="slide">
-            <div class="header">
-                <div class="icon">🧭</div>
-                <h1>相对位置判断</h1>
-            </div>
-            <div class="layout">
-                <div class="col-text">
-                    <p>比较坐标大小，就能知道方位：</p>
-                    <ul style="list-style: none; padding: 0; font-size: 18px;">
-                        <li>👉 <code>enemy.x > hero.x</code> : 敌人在<b>右</b>边</li>
-                        <li>👈 <code>enemy.x < hero.x</code> : 敌人在<b>左</b>边</li>
-                        <li>👆 <code>enemy.y > hero.y</code> : 敌人在<b>上</b>边</li>
-                        <li>👇 <code>enemy.y < hero.y</code> : 敌人在<b>下</b>边</li>
-                    </ul>
-                </div>
-                <div class="col-visual" style="background: #000;">
-                    <div class="radar-screen" style="width: 250px; height: 250px; border-radius: 50%; border: 2px solid var(--neon-blue); position: relative; background: rgba(0, 210, 211, 0.1);">
-                        <div class="scan-line" style="width: 125px; height: 125px; border-bottom: 2px solid var(--neon-blue); position: absolute; top:0; left:0; transform-origin: bottom right; animation: spin 2s infinite linear; background: linear-gradient(to top, rgba(0,210,211,0.3), transparent);"></div>
-                        <div class="radar-hero" style="position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: white; border-radius: 50%; transform: translate(-50%, -50%);"></div>
-                        <!-- Blips -->
-                        <div class="radar-enemy" style="top: 30%; right: 30%;"></div> <!-- 右上 -->
-                        <div style="position: absolute; top: 35%; right: 10%; color: var(--neon-pink); font-size: 12px;">(x>, y>)</div>
-                    </div>
-                    <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 7: 距离计算 (Distance) -->
-        <div class="slide">
-            <div class="header">
-                <div class="icon">📏</div>
-                <h1>距离计算 (Math)</h1>
-            </div>
-            <div class="layout">
-                <div class="col-text">
-                    <p>虽然有 <code>distanceTo()</code>，但用坐标差也能算距离。</p>
-                    <div class="code-box">
-                        <span class="c"># 水平距离 (绝对值)</span><br>
-                        <span class="v">dist_x</span> <span class="o">=</span> <span class="f">abs</span>(<span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">x</span> <span class="o">-</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">x</span>)<br>
-                        <br>
-                        <span class="c"># 垂直距离</span><br>
-                        <span class="v">dist_y</span> <span class="o">=</span> <span class="f">abs</span>(<span class="v">enemy</span>.<span class="p">pos</span>.<span class="p">y</span> <span class="o">-</span> <span class="v">hero</span>.<span class="p">pos</span>.<span class="p">y</span>)
-                    </div>
-                    <div class="card">
-                        "abs() 是绝对值函数，把负数变正数。"
-                    </div>
-                </div>
-                <div class="col-visual">
-                    <div style="display: flex; align-items: center; gap: 10px; font-size: 40px;">
-                        <div>🚀</div>
-                        <div style="border-bottom: 2px dashed #fff; width: 100px; text-align: center; font-size: 14px; color: #fff;">dist_x</div>
-                        <div>👾</div>
+                    <div style="font-size: 60px; text-align: center;">
+                        🐂<br>
+                        ⬇️<br>
+                        🚧<br>
+                        🤖
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 8: 总结 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🎓</div>
@@ -598,7 +481,7 @@
                     </div>
                     <div class="card" style="background: rgba(255, 159, 243, 0.1); border-color: var(--neon-pink); margin-top: 20px; color: var(--text-main);">
                         "大于小于判方位，<br>
-                        精准导航靠数学！"
+                        中点公式除以二！"
                     </div>
                 </div>
                 <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
@@ -607,12 +490,10 @@
             </div>
         </div>
 
-        <!-- 底部进度条 -->
         <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
 
     </div>
 
-    <!-- 右按钮 -->
     <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">
         <div class="thruster-flame"></div>
     </button>
