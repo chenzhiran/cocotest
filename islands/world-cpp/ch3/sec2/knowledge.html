@@ -3,30 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第6-13关 单分支选择结构 if 语句 打敌人三件套</title>
-    <!-- 引入 html2pdf 库用于生成 PDF -->
+    <title>C++ 第6-13关：if 语句与循环大冒险</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         /* --- 1. 基础样式设置 --- */
         :root {
-            --bg-color: #F0F4F8;       /* 柔和背景灰 */
-            --primary: #3B82F6;        /* 侦探蓝 */
-            --secondary: #EF4444;      /* 战斗红 */
-            --accent: #F59E0B;         /* 重点黄 */
-            --success: #10B981;        /* 成功绿 */
+            --bg-color: #F3F4F6;
+            --primary: #2563EB;        /* C++ 蓝 */
+            --secondary: #DC2626;      /* 战斗红 */
+            --accent: #D97706;         /* 警告黄 */
+            --success: #059669;        /* 成功绿 */
             --text-main: #1F2937;
-            --code-bg: #111827;        /* 代码黑 */
-            --code-fg: #E5E7EB;
+            --code-bg: #1E1E1E;        /* VS Code 深色风格 */
+            --code-fg: #D4D4D4;
         }
 
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
             background-color: var(--bg-color);
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(239, 68, 68, 0.1) 0%, transparent 20%);
             height: 100vh;
             display: flex;
             justify-content: center;
@@ -40,51 +36,42 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 50px; /* 按钮与屏幕的距离 */
+            gap: 40px;
             width: 100vw;
             max-width: 1400px;
         }
 
-        /* --- 3. 可爱导航按钮 (外部) --- */
+        /* --- 3. 导航按钮 --- */
         .nav-btn {
-            width: 80px;
-            height: 80px;
+            width: 70px;
+            height: 70px;
             border: none;
-            border-radius: 20px;
+            border-radius: 50%;
             cursor: pointer;
-            font-size: 40px;
+            font-size: 30px;
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 100;
-            box-shadow: 0 10px 0 rgba(0,0,0,0.1), 0 20px 20px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
-        .nav-btn:hover { transform: translateY(-3px); }
-        .nav-btn:active { transform: translateY(6px); box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
-
-        .btn-prev { background: #60A5FA; border-bottom: 6px solid #2563EB; }
-        .btn-prev:hover { background: #93C5FD; }
-        
-        .btn-next { background: #F87171; border-bottom: 6px solid #DC2626; }
-        .btn-next:hover { background: #FCA5A5; }
-
-        .disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+        .nav-btn:hover { transform: scale(1.1); }
+        .nav-btn:active { transform: scale(0.95); }
+        .btn-prev { background: #60A5FA; }
+        .btn-next { background: #F87171; }
+        .disabled { opacity: 0.3; cursor: not-allowed; }
 
         /* --- 4. PPT 容器 --- */
         .ppt-container {
-            width: 960px;
-            height: 540px;
+            width: 1000px;
+            height: 600px;
             background: white;
-            border-radius: 30px;
+            border-radius: 20px;
             position: relative;
-            box-shadow: 
-                0 0 0 10px rgba(255,255,255,0.5),
-                0 30px 60px rgba(0,0,0,0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             overflow: hidden;
-            border: 4px solid #fff;
+            border: 1px solid #E5E7EB;
         }
 
         /* 幻灯片通用样式 */
@@ -92,433 +79,362 @@
             display: none;
             width: 100%;
             height: 100%;
-            padding: 40px 60px;
+            padding: 40px 50px;
             box-sizing: border-box;
             flex-direction: column;
-            animation: slideIn 0.5s ease;
+            animation: fadeIn 0.4s ease;
         }
         .slide.active { display: flex; }
 
-        @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* 内容布局 */
         .header {
             display: flex;
             align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 3px dashed #E5E7EB;
-            padding-bottom: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #F3F4F6;
+            padding-bottom: 15px;
         }
-        .title-icon { font-size: 40px; margin-right: 15px; }
+        .title-icon { font-size: 36px; margin-right: 15px; }
         h1 { margin: 0; color: var(--primary); font-size: 32px; }
-        .page-num { margin-left: auto; background: #E5E7EB; padding: 5px 15px; border-radius: 15px; color: #6B7280; font-weight: bold; }
+        .page-num { margin-left: auto; color: #9CA3AF; font-weight: bold; font-family: monospace; }
 
         .content {
             flex: 1;
             display: flex;
             gap: 40px;
+            overflow: hidden;
         }
-        .col-text { flex: 1; font-size: 20px; line-height: 1.6; color: var(--text-main); }
-        .col-visual { flex: 0.8; display: flex; justify-content: center; align-items: center; background: #F9FAFB; border-radius: 20px; border: 2px solid #F3F4F6; position: relative; overflow: hidden; }
+        .col-text { flex: 1; font-size: 18px; line-height: 1.6; color: var(--text-main); overflow-y: auto; }
+        .col-visual { flex: 0.9; display: flex; justify-content: center; align-items: center; background: #F9FAFB; border-radius: 15px; border: 1px solid #E5E7EB; position: relative; overflow: hidden; }
 
-        /* 代码块样式 */
+        /* C++ 代码块样式 */
         .code-box {
             background: var(--code-bg);
             color: var(--code-fg);
             padding: 20px;
-            border-radius: 15px;
-            font-family: 'Consolas', monospace;
-            font-size: 18px;
-            margin-top: 20px;
-            border-left: 6px solid var(--accent);
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            border-radius: 10px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 16px;
+            line-height: 1.5;
+            margin-top: 15px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            white-space: pre; /* 保持格式 */
+            overflow-x: auto;
         }
-        .kw { color: #C084FC; font-weight: bold; } /* keyword */
-        .fn { color: #60A5FA; } /* function */
-        .str { color: #34D399; } /* string */
-        .cm { color: #9CA3AF; font-style: italic; } /* comment */
-        .indent { display: inline-block; width: 30px; height: 2px; background: rgba(255,255,255,0.2); vertical-align: middle; margin-right: 5px; }
+        
+        /* C++ 语法高亮模拟 */
+        .kw { color: #569CD6; font-weight: bold; } /* int, if, while, return, true */
+        .fn { color: #DCDCAA; } /* 函数名 */
+        .str { color: #CE9178; } /* 字符串 */
+        .num { color: #B5CEA8; } /* 数字 */
+        .type { color: #4EC9B0; } /* 类型 auto */
+        .cm { color: #6A9955; font-style: italic; } /* 注释 */
+        .var { color: #9CDCFE; } /* 变量 */
 
         /* 强调卡片 */
         .card {
             background: #EFF6FF;
-            border-left: 5px solid var(--primary);
+            border-left: 4px solid var(--primary);
             padding: 15px;
-            border-radius: 0 10px 10px 0;
+            border-radius: 4px;
             margin-bottom: 15px;
-            font-size: 18px;
+            font-size: 16px;
         }
-        .card strong { color: var(--primary); }
 
-        /* --- 5. 视觉化图形 CSS --- */
-        
-        /* 侦探 */
-        .detective { font-size: 80px; position: relative; animation: float 3s infinite ease-in-out; }
-        .magnifier { font-size: 40px; position: absolute; top: 0; right: -10px; animation: search 2s infinite linear; }
-        
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        @keyframes search { 0% { transform: rotate(0deg); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } 100% { transform: rotate(0deg); } }
-
-        /* 三件套步骤条 */
-        .steps { display: flex; flex-direction: column; gap: 20px; width: 80%; }
-        .step { display: flex; align-items: center; background: white; padding: 10px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); opacity: 0.5; transition: all 0.3s; }
-        .step.active { opacity: 1; transform: scale(1.05); border: 2px solid var(--primary); }
-        .step-icon { font-size: 30px; margin-right: 15px; width: 40px; text-align: center; }
-        .step-text { font-weight: bold; color: var(--text-main); }
-
-        /* 空盒子逻辑 */
-        .box-container { text-align: center; }
-        .box { width: 100px; height: 100px; background: #E5E7EB; border: 4px solid #9CA3AF; margin: 10px auto; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 50px; }
+        /* --- 视觉元素 --- */
+        .box-container { text-align: center; margin: 10px; }
+        .box { width: 80px; height: 80px; background: #E5E7EB; border: 3px solid #9CA3AF; margin: 0 auto 10px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 40px; }
         .box.full { border-color: var(--success); background: #D1FAE5; }
         .box.empty { border-color: var(--secondary); background: #FEE2E2; }
-        
-        /* 缩进尺子 */
-        .ruler-bg {
-            background-image: linear-gradient(90deg, transparent 39px, #374151 40px);
-            background-size: 40px 100%;
-            border-top: 1px solid #374151;
-        }
 
-        /* --- 6. 底部 PDF 按钮 --- */
+        /* 步骤条 */
+        .steps { display: flex; flex-direction: column; gap: 15px; width: 90%; }
+        .step { display: flex; align-items: center; background: white; padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #E5E7EB; }
+        .step strong { color: var(--primary); margin-right: 10px; }
+
+        /* PDF 按钮 */
         .pdf-btn {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            background: #F59E0B;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 50px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: transform 0.2s;
-            z-index: 200;
+            position: absolute; bottom: 20px; right: 20px;
+            background: var(--text-main); color: white;
+            border: none; padding: 10px 20px; border-radius: 30px;
+            cursor: pointer; display: flex; gap: 8px; align-items: center;
+            z-index: 100;
         }
-        .pdf-btn:hover { transform: scale(1.05); background: #D97706; }
-        .pdf-btn:active { transform: scale(0.95); }
+        .pdf-btn:hover { background: black; }
 
     </style>
 </head>
 <body>
 
 <div class="stage">
-    <!-- 左按钮 -->
     <button class="nav-btn btn-prev" onclick="moveSlide(-1)">◀</button>
 
-    <!-- PPT 容器 -->
     <div class="ppt-container" id="pptContent">
         
-        <!-- Slide 1: 封面 -->
-        <div class="slide active" style="justify-content: center; text-align: center; background: #FFFBEB;">
-            <div style="font-size: 100px; animation: float 3s infinite;">🕵️‍♂️</div>
-            <h1 style="font-size: 48px; border: none; justify-content: center; margin-top: 20px;">单分支选择结构 & 打敌人</h1>
-            <h2 style="color: #F59E0B; font-weight: normal;">CodeCombat 第6-13关 知识点大冒险</h2>
-            <div style="margin-top: 40px; display: flex; justify-content: center; gap: 30px;">
-                <div style="background: white; padding: 15px 30px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
-                    <span style="color: #3B82F6; font-weight: bold;">🤔 if 语句</span>
-                </div>
-                <div style="background: white; padding: 15px 30px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
-                    <span style="color: #EF4444; font-weight: bold;">⚔️ 三件套</span>
-                </div>
-                <div style="background: white; padding: 15px 30px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
-                    <span style="color: #10B981; font-weight: bold;">🔄 循环</span>
-                </div>
+        <div class="slide active" style="justify-content: center; text-align: center; background: #F0F9FF;">
+            <div style="font-size: 100px; margin-bottom: 20px;">🛡️⚔️</div>
+            <h1 style="font-size: 48px; margin-bottom: 10px;">C++ 语法大冒险</h1>
+            <h2 style="color: #6B7280; font-weight: normal; font-size: 24px;">CodeCombat 第6-13关：if 语句与循环</h2>
+            <div style="margin-top: 40px; display: flex; justify-content: center; gap: 20px;">
+                <div style="background: white; padding: 10px 25px; border-radius: 50px; color: var(--primary); font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">if (判断)</div>
+                <div style="background: white; padding: 10px 25px; border-radius: 50px; color: var(--secondary); font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">while (循环)</div>
+                <div style="background: white; padding: 10px 25px; border-radius: 50px; color: var(--accent); font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">{ } (大括号)</div>
             </div>
         </div>
 
-        <!-- Slide 2: 什么是if语句 -->
         <div class="slide">
             <div class="header">
                 <span class="title-icon">🤔</span>
                 <h1>什么是 if 语句?</h1>
-                <div class="page-num">01/11</div>
+                <div class="page-num">01/08</div>
             </div>
             <div class="content">
                 <div class="col-text">
-                    <p>想象你是一个小侦探，每天都要做很多选择：</p>
-                    <ul style="list-style: none; padding: 0;">
-                        <li>☔ <b>如果</b> 下雨 → 带伞出门</li>
-                        <li>🍰 <b>如果</b> 肚子饿 → 去吃点心</li>
-                        <li>⚔️ <b>如果</b> 看到敌人 → 发动攻击！</li>
+                    <p><b>if (如果)</b> 是代码中的大脑思考官。它帮助英雄做决定。</p>
+                    <p>就像在现实生活中：</p>
+                    <ul style="line-height: 2;">
+                        <li>☔ <b>如果</b> 下雨，就带伞。</li>
+                        <li>🍦 <b>如果</b> 看到冰淇淋，就吃掉！</li>
+                        <li>⚔️ <b>如果</b> (if) 看到敌人 (enemy)，就攻击 (attack)！</li>
                     </ul>
-                    <div class="card">
-                        <p>在编程中，<b>if</b> 就是我们的<b>魔法判断咒语</b>！</p>
-                    </div>
-                </div>
-                <div class="col-visual" style="background: #EBF8FF;">
-                    <div class="detective">🕵️‍♂️<span class="magnifier">🔍</span></div>
-                    <div style="position: absolute; bottom: 30px; background: white; padding: 10px; border-radius: 10px; border: 2px solid #3B82F6;">
-                        "如果发现线索，就..."
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 3: 大脑思考官 -->
-        <div class="slide">
-            <div class="header">
-                <span class="title-icon">🧠</span>
-                <h1>大脑思考官</h1>
-                <div class="page-num">02/11</div>
-            </div>
-            <div class="content">
-                <div class="col-text">
-                    <p><b>if</b> 就像你的大脑思考官，它会问：</p>
-                    <p style="font-size: 24px; color: var(--primary); font-weight: bold; text-align: center;">"这个条件成立吗？"</p>
-                    <p>如果成立（是的！），就执行后面的动作。</p>
                     <div class="code-box">
-                        <span class="cm"># 就像这样思考：</span><br>
-                        <span class="kw">if</span> 条件成立:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;执行这个动作
+<span class="cm">// C++ 语法结构</span>
+<span class="kw">if</span> (条件) {
+    <span class="cm">// 如果条件成立，做这里的事</span>
+    <span class="fn">执行动作</span>();
+}
                     </div>
                 </div>
                 <div class="col-visual">
                     <div style="font-size: 80px;">🧠</div>
-                    <div style="position: absolute; right: 20px; top: 40px; font-size: 50px;">💡</div>
-                    <div style="position: absolute; left: 20px; top: 40px; font-size: 50px;">❓</div>
+                    <div style="position: absolute; bottom: 20px; background: white; padding: 10px 20px; border-radius: 10px; border: 2px solid var(--primary);">"Should I attack?"</div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 4: 冰淇淋例子 -->
         <div class="slide">
             <div class="header">
-                <span class="title-icon">🍦</span>
-                <h1>生活中的例子</h1>
-                <div class="page-num">03/11</div>
+                <span class="title-icon">📏</span>
+                <h1>C++ 核心规则：括号与分号</h1>
+                <div class="page-num">02/08</div>
             </div>
             <div class="content">
                 <div class="col-text">
-                    <p>让我们写一段贪吃代码：</p>
-                    <div class="code-box">
-                        <span class="cm"># 如果看到冰淇淋店，就买一个吃！</span><br>
-                        <span class="kw">if</span> 看到冰淇淋店:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">买冰淇淋</span>()<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">吃冰淇淋</span>()
+                    <p>在 Python 中我们用缩进，但在 <b>C++</b> 中，我们有两条铁律：</p>
+                    <div class="steps">
+                        <div class="step">
+                            <strong>1. 小括号 ( )</strong>
+                            <span>if 后面的条件必须包在小括号里。</span>
+                        </div>
+                        <div class="step">
+                            <strong>2. 大括号 { }</strong>
+                            <span>要执行的代码块必须包在大括号里。</span>
+                        </div>
+                        <div class="step">
+                            <strong>3. 分号 ;</strong>
+                            <span>每句命令结束必须加分号！</span>
+                        </div>
                     </div>
-                    <p style="margin-top: 20px; color: #6B7280; font-size: 16px;">注意：如果没有看到店，就什么都不做，直接走过去。</p>
                 </div>
-                <div class="col-visual" style="background: #FFF5F5;">
-                    <div style="font-size: 60px;">🏪 🍦 😋</div>
+                <div class="col-visual" style="background: #2D2D2D; flex-direction: column; justify-content: center;">
+                    <div class="code-box" style="margin: 0; border: none; background: transparent; font-size: 22px;">
+<span class="kw">if</span> <span style="color: yellow;">(</span><span class="var">enemy</span><span style="color: yellow;">)</span> <span style="color: #4EC9B0;">{</span>
+    <span class="var">hero</span>.<span class="fn">attack</span>(<span class="var">enemy</span>)<span style="color: #FF0000;">;</span>
+    <span class="var">hero</span>.<span class="fn">attack</span>(<span class="var">enemy</span>)<span style="color: #FF0000;">;</span>
+<span style="color: #4EC9B0;">}</span>
+                    </div>
+                    <div style="color: #6B7280; margin-top: 20px; font-size: 14px;">👆 黄色是条件，绿色是范围，红色是结束符</div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 5: 打敌人三件套 -->
         <div class="slide">
             <div class="header">
                 <span class="title-icon">⚔️</span>
-                <h1>打敌人三件套 (Combat Trilogy)</h1>
-                <div class="page-num">04/11</div>
+                <h1>打敌人三件套 (The Trilogy)</h1>
+                <div class="page-num">03/08</div>
             </div>
             <div class="content">
                 <div class="col-text">
-                    <p>这是这一章最重要的口诀！必须按顺序来：</p>
-                    <div class="steps">
-                        <div class="step">
-                            <div class="step-icon">🔍</div>
-                            <div class="step-text">第一件：找敌人 (Find)</div>
-                        </div>
-                        <div class="step">
-                            <div class="step-icon">🧠</div>
-                            <div class="step-text">第二件：判敌人 (Check)</div>
-                        </div>
-                        <div class="step">
-                            <div class="step-icon">⚔️</div>
-                            <div class="step-text">第三件：打敌人 (Attack)</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-visual">
-                    <div style="font-size: 100px;">🛡️</div>
-                </div>
-            </div>
-        </div>
+                    <p>在第6-13关中，我们必须遵守这个逻辑，否则会出错：</p>
+                    <div class="code-box">
+<span class="cm">// 1. 找：寻找最近的敌人</span>
+<span class="type">auto</span> <span class="var">enemy</span> = <span class="var">hero</span>.<span class="fn">findNearestEnemy</span>();
 
-        <!-- Slide 6: 三件套代码 -->
-        <div class="slide">
-            <div class="header">
-                <span class="title-icon">💻</span>
-                <h1>三件套完整代码</h1>
-                <div class="page-num">05/11</div>
-            </div>
-            <div class="content">
-                <div class="col-text">
-                    <div class="code-box" style="font-size: 16px;">
-                        <span class="cm"># 1. 找：用"侦探眼镜"寻找</span><br>
-                        enemy = <span class="fn">hero.findNearestEnemy</span>()<br>
-                        <br>
-                        <span class="cm"># 2. 判：用"大脑"判断是否存在</span><br>
-                        <span class="kw">if</span> enemy:<br>
-                        <span class="cm">&nbsp;&nbsp;&nbsp;&nbsp;# 3. 打：确认存在后攻击</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">hero.attack</span>(enemy)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">hero.attack</span>(enemy)
+<span class="cm">// 2. 判：检查 enemy 变量是否为空</span>
+<span class="kw">if</span> (<span class="var">enemy</span>) {
+    <span class="cm">// 3. 打：只有存在才攻击！</span>
+    <span class="var">hero</span>.<span class="fn">attack</span>(<span class="var">enemy</span>);
+    <span class="var">hero</span>.<span class="fn">attack</span>(<span class="var">enemy</span>);
+}
                     </div>
-                </div>
-                <div class="col-visual">
-                    <div style="text-align: center;">
-                        <div style="font-size: 50px; margin-bottom: 20px;">👹</div>
-                        <div style="background: #EF4444; color: white; padding: 5px 15px; border-radius: 5px;">Enemy Found!</div>
+                    <div class="card" style="margin-top: 20px;">
+                        <strong>为什么？</strong><br>如果 <code>enemy</code> 不存在（空的），直接攻击会让程序报错，或者英雄会发呆！
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 7: 条件表达式深入 -->
-        <div class="slide">
-            <div class="header">
-                <span class="title-icon">📦</span>
-                <h1>深入理解: if enemy</h1>
-                <div class="page-num">06/11</div>
-            </div>
-            <div class="content">
-                <div class="col-text">
-                    <p><code>if enemy:</code> 到底是什么意思？</p>
-                    <p>这就像检查你的零食袋：</p>
-                    <ul style="list-style: none; padding: 0;">
-                        <li>🥡 <b>如果 enemy 不是空的</b> → 有敌人！(True)</li>
-                        <li>💨 <b>如果 enemy 是空的</b> → 没敌人... (False)</li>
-                    </ul>
                 </div>
                 <div class="col-visual" style="flex-direction: column; gap: 20px;">
                     <div style="display: flex; gap: 30px;">
                         <div class="box-container">
                             <div class="box full">👹</div>
-                            <span>True (成立)</span>
+                            <span>有敌人<br>(True)</span>
                         </div>
                         <div class="box-container">
-                            <div class="box empty"></div>
-                            <span>False (不成立)</span>
+                            <div class="box empty">👻</div>
+                            <span>没敌人<br>(False/Null)</span>
                         </div>
                     </div>
+                    <div style="text-align: center; color: #666;">if (enemy) 就是在检查盒子里有没有东西</div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 8: 缩进规则 -->
         <div class="slide">
             <div class="header">
-                <span class="title-icon">📏</span>
-                <h1>缩进 (Indentation)</h1>
-                <div class="page-num">07/11</div>
+                <span class="title-icon">🌲</span>
+                <h1>实战：林地小屋 (Level 6)</h1>
+                <div class="page-num">04/08</div>
             </div>
             <div class="content">
                 <div class="col-text">
-                    <p>Python 用<b>缩进（4个空格）</b>来表示哪些代码属于 if 语句。</p>
-                    <div class="card">
-                        <p>记忆口诀：<br><b>"if 后面冒号不能忘，缩进4格要记牢！"</b></p>
+                    <p>在这一关，我们需要移动到指定位置，然后检查那里是否有敌人。</p>
+                    <p><b>C++ 特性：</b> 我们使用 <code>auto</code> 关键字来让电脑自动推断 <code>enemy</code> 是什么类型，这样写起来更简单！</p>
+                    <div class="code-box" style="font-size: 14px;">
+<span class="kw">int</span> <span class="fn">main</span>() {
+    <span class="var">hero</span>.<span class="fn">moveXY</span>(<span class="num">19</span>, <span class="num">33</span>);
+    <span class="type">auto</span> <span class="var">enemy</span> = <span class="var">hero</span>.<span class="fn">findNearestEnemy</span>();
+    
+    <span class="cm">// if语句会检查变量有没有食人魔</span>
+    <span class="kw">if</span> (<span class="var">enemy</span>) {
+        <span class="var">hero</span>.<span class="fn">attack</span>(<span class="var">enemy</span>);
+        <span class="var">hero</span>.<span class="fn">attack</span>(<span class="var">enemy</span>);
+    }
+
+    <span class="var">hero</span>.<span class="fn">moveXY</span>(<span class="num">49</span>, <span class="num">51</span>);
+    <span class="var">enemy</span> = <span class="var">hero</span>.<span class="fn">findNearestEnemy</span>();
+    <span class="kw">if</span> (<span class="var">enemy</span>) {
+        <span class="var">hero</span>.<span class="fn">attack</span>(<span class="var">enemy</span>);
+        <span class="var">hero</span>.<span class="fn">attack</span>(<span class="var">enemy</span>);
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}
                     </div>
                 </div>
-                <div class="col-visual" style="align-items: flex-start; padding: 20px; background: #282C34;">
-                    <div style="font-family: 'Consolas', monospace; color: white; width: 100%;">
-                        <div><span class="kw">if</span> enemy<span class="kw">:</span></div>
-                        <div class="ruler-bg">
-                            <span style="background: rgba(255,255,0,0.3);">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="fn">hero.attack</span>(enemy) <span style="color: #4ADE80;">✔</span>
-                        </div>
-                        <div class="ruler-bg">
-                            <span style="background: rgba(255,255,0,0.3);">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="fn">hero.attack</span>(enemy) <span style="color: #4ADE80;">✔</span>
-                        </div>
-                        <div style="margin-top: 10px;">
-                            <span class="fn">hero.moveXY</span>(...) <span style="color: #F87171;">✘ 不属于if</span>
-                        </div>
-                    </div>
+                <div class="col-visual" style="background: #ECFCCB;">
+                    <div style="font-size: 100px;">🏡</div>
+                    <div style="position: absolute; top: 20px; right: 20px; font-size: 40px;">❓</div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 9: 循环结构 -->
-        <div class="slide">
-            <div class="header">
-                <span class="title-icon">👮‍♂️</span>
-                <h1>循环结构 (Loop)</h1>
-                <div class="page-num">08/11</div>
-            </div>
-            <div class="content">
-                <div class="col-text">
-                    <p><b>while 循环</b> —— 永不停止的巡逻兵！</p>
-                    <p>就像保安叔叔，永远在指定的路线上走来走去，随时准备应对突发情况。</p>
-                    <div class="code-box">
-                        <span class="kw">while</span> <span class="kw">True</span>:  <span class="cm"># 永远为真</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">巡逻</span>()<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">检查敌人</span>()
-                    </div>
-                </div>
-                <div class="col-visual">
-                    <div style="position: relative; width: 200px; height: 200px;">
-                        <div style="position: absolute; top:0; left:0; width: 100%; height: 100%; border: 4px dashed #9CA3AF; border-radius: 50%; animation: spin 10s linear infinite;"></div>
-                        <div style="font-size: 50px; position: absolute; top: -30px; left: 50%; transform: translateX(-50%); animation: orbit 4s linear infinite;">👮</div>
-                    </div>
-                    <style>
-                        @keyframes orbit {
-                            0% { transform: rotate(0deg) translateX(100px) rotate(0deg); }
-                            100% { transform: rotate(360deg) translateX(100px) rotate(-360deg); }
-                        }
-                    </style>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 10: 完整逻辑图 -->
         <div class="slide">
             <div class="header">
                 <span class="title-icon">🔄</span>
-                <h1>完整逻辑图</h1>
-                <div class="page-num">09/11</div>
+                <h1>无限循环：while(true)</h1>
+                <div class="page-num">05/08</div>
             </div>
             <div class="content">
                 <div class="col-text">
-                    <p>这就是我们在游戏中写代码的完整思路：</p>
-                    <ol>
-                        <li><b>循环</b> (一直做...)</li>
-                        <li><b>找</b>敌人</li>
-                        <li><b>判</b>敌人是否存在</li>
-                        <li><b>打</b>敌人 (如果存在)</li>
-                    </ol>
-                </div>
-                <div class="col-visual" style="flex-direction: column;">
-                    <div style="background: #3B82F6; color: white; padding: 10px 20px; border-radius: 20px; margin-bottom: 10px;">Loop (循环)</div>
-                    <div style="font-size: 20px;">⬇️</div>
-                    <div style="background: #F59E0B; color: white; padding: 10px 20px; border-radius: 20px; margin-bottom: 10px;">Find (找)</div>
-                    <div style="font-size: 20px;">⬇️</div>
-                    <div style="border: 3px solid #EF4444; padding: 10px 20px; border-radius: 20px; width: 60%; text-align: center;">
-                        If (判) <br>
-                        ⬇️ Yes<br>
-                        <span style="font-weight: bold; color: #EF4444;">Attack (打)</span>
+                    <p>我们要像保安一样，永远不停地寻找敌人。</p>
+                    <p>使用 <code>while(true) { ... }</code> 来创建一个永远执行的循环。</p>
+                    <div class="code-box">
+<span class="kw">int</span> <span class="fn">main</span>() {
+    <span class="cm">// 永远执行大括号里的代码</span>
+    <span class="kw">while</span> (<span class="kw">true</span>) {
+        <span class="type">auto</span> <span class="var">enemy</span> = <span class="var">hero</span>.<span class="fn">findNearestEnemy</span>();
+        <span class="kw">if</span> (<span class="var">enemy</span>) {
+            <span class="var">hero</span>.<span class="fn">attack</span>(<span class="var">enemy</span>);
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}
                     </div>
+                </div>
+                <div class="col-visual">
+                    <div style="position: relative; width: 150px; height: 150px; border: 4px dashed var(--primary); border-radius: 50%; animation: spin 4s linear infinite;"></div>
+                    <div style="position: absolute; font-size: 50px;">👮</div>
+                    <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 11: 总结 -->
+        <div class="slide">
+            <div class="header">
+                <span class="title-icon">🔥</span>
+                <h1>进阶：条件建造 (Level 11)</h1>
+                <div class="page-num">06/08</div>
+            </div>
+            <div class="content">
+                <div class="col-text">
+                    <p>if 语句不光能用来攻击，还能用来建造！</p>
+                    <p>逻辑：<b>如果</b>看到敌人，<b>就</b>在那个位置造一个火焰陷阱。</p>
+                    <div class="code-box" style="font-size: 14px;">
+<span class="kw">int</span> <span class="fn">main</span>() {
+    <span class="kw">while</span> (<span class="kw">true</span>) {
+        <span class="cm">// 1. 去上路检查</span>
+        <span class="var">hero</span>.<span class="fn">moveXY</span>(<span class="num">43</span>, <span class="num">50</span>);
+        <span class="type">auto</span> <span class="var">top</span> = <span class="var">hero</span>.<span class="fn">findNearestEnemy</span>();
+        <span class="cm">// 2. 如果有敌人，造陷阱！</span>
+        <span class="kw">if</span> (<span class="var">top</span>) {
+            <span class="var">hero</span>.<span class="fn">buildXY</span>(<span class="str">"fire-trap"</span>, <span class="num">43</span>, <span class="num">50</span>);
+        }
+        
+        <span class="cm">// ... 左路和下路同理 ...</span>
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}
+                    </div>
+                </div>
+                <div class="col-visual" style="background: #FFF7ED;">
+                    <div style="font-size: 80px;">💣</div>
+                    <div style="position: absolute; bottom: 20px; color: #C2410C; font-weight: bold;">Only build if needed!</div>
+                </div>
+            </div>
+        </div>
+
         <div class="slide">
             <div class="header">
                 <span class="title-icon">🎓</span>
-                <h1>通关口诀</h1>
-                <div class="page-num">10/11</div>
+                <h1>终极挑战：中点 (Level 13)</h1>
+                <div class="page-num">07/08</div>
             </div>
             <div class="content">
-                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
-                    <h2 style="color: var(--primary); font-size: 36px;">"找敌人，判存在，<br>如果真有就开打！"</h2>
-                    <div style="margin-top: 40px; font-size: 80px;">🏆</div>
-                    <p style="color: #6B7280;">恭喜你掌握了第6-13关的秘籍！</p>
+                <div class="col-text">
+                    <p>这一关结合了所有知识点：坐标移动、循环、if判断、建造。</p>
+                    <div class="card">
+                        <b>通关口诀：</b><br>
+                        "Move (移动) -> Find (找) -> Check (判) -> Build (造)"
+                    </div>
+                    <div class="code-box" style="font-size: 13px;">
+<span class="kw">while</span> (<span class="kw">true</span>) {
+    <span class="var">hero</span>.<span class="fn">moveXY</span>(<span class="num">32</span>, <span class="num">52</span>);
+    <span class="type">auto</span> <span class="var">topEnemy</span> = <span class="var">hero</span>.<span class="fn">findNearestEnemy</span>();
+    <span class="kw">if</span> (<span class="var">topEnemy</span>) {
+        <span class="var">hero</span>.<span class="fn">buildXY</span>(<span class="str">"fire-trap"</span>, <span class="num">35</span>, <span class="num">52</span>);
+    }
+    <span class="cm">// ... 继续巡逻其他点 ...</span>
+}
+                    </div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <h2 style="color: var(--primary);">CONGRATULATIONS!</h2>
+                        <div style="font-size: 80px;">🏆</div>
+                        <p>你已经掌握了 C++ 的基础逻辑！</p>
+                    </div>
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- 右按钮 -->
     <button class="nav-btn btn-next" onclick="moveSlide(1)">❯</button>
 </div>
 
-<!-- 底部下载按钮 -->
 <button class="pdf-btn" onclick="downloadPDF()">
-    <span>📥</span> 生成秘籍 (PDF)
+    <span>📥</span> 生成 C++ 秘籍 (PDF)
 </button>
 
 <script>
@@ -526,21 +442,15 @@
     const slides = document.querySelectorAll('.slide');
     const totalSlides = slides.length;
 
-    // 初始化显示第一张
     showSlide(currentSlide);
 
     function showSlide(n) {
-        // 处理循环
         if (n >= totalSlides) currentSlide = 0;
         if (n < 0) currentSlide = totalSlides - 1;
 
-        // 隐藏所有
         slides.forEach(slide => slide.classList.remove('active'));
-        
-        // 显示当前
         slides[currentSlide].classList.add('active');
 
-        // 更新按钮状态样式
         const prevBtn = document.querySelector('.btn-prev');
         const nextBtn = document.querySelector('.btn-next');
         
@@ -556,33 +466,26 @@
         showSlide(currentSlide);
     }
 
-    // 键盘支持
     document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') moveSlide(-1);
         if (e.key === 'ArrowRight') moveSlide(1);
     });
 
-    // 生成 PDF 功能
     function downloadPDF() {
         const btn = document.querySelector('.pdf-btn');
         const originalText = btn.innerHTML;
-        
-        btn.innerHTML = '<span>⏳</span> 正在绘制...';
+        btn.innerHTML = '<span>⏳</span> 绘制中...';
 
-        // 创建临时容器
         const printContainer = document.createElement('div');
-        printContainer.style.width = '960px';
+        printContainer.style.width = '1000px';
         printContainer.style.position = 'absolute';
-        printContainer.style.top = '-9999px';
-        printContainer.style.left = '0';
+        printContainer.style.top = '-10000px';
         
-        // 复制所有 Slide
         slides.forEach(slide => {
             const clone = slide.cloneNode(true);
             clone.style.display = 'flex';
-            clone.style.height = '540px';
+            clone.style.height = '600px';
             clone.style.marginBottom = '20px';
-            clone.style.border = '1px solid #ccc';
             clone.classList.add('active');
             printContainer.appendChild(clone);
         });
@@ -590,22 +493,17 @@
         document.body.appendChild(printContainer);
 
         const opt = {
-            margin:       10,
-            filename:     'CodeCombat_打敌人三件套.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            margin: 10,
+            filename: 'CodeCombat_Level6-13_CPP.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
         };
 
         html2pdf().set(opt).from(printContainer).save().then(() => {
             document.body.removeChild(printContainer);
             btn.innerHTML = '<span>✅</span> 完成!';
             setTimeout(() => btn.innerHTML = originalText, 2000);
-        }).catch(err => {
-            console.error(err);
-            alert("生成 PDF 需要连接网络加载转换库，或者您可以尝试直接打印网页并另存为 PDF。");
-            document.body.removeChild(printContainer);
-            btn.innerHTML = originalText;
         });
     }
 </script>

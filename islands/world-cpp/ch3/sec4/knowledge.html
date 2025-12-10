@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第25关 多分支选择结构 if-elif-else</title>
+    <title>C++ 第25关：多分支选择结构 if-else if-else</title>
     <style>
         /* --- 1. 基础设置 --- */
         :root {
@@ -16,20 +16,20 @@
             --text-main: #2c3e50;
             
             /* 代码高亮 */
-            --code-bg: #2d3436;
-            --code-fg: #dfe6e9;
-            --tok-kw: #ff7675;         /* 关键字 if/else */
-            --tok-func: #74b9ff;       /* 函数 */
-            --tok-str: #55efc4;        /* 字符串 */
-            --tok-num: #ffeaa7;        /* 数字 */
+            --code-bg: #1e1e1e;        /* C++ 深色编辑器风格 */
+            --code-fg: #d4d4d4;
+            --tok-kw: #569cd6;         /* 关键字 blue */
+            --tok-func: #dcdcaa;       /* 函数 yellow */
+            --tok-str: #ce9178;        /* 字符串 orange */
+            --tok-num: #b5cea8;        /* 数字 green */
+            --tok-type: #4ec9b0;       /* 类型 teal */
         }
 
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
             background-color: var(--bg-color);
-            /* 科技感网格背景 */
             background-image: 
                 linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
@@ -47,12 +47,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 50px; /* 按钮距离屏幕 */
+            gap: 50px;
             width: 98vw;
             max-width: 1400px;
         }
 
-        /* --- 3. 街机风格按钮 (外部) --- */
+        /* --- 3. 街机风格按钮 --- */
         .nav-btn {
             width: 80px;
             height: 80px;
@@ -65,46 +65,34 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 
-                0 0 10px var(--primary),
-                0 10px 0 #40407a,
-                0 20px 20px rgba(0,0,0,0.4);
+            box-shadow: 0 0 10px var(--primary), 0 10px 0 #40407a, 0 20px 20px rgba(0,0,0,0.4);
             transition: all 0.1s;
             z-index: 100;
-            position: relative;
         }
 
         .nav-btn:active {
             transform: translateY(10px);
-            box-shadow: 
-                0 0 15px var(--primary),
-                0 0 0 #40407a,
-                inset 0 5px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 0 15px var(--primary), 0 0 0 #40407a, inset 0 5px 10px rgba(0,0,0,0.2);
         }
 
         .nav-btn.prev { background: radial-gradient(circle at 30% 30%, #fff, #34ace0); box-shadow: 0 0 10px #34ace0, 0 10px 0 #227093, 0 20px 20px rgba(0,0,0,0.4); }
-        .nav-btn.prev:active { box-shadow: 0 0 15px #34ace0, 0 0 0 #227093, inset 0 5px 10px rgba(0,0,0,0.2); }
-
         .disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
 
         /* --- 4. 屏幕容器 --- */
         .screen-container {
-            width: 960px;
-            height: 560px;
+            width: 1000px;
+            height: 600px;
             background: var(--slide-bg);
             border-radius: 30px;
             border: 12px solid #474787;
-            box-shadow: 
-                inset 0 0 30px rgba(0,0,0,0.1),
-                0 0 0 15px #2c2c54,
-                0 30px 60px rgba(0,0,0,0.5);
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.1), 0 0 0 15px #2c2c54, 0 30px 60px rgba(0,0,0,0.5);
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
         }
 
-        /* 顶部 HUD (Heads-Up Display) */
+        /* HUD */
         .hud-bar {
             height: 50px;
             background: #474787;
@@ -116,10 +104,8 @@
             font-family: monospace;
             font-weight: bold;
             font-size: 18px;
-            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
             z-index: 10;
         }
-        .hud-item { display: flex; align-items: center; gap: 10px; }
 
         /* 幻灯片 */
         .slide {
@@ -131,7 +117,6 @@
             overflow-y: auto;
         }
         .slide.active { display: flex; }
-
         @keyframes fadeIn { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
 
         /* 内容布局 */
@@ -142,213 +127,134 @@
             display: flex;
             align-items: center;
         }
-        .header-icon { font-size: 45px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1)); }
-        h1 { margin: 0; color: var(--primary); font-size: 34px; text-shadow: 1px 1px 0 rgba(0,0,0,0.1); }
+        .header-icon { font-size: 45px; margin-right: 20px; }
+        h1 { margin: 0; color: var(--primary); font-size: 34px; }
 
-        .layout {
-            display: flex;
-            gap: 40px;
-            height: 100%;
-        }
+        .layout { display: flex; gap: 40px; height: 100%; }
         .text-col { flex: 1.2; font-size: 20px; line-height: 1.6; color: var(--text-main); }
-        .visual-col { 
-            flex: 0.8; 
-            background: #fff; 
-            border-radius: 20px; 
-            border: 4px solid #d1ccc0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
-        }
+        .visual-col { flex: 0.8; background: #fff; border-radius: 20px; border: 4px solid #d1ccc0; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
 
-        /* 代码块 */
+        /* C++ 代码块 */
         .code-box {
             background: var(--code-bg);
             color: var(--code-fg);
             padding: 20px;
-            border-radius: 15px;
+            border-radius: 10px;
             font-family: 'Consolas', monospace;
-            font-size: 18px;
-            margin-top: 20px;
-            border-left: 6px solid var(--highlight);
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.15);
+            font-size: 16px;
+            margin-top: 15px;
+            border-left: 6px solid var(--primary);
+            white-space: pre; /* 保持缩进 */
+            overflow-x: auto;
         }
         .k { color: var(--tok-kw); font-weight: bold; }
         .f { color: var(--tok-func); }
         .s { color: var(--tok-str); }
         .n { color: var(--tok-num); }
-        .c { color: #b2bec3; font-style: italic; }
+        .t { color: var(--tok-type); }
+        .c { color: #6a9955; font-style: italic; }
 
-        /* 强调卡片 */
-        .card {
-            background: #f1f2f6;
-            border-left: 5px solid var(--primary);
-            padding: 15px;
-            border-radius: 0 10px 10px 0;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        /* --- 5. 视觉化组件 CSS --- */
+        /* 视觉组件 */
+        .card { background: #f1f2f6; border-left: 5px solid var(--secondary); padding: 15px; border-radius: 0 10px 10px 0; margin-bottom: 15px; font-size: 18px; }
         
-        /* 三层优先级金字塔 */
+        /* 优先级金字塔 */
         .pyramid { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 10px; }
-        .layer { width: 80%; padding: 15px; text-align: center; border-radius: 10px; color: white; font-weight: bold; transition: all 0.3s; position: relative; }
-        .layer-1 { background: var(--secondary); width: 40%; animation: pulse 2s infinite; z-index: 3; }
+        .layer { width: 80%; padding: 15px; text-align: center; border-radius: 10px; color: white; font-weight: bold; position: relative; }
+        .layer-1 { background: var(--secondary); width: 40%; z-index: 3; animation: pulse 2s infinite; }
         .layer-2 { background: var(--highlight); width: 70%; z-index: 2; }
         .layer-3 { background: var(--primary); width: 100%; z-index: 1; }
-        .arrow-down { font-size: 24px; color: #ccc; }
-
-        /* 技能冷却时钟 */
-        .cooldown-clock {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: #d1ccc0;
-            position: relative;
-            overflow: hidden;
-            border: 8px solid #706fd3;
-        }
-        .clock-hand {
-            width: 50%;
-            height: 50%;
-            background: conic-gradient(rgba(255,255,255,0.8) var(--angle, 0deg), transparent 0deg);
-            position: absolute;
-            top: 0; left: 50%;
-            transform-origin: left bottom;
-            transform: rotate(0deg); /* Conic gradient handles rotation simulation */
-            width: 100%; height: 100%; top:0; left:0;
-        }
-        .clock-center {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-weight: bold; color: #2c3e50; font-size: 14px; text-align: center;
-        }
-
-        /* 交通工具动画 */
-        @keyframes fly { 0% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(2deg); } 100% { transform: translateY(0) rotate(0deg); } }
-        @keyframes drive { 0% { transform: translateX(-10px); } 100% { transform: translateX(10px); } }
-        .heli { font-size: 60px; animation: fly 2s infinite ease-in-out; }
-        .bike { font-size: 50px; animation: drive 1s infinite alternate ease-in-out; }
-        .bus { font-size: 50px; opacity: 0.7; }
-
-        /* 流程图元素 */
-        .flow-node { padding: 10px 20px; border-radius: 8px; color: white; font-weight: bold; margin: 5px 0; text-align: center; width: 80%; }
-        .bg-red { background: var(--secondary); }
-        .bg-yellow { background: var(--highlight); }
-        .bg-blue { background: var(--primary); }
-        .bg-green { background: var(--accent); }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         /* 进度条 */
-        .progress-bar {
-            height: 6px;
-            background: #474787;
-            width: 100%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent), var(--highlight));
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 rgba(255,82,82,0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,82,82,0.6); } 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,82,82,0.4); } }
+        .progress-bar { height: 6px; background: #474787; width: 100%; position: absolute; bottom: 0; left: 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--highlight)); width: 0%; transition: width 0.3s; }
 
     </style>
 </head>
 <body>
 
 <div class="stage">
-    <!-- 左按钮 -->
     <button class="nav-btn prev" id="btnPrev" onclick="moveSlide(-1)">◀</button>
 
-    <!-- 屏幕容器 -->
     <div class="screen-container">
         
-        <!-- HUD 状态栏 -->
         <div class="hud-bar">
-            <div class="hud-item"><span>📊</span> LEVEL 25</div>
-            <div class="hud-item"><span>🛡️</span> 战术系统: 在线</div>
-            <div class="hud-item">PAGE <span id="pageNum">1</span>/14</div>
+            <div class="hud-item"><span>📊</span> LEVEL 25: 释放</div>
+            <div class="hud-item"><span>🛡️</span> C++ 战术系统</div>
+            <div class="hud-item">PAGE <span id="pageNum">1</span>/12</div>
         </div>
 
-        <!-- Slide 1: 封面 -->
         <div class="slide active" style="align-items: center; justify-content: center; text-align: center;">
-            <div style="font-size: 100px; animation: fly 3s infinite;">🤖</div>
+            <div style="font-size: 100px;">🔓</div>
             <h1 style="font-size: 48px; margin: 20px 0; color: var(--primary);">多分支选择结构</h1>
-            <h2 style="font-size: 28px; color: #7f8fa6; font-weight: normal;">if - elif - else 战术指南</h2>
+            <h2 style="font-size: 28px; color: #7f8fa6; font-weight: normal;">C++ 中的 if - else if - else</h2>
             <div style="margin-top: 40px; display: flex; gap: 20px;">
-                <div style="padding: 10px 20px; background: var(--secondary); color: white; border-radius: 20px; font-weight: bold;">🔥 必杀技</div>
-                <div style="padding: 10px 20px; background: var(--highlight); color: white; border-radius: 20px; font-weight: bold;">⚔️ 普通攻击</div>
-                <div style="padding: 10px 20px; background: var(--primary); color: white; border-radius: 20px; font-weight: bold;">🛡️ 保底方案</div>
+                <div style="padding: 10px 20px; background: var(--secondary); color: white; border-radius: 20px; font-weight: bold;">🔥 优先大招</div>
+                <div style="padding: 10px 20px; background: var(--highlight); color: white; border-radius: 20px; font-weight: bold;">⚔️ 其次普攻</div>
+                <div style="padding: 10px 20px; background: var(--primary); color: white; border-radius: 20px; font-weight: bold;">🚪 保底开门</div>
             </div>
         </div>
 
-        <!-- Slide 2: 什么是 if-elif-else -->
         <div class="slide">
             <div class="header">
                 <span class="header-icon">🎮</span>
-                <h1>什么是 if-elif-else?</h1>
+                <h1>什么是 else if?</h1>
             </div>
             <div class="layout">
                 <div class="text-col">
-                    <p>想象你在玩一个<b>超级智能</b>的战术选择游戏，面对敌人，你有三个选择：</p>
+                    <p>面对复杂的战场，我们不再只有“非黑即白”的选择。</p>
+                    <p><b>else if (否则如果)</b> 让我们能设置多个检查点：</p>
                     <ul style="list-style: none; padding: 0;">
-                        <li style="color: var(--secondary); font-weight: bold; margin-bottom: 10px;">💥 如果有大招 → 放必杀技！</li>
-                        <li style="color: var(--highlight); font-weight: bold; margin-bottom: 10px;">🗡️ 否则如果很近 → 普通攻击</li>
-                        <li style="color: var(--primary); font-weight: bold;">🚪 否则 → 攻击门开路</li>
+                        <li style="color: var(--secondary); font-weight: bold; margin-bottom: 10px;">💥 if: 最强方案 (必杀技)</li>
+                        <li style="color: var(--highlight); font-weight: bold; margin-bottom: 10px;">🗡️ else if: 备选方案 (近距离攻击)</li>
+                        <li style="color: var(--primary); font-weight: bold;">🚪 else: 最后方案 (攻击门)</li>
                     </ul>
                     <div class="card">
-                        "就像技能轮盘：先选最强的，不行选次强的，最后选保底！"
+                        C++ 语法注意：<br>必须写成 <b>else if</b> (中间有空格)，而不是 elif！
                     </div>
                 </div>
                 <div class="visual-col">
-                    <div style="position: relative; width: 200px; height: 200px; border-radius: 50%; border: 10px solid #d1ccc0; display: flex; justify-content: center; align-items: center;">
-                        <div style="position: absolute; top: 10px; font-size: 30px;">💥</div>
-                        <div style="position: absolute; right: 10px; bottom: 40px; font-size: 30px;">🗡️</div>
-                        <div style="position: absolute; left: 10px; bottom: 40px; font-size: 30px;">🚪</div>
-                        <div style="width: 10px; height: 100px; background: var(--secondary); position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; animation: spin 3s infinite steps(3);"></div>
-                        <div style="width: 20px; height: 20px; background: #333; border-radius: 50%; z-index: 10;"></div>
-                    </div>
-                    <style>@keyframes spin { 0% { transform: translateX(-50%) rotate(0deg); } 33% { transform: translateX(-50%) rotate(120deg); } 66% { transform: translateX(-50%) rotate(240deg); } 100% { transform: translateX(-50%) rotate(360deg); } }</style>
+                   
+                   <div style="font-size: 80px;">🚦</div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 3: 语法结构 -->
         <div class="slide">
             <div class="header">
                 <span class="header-icon">📝</span>
-                <h1>语法结构</h1>
+                <h1>C++ 语法结构</h1>
             </div>
             <div class="layout">
                 <div class="text-col">
-                    <p>这就是<b>多分支选择</b>！就像有三条路可选，每次只走<b>最适合</b>的那条。</p>
+                    <p>C++ 的多分支结构非常严谨，注意<b>大括号 {}</b> 和<b>圆括号 ()</b>。</p>
                     <div class="code-box">
-                        <span class="k">if</span> 条件1成立:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;执行最强方案<br>
-                        <span class="k">elif</span> 条件2成立:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;执行次强方案<br>
-                        <span class="k">else</span>:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;执行保底方案
+<span class="k">if</span> (条件1) {
+    <span class="c">// 方案 A: 最优先</span>
+    <span class="f">doOptionA</span>();
+} 
+<span class="k">else if</span> (条件2) {
+    <span class="c">// 方案 B: 如果 A 不行，看 B</span>
+    <span class="f">doOptionB</span>();
+} 
+<span class="k">else</span> {
+    <span class="c">// 方案 C: 全都不行时的保底</span>
+    <span class="f">doOptionC</span>();
+}
                     </div>
                 </div>
-                <div class="visual-col" style="flex-direction: column; gap: 10px;">
-                    <div class="flow-node bg-red">条件1 (最强)</div>
-                    <div class="arrow-down">⬇️ 否</div>
-                    <div class="flow-node bg-yellow">条件2 (次强)</div>
-                    <div class="arrow-down">⬇️ 否</div>
-                    <div class="flow-node bg-blue">Else (保底)</div>
+                <div class="visual-col">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                        <div style="background: var(--secondary); color: white; padding: 10px 20px; border-radius: 5px;">check 1</div>
+                        <div style="font-size: 20px;">⬇️ false</div>
+                        <div style="background: var(--highlight); color: white; padding: 10px 20px; border-radius: 5px;">check 2</div>
+                        <div style="font-size: 20px;">⬇️ false</div>
+                        <div style="background: var(--primary); color: white; padding: 10px 20px; border-radius: 5px;">do else</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 4: 生活例子 -->
         <div class="slide">
             <div class="header">
                 <span class="header-icon">🚁</span>
@@ -357,89 +263,90 @@
             <div class="layout">
                 <div class="text-col">
                     <div class="code-box">
-                        <span class="c"># 选择出行方式</span><br>
-                        <span class="k">if</span> 有直升机:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">坐直升机</span>() <span class="c"># 最快</span><br>
-                        <span class="k">elif</span> 距离 < 5公里:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">骑自行车</span>() <span class="c"># 中等</span><br>
-                        <span class="k">else</span>:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">坐公交车</span>() <span class="c"># 保底</span>
-                    </div>
-                </div>
-                <div class="visual-col" style="flex-direction: column; justify-content: space-around;">
-                    <div class="heli">🚁 <span style="font-size: 14px;">优先!</span></div>
-                    <div class="bike">🚲 <span style="font-size: 14px;">如果近</span></div>
-                    <div class="bus">🚌 <span style="font-size: 14px;">否则</span></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 5: 关卡程序分析 -->
-        <div class="slide">
-            <div class="header">
-                <span class="header-icon">🧠</span>
-                <h1>智能战斗系统</h1>
-            </div>
-            <div class="layout">
-                <div class="text-col">
-                    <p>这是第25关的完整战术逻辑：</p>
-                    <div class="code-box" style="font-size: 16px;">
-                        <span class="k">while</span> <span class="k">True</span>:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 1. 侦察与测量</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;enemy = <span class="f">hero.findNearestEnemy</span>()<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;dist = <span class="f">hero.distanceTo</span>(enemy)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 2. 三层决策</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">if</span> <span class="f">hero.isReady</span>(<span class="s">"cleave"</span>):<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">hero.cleave</span>(enemy)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">elif</span> dist < 5:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">hero.attack</span>(enemy)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">else</span>:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">hero.attack</span>(<span class="s">"Door"</span>)
+<span class="c">// C++ 示例</span>
+<span class="k">if</span> (hasHelicopter) {
+    <span class="f">fly</span>(); <span class="c">// 最快！</span>
+} 
+<span class="k">else if</span> (distance < <span class="n">5</span>) {
+    <span class="f">bike</span>(); <span class="c">// 近距离</span>
+} 
+<span class="k">else</span> {
+    <span class="f">takeBus</span>(); <span class="c">// 保底</span>
+}
                     </div>
                 </div>
                 <div class="visual-col">
-                    <div class="pyramid">
-                        <div class="layer layer-1">Cleave (必杀)</div>
-                        <div class="layer layer-2">Attack (普攻)</div>
-                        <div class="layer layer-3">Door (打门)</div>
+                    <div style="font-size: 60px; display: flex; flex-direction: column; gap: 20px;">
+                        <div>🚁 <span style="font-size: 20px;">Priority 1</span></div>
+                        <div>🚲 <span style="font-size: 20px;">Priority 2</span></div>
+                        <div>🚌 <span style="font-size: 20px;">Priority 3</span></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 6: 执行顺序 -->
         <div class="slide">
             <div class="header">
-                <span class="header-icon">🪜</span>
-                <h1>执行顺序很重要！</h1>
+                <span class="header-icon">🧠</span>
+                <h1>第25关：释放 (Unleash)</h1>
             </div>
             <div class="layout">
                 <div class="text-col">
-                    <p><b>if-elif-else</b> 严格按照<b>从上到下</b>的顺序检查。</p>
+                    <p>我们要释放被困的树精，同时保护自己。这是高手的思维过程：</p>
+                    <div class="code-box">
+<span class="k">while</span> (<span class="k">true</span>) {
+    <span class="t">auto</span> enemy = <span class="f">hero.findNearestEnemy</span>();
+    <span class="t">float</span> dist = <span class="f">hero.distanceTo</span>(enemy);
+
+    <span class="c">// 1. 大招好了吗？好了就放！</span>
+    <span class="k">if</span> (<span class="f">hero.isReady</span>(<span class="s">"cleave"</span>)) {
+        <span class="f">hero.cleave</span>(enemy);
+    } 
+    <span class="c">// 2. 没好...那敌人近吗？近就砍！</span>
+    <span class="k">else if</span> (dist < <span class="n">5</span>) {
+        <span class="f">hero.attack</span>(enemy);
+    } 
+    <span class="c">// 3. 都没事？那就去砸门救人。</span>
+    <span class="k">else</span> {
+        <span class="f">hero.attack</span>(<span class="s">"Door"</span>);
+    }
+}
+                    </div>
+                </div>
+                <div class="visual-col">
+                    
+                    <div class="pyramid">
+                        <div class="layer layer-1">Cleave (必杀)</div>
+                        <div class="layer layer-2">Attack (自保)</div>
+                        <div class="layer layer-3">Door (任务)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="header">
+                <span class="header-icon">🪜</span>
+                <h1>排排队，吃果果</h1>
+            </div>
+            <div class="layout">
+                <div class="text-col">
+                    <p><b>if - else if - else</b> 严格按照<b>从上到下</b>的顺序检查。</p>
                     <div class="card">
-                        口诀：<br>
+                        关键规则：<br>
                         "三兄弟，排排队，<br>
                         <b>只有一个</b>能执行！<br>
                         找到就停不回头！"
                     </div>
-                    <p>如果 <code>if</code> 成立了，后面的 <code>elif</code> 和 <code>else</code> 直接跳过！</p>
+                    <p>一旦某个条件成立（比如 <code>cleave</code> 准备好了），后面的 <code>else if</code> 和 <code>else</code> 会被<b>直接忽略</b>！</p>
                 </div>
                 <div class="visual-col">
-                    <div style="display: flex; flex-direction: column; align-items: center;">
-                        <div style="font-size: 40px;">👇</div>
-                        <div style="background: #f1f2f6; padding: 10px; width: 150px; text-align: center; border: 2px solid #ccc; margin: 5px;">检查 If...</div>
-                        <div style="font-size: 20px; color: green;">❌ 不成立</div>
-                        <div style="font-size: 40px;">👇</div>
-                        <div style="background: #f1f2f6; padding: 10px; width: 150px; text-align: center; border: 2px solid #ccc; margin: 5px;">检查 Elif...</div>
-                        <div style="font-size: 20px; color: green;">✅ 成立！</div>
-                        <div style="font-size: 40px; color: red;">🛑</div>
-                        <div style="font-size: 14px; color: #aaa;">(Else 被跳过)</div>
-                    </div>
+                     <div style="font-size: 100px;">🛑</div>
+                     <p>One Way Only</p>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 7: 技能准备检查 -->
         <div class="slide">
             <div class="header">
                 <span class="header-icon">⚡</span>
@@ -448,40 +355,26 @@
             <div class="layout">
                 <div class="text-col">
                     <p><code>hero.isReady("cleave")</code></p>
-                    <p>就像检查你的大招<b>冷却时间</b> (Cooldown)：</p>
+                    <p>这是一个布尔函数，它回答 Yes/No：</p>
                     <ul style="list-style: none; padding: 0;">
                         <li>🟢 <b>True</b> → 技能亮了，可以用！</li>
-                        <li>🔴 <b>False</b> → 技能灰的，还在读秒...</li>
+                        <li>🔴 <b>False</b> → 技能灰的，还在冷却...</li>
                     </ul>
                     <div class="code-box">
-                        <span class="k">if</span> <span class="f">hero.isReady</span>(<span class="s">"cleave"</span>):<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">hero.cleave</span>(enemy)
+<span class="k">if</span> (<span class="f">hero.isReady</span>(<span class="s">"cleave"</span>)) {
+    <span class="f">hero.cleave</span>(enemy);
+}
                     </div>
                 </div>
                 <div class="visual-col">
-                    <div class="cooldown-clock">
-                        <div class="clock-hand" style="--angle: 270deg;"></div>
-                        <div class="clock-center">
-                            <div style="font-size: 24px;">⚔️</div>
-                            Cooldown
-                        </div>
+                    
+                    <div style="position:relative; width:100px; height:100px; border-radius:50%; background:#ccc; display:flex; justify-content:center; align-items:center; border:5px solid var(--primary);">
+                        <div style="font-size:40px;">⏳</div>
                     </div>
-                    <script>
-                        // 简单的动画模拟
-                        let angle = 0;
-                        setInterval(() => {
-                            angle = (angle + 5) % 360;
-                            const hand = document.querySelector('.clock-hand');
-                            if(hand) {
-                                hand.style.background = `conic-gradient(rgba(112, 111, 211, 0.5) ${angle}deg, transparent 0deg)`;
-                            }
-                        }, 50);
-                    </script>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 8: 为什么不用多个 if? -->
         <div class="slide">
             <div class="header">
                 <span class="header-icon">🤔</span>
@@ -491,50 +384,20 @@
                 <div class="text-col">
                     <p>❌ <b>多个 if 的坏处：</b></p>
                     <div class="code-box" style="border-color: #ff5252;">
-                        <span class="k">if</span> <span class="f">isReady</span>(...): <span class="f">cleave</span>()<br>
-                        <span class="k">if</span> dist < 5: <span class="f">attack</span>()
+<span class="k">if</span> (<span class="f">isReady</span>(...)) { <span class="f">cleave</span>(); }
+<span class="k">if</span> (dist < <span class="n">5</span>) { <span class="f">attack</span>(); }
                     </div>
-                    <p style="color: #ff5252; font-weight: bold;">后果：英雄可能会同时试图放技能又普攻，导致混乱！</p>
+                    <p style="color: #ff5252; font-weight: bold;">后果：如果技能好了且敌人很近，英雄会试图同时做两件事，导致混乱！</p>
                     <hr style="border: 1px dashed #ccc; margin: 10px 0;">
-                    <p>✅ <b>if-elif 的好处：</b><br>只执行<b>一个</b>最合适的动作，井井有条。</p>
+                    <p>✅ <b>else if 的好处：</b><br>确保每一轮只做一个动作。</p>
                 </div>
                 <div class="visual-col">
                     <div style="font-size: 60px;">😵‍💫</div>
-                    <p>英雄：<br>"又要我劈砍，又要我普攻，<br>我太难了！"</p>
+                    <p>Confused Hero</p>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 9: 逻辑流程图 -->
-        <div class="slide">
-            <div class="header">
-                <span class="header-icon">🗺️</span>
-                <h1>程序思维导图</h1>
-            </div>
-            <div class="layout">
-                <div class="text-col">
-                    <p>看一看高手的思维过程：</p>
-                    <ol style="font-size: 18px; line-height: 2;">
-                        <li><b>开始</b>新一轮思考</li>
-                        <li>侦察敌人位置，目测距离</li>
-                        <li><b>问：</b>大招好了吗？<br>→ 好了就放！(结束)</li>
-                        <li><b>问：</b>没好...那敌人近吗？<br>→ 近就砍！(结束)</li>
-                        <li><b>叹气：</b>都不行...<br>→ 那就去砸门吧。</li>
-                    </ol>
-                </div>
-                <div class="visual-col" style="flex-direction: column;">
-                    <div class="flow-node bg-green">Start Loop</div>
-                    <div class="arrow-down">⬇️</div>
-                    <div class="flow-node bg-red">Cleave?</div>
-                    <div class="arrow-down">⬇️ No</div>
-                    <div class="flow-node bg-yellow">Close?</div>
-                    <div class="arrow-down">⬇️ No</div>
-                    <div class="flow-node bg-blue">Attack Door</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 10: 编程概念 -->
         <div class="slide">
             <div class="header">
                 <span class="header-icon">📚</span>
@@ -542,27 +405,28 @@
             </div>
             <div class="layout">
                 <div class="text-col">
-                    <h3>1. 布尔函数 (Boolean Function)</h3>
-                    <p><code>isReady()</code> 是一个会回答 Yes/No 的函数。</p>
-                    <p>返回 <b>True</b> (真) 或 <b>False</b> (假)。</p>
-                    
-                    <h3>2. 字符串参数 (String Parameter)</h3>
-                    <p><code>"cleave"</code> 是传给函数的暗号。</p>
+                    <h3>1. auto (自动类型)</h3>
+                    <p>C++ 可以自动推断变量类型：</p>
                     <div class="code-box">
-                        <span class="f">isReady</span>(<span class="s">"cleave"</span>) <span class="c"># 查劈砍</span><br>
-                        <span class="f">isReady</span>(<span class="s">"shield"</span>) <span class="c"># 查盾牌</span>
+<span class="t">auto</span> enemy = <span class="f">hero.findNearestEnemy</span>();
+<span class="c">// 相当于 Enemy* enemy = ...</span>
+                    </div>
+                    
+                    <h3>2. float (浮点数)</h3>
+                    <p>距离通常带有小数（如 4.5 米），所以用 float：</p>
+                    <div class="code-box">
+<span class="t">float</span> dist = <span class="f">hero.distanceTo</span>(enemy);
                     </div>
                 </div>
                 <div class="visual-col">
                     <div style="text-align: center;">
-                        <div style="font-size: 50px;">📜</div>
-                        <p>参数就像给函数的<br><b>小纸条</b></p>
+                        <div style="font-size: 50px;">📏</div>
+                        <p>4.5m</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 11: 马戏团比喻 -->
         <div class="slide">
             <div class="header">
                 <span class="header-icon">🎪</span>
@@ -572,12 +436,15 @@
                 <div class="text-col">
                     <p>想象有三个杂技演员在等待上场，但舞台只能容纳一人：</p>
                     <div class="code-box">
-                        <span class="k">if</span> 有火焰圈:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">跳火圈</span>() <span class="c"># 最精彩！</span><br>
-                        <span class="k">elif</span> 有高台:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">翻跟头</span>() <span class="c"># 次精彩</span><br>
-                        <span class="k">else</span>:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">走钢丝</span>() <span class="c"># 基础表演</span>
+<span class="k">if</span> (hasFireRing) {
+    <span class="f">jumpFire</span>(); <span class="c">// 最精彩！</span>
+} 
+<span class="k">else if</span> (hasHighStage) {
+    <span class="f">doFlip</span>(); <span class="c">// 次精彩</span>
+} 
+<span class="k">else</span> {
+    <span class="f">walkWire</span>(); <span class="c">// 基础表演</span>
+}
                     </div>
                 </div>
                 <div class="visual-col">
@@ -586,34 +453,6 @@
             </div>
         </div>
 
-        <!-- Slide 12: 战术深度分析 -->
-        <div class="slide">
-            <div class="header">
-                <span class="header-icon">🎯</span>
-                <h1>为什么这个顺序很聪明？</h1>
-            </div>
-            <div class="layout">
-                <div class="text-col">
-                    <div class="card" style="background: #fff5f5; border-color: #ff5252;">
-                        <b>1. Cleave (第一位)</b><br>
-                        它是范围攻击，伤害高，CD长。<b>有就要用，不用浪费！</b>
-                    </div>
-                    <div class="card" style="background: #fffbf0; border-color: #ffb142;">
-                        <b>2. Attack (第二位)</b><br>
-                        单体攻击。只有大招没好，且敌人很近容易打中时才用。
-                    </div>
-                    <div class="card" style="background: #f0f9ff; border-color: #706fd3;">
-                        <b>3. Door (最后)</b><br>
-                        打门是为了过关，但不能顶着敌人的攻击去打门，所以最后考虑。
-                    </div>
-                </div>
-                <div class="visual-col">
-                    <div style="font-size: 80px;">🏅</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 13: 扩展思考 -->
         <div class="slide">
             <div class="header">
                 <span class="header-icon">🚀</span>
@@ -621,30 +460,31 @@
             </div>
             <div class="layout">
                 <div class="text-col">
-                    <p>你可以加无数个 <code>elif</code>！</p>
-                    <div class="code-box" style="font-size: 14px;">
-                        <span class="k">if</span> <span class="f">isReady</span>(<span class="s">"cleave"</span>):<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">cleave</span>()<br>
-                        <span class="k">elif</span> health < 20: <span class="c"># 快死了？</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">runAway</span>()<br>
-                        <span class="k">elif</span> distance < 5:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">attack</span>()<br>
-                        <span class="k">elif</span> distance < 10:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">shoot</span>() <span class="c"># 射箭</span><br>
-                        <span class="k">else</span>:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">wait</span>()
+                    <p>你可以加无数个 <code>else if</code>！像搭积木一样。</p>
+                    <div class="code-box">
+<span class="k">if</span> (<span class="f">isReady</span>(<span class="s">"cleave"</span>)) {
+    <span class="f">cleave</span>();
+} 
+<span class="k">else if</span> (health < <span class="n">20</span>) { 
+    <span class="f">runAway</span>(); <span class="c">// 快死了？跑！</span>
+} 
+<span class="k">else if</span> (dist < <span class="n">5</span>) {
+    <span class="f">attack</span>();
+} 
+<span class="k">else</span> {
+    <span class="f">wait</span>();
+}
                     </div>
                 </div>
                 <div class="visual-col">
                     <div style="text-align: center;">
                         <div style="font-size: 50px;">🧱</div>
-                        <p>像搭积木一样<br>叠加战术！</p>
+                        <p>Logic Blocks</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 14: 总结 -->
         <div class="slide">
             <div class="header">
                 <span class="header-icon">🎓</span>
@@ -653,7 +493,7 @@
             <div class="layout">
                 <div class="text-col" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
                     <div style="background: #dff9fb; padding: 30px; border-radius: 20px; border: 4px dashed #22a6b3; transform: rotate(-2deg);">
-                        <h2 style="color: #130f40; margin: 0;">"if-elif-else 三层楼，<br>从上往下走，<br>找到就停不回头！"</h2>
+                        <h2 style="color: #130f40; margin: 0;">"if - else if - else 三层楼，<br>从上往下走，<br>找到就停不回头！"</h2>
                     </div>
                     <br>
                     <div style="background: #ffcccc; padding: 20px; border-radius: 20px; border: 4px dashed #b33939; transform: rotate(2deg);">
@@ -666,12 +506,10 @@
             </div>
         </div>
 
-        <!-- 底部进度条 -->
         <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
 
     </div>
 
-    <!-- 右按钮 -->
     <button class="nav-btn" id="btnNext" onclick="moveSlide(1)">▶</button>
 
 </div>
@@ -686,7 +524,6 @@
     const btnNext = document.getElementById('btnNext');
 
     function updateUI() {
-        // 切换幻灯片
         slides.forEach((slide, index) => {
             if (index === currentSlide) {
                 slide.classList.add('active');
@@ -695,14 +532,10 @@
             }
         });
 
-        // 更新页码
         pageNumDisplay.textContent = currentSlide + 1;
-
-        // 更新进度条
         const percentage = ((currentSlide + 1) / totalSlides) * 100;
         progressBar.style.width = `${percentage}%`;
 
-        // 更新按钮状态
         btnPrev.classList.toggle('disabled', currentSlide === 0);
         btnNext.classList.toggle('disabled', currentSlide === totalSlides - 1);
     }
@@ -715,13 +548,11 @@
         }
     }
 
-    // 键盘控制
     document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') moveSlide(-1);
         if (e.key === 'ArrowRight') moveSlide(1);
     });
 
-    // 初始化
     updateUI();
 </script>
 
