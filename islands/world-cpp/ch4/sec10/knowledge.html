@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第17-18关 游戏事件：collide</title>
+    <title>第17-18关：游戏事件 collide (C++)</title>
     <style>
         /* --- 1. 基础设置 --- */
         :root {
@@ -15,7 +15,7 @@
             --text-main: #2d3436;
             --text-sub: #636e72;
             
-            /* 代码高亮 */
+            /* 代码高亮 (C++ 风格) */
             --code-bg: #1e272e;
             --code-fg: #d2dae2;
             --tok-kw: #ff7675;         /* 关键字 */
@@ -25,14 +25,14 @@
             --tok-num: #55efc4;        /* 数字 */
             --tok-str: #a29bfe;        /* 字符串 */
             --tok-cm: #b2bec3;         /* 注释 */
+            --tok-type: #fd79a8;       /* 类型 auto/void */
         }
 
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
             background-color: var(--bg-color);
-            /* 破碎背景 */
             background-image: 
                 linear-gradient(45deg, #222 25%, transparent 25%, transparent 75%, #222 75%, #222),
                 linear-gradient(45deg, #222 25%, transparent 25%, transparent 75%, #222 75%, #222);
@@ -48,79 +48,45 @@
 
         /* --- 2. 舞台布局 --- */
         .stage {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 60px;
-            width: 98vw;
-            max-width: 1400px;
-            position: relative;
-            z-index: 10;
+            display: flex; align-items: center; justify-content: center; gap: 60px;
+            width: 98vw; max-width: 1400px; position: relative; z-index: 10;
         }
 
-        /* --- 3. 强力按钮 (外部) --- */
+        /* --- 3. 强力按钮 --- */
         .nav-btn {
-            width: 90px;
-            height: 90px;
-            background: #fff;
-            border: 4px solid #000;
-            border-radius: 20px;
-            cursor: pointer;
-            position: relative;
+            width: 90px; height: 90px; background: #fff; border: 4px solid #000;
+            border-radius: 20px; cursor: pointer; position: relative;
             box-shadow: 0 8px 0 #000, 0 15px 20px rgba(0,0,0,0.4);
-            transition: all 0.1s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            transition: all 0.1s; display: flex; align-items: center; justify-content: center;
             font-size: 45px;
         }
-
         .nav-btn:hover { transform: translateY(2px); background: #ffeaa7; }
         .nav-btn:active { transform: translateY(8px); box-shadow: 0 0 0 #000; }
         
         .btn-prev { border-color: var(--accent); color: var(--accent); }
-        .btn-prev::after { content: '🍄'; } /* 蘑菇 */
+        .btn-prev::after { content: '🍄'; }
         
         .btn-next { border-color: var(--primary); color: var(--primary); }
-        .btn-next::after { content: '👊'; } /* 拳头 */
+        .btn-next::after { content: '👊'; }
 
         .disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
 
         /* --- 4. 警告牌屏幕容器 --- */
         .sign-container {
-            width: 960px;
-            height: 600px;
-            background: var(--secondary);
-            border-radius: 10px;
-            /* 警示条纹边框 */
-            background-image: repeating-linear-gradient(
-                45deg,
-                #e17055,
-                #e17055 20px,
-                #2d3436 20px,
-                #2d3436 40px
-            );
-            padding: 20px; /* 边框厚度 */
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            position: relative;
-            display: flex;
-            flex-direction: column;
+            width: 960px; height: 600px; background: var(--secondary); border-radius: 10px;
+            /* 警示条纹 */
+            background-image: repeating-linear-gradient(45deg, #e17055, #e17055 20px, #2d3436 20px, #2d3436 40px);
+            padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative; display: flex; flex-direction: column;
         }
 
-        /* 内部屏幕 */
         .inner-screen {
-            flex: 1;
-            background: var(--screen-bg);
-            border-radius: 5px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            border: 4px solid #2d3436;
+            flex: 1; background: var(--screen-bg); border-radius: 5px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2); position: relative; overflow: hidden;
+            display: flex; flex-direction: column; border: 4px solid #2d3436;
         }
 
-        /* 螺丝钉装饰 */
+        /* 螺丝钉 */
         .screw {
             position: absolute; width: 15px; height: 15px; background: #b2bec3; border-radius: 50%;
             box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5); z-index: 20;
@@ -131,101 +97,62 @@
         .screw-br { bottom: 10px; right: 10px; }
         .screw::after { content: '+'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #636e72; font-weight: bold; font-size: 12px; }
 
-        /* 顶部标签 */
         .top-tag {
-            position: absolute;
-            top: 0; left: 50%; transform: translateX(-50%);
-            background: #fab1a0;
-            padding: 5px 20px;
-            border-radius: 0 0 10px 10px;
-            font-weight: bold;
-            color: #d63031;
-            border: 2px solid #2d3436;
-            border-top: none;
-            z-index: 15;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            background: #fab1a0; padding: 5px 20px; border-radius: 0 0 10px 10px;
+            font-weight: bold; color: #d63031; border: 2px solid #2d3436; border-top: none;
+            z-index: 15; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         /* 幻灯片 */
         .slide {
-            display: none;
-            flex: 1;
-            padding: 50px 70px;
-            flex-direction: column;
-            animation: slideIn 0.5s ease-out;
-            overflow-y: auto;
+            display: none; flex: 1; padding: 50px 70px;
+            flex-direction: column; animation: slideIn 0.5s ease-out; overflow-y: auto;
         }
         .slide.active { display: flex; }
-
-        @keyframes slideIn { 
-            0% { opacity: 0; transform: scale(0.95); } 
-            100% { opacity: 1; transform: scale(1); } 
-        }
+        @keyframes slideIn { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
 
         /* 内容布局 */
         .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 25px;
-            border-bottom: 4px solid #dfe6e9;
-            padding-bottom: 10px;
+            display: flex; align-items: center; margin-bottom: 25px;
+            border-bottom: 3px dashed #dfe6e9; padding-bottom: 10px;
         }
         .icon { font-size: 50px; margin-right: 20px; animation: shake 3s infinite; }
         h1 { margin: 0; color: #d63031; font-size: 36px; letter-spacing: 1px; font-weight: 900; text-transform: uppercase; }
 
         .layout { display: flex; gap: 40px; height: 100%; }
-        .col-text { flex: 1.2; font-size: 19px; line-height: 1.7; color: var(--text-main); }
+        .col-text { flex: 1.2; font-size: 19px; line-height: 1.6; color: var(--text-main); }
         .col-visual { 
-            flex: 0.8; 
-            background: #fff;
-            border-radius: 10px; 
-            border: 3px solid #b2bec3; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            flex: 0.8; background: #fff; border-radius: 15px; 
+            border: 2px solid #dfe6e9; display: flex; justify-content: center; align-items: center; 
+            position: relative; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
         }
 
-        /* 代码块 */
+        /* C++ 代码块 */
         .code-box {
-            background: var(--code-bg);
-            color: var(--code-fg);
-            padding: 15px 20px;
-            border-radius: 5px;
-            font-family: 'Consolas', monospace;
-            font-size: 17px;
-            margin-top: 15px;
-            border-left: 6px solid var(--primary);
-            box-shadow: 5px 5px 0 rgba(0,0,0,0.1);
-            position: relative;
+            background: var(--code-bg); color: var(--code-fg); padding: 15px 20px;
+            border-radius: 10px; font-family: 'Consolas', monospace; font-size: 17px;
+            margin-top: 15px; border-left: 6px solid var(--primary);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); position: relative; white-space: pre; overflow-x: auto;
         }
         
-        .k { color: var(--tok-kw); font-weight: bold; } 
-        .f { color: var(--tok-func); } 
-        .o { color: var(--tok-obj); } 
-        .p { color: var(--tok-prop); font-weight: bold; } 
+        .k { color: var(--tok-kw); font-weight: bold; }
+        .f { color: var(--tok-func); }
+        .v { color: var(--tok-obj); }
+        .p { color: var(--tok-prop); font-weight: bold; }
         .n { color: var(--tok-num); }
-        .s { color: var(--tok-str); } 
-        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+        .s { color: var(--tok-str); }
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; }
+        .t { color: var(--tok-type); font-weight: bold; }
 
         /* 卡片 */
         .card {
-            background: #ff7675;
-            background: linear-gradient(135deg, #ff7675, #fab1a0);
-            color: white;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
+            background: #fff0f6; border-left: 5px solid var(--secondary);
+            color: #c2185b; padding: 15px 20px; margin-bottom: 15px;
+            border-radius: 0 10px 10px 0; font-size: 18px; font-weight: bold;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
         }
 
-        /* --- 5. 视觉化组件 --- */
-        
         /* 碰撞演示 */
         .collision-box {
             width: 100%; height: 100%; position: relative;
@@ -245,29 +172,15 @@
             position: absolute; font-size: 60px; color: var(--primary); 
             animation: flash 0.5s; display: none; left: 50%; transform: translateX(-50%);
         }
-        
+
         /* 变身演示 */
-        .scale-hero {
-            font-size: 40px; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer;
-        }
-        .mushroom-item {
-            font-size: 30px; cursor: pointer; animation: float 2s infinite ease-in-out;
-        }
+        .scale-hero { font-size: 40px; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; }
+        .mushroom-item { font-size: 30px; cursor: pointer; animation: float 2s infinite ease-in-out; }
 
         /* 破坏演示 */
-        .fence-row {
-            display: flex; gap: 5px; align-items: flex-end;
-        }
-        .fence {
-            width: 20px; height: 60px; background: #e17055; border: 2px solid #d35400;
-            transition: all 0.3s;
-        }
+        .fence { width: 20px; height: 60px; background: #e17055; border: 2px solid #d35400; transition: all 0.3s; }
         .fence.broken { transform: scaleY(0); opacity: 0; }
-        
-        .smasher {
-            font-size: 40px; position: absolute; bottom: 20px; left: 20px; transition: left 2s linear, transform 0.5s;
-        }
+        .smasher { font-size: 40px; position: absolute; bottom: 20px; left: 20px; transition: left 2s linear, transform 0.5s; }
         .smasher.big { font-size: 80px; }
 
         /* 对比表 */
@@ -277,41 +190,15 @@
         .vs-win { background: #fab1a0; font-weight: bold; color: #d63031; }
 
         /* 进度条 */
-        .progress-bar {
-            height: 8px;
-            background: #dfe6e9;
-            width: 100%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--secondary), var(--primary));
-            width: 0%;
-            transition: width 0.3s;
-        }
+        .progress-bar { height: 8px; background: #dfe6e9; width: 100%; position: absolute; bottom: 0; left: 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--secondary), var(--primary)); width: 0%; transition: width 0.3s; }
 
-        /* 动画 */
-        @keyframes shake { 
-            0%, 100% { transform: rotate(0deg); } 
-            25% { transform: rotate(-5deg); } 
-            75% { transform: rotate(5deg); } 
-        }
-        @keyframes flash {
-            0% { transform: translateX(-50%) scale(0); opacity: 0; }
-            50% { transform: translateX(-50%) scale(1.5); opacity: 1; }
-            100% { transform: translateX(-50%) scale(2); opacity: 0; }
-        }
+        @keyframes shake { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
+        @keyframes flash { 0% { transform: translateX(-50%) scale(0); opacity: 0; } 50% { transform: translateX(-50%) scale(1.5); opacity: 1; } 100% { transform: translateX(-50%) scale(2); opacity: 0; } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-        /* 按钮样式 */
-        .btn-action {
-            padding: 8px 15px; border: none; border-radius: 5px; font-weight: bold; color: white; cursor: pointer;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.2); margin-top: 10px;
-        }
+        .btn-action { padding: 8px 15px; border: none; border-radius: 5px; font-weight: bold; color: white; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.2); margin-top: 10px; }
         .btn-action:active { transform: translateY(4px); box-shadow: none; }
-        .bg-green { background: var(--accent); }
         .bg-red { background: var(--primary); }
 
     </style>
@@ -319,10 +206,8 @@
 <body>
 
 <div class="stage">
-    <!-- 左按钮 -->
     <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)"></button>
 
-    <!-- 警告牌容器 -->
     <div class="sign-container">
         <div class="screw screw-tl"></div>
         <div class="screw screw-tr"></div>
@@ -332,7 +217,6 @@
         <div class="inner-screen">
             <div class="top-tag">🚧 游戏开发 2 | 第 17-18 关</div>
 
-            <!-- Slide 1: 封面 -->
             <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
                 <div style="font-size: 100px; margin-bottom: 20px; animation: shake 2s infinite;">💥</div>
                 <h1 style="font-size: 50px; margin: 10px 0; color: var(--primary);">游戏事件：Collide</h1>
@@ -343,7 +227,6 @@
                 </div>
             </div>
 
-            <!-- Slide 2: 什么是 collide -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">🤜</div>
@@ -384,7 +267,6 @@
                 </div>
             </div>
 
-            <!-- Slide 3: 主角 target & other -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">👥</div>
@@ -394,11 +276,12 @@
                     <div class="col-text">
                         <p>碰撞是双向的，但在代码里我们通常只从一个角度看：</p>
                         <div class="code-box">
-                            <span class="k">def</span> <span class="f">onCollide</span>(event):<br>
-                            &nbsp;&nbsp;<span class="c"># event.target: 我 (unit)</span><br>
-                            &nbsp;&nbsp;<span class="v">unit</span> = event.<span class="p">target</span><br>
-                            &nbsp;&nbsp;<span class="c"># event.other: 对方 (被撞物)</span><br>
-                            &nbsp;&nbsp;<span class="v">obj</span> = event.<span class="p">other</span>
+<span class="t">auto</span> <span class="f">onCollide</span>(<span class="t">auto</span> event) {
+    <span class="c">// event.target: 我 (unit)</span>
+    <span class="t">auto</span> <span class="v">unit</span> = event.<span class="p">target</span>;
+    <span class="c">// event.other: 对方 (被撞物)</span>
+    <span class="t">auto</span> <span class="v">obj</span> = event.<span class="p">other</span>;
+}
                         </div>
                         <p style="margin-top: 10px;">可以读作：“<b>unit</b> 撞到了 <b>obj</b>。”</p>
                     </div>
@@ -418,7 +301,6 @@
                 </div>
             </div>
 
-            <!-- Slide 4: Collect 事件 (变身) -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">🍄</div>
@@ -428,12 +310,14 @@
                     <div class="col-text">
                         <p>要破坏围栏，首先得变强！</p>
                         <div class="code-box">
-                            <span class="k">def</span> <span class="f">onCollect</span>(event):<br>
-                            &nbsp;&nbsp;<span class="v">item</span> = event.<span class="p">other</span><br>
-                            &nbsp;&nbsp;<span class="k">if</span> <span class="v">item</span>.<span class="p">type</span> == <span class="s">"mushroom"</span>:<br>
-                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># scale: 缩放比例</span><br>
-                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">unit</span>.<span class="p">scale</span> = <span class="n">2</span><br>
-                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">unit</span>.<span class="f">say</span>(<span class="s">"变大!"</span>)
+<span class="t">auto</span> <span class="f">onCollect</span>(<span class="t">auto</span> event) {
+    <span class="t">auto</span> <span class="v">item</span> = event.<span class="p">other</span>;
+    <span class="k">if</span> (<span class="v">item</span>.<span class="p">type</span> == <span class="s">"mushroom"</span>) {
+        <span class="c">// scale: 缩放比例</span>
+        <span class="v">unit</span>.<span class="p">scale</span> = <span class="n">2</span>;
+        <span class="v">unit</span>.<span class="f">say</span>(<span class="s">"变大!"</span>);
+    }
+}
                         </div>
                         <p><b>unit.scale = 2</b>：变成原来的 2 倍大（巨人模式）。</p>
                     </div>
@@ -459,7 +343,6 @@
                 </div>
             </div>
 
-            <!-- Slide 5: Collide 事件 (破坏) -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">🔨</div>
@@ -469,13 +352,16 @@
                     <div class="col-text">
                         <p>只有<b>巨人</b>才能撞碎围栏！</p>
                         <div class="code-box" style="font-size: 14px;">
-                            <span class="k">def</span> <span class="f">onCollide</span>(event):<br>
-                            &nbsp;&nbsp;<span class="v">obj</span> = event.<span class="p">other</span><br>
-                            &nbsp;&nbsp;<span class="k">if</span> <span class="v">obj</span>.<span class="p">type</span> == <span class="s">"fence"</span>:<br>
-                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 检查是不是巨人?</span><br>
-                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">if</span> <span class="v">unit</span>.<span class="p">scale</span> == <span class="n">2</span>:<br>
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 彻底销毁对象</span><br>
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="v">obj</span>.<span class="f">destroy</span>()
+<span class="t">auto</span> <span class="f">onCollide</span>(<span class="t">auto</span> event) {
+    <span class="t">auto</span> <span class="v">obj</span> = event.<span class="p">other</span>;
+    <span class="k">if</span> (<span class="v">obj</span>.<span class="p">type</span> == <span class="s">"fence"</span>) {
+        <span class="c">// 检查是不是巨人?</span>
+        <span class="k">if</span> (<span class="v">unit</span>.<span class="p">scale</span> == <span class="n">2</span>) {
+            <span class="c">// 彻底销毁对象</span>
+            <span class="v">obj</span>.<span class="f">destroy</span>();
+        }
+    }
+}
                         </div>
                         <p><b>destroy()</b>：直接从世界上移除（消失）。</p>
                     </div>
@@ -492,7 +378,6 @@
                 </div>
             </div>
 
-            <!-- Slide 6: Defeat vs Destroy -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">⚖️</div>
@@ -532,7 +417,6 @@
                 </div>
             </div>
 
-            <!-- Slide 7: 计时器还原 -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">⏳</div>
@@ -542,9 +426,11 @@
                     <div class="col-text">
                         <p>魔法只能持续 3 秒。</p>
                         <div class="code-box">
-                            <span class="k">if</span> <span class="v">game</span>.<span class="p">time</span> > <span class="v">endTime</span>:<br>
-                            &nbsp;&nbsp;<span class="k">if</span> <span class="v">player</span>.<span class="p">scale</span> == <span class="n">2</span>:<br>
-                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">player</span>.<span class="p">scale</span> = <span class="n">1</span> <span class="c"># 还原</span>
+<span class="k">if</span> (<span class="v">game</span>.<span class="p">time</span> > <span class="v">endTime</span>) {
+    <span class="k">if</span> (<span class="v">player</span>.<span class="p">scale</span> == <span class="n">2</span>) {
+        <span class="v">player</span>.<span class="p">scale</span> = <span class="n">1</span>; <span class="c">// 还原</span>
+    }
+}
                         </div>
                         <p style="margin-top: 20px;">
                             "时间一到，再大的巨人也要变回原来的小队长。撞墙只会头痛哦！"
@@ -560,7 +446,6 @@
                 </div>
             </div>
 
-            <!-- Slide 8: 总结 -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">🎓</div>
@@ -583,13 +468,11 @@
                 </div>
             </div>
 
-            <!-- 底部进度条 -->
             <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
 
         </div>
     </div>
 
-    <!-- 右按钮 -->
     <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)"></button>
 
 </div>

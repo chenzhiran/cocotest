@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第22关 分数</title>
+    <title>第22关：游戏分数 (C++)</title>
     <style>
         /* --- 1. 基础设置 --- */
         :root {
@@ -15,7 +15,7 @@
             --neon-yellow: #fff01f;    /* 霓虹黄 */
             --text-main: #ffffff;
             
-            /* 代码高亮 */
+            /* 代码高亮 (C++ 风格) */
             --code-bg: #1a1a1a;
             --code-fg: #f0f0f0;
             --tok-kw: #ff79c6;         /* 关键字 */
@@ -25,6 +25,9 @@
             --tok-str: #50fa7b;        /* 字符串 */
             --tok-op: #ffb86c;         /* 运算符 */
             --tok-cm: #6272a4;         /* 注释 */
+            --tok-obj: #ff79c6;        /* 对象 game */
+            --tok-type: #bd93f9;       /* 类型 auto */
+            --tok-prop: #8be9fd;       /* 属性 */
         }
 
         body {
@@ -32,7 +35,6 @@
             padding: 0;
             font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', monospace;
             background-color: var(--bg-dark);
-            /* 像素网格背景 */
             background-image: 
                 linear-gradient(rgba(255, 0, 255, 0.1) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
@@ -48,144 +50,78 @@
 
         /* --- 2. 舞台布局 --- */
         .stage {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 80px;
-            width: 98vw;
-            max-width: 1400px;
-            position: relative;
-            z-index: 10;
+            display: flex; align-items: center; justify-content: center; gap: 80px;
+            width: 98vw; max-width: 1400px; position: relative; z-index: 10;
         }
 
-        /* --- 3. 街机按钮 (外部) --- */
+        /* --- 3. 街机按钮 --- */
         .nav-btn {
-            width: 100px;
-            height: 100px;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            position: relative;
-            box-shadow: 0 10px 0 #555, 0 15px 20px rgba(0,0,0,0.5);
-            transition: all 0.1s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Arial Black', sans-serif;
-            font-size: 24px;
-            text-shadow: 0 2px 0 rgba(0,0,0,0.3);
+            width: 100px; height: 100px; border: none; border-radius: 50%; cursor: pointer;
+            position: relative; box-shadow: 0 10px 0 #555, 0 15px 20px rgba(0,0,0,0.5);
+            transition: all 0.1s; display: flex; align-items: center; justify-content: center;
+            font-family: 'Arial Black', sans-serif; font-size: 24px; text-shadow: 0 2px 0 rgba(0,0,0,0.3);
         }
 
-        /* 左：摇杆底座风格 */
-        .btn-prev {
-            background: #333;
-            color: #aaa;
-            border: 4px solid #555;
-        }
+        .btn-prev { background: #333; color: #aaa; border: 4px solid #555; }
         .joystick-ball {
-            position: absolute; top: -20px; left: 25px;
-            width: 50px; height: 50px; background: #ff3333; border-radius: 50%;
-            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.5);
+            position: absolute; top: -20px; left: 25px; width: 50px; height: 50px;
+            background: #ff3333; border-radius: 50%; box-shadow: inset -5px -5px 10px rgba(0,0,0,0.5);
             transition: transform 0.2s;
         }
         .joystick-stick {
-            position: absolute; top: 20px; left: 40px;
-            width: 20px; height: 40px; background: #888; z-index: -1;
+            position: absolute; top: 20px; left: 40px; width: 20px; height: 40px;
+            background: #888; z-index: -1;
         }
         .btn-prev:active .joystick-ball { transform: translateX(-15px) rotate(-20deg); }
 
-        /* 右：红色大按钮 */
         .btn-next {
-            background: #ff3333;
-            color: white;
-            border: 4px solid #cc0000;
+            background: #ff3333; color: white; border: 4px solid #cc0000;
             box-shadow: 0 10px 0 #990000, 0 20px 20px rgba(0,0,0,0.5);
         }
         .btn-next:active {
-            transform: translateY(10px);
-            box-shadow: 0 0 0 #990000, inset 0 5px 10px rgba(0,0,0,0.3);
+            transform: translateY(10px); box-shadow: 0 0 0 #990000, inset 0 5px 10px rgba(0,0,0,0.3);
         }
-
         .disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
 
         /* --- 4. 街机屏幕容器 --- */
         .arcade-machine {
-            width: 960px;
-            height: 620px;
-            background: #222;
+            width: 960px; height: 620px; background: #222;
             border-radius: 30px 30px 10px 10px;
-            /* 霓虹边框 */
-            box-shadow: 
-                0 0 20px var(--neon-blue),
-                inset 0 0 50px rgba(0,0,0,0.8);
-            border: 8px solid #444;
-            position: relative;
-            display: flex;
-            flex-direction: column;
+            box-shadow: 0 0 20px var(--neon-blue), inset 0 0 50px rgba(0,0,0,0.8);
+            border: 8px solid #444; position: relative; display: flex; flex-direction: column;
             overflow: hidden;
         }
 
-        /* 顶部招牌 */
         .marquee {
-            height: 60px;
-            background: linear-gradient(90deg, #ff00ff, #00ffff);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-            font-family: 'Arial Black', sans-serif;
-            font-size: 24px;
-            text-shadow: 2px 2px 0 #000;
-            border-bottom: 5px solid #111;
-            z-index: 20;
+            height: 60px; background: linear-gradient(90deg, #ff00ff, #00ffff);
+            display: flex; justify-content: space-between; align-items: center; padding: 0 30px;
+            font-family: 'Arial Black', sans-serif; font-size: 24px; text-shadow: 2px 2px 0 #000;
+            border-bottom: 5px solid #111; z-index: 20;
         }
         .level-tag { background: #000; color: var(--neon-yellow); padding: 2px 10px; font-size: 16px; border-radius: 5px; }
 
-        /* CRT 屏幕效果 */
         .crt-screen {
-            flex: 1;
-            background: var(--screen-bg);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+            flex: 1; background: var(--screen-bg); position: relative; overflow: hidden;
+            display: flex; flex-direction: column; box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
         }
-        /* 扫描线 */
         .crt-screen::after {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-            background-size: 100% 4px;
-            z-index: 50;
-            pointer-events: none;
+            background-size: 100% 4px; z-index: 50; pointer-events: none;
         }
 
         /* 幻灯片 */
         .slide {
-            display: none;
-            flex: 1;
-            padding: 40px 60px;
-            flex-direction: column;
-            animation: flicker 0.2s ease-out;
-            overflow-y: auto;
-            z-index: 10;
+            display: none; flex: 1; padding: 40px 60px;
+            flex-direction: column; animation: flicker 0.2s ease-out; overflow-y: auto; z-index: 10;
         }
         .slide.active { display: flex; }
-
-        @keyframes flicker { 
-            0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 1; } 
-        }
+        @keyframes flicker { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 1; } }
 
         /* 内容布局 */
         .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 25px;
-            border-bottom: 2px solid var(--neon-green);
-            padding-bottom: 10px;
+            display: flex; align-items: center; margin-bottom: 25px;
+            border-bottom: 2px solid var(--neon-green); padding-bottom: 10px;
         }
         .icon { font-size: 50px; margin-right: 20px; text-shadow: 0 0 10px var(--neon-green); }
         h1 { margin: 0; color: var(--neon-green); font-size: 36px; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 5px var(--neon-green); }
@@ -193,55 +129,41 @@
         .layout { display: flex; gap: 40px; height: 100%; }
         .col-text { flex: 1.1; font-size: 20px; line-height: 1.7; color: #ddd; text-shadow: 1px 1px 0 #000; }
         .col-visual { 
-            flex: 0.9; 
-            background: #111;
-            border: 2px solid #444; 
-            border-radius: 10px;
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px #000;
+            flex: 0.9; background: #111; border: 2px solid #444; border-radius: 10px; 
+            display: flex; justify-content: center; align-items: center; position: relative; 
+            overflow: hidden; box-shadow: inset 0 0 20px #000;
         }
 
-        /* 代码块 */
+        /* C++ 代码块 (关键修改：white-space: pre) */
         .code-box {
-            background: var(--code-bg);
-            color: var(--code-fg);
-            padding: 20px;
-            border-radius: 5px;
-            font-family: 'Consolas', monospace;
-            font-size: 18px;
-            margin-top: 15px;
-            border-left: 4px solid var(--neon-pink);
-            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
-            text-shadow: none;
+            background: var(--code-bg); color: var(--code-fg); padding: 20px;
+            border-radius: 5px; font-family: 'Consolas', monospace; font-size: 16px;
+            margin-top: 15px; border-left: 4px solid var(--neon-pink);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5); text-shadow: none; position: relative;
+            white-space: pre; /* 保留空格和换行 */
+            overflow-x: auto;
+            line-height: 1.5;
         }
         
-        .k { color: var(--tok-kw); font-weight: bold; } 
-        .f { color: var(--tok-func); } 
-        .v { color: var(--tok-var); } 
+        .k { color: var(--tok-kw); font-weight: bold; }
+        .f { color: var(--tok-func); }
+        .v { color: var(--tok-var); }
         .n { color: var(--tok-num); }
-        .s { color: var(--tok-str); } 
-        .o { color: var(--tok-op); } 
-        .c { color: var(--tok-cm); font-style: italic; } 
+        .s { color: var(--tok-str); }
+        .o { color: var(--tok-op); }
+        .c { color: var(--tok-cm); font-style: italic; }
+        .obj { color: var(--tok-obj); font-weight: bold; }
+        .type { color: var(--tok-type); font-weight: bold; }
+        .prop { color: var(--tok-prop); }
 
         /* 卡片 */
         .card {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--neon-blue);
-            color: var(--neon-blue);
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            font-size: 18px;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1); border: 1px solid var(--neon-blue);
+            color: var(--neon-blue); padding: 15px 20px; margin-bottom: 15px;
+            border-radius: 5px; font-size: 18px; box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
         }
 
-        /* --- 5. 视觉化组件 --- */
-        
-        /* 分数动画 */
+        /* 视觉组件 */
         .score-demo {
             width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
@@ -251,23 +173,18 @@
         }
         .items-container { display: flex; gap: 30px; }
         .game-item {
-            width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; cursor: pointer;
-            transition: transform 0.1s; position: relative;
+            width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 30px; cursor: pointer; transition: transform 0.1s; position: relative;
         }
         .item-coin { background: gold; border: 2px solid orange; box-shadow: 0 0 10px gold; }
         .item-shroom { background: red; border: 2px solid white; box-shadow: 0 0 10px red; }
-        
         .game-item:active { transform: scale(0.9); }
-        
         .plus-text {
             position: absolute; top: -30px; color: var(--neon-green); font-weight: bold; font-size: 20px;
             animation: floatUp 0.5s forwards;
         }
 
-        /* 时间扣分演示 */
-        .drain-demo {
-            width: 80%; text-align: center;
-        }
+        .drain-demo { width: 80%; text-align: center; }
         .drain-bar {
             width: 100%; height: 20px; background: #333; border: 2px solid #555; margin-top: 10px; position: relative;
         }
@@ -275,12 +192,9 @@
             height: 100%; background: var(--neon-pink); width: 100%; transition: width 0.1s linear;
             box-shadow: 0 0 10px var(--neon-pink);
         }
-        .floor-line {
-            border-top: 2px dashed var(--neon-blue); width: 100%; margin-top: 20px; position: relative;
-        }
+        .floor-line { border-top: 2px dashed var(--neon-blue); width: 100%; margin-top: 20px; position: relative; }
         .floor-text { position: absolute; right: 0; top: -20px; color: var(--neon-blue); font-size: 12px; }
 
-        /* 运算符演示 */
         .op-box {
             display: flex; align-items: center; gap: 15px; font-size: 30px; font-family: monospace;
             background: #222; padding: 10px 20px; border-radius: 10px; margin: 10px 0; border: 1px solid #444;
@@ -289,20 +203,11 @@
 
         /* 进度条 */
         .progress-bar {
-            height: 6px;
-            background: #333;
-            width: 100%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            z-index: 60;
+            height: 6px; background: #333; width: 100%; position: absolute; bottom: 0; left: 0; z-index: 60;
         }
         .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
-            width: 0%;
-            transition: width 0.3s;
-            box-shadow: 0 0 10px var(--neon-pink);
+            height: 100%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink)); width: 0%;
+            transition: width 0.3s; box-shadow: 0 0 10px var(--neon-pink);
         }
 
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-30px); } }
@@ -313,15 +218,12 @@
 <body>
 
 <div class="stage">
-    <!-- 左按钮 (摇杆) -->
     <div class="nav-btn btn-prev" onclick="moveSlide(-1)">
         <div class="joystick-stick"></div>
         <div class="joystick-ball"></div>
     </div>
 
-    <!-- 街机屏幕 -->
     <div class="arcade-machine">
-        <!-- 顶部招牌 -->
         <div class="marquee">
             <span>GAME DEV 2</span>
             <span>SCORE ATTACK</span>
@@ -329,7 +231,6 @@
         </div>
 
         <div class="crt-screen">
-            <!-- Slide 1: 封面 -->
             <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
                 <div style="font-size: 100px; margin-bottom: 20px; text-shadow: 0 0 20px var(--neon-yellow);">🏆</div>
                 <h1 style="font-size: 60px; color: var(--neon-yellow); margin: 0;">分数 (Score)</h1>
@@ -340,7 +241,6 @@
                 </div>
             </div>
 
-            <!-- Slide 2: game.score 变量 -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">📟</div>
@@ -351,11 +251,11 @@
                         <p><b>game.score</b> 就是游戏里的记分牌。</p>
                         <p>一开始，我们要在上面写一个数字（初始化）。</p>
                         <div class="code-box">
-                            <span class="c"># 1. 初始化分数 (赋值)</span><br>
-                            <span class="v">game</span>.<span class="v">score</span> <span class="o">=</span> <span class="n">1000</span><br>
-                            <br>
-                            <span class="c"># 2. 在屏幕上显示</span><br>
-                            <span class="v">ui</span>.<span class="f">track</span>(<span class="v">game</span>, <span class="s">"score"</span>)
+<span class="c">// 1. 初始化分数 (赋值)</span>
+<span class="obj">game</span>.<span class="prop">score</span> <span class="o">=</span> <span class="n">1000</span>;
+
+<span class="c">// 2. 在屏幕上显示</span>
+<span class="obj">ui</span>.<span class="f">track</span>(<span class="obj">game</span>, <span class="s">"score"</span>);
                         </div>
                         <div class="card">
                             "UI 小帮手，帮我把这个分数挂在屏幕上！"
@@ -370,7 +270,6 @@
                 </div>
             </div>
 
-            <!-- Slide 3: 收集加分 -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">💰</div>
@@ -380,14 +279,17 @@
                     <div class="col-text">
                         <p>当触发 <b>collect</b> 事件时，我们要判断捡到了什么。</p>
                         <div class="code-box">
-                            <span class="k">def</span> <span class="f">onCollect</span>(event):<br>
-                            &nbsp;&nbsp;<span class="v">item</span> = event.other<br>
-                            &nbsp;&nbsp;<span class="c"># 捡到铜币</span><br>
-                            &nbsp;&nbsp;<span class="k">if</span> <span class="v">item</span>.type == <span class="s">"bronze-coin"</span>:<br>
-                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">game</span>.<span class="v">score</span> <span class="o">+=</span> <span class="n">1</span><br>
-                            &nbsp;&nbsp;<span class="c"># 捡到蘑菇</span><br>
-                            &nbsp;&nbsp;<span class="k">if</span> <span class="v">item</span>.type == <span class="s">"mushroom"</span>:<br>
-                            &nbsp;&nbsp;&nbsp;&nbsp;<span class="v">game</span>.<span class="v">score</span> <span class="o">+=</span> <span class="n">5</span>
+<span class="type">auto</span> <span class="f">onCollect</span>(<span class="type">auto</span> <span class="v">event</span>) {
+    <span class="type">auto</span> <span class="v">item</span> = <span class="v">event</span>.<span class="prop">other</span>;
+    <span class="c">// 捡到铜币</span>
+    <span class="k">if</span> (<span class="v">item</span>.<span class="prop">type</span> == <span class="s">"bronze-coin"</span>) {
+        <span class="obj">game</span>.<span class="prop">score</span> <span class="o">+=</span> <span class="n">1</span>;
+    }
+    <span class="c">// 捡到蘑菇</span>
+    <span class="k">if</span> (<span class="v">item</span>.<span class="prop">type</span> == <span class="s">"mushroom"</span>) {
+        <span class="obj">game</span>.<span class="prop">score</span> <span class="o">+=</span> <span class="n">5</span>;
+    }
+}
                         </div>
                     </div>
                     <div class="col-visual">
@@ -416,7 +318,6 @@
                 </div>
             </div>
 
-            <!-- Slide 4: 运算符 += -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">➕</div>
@@ -442,7 +343,6 @@
                 </div>
             </div>
 
-            <!-- Slide 5: 时间扣分 -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">⏳</div>
@@ -452,12 +352,17 @@
                     <div class="col-text">
                         <p>为了让游戏更刺激，分数会随时间流逝而减少。</p>
                         <div class="code-box">
-                            <span class="k">def</span> <span class="f">checkTimeScore</span>():<br>
-                            &nbsp;&nbsp;<span class="c"># 每一帧减去 0.5 分</span><br>
-                            &nbsp;&nbsp;<span class="v">game</span>.<span class="v">score</span> <span class="o">-=</span> <span class="n">0.5</span><br>
-                            <br>
-                            <span class="k">while</span> <span class="k">True</span>:<br>
-                            &nbsp;&nbsp;<span class="f">checkTimeScore</span>()
+<span class="type">auto</span> <span class="f">checkTimeScore</span>() {
+    <span class="c">// 每一帧减去 0.5 分</span>
+    <span class="obj">game</span>.<span class="prop">score</span> <span class="o">-=</span> <span class="n">0.5</span>;
+}
+
+<span class="type">int</span> <span class="f">main</span>() {
+    <span class="k">while</span>(<span class="k">true</span>) {
+        <span class="f">checkTimeScore</span>();
+    }
+    <span class="k">return</span> <span class="n">0</span>;
+}
                         </div>
                         <p><b>-=</b>：自减运算符。每过一小会儿，就扣掉一点点。</p>
                     </div>
@@ -469,9 +374,7 @@
                         </div>
                         <script>
                             let drainScore = 1000;
-                            let drainInterval;
                             
-                            // Slide change detection to start/stop animation
                             // Simple simulation here
                             setInterval(() => {
                                 const display = document.getElementById('drainDisplay');
@@ -487,7 +390,6 @@
                 </div>
             </div>
 
-            <!-- Slide 6: 防止负分 -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">🛑</div>
@@ -497,9 +399,10 @@
                     <div class="col-text">
                         <p>如果一直扣分，变成 -100 分就太难看了。</p>
                         <div class="code-box">
-                            <span class="k">if</span> <span class="v">game</span>.<span class="v">score</span> <span class="o"><</span> <span class="n">0</span>:<br>
-                            &nbsp;&nbsp;<span class="c"># 拉回 0 分</span><br>
-                            &nbsp;&nbsp;<span class="v">game</span>.<span class="v">score</span> <span class="o">=</span> <span class="n">0</span>
+<span class="k">if</span> (<span class="obj">game</span>.<span class="prop">score</span> <span class="o"><</span> <span class="n">0</span>) {
+    <span class="c">// 拉回 0 分</span>
+    <span class="obj">game</span>.<span class="prop">score</span> <span class="o">=</span> <span class="n">0</span>;
+}
                         </div>
                         <div class="card">
                             "就像地板：不管你怎么掉，最低只能掉到地板上，不会掉进地下室。"
@@ -514,18 +417,13 @@
                         </div>
                         <style>
                             @keyframes bounceFloor {
-                                0% { bottom: 150px; }
-                                40% { bottom: 50px; }
-                                60% { bottom: 70px; }
-                                80% { bottom: 50px; }
-                                100% { bottom: 50px; }
+                                0% { bottom: 150px; } 40% { bottom: 50px; } 60% { bottom: 70px; } 80% { bottom: 50px; } 100% { bottom: 50px; }
                             }
                         </style>
                     </div>
                 </div>
             </div>
 
-            <!-- Slide 7: 游戏设计思考 -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">🎨</div>
@@ -547,7 +445,6 @@
                 </div>
             </div>
 
-            <!-- Slide 8: 总结 -->
             <div class="slide">
                 <div class="header">
                     <div class="icon">🏅</div>
@@ -570,13 +467,11 @@
                 </div>
             </div>
 
-            <!-- 底部进度条 -->
             <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
         
         </div>
     </div>
 
-    <!-- 右按钮 (红色大按钮) -->
     <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">PUSH</button>
 
 </div>

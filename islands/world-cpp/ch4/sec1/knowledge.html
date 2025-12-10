@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第1-2关 事件处理机制</title>
+    <title>第1-2关：游戏开发入门 (C++)</title>
     <style>
         /* --- 1. 基础设置 --- */
         :root {
@@ -16,23 +16,22 @@
             --highlight: #fdcb6e;      /* 重点黄 */
             --text-main: #2d3436;
             
-            /* 代码高亮 */
+            /* 代码高亮 (C++ 风格) */
             --code-bg: #282c34;
             --code-fg: #abb2bf;
-            --tok-kw: #c678dd;         /* 关键字 def, while */
+            --tok-kw: #c678dd;         /* auto, void, while, if, else */
             --tok-func: #61afef;       /* 函数名 */
             --tok-str: #98c379;        /* 字符串 */
             --tok-num: #d19a66;        /* 数字 */
-            --tok-obj: #e06c75;        /* 对象 */
+            --tok-obj: #e06c75;        /* 对象 game, soldier */
             --tok-cm: #7f8c8d;         /* 注释 */
         }
 
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
             background-color: var(--bg-color);
-            /* 像素点阵背景 */
             background-image: 
                 radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
                 radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
@@ -47,126 +46,65 @@
 
         /* --- 2. 舞台布局 --- */
         .stage {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 60px;
-            width: 98vw;
-            max-width: 1400px;
-            position: relative;
-            z-index: 10;
+            display: flex; align-items: center; justify-content: center; gap: 60px;
+            width: 98vw; max-width: 1400px; position: relative; z-index: 10;
         }
 
-        /* --- 3. 游戏手柄按钮 (外部) --- */
+        /* --- 3. 游戏手柄按钮 --- */
         .nav-btn {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            position: relative;
-            font-family: 'Arial Black', sans-serif;
-            font-size: 24px;
-            color: rgba(0,0,0,0.3);
+            width: 90px; height: 90px; border-radius: 50%; border: none; cursor: pointer;
+            position: relative; font-family: 'Arial Black', sans-serif; font-size: 24px; color: rgba(0,0,0,0.3);
             box-shadow: 0 8px 0 rgba(0,0,0,0.2), 0 15px 20px rgba(0,0,0,0.4);
-            transition: all 0.1s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            transition: all 0.1s; display: flex; align-items: center; justify-content: center;
         }
         
-        .btn-prev {
-            background: #ff7675; /* B键红 */
-            border-bottom: 6px solid #d63031;
-        }
+        .btn-prev { background: #ff7675; border-bottom: 6px solid #d63031; }
         .btn-prev::after { content: 'B'; }
 
-        .btn-next {
-            background: #55efc4; /* A键绿 */
-            border-bottom: 6px solid #00b894;
-        }
+        .btn-next { background: #55efc4; border-bottom: 6px solid #00b894; }
         .btn-next::after { content: 'A'; }
 
         .nav-btn:active {
-            transform: translateY(6px);
-            border-bottom-width: 0;
+            transform: translateY(6px); border-bottom-width: 0;
             box-shadow: 0 0 0 rgba(0,0,0,0.2), inset 0 5px 10px rgba(0,0,0,0.2);
         }
-        
         .disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
 
         /* --- 4. 游戏机屏幕容器 --- */
         .console-body {
-            width: 960px;
-            height: 640px;
-            background: var(--console-color);
-            border-radius: 40px;
-            padding: 30px;
-            box-shadow: 
-                inset 0 -10px 20px rgba(0,0,0,0.2),
-                0 20px 50px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
+            width: 960px; height: 640px; background: var(--console-color);
+            border-radius: 40px; padding: 30px;
+            box-shadow: inset 0 -10px 20px rgba(0,0,0,0.2), 0 20px 50px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; align-items: center; position: relative;
         }
 
-        /* 卡带插槽 (显示地图名称) */
         .cartridge-slot {
-            position: absolute;
-            top: -25px;
-            background: #4834d4;
-            padding: 10px 40px;
-            border-radius: 10px 10px 0 0;
-            color: white;
-            font-weight: bold;
-            letter-spacing: 1px;
-            box-shadow: inset 0 5px 10px rgba(0,0,0,0.2);
-            border: 4px solid #30336b;
-            border-bottom: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            position: absolute; top: -25px; background: #4834d4; padding: 10px 40px;
+            border-radius: 10px 10px 0 0; color: white; font-weight: bold; letter-spacing: 1px;
+            box-shadow: inset 0 5px 10px rgba(0,0,0,0.2); border: 4px solid #30336b; border-bottom: none;
+            display: flex; flex-direction: column; align-items: center;
         }
         .cartridge-sub { font-size: 12px; opacity: 0.8; margin-top: 2px; }
 
-        /* 屏幕边框 */
         .screen-bezel {
-            width: 100%;
-            height: 100%;
-            background: #2d3436;
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
+            width: 100%; height: 100%; background: #2d3436; border-radius: 20px;
+            padding: 20px; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column;
         }
 
-        /* 液晶屏幕 */
         .lcd-screen {
-            flex: 1;
-            background: var(--screen-bg);
-            border-radius: 10px;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            /* 扫描线效果 */
+            flex: 1; background: var(--screen-bg); border-radius: 10px;
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
             background-image: linear-gradient(rgba(0,0,0,0.03) 50%, transparent 50%);
             background-size: 100% 4px;
         }
 
         /* 幻灯片 */
         .slide {
-            display: none;
-            flex: 1;
-            padding: 40px 60px;
-            flex-direction: column;
-            animation: screenOn 0.4s ease-out;
-            overflow-y: auto;
+            display: none; flex: 1; padding: 40px 60px;
+            flex-direction: column; animation: screenOn 0.4s ease-out; overflow-y: auto;
         }
         .slide.active { display: flex; }
-
         @keyframes screenOn { 
             0% { opacity: 0; transform: scale(0.98); filter: brightness(0.5); } 
             100% { opacity: 1; transform: scale(1); filter: brightness(1); } 
@@ -174,11 +112,8 @@
 
         /* 内容布局 */
         .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 4px solid var(--highlight);
-            padding-bottom: 10px;
+            display: flex; align-items: center; margin-bottom: 20px;
+            border-bottom: 4px solid var(--highlight); padding-bottom: 10px;
         }
         .icon { font-size: 45px; margin-right: 20px; animation: float 3s infinite ease-in-out; }
         h1 { margin: 0; color: var(--text-main); font-size: 32px; letter-spacing: 1px; }
@@ -187,424 +122,312 @@
         .layout { display: flex; gap: 40px; height: 100%; }
         .col-text { flex: 1.1; font-size: 19px; line-height: 1.7; color: var(--text-main); }
         .col-visual { 
-            flex: 0.9; 
-            background: #fff;
-            border-radius: 15px; 
-            border: 4px solid #dfe6e9; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            flex: 0.9; background: #fff; border-radius: 15px; 
+            border: 4px solid #dfe6e9; display: flex; justify-content: center; align-items: center; 
+            position: relative; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
         }
 
-        /* 代码块 */
+        /* C++ 代码块 */
         .code-box {
-            background: var(--code-bg);
-            color: var(--code-fg);
-            padding: 15px 20px;
-            border-radius: 10px;
-            font-family: 'Consolas', monospace;
-            font-size: 17px;
-            margin-top: 15px;
-            border-left: 6px solid var(--primary);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            position: relative;
+            background: var(--code-bg); color: var(--code-fg); padding: 15px 20px;
+            border-radius: 10px; font-family: 'Consolas', monospace; font-size: 16px;
+            margin-top: 15px; border-left: 6px solid var(--primary);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); position: relative; white-space: pre; overflow-x: auto;
         }
         
-        .k { color: var(--tok-kw); font-weight: bold; } 
-        .f { color: var(--tok-func); } 
-        .s { color: var(--tok-str); } 
+        .k { color: var(--tok-kw); font-weight: bold; }
+        .f { color: var(--tok-func); }
+        .s { color: var(--tok-str); }
         .n { color: var(--tok-num); }
         .o { color: var(--tok-obj); }
-        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+        .c { color: var(--tok-cm); font-style: italic; }
 
         /* 卡片 */
         .card {
-            background: #fff8e1;
-            border-left: 5px solid var(--highlight);
-            color: #d35400;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 0 10px 10px 0;
-            font-size: 18px;
-            font-weight: bold;
+            background: #fff8e1; border-left: 5px solid var(--highlight);
+            color: #d35400; padding: 15px 20px; margin-bottom: 15px;
+            border-radius: 0 10px 10px 0; font-size: 18px; font-weight: bold;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        /* --- 5. 视觉化组件 --- */
-        
-        /* 舞台与演员 */
-        .theater-stage {
-            width: 100%; height: 100%; background: #2c3e50; position: relative;
-            display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px;
-        }
-        .curtain {
-            position: absolute; top: 0; width: 50px; height: 100%; background: #c0392b; z-index: 2;
-        }
-        .curtain-l { left: 0; }
-        .curtain-r { right: 0; }
-        .spotlight {
-            position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
-            width: 200px; height: 300px; background: linear-gradient(rgba(255,255,255,0.3), transparent);
-            clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%);
-            z-index: 1; pointer-events: none;
-        }
-        .actor {
-            font-size: 60px; z-index: 3; animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .actor-label {
-            position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
-            background: white; padding: 2px 8px; border-radius: 5px; font-size: 12px;
-            white-space: nowrap;
-        }
+        /* 进度条 */
+        .progress-bar { height: 6px; background: #dfe6e9; width: 100%; margin-top: auto; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; transition: width 0.3s; }
 
-        /* 批量控制演示 */
-        .squad-container {
-            display: flex; gap: 10px; align-items: flex-end; height: 100px;
-        }
-        .unit {
-            font-size: 40px; position: relative; transition: all 0.3s;
-        }
-        .unit.listening { animation: jump 1s infinite; }
-        .director {
-            font-size: 50px; margin-right: 30px;
-        }
-        .speech-bubble {
-            position: absolute; top: -40px; left: -20px; background: white; padding: 5px 10px; border-radius: 10px; font-size: 12px;
-            border: 2px solid #2d3436; white-space: nowrap;
-        }
-
-        /* 坐标网格 */
-        .grid-map {
-            width: 100%; height: 100%;
-            background-image: 
-                linear-gradient(#bdc3c7 1px, transparent 1px),
-                linear-gradient(90deg, #bdc3c7 1px, transparent 1px);
-            background-size: 40px 40px;
-            position: relative;
-        }
-        .axis { position: absolute; background: #2d3436; }
-        .axis-x { bottom: 20px; left: 20px; width: 200px; height: 2px; }
-        .axis-y { bottom: 20px; left: 20px; width: 2px; height: 200px; }
-        .point {
-            width: 15px; height: 15px; background: var(--secondary); border-radius: 50%;
-            position: absolute; bottom: 100px; left: 100px;
-            box-shadow: 0 0 0 5px rgba(214, 48, 49, 0.3);
-        }
-        .coord-text {
-            position: absolute; font-family: monospace; font-weight: bold; color: var(--secondary);
-        }
-
-        /* 动画 */
-        @keyframes popUp { 0% { transform: scale(0) translateY(50px); } 100% { transform: scale(1) translateY(0); } }
-        @keyframes jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-        /* 进度条 */
-        .progress-bar {
-            height: 6px;
-            background: #dfe6e9;
-            width: 100%;
-            margin-top: auto; /* Push to bottom */
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        .btn-action {
-            padding: 5px 15px; background: var(--primary); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px;
-        }
-        .btn-action:active { transform: scale(0.95); }
+        /* 视觉组件 */
+        .unit-icon { font-size: 60px; margin-bottom: 10px; }
+        .flow-arrow { font-size: 30px; margin: 10px 0; color: var(--primary); }
+        .logic-box { border: 2px dashed var(--console-color); padding: 10px; border-radius: 10px; text-align: center; width: 80%; background: #fff; }
 
     </style>
 </head>
 <body>
 
 <div class="stage">
-    <!-- 左按钮 -->
     <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)"></button>
 
-    <!-- 游戏机容器 -->
     <div class="console-body">
-        <!-- 卡带插槽 -->
         <div class="cartridge-slot">
-            🎮 游戏开发 2
+            🎮 游戏开发入门
             <div class="cartridge-sub">第 1-2 关</div>
         </div>
 
         <div class="screen-bezel">
             <div class="lcd-screen">
                 
-                <!-- Slide 1: 封面 -->
                 <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
-                    <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">🎬</div>
-                    <h1 style="font-size: 48px; margin: 10px 0; color: var(--console-color);">事件处理机制</h1>
-                    <h2 style="font-size: 28px; color: var(--primary); font-weight: normal; margin-top: 0;">Events & Handlers</h2>
+                    <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">👾</div>
+                    <h1 style="font-size: 48px; margin: 10px 0; color: var(--console-color);">C++ 游戏开发</h1>
+                    <h2 style="font-size: 28px; color: var(--primary); font-weight: normal; margin-top: 0;">事件处理与单位控制</h2>
                     <div style="margin-top: 40px; display: flex; gap: 30px;">
-                        <div style="padding: 15px 30px; background: var(--highlight); color: #d35400; border-radius: 10px; font-weight: bold; border: 3px solid #e67e22;">🔔 事件触发</div>
-                        <div style="padding: 15px 30px; background: var(--accent); color: #6c5ce7; border-radius: 10px; font-weight: bold; border: 3px solid #6c5ce7;">📝 剧本执行</div>
+                        <div style="padding: 15px 30px; background: var(--highlight); color: #d35400; border-radius: 10px; font-weight: bold; border: 3px solid #e67e22;">🔔 Spawn 事件</div>
+                        <div style="padding: 15px 30px; background: var(--accent); color: #6c5ce7; border-radius: 10px; font-weight: bold; border: 3px solid #6c5ce7;">📝 行为逻辑</div>
                     </div>
                 </div>
 
-                <!-- Slide 2: 什么是事件 -->
                 <div class="slide">
                     <div class="header">
-                        <div class="icon">🔔</div>
-                        <h1>什么是“事件” (Event)？</h1>
+                        <div class="icon">🐣</div>
+                        <h1>什么是 "Spawn" 事件？</h1>
                     </div>
                     <div class="layout">
                         <div class="col-text">
-                            <p><b>事件</b>就是游戏世界里“发生了一件事”。</p>
-                            <ul style="list-style: none; padding: 0;">
-                                <li style="margin-bottom: 10px;">🐣 <b>spawn (出生)</b>：小演员登场了！</li>
-                                <li>☠️ <b>death (死亡)</b>：角色倒下了。</li>
-                            </ul>
+                            <p>在游戏开发中，我们不需要每时每刻都盯着单位。</p>
+                            <p>我们只需要告诉系统：<b>"当这个单位出生(Spawn)时，它应该做什么。"</b></p>
                             <div class="card">
-                                "spawn事件就像舞台上的聚光灯亮起，演员正式上场的那一刻！"
+                                "Spawn" = 生成 / 出生 / 登场
                             </div>
+                            <p>这就像给演员剧本：只有当聚光灯亮起（事件发生），演员才开始表演（执行代码）。</p>
                         </div>
                         <div class="col-visual">
-                            <div class="theater-stage">
-                                <div class="curtain curtain-l"></div>
-                                <div class="curtain curtain-r"></div>
-                                <div class="spotlight"></div>
-                                <div class="actor" id="demoActor" style="display: none;">
-                                    🤠
-                                    <div class="actor-label">spawn!</div>
-                                </div>
-                            </div>
-                            <button class="btn-action" style="position: absolute; bottom: 10px;" onclick="spawnActor()">模拟出生事件</button>
-                            <script>
-                                function spawnActor() {
-                                    const a = document.getElementById('demoActor');
-                                    a.style.display = 'none';
-                                    setTimeout(() => a.style.display = 'block', 100);
-                                }
-                            </script>
+                            
+                            <div style="font-size: 80px; margin-top: 20px;">✨🤖✨</div>
+                            <p style="color: var(--primary); font-weight: bold;">Spawn!</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Slide 3: 事件处理器 -->
                 <div class="slide">
                     <div class="header">
-                        <div class="icon">📜</div>
-                        <h1>事件处理器 (Event Handler)</h1>
+                        <div class="icon">🔗</div>
+                        <h1>绑定事件处理器</h1>
                     </div>
                     <div class="layout">
                         <div class="col-text">
-                            <p><b>事件处理器</b>就是“当事件发生时，要做什么”的那段代码。</p>
-                            <p>就像是：<br>
-                            🔔 <b>事件：</b> 上课铃响了<br>
-                            🏃 <b>处理器：</b> 同学们跑进教室</p>
+                            <p>我们需要将<b>单位</b>、<b>事件</b>和<b>行为函数</b>绑定在一起。</p>
                             <div class="code-box">
-                                <span class="o">soldier</span>.on(<span class="s">"spawn"</span>, <span class="f">soldierLogic</span>)<br>
-                                <span class="c"># 当 soldier 出生时，<br># 自动执行 soldierLogic 函数</span>
+<span class="c">// 1. 定义行为函数 (剧本)</span>
+<span class="k">void</span> <span class="f">soldierLogic</span>() {
+    <span class="c">// ... 士兵要做的事 ...</span>
+}
+
+<span class="k">int</span> <span class="f">main</span>() {
+    <span class="c">// 2. 绑定事件</span>
+    <span class="c">// 当 soldier 触发 "spawn" 时，运行 soldierLogic</span>
+    <span class="o">soldier</span>.on(<span class="s">"spawn"</span>, <span class="f">soldierLogic</span>);
+    <span class="k">return</span> 0;
+}
                             </div>
                         </div>
                         <div class="col-visual">
-                            <div style="text-align: center;">
-                                <div style="font-size: 50px;">🔔 ➡️ 🏃</div>
-                                <div style="margin-top: 20px; font-weight: bold; color: var(--primary);">
-                                    事件 ➡️ 触发行动
-                                </div>
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <div class="logic-box" style="border-color: var(--primary);">soldier (单位)</div>
+                                <div class="flow-arrow">⬇️ .on()</div>
+                                <div class="logic-box" style="border-color: var(--highlight);">"spawn" (事件)</div>
+                                <div class="flow-arrow">⬇️ 触发</div>
+                                <div class="logic-box" style="border-color: var(--secondary);">soldierLogic (函数)</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Slide 4: 专属剧本 soldierLogic -->
                 <div class="slide">
                     <div class="header">
-                        <div class="icon">🤖</div>
-                        <h1>专属剧本: soldierLogic</h1>
+                        <div class="icon">🛡️</div>
+                        <h1>Level 1: 守卫的职责</h1>
                     </div>
                     <div class="layout">
                         <div class="col-text">
-                            <p>我们要定义一个函数，专门告诉这个士兵该干嘛。</p>
-                            <div class="code-box" style="font-size: 16px;">
-                                <span class="k">def</span> <span class="f">soldierLogic</span>():<br>
-                                &nbsp;&nbsp;<span class="k">while</span> <span class="k">True</span>:<br>
-                                &nbsp;&nbsp;&nbsp;&nbsp;enemy = <span class="o">soldier</span>.findNearestEnemy()<br>
-                                &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">if</span> enemy:<br>
-                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="o">soldier</span>.attack(enemy)<br>
-                                &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">else</span>:<br>
-                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="o">soldier</span>.moveXY(<span class="n">42</span>, <span class="n">48</span>)
-                            </div>
-                            <p style="font-size: 16px; margin-top: 10px; color: var(--primary);">这就是士兵的<b>“行动说明书”</b>！</p>
-                        </div>
-                        <div class="col-visual">
-                            <div style="position: relative;">
-                                <div style="font-size: 80px;">👮‍♂️</div>
-                                <div style="position: absolute; top: 0; right: -40px; font-size: 40px;">📄</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                            <p><b>任务：</b> 创建一个士兵，并给他下达防守指令。</p>
+                            <p>如果看到敌人就攻击，否则回到防守点。</p>
+                            
+                            <div class="code-box" style="font-size: 14px;">
+<span class="k">auto</span> <span class="o">soldier</span> = <span class="o">game</span>.spawnXY(<span class="s">"soldier"</span>, <span class="n">42</span>, <span class="n">48</span>);
 
-                <!-- Slide 5: 通用剧本 fightEnemies -->
-                <div class="slide">
-                    <div class="header">
-                        <div class="icon">🎭</div>
-                        <h1>通用剧本: fightEnemies</h1>
-                    </div>
-                    <div class="layout">
-                        <div class="col-text">
-                            <p>如果有很多单位，我们用<b>通用剧本</b>。</p>
-                            <div class="code-box">
-                                <span class="k">def</span> <span class="f">fightEnemies</span>(event):<br>
-                                &nbsp;&nbsp;<span class="c"># event.target 是触发事件的"主角"</span><br>
-                                &nbsp;&nbsp;friendUnit = <span class="o">event.target</span><br>
-                                &nbsp;&nbsp;...<br>
-                                &nbsp;&nbsp;friendUnit.attack(enemy)
-                            </div>
-                            <div class="card">
-                                就像老师点名：“不管点到谁(target)，谁就回答问题！”
+<span class="k">void</span> <span class="f">soldierLogic</span>() {
+    <span class="k">while</span>(<span class="k">true</span>) {
+        <span class="k">auto</span> enemy = <span class="o">soldier</span>.findNearestEnemy();
+        <span class="k">if</span>(enemy) {
+            <span class="o">soldier</span>.attack(enemy);
+        } <span class="k">else</span> {
+            <span class="o">soldier</span>.moveXY(<span class="n">42</span>, <span class="n">48</span>);
+        }
+    }
+}
+
+<span class="k">int</span> <span class="f">main</span>() {
+    <span class="o">soldier</span>.on(<span class="s">"spawn"</span>, <span class="f">soldierLogic</span>);
+    <span class="k">return</span> 0;
+}
                             </div>
                         </div>
                         <div class="col-visual">
+                            <div class="unit-icon">👮‍♂️</div>
                             <div style="text-align: center;">
-                                <div style="font-size: 50px;">👮‍♂️ 🏹 🧙‍♂️</div>
-                                <div style="margin: 10px 0; font-size: 30px;">⬆️</div>
-                                <div style="background: var(--primary); color: white; padding: 5px 15px; border-radius: 10px;">event.target</div>
-                                <div style="font-size: 12px; color: #666;">指向谁，谁就是主角</div>
+                                <div>👀 侦查...</div>
+                                <div style="font-size: 30px;">⚔️ / 🛡️</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Slide 6: 批量控制 setActionFor -->
                 <div class="slide">
                     <div class="header">
-                        <div class="icon">📣</div>
+                        <div class="icon">📢</div>
                         <h1>批量控制: setActionFor</h1>
                     </div>
                     <div class="layout">
                         <div class="col-text">
-                            <p>导演发话了：“所有弓箭手，都按这个剧本演！”</p>
-                            <div class="code-box">
-                                <span class="o">game</span>.<span class="f">setActionFor</span>(<span class="s">"archer"</span>, <span class="s">"spawn"</span>, <span class="f">fightEnemies</span>)
+                            <p>如果你有一支军队，一个一个设置 <code>.on()</code> 太麻烦了。</p>
+                            <p><b>setActionFor</b> 就像广播命令：<br>"所有这类单位，都听这个指令！"</p>
+                            <div class="card">
+                                <code>game.setActionFor("类型", "事件", 函数)</code>
                             </div>
-                            <ul style="font-size: 16px; color: var(--text-main); margin-top: 15px;">
-                                <li><b>Type:</b> "archer" (那类人)</li>
-                                <li><b>Event:</b> "spawn" (什么时候)</li>
-                                <li><b>Handler:</b> fightEnemies (做什么)</li>
+                            <p>这需要一个更通用的函数，能处理<b>任何</b>单位，而不仅仅是特定的 <code>soldier</code> 变量。</p>
+                        </div>
+                        <div class="col-visual">
+                            
+                            <div style="font-size: 60px;">📣</div>
+                            <div style="display: flex; gap: 10px;">
+                                <span>🏹</span><span>🏹</span><span>🏹</span>
+                            </div>
+                            <p>全体弓箭手听令！</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="slide">
+                    <div class="header">
+                        <div class="icon">🎯</div>
+                        <h1>主角是谁? event.target</h1>
+                    </div>
+                    <div class="layout">
+                        <div class="col-text">
+                            <p>在通用函数中，我们不知道具体是哪个士兵在执行。</p>
+                            <p><code>event.target</code> 代表<b>"触发事件的那个单位"</b>。</p>
+                            <div class="code-box">
+<span class="k">auto</span> <span class="f">fightEnemies</span>(<span class="k">auto</span> <span class="o">event</span>) {
+    <span class="k">while</span>(<span class="k">true</span>) {
+        <span class="c">// 谁触发了事件，friendUnit 就是谁</span>
+        <span class="k">auto</span> friendUnit = <span class="o">event</span>.target;
+        
+        <span class="k">auto</span> enemy = friendUnit.findNearestEnemy();
+        <span class="k">if</span>(enemy) {
+            friendUnit.attack(enemy);
+        }
+    }
+}
+                            </div>
+                        </div>
+                        <div class="col-visual">
+                            <div style="text-align: center;">
+                                <div style="font-size: 20px; background: #dfe6e9; padding: 5px; border-radius: 5px;">event.target</div>
+                                <div style="font-size: 30px;">⬇️</div>
+                                <div style="font-size: 50px;">👈 我！</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="slide">
+                    <div class="header">
+                        <div class="icon">⚔️</div>
+                        <h1>Level 2: 军事训练 2</h1>
+                    </div>
+                    <div class="layout">
+                        <div class="col-text">
+                            <p><b>任务：</b> 创建士兵和弓箭手，并统一指挥他们战斗。</p>
+                            <div class="code-box" style="font-size: 14px;">
+<span class="k">auto</span> <span class="f">fightEnemies</span>(<span class="k">auto</span> <span class="o">event</span>) {
+    <span class="k">while</span>(<span class="k">true</span>) {
+        <span class="k">auto</span> unit = <span class="o">event</span>.target; <span class="c">// 获取当前单位</span>
+        <span class="k">auto</span> enemy = unit.findNearestEnemy();
+        <span class="k">if</span>(enemy) {
+            unit.attack(enemy);
+        }
+    }
+}
+
+<span class="k">int</span> <span class="f">main</span>() {
+    <span class="c">// 生成单位...</span>
+    <span class="o">game</span>.spawnXY(<span class="s">"soldier"</span>, <span class="n">35</span>, <span class="n">20</span>);
+    <span class="o">game</span>.spawnXY(<span class="s">"archer"</span>, <span class="n">35</span>, <span class="n">10</span>);
+    
+    <span class="c">// 批量设置行为</span>
+    <span class="o">game</span>.setActionFor(<span class="s">"soldier"</span>, <span class="s">"spawn"</span>, <span class="f">fightEnemies</span>);
+    <span class="o">game</span>.setActionFor(<span class="s">"archer"</span>, <span class="s">"spawn"</span>, <span class="f">fightEnemies</span>);
+    <span class="k">return</span> 0;
+}
+                            </div>
+                        </div>
+                        <div class="col-visual">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: center;">
+                                <div>
+                                    <div style="font-size: 40px;">👮‍♂️</div>
+                                    <div>Soldier</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 40px;">🏹</div>
+                                    <div>Archer</div>
+                                </div>
+                                <div style="grid-column: span 2; border-top: 2px dashed #ccc; padding-top: 10px;">
+                                    都使用 <b>fightEnemies</b> 逻辑
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="slide">
+                    <div class="header">
+                        <div class="icon">💾</div>
+                        <h1>开发日志总结</h1>
+                    </div>
+                    <div class="layout">
+                        <div class="col-text">
+                            <ul style="list-style: none; padding: 0; font-size: 20px;">
+                                <li style="margin-bottom: 20px; background: #fff; padding: 10px; border-radius: 10px; border-left: 5px solid var(--primary);">
+                                    🔔 <b>Event (事件)</b><br>
+                                    游戏中的触发信号，如 "spawn" (出生)。
+                                </li>
+                                <li style="margin-bottom: 20px; background: #fff; padding: 10px; border-radius: 10px; border-left: 5px solid var(--highlight);">
+                                    🔗 <b>.on()</b><br>
+                                    为单个单位绑定事件处理器。
+                                </li>
+                                <li style="margin-bottom: 20px; background: #fff; padding: 10px; border-radius: 10px; border-left: 5px solid var(--secondary);">
+                                    📢 <b>game.setActionFor()</b><br>
+                                    为某种类型的所有单位批量绑定事件。
+                                </li>
+                                <li style="background: #fff; padding: 10px; border-radius: 10px; border-left: 5px solid var(--accent);">
+                                    🎯 <b>event.target</b><br>
+                                    在通用函数中引用当前执行的单位。
+                                </li>
                             </ul>
                         </div>
-                        <div class="col-visual">
-                            <div style="display: flex; align-items: center;">
-                                <div class="director">🎬</div>
-                                <div class="squad-container">
-                                    <div class="unit u1">🏹</div>
-                                    <div class="unit u2">🏹</div>
-                                    <div class="unit u3">🏹</div>
-                                </div>
-                            </div>
-                            <button class="btn-action" style="position: absolute; bottom: 10px;" onclick="commandSquad()">导演喊话！</button>
-                            <script>
-                                function commandSquad() {
-                                    const units = document.querySelectorAll('.unit');
-                                    units.forEach((u, i) => {
-                                        setTimeout(() => u.classList.add('listening'), i * 200);
-                                        setTimeout(() => u.classList.remove('listening'), 2000 + i * 200);
-                                    });
-                                }
-                            </script>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Slide 7: 对象与方法 -->
-                <div class="slide">
-                    <div class="header">
-                        <div class="icon">🧩</div>
-                        <h1>对象(Object) 与 方法(Method)</h1>
-                    </div>
-                    <div class="layout">
-                        <div class="col-text">
-                            <p><b>对象</b>是游戏里的角色（soldier, game）。<br>
-                            <b>方法</b>是他们会的技能。</p>
-                            <div class="code-box">
-                                <span class="o">soldier</span>.<span class="f">attack</span>(enemy) <span class="c"># 攻击技能</span><br>
-                                <span class="o">soldier</span>.<span class="f">moveXY</span>(<span class="n">42</span>, <span class="n">48</span>) <span class="c"># 移动技能</span>
-                            </div>
-                            <p>记住那个<b>小圆点 .</b> ：表示“让谁去做什么”。</p>
-                        </div>
-                        <div class="col-visual">
-                            <div style="background: #dfe6e9; padding: 20px; border-radius: 10px; border: 2px solid #b2bec3;">
-                                <div style="font-weight: bold; margin-bottom: 10px;">🪪 角色卡: Soldier</div>
-                                <div style="font-size: 14px;">
-                                    🔹 技能: attack()<br>
-                                    🔹 技能: moveXY()<br>
-                                    🔹 技能: findEnemy()
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Slide 8: 坐标与循环 -->
-                <div class="slide">
-                    <div class="header">
-                        <div class="icon">🔁</div>
-                        <h1>坐标 & 循环</h1>
-                    </div>
-                    <div class="layout">
-                        <div class="col-text">
-                            <p><b>坐标 (x, y)</b>：地图上的位置。<br>
-                            (0, 0) 在左下角，X向右变大，Y向上变大。</p>
-                            <p><b>while True:</b>：永不停歇的循环。<br>
-                            只要游戏没结束，就一直干活！</p>
-                        </div>
-                        <div class="col-visual">
-                            <div class="grid-map">
-                                <div class="axis axis-x"></div>
-                                <div class="axis axis-y"></div>
-                                <div class="point"></div>
-                                <div class="coord-text" style="bottom: 120px; left: 110px;">(42, 48)</div>
-                                <div class="coord-text" style="bottom: 5px; left: 5px;">(0,0)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Slide 9: 总结 -->
-                <div class="slide">
-                    <div class="header">
-                        <div class="icon">🏆</div>
-                        <h1>导演的总结</h1>
-                    </div>
-                    <div class="layout">
-                        <div class="col-text">
-                            <div class="card">
-                                <b>单个控制：</b> soldier.on(...)<br>
-                                就像给一个学生开小灶。
-                            </div>
-                            <div class="card" style="background: #e1f5fe; border-color: #03a9f4; color: #0277bd;">
-                                <b>批量控制：</b> game.setActionFor(...)<br>
-                                就像给全班同学发课表。
-                            </div>
-                            <p>学会这两个，你就能指挥千军万马啦！</p>
-                        </div>
                         <div class="col-visual" style="background: transparent; border: none; box-shadow: none;">
-                            <div style="font-size: 100px; animation: float 3s infinite;">🌟</div>
+                            <div style="font-size: 100px;">🏆</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 底部进度条 -->
                 <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
 
             </div>
         </div>
     </div>
 
-    <!-- 右按钮 -->
     <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)"></button>
 
 </div>

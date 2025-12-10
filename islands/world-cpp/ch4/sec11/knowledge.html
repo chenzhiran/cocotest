@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第19-20关 游戏事件综合应用</title>
+    <title>第19-20关：游戏事件综合应用 (C++)</title>
     <style>
         /* --- 1. 基础设置 --- */
         :root {
@@ -16,7 +16,7 @@
             --text-main: #2f3542;
             --text-light: #dfe4ea;
             
-            /* 代码高亮 */
+            /* 代码高亮 (C++ 风格) */
             --code-bg: #2f3640;
             --code-fg: #dcdde1;
             --tok-kw: #ff9ff3;         /* 关键字 */
@@ -25,14 +25,15 @@
             --tok-prop: #48dbfb;       /* 属性 */
             --tok-num: #1dd1a1;        /* 数字 */
             --tok-cm: #8395a7;         /* 注释 */
+            --tok-type: #a29bfe;       /* auto/void */
+            --tok-str: #ff9ff3;        /* 字符串 */
         }
 
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
             background-color: var(--bg-space);
-            /* 时空隧道背景 */
             background-image: 
                 linear-gradient(30deg, #302b63 12%, transparent 12.5%, transparent 87%, #302b63 87.5%, #302b63),
                 linear-gradient(150deg, #302b63 12%, transparent 12.5%, transparent 87%, #302b63 87.5%, #302b63),
@@ -52,111 +53,59 @@
 
         /* --- 2. 舞台布局 --- */
         .stage {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 60px;
-            width: 98vw;
-            max-width: 1400px;
-            position: relative;
-            z-index: 10;
+            display: flex; align-items: center; justify-content: center; gap: 60px;
+            width: 98vw; max-width: 1400px; position: relative; z-index: 10;
         }
 
-        /* --- 3. 功能按钮 (外部) --- */
+        /* --- 3. 功能按钮 --- */
         .nav-btn {
-            width: 90px;
-            height: 90px;
-            border-radius: 20px;
-            border: none;
-            cursor: pointer;
-            position: relative;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 2px 5px rgba(255,255,255,0.2);
-            transition: all 0.1s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            color: white;
-            font-weight: bold;
+            width: 90px; height: 90px; border-radius: 20px; border: none; cursor: pointer;
+            position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 2px 5px rgba(255,255,255,0.2);
+            transition: all 0.1s; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 30px; color: white; font-weight: bold;
         }
 
         .nav-btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
         .nav-btn:active { transform: translateY(5px); box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         
-        .btn-prev { background: linear-gradient(135deg, #00d2d3, #0984e3); } /* 时光蓝 */
-        .btn-next { background: linear-gradient(135deg, #ff9ff3, #f368e0); } /* 魔法粉 */
-
+        .btn-prev { background: linear-gradient(135deg, #00d2d3, #0984e3); }
+        .btn-next { background: linear-gradient(135deg, #ff9ff3, #f368e0); }
         .disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
 
         /* --- 4. 生态控制台容器 --- */
         .console-container {
-            width: 960px;
-            height: 620px;
-            background: var(--console-bg);
-            border-radius: 30px;
-            /* 科技感边框 */
-            box-shadow: 
-                0 0 0 5px #576574,
-                0 0 0 15px #222f3e,
-                0 30px 60px rgba(0,0,0,0.7);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            width: 960px; height: 620px; background: var(--console-bg); border-radius: 30px;
+            box-shadow: 0 0 0 5px #576574, 0 0 0 15px #222f3e, 0 30px 60px rgba(0,0,0,0.7);
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
         }
 
         /* 顶部状态栏 */
         .status-bar {
-            height: 50px;
-            background: #222f3e;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-            color: var(--time-color);
-            font-family: monospace;
-            font-size: 18px;
-            border-bottom: 2px solid #576574;
+            height: 50px; background: #222f3e; display: flex; justify-content: space-between;
+            align-items: center; padding: 0 30px; color: var(--time-color);
+            font-family: monospace; font-size: 18px; border-bottom: 2px solid #576574;
             z-index: 20;
         }
         .map-tag {
-            background: var(--time-color);
-            color: #222f3e;
-            padding: 2px 10px;
-            border-radius: 4px;
-            font-weight: bold;
-            margin-right: 10px;
+            background: var(--time-color); color: #222f3e; padding: 2px 10px;
+            border-radius: 4px; font-weight: bold; margin-right: 10px;
         }
-        .clock-display {
-            display: flex; align-items: center; gap: 10px;
-        }
+        .clock-display { display: flex; align-items: center; gap: 10px; }
         .clock-icon { animation: tickTock 2s infinite linear; }
 
         /* 幻灯片 */
         .slide {
-            display: none;
-            flex: 1;
-            padding: 50px 70px;
-            flex-direction: column;
-            animation: hologram 0.5s ease-out;
-            overflow-y: auto;
+            display: none; flex: 1; padding: 50px 70px;
+            flex-direction: column; animation: hologram 0.5s ease-out; overflow-y: auto;
             background: var(--screen-bg);
         }
         .slide.active { display: flex; }
-
-        @keyframes hologram { 
-            0% { opacity: 0; transform: scaleY(0.9); filter: blur(5px); } 
-            100% { opacity: 1; transform: scaleY(1); filter: blur(0); } 
-        }
+        @keyframes hologram { 0% { opacity: 0; transform: scaleY(0.9); filter: blur(5px); } 100% { opacity: 1; transform: scaleY(1); filter: blur(0); } }
 
         /* 内容布局 */
         .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 25px;
-            border-bottom: 3px solid #cbd5e0;
-            padding-bottom: 10px;
+            display: flex; align-items: center; margin-bottom: 25px;
+            border-bottom: 3px solid #cbd5e0; padding-bottom: 10px;
         }
         .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2)); }
         h1 { margin: 0; color: var(--text-main); font-size: 34px; letter-spacing: 1px; font-weight: 800; }
@@ -164,54 +113,36 @@
         .layout { display: flex; gap: 40px; height: 100%; }
         .col-text { flex: 1.2; font-size: 19px; line-height: 1.7; color: var(--text-main); }
         .col-visual { 
-            flex: 0.8; 
-            background: #fff;
-            border-radius: 15px; 
-            border: 2px solid #ced6e0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.05);
+            flex: 0.8; background: #fff; border-radius: 15px; 
+            border: 2px solid #ced6e0; display: flex; justify-content: center; align-items: center; 
+            position: relative; overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.05);
         }
 
-        /* 代码块 */
+        /* C++ 代码块 */
         .code-box {
-            background: var(--code-bg);
-            color: var(--code-fg);
-            padding: 15px 20px;
-            border-radius: 8px;
-            font-family: 'Consolas', monospace;
-            font-size: 16px;
-            margin-top: 15px;
-            border-left: 5px solid var(--time-color);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            position: relative;
+            background: var(--code-bg); color: var(--code-fg); padding: 15px 20px;
+            border-radius: 8px; font-family: 'Consolas', monospace; font-size: 16px;
+            margin-top: 15px; border-left: 5px solid var(--time-color);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); position: relative; white-space: pre; overflow-x: auto;
         }
         
-        .k { color: var(--tok-kw); font-weight: bold; } 
-        .f { color: var(--tok-func); } 
-        .v { color: var(--tok-var); } 
-        .p { color: var(--tok-prop); } 
+        .k { color: var(--tok-kw); font-weight: bold; }
+        .f { color: var(--tok-func); }
+        .v { color: var(--tok-var); }
+        .p { color: var(--tok-prop); }
         .n { color: var(--tok-num); }
-        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+        .s { color: var(--tok-str); }
+        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; }
+        .t { color: var(--tok-type); font-weight: bold; }
 
         /* 卡片 */
         .card {
-            background: #dfe4ea;
-            border-left: 5px solid #70a1ff;
-            color: #2f3542;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 0 8px 8px 0;
-            font-size: 18px;
-            font-weight: bold;
+            background: #dfe4ea; border-left: 5px solid #70a1ff;
+            color: #2f3542; padding: 15px 20px; margin-bottom: 15px;
+            border-radius: 0 8px 8px 0; font-size: 18px; font-weight: bold;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* --- 5. 视觉化组件 --- */
-        
         /* 寿命倒计时演示 */
         .life-demo {
             position: relative; width: 100%; height: 100%;
@@ -220,26 +151,21 @@
         .item-circle {
             width: 100px; height: 100px; border-radius: 50%; background: var(--gold-color);
             display: flex; justify-content: center; align-items: center; font-size: 40px;
-            position: relative; box-shadow: 0 0 20px var(--gold-color);
-            transition: all 0.3s;
+            position: relative; box-shadow: 0 0 20px var(--gold-color); transition: all 0.3s;
         }
         .timer-ring {
             position: absolute; top: -10px; left: -10px; width: 120px; height: 120px;
-            border-radius: 50%; border: 5px solid #eee;
-            border-top-color: var(--destroy-color);
+            border-radius: 50%; border: 5px solid #eee; border-top-color: var(--destroy-color);
             animation: spinRing 3s linear infinite;
         }
         .life-label {
-            position: absolute; bottom: -40px; font-family: monospace; font-weight: bold; background: #2f3542; color: white; padding: 2px 10px; border-radius: 5px;
+            position: absolute; bottom: -40px; font-family: monospace; font-weight: bold;
+            background: #2f3542; color: white; padding: 2px 10px; border-radius: 5px;
         }
-        
+
         /* 垃圾回收演示 */
-        .trash-bin {
-            position: absolute; bottom: 20px; right: 20px; font-size: 60px; z-index: 5;
-        }
-        .mob {
-            font-size: 50px; position: absolute; transition: all 0.5s; cursor: pointer;
-        }
+        .trash-bin { position: absolute; bottom: 20px; right: 20px; font-size: 60px; z-index: 5; }
+        .mob { font-size: 50px; position: absolute; transition: all 0.5s; cursor: pointer; }
         .mob.defeated { transform: rotate(90deg); filter: grayscale(1); opacity: 0.7; }
         .mob.destroyed { transform: scale(0) translate(200px, 200px); opacity: 0; }
 
@@ -249,21 +175,21 @@
             position: relative; display: flex; align-items: flex-end;
         }
         .wave-bar {
-            width: 20px; background: var(--time-color); margin-left: 30px; position: relative;
-            transition: height 0.5s;
+            width: 20px; background: var(--time-color); margin-left: 30px; position: relative; transition: height 0.5s;
         }
         .wave-label { position: absolute; bottom: -25px; font-size: 12px; left: -10px; width: 40px; text-align: center; }
-        
+
         /* 计分板演示 */
         .scoreboard {
             background: #2f3542; padding: 20px; border-radius: 10px; color: var(--gold-color);
             font-family: 'Courier New', monospace; font-size: 24px; border: 4px solid #feca57;
             text-align: center; width: 80%;
         }
-        
+
         /* 流程图节点 */
         .flow-node {
-            padding: 8px 15px; border-radius: 5px; color: white; font-weight: bold; margin: 8px 0; text-align: center; width: 240px; position: relative; font-size: 16px;
+            padding: 8px 15px; border-radius: 5px; color: white; font-weight: bold; margin: 8px 0;
+            text-align: center; width: 240px; position: relative; font-size: 16px;
             box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
         }
         .bg-blue { background: var(--time-color); color: #2f3542; }
@@ -272,20 +198,8 @@
         .arrow-down { font-size: 20px; color: #b2bec3; margin: 0; text-align: center; width: 100%; }
 
         /* 进度条 */
-        .progress-bar {
-            height: 8px;
-            background: #dfe4ea;
-            width: 100%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--time-color), var(--destroy-color));
-            width: 0%;
-            transition: width 0.3s;
-        }
+        .progress-bar { height: 8px; background: #dfe4ea; width: 100%; position: absolute; bottom: 0; left: 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--time-color), var(--destroy-color)); width: 0%; transition: width 0.3s; }
 
         @keyframes spinRing { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes tickTock { 0% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } 100% { transform: rotate(-10deg); } }
@@ -303,14 +217,11 @@
 <body>
 
 <div class="stage">
-    <!-- 左按钮 -->
     <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">
         <div>⏳</div>
     </button>
 
-    <!-- 控制台容器 -->
     <div class="console-container">
-        <!-- 顶部状态栏 -->
         <div class="status-bar">
             <div style="display: flex; align-items: center;">
                 <span class="map-tag">游戏开发 2</span>
@@ -321,7 +232,6 @@
             </div>
         </div>
 
-        <!-- Slide 1: 封面 -->
         <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
             <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">🌐</div>
             <h1 style="font-size: 50px; margin: 10px 0; color: var(--text-main);">游戏事件综合应用</h1>
@@ -332,7 +242,6 @@
             </div>
         </div>
 
-        <!-- Slide 2: 主题概述 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🗺️</div>
@@ -360,7 +269,6 @@
             </div>
         </div>
 
-        <!-- Slide 3: 带寿命的宝物 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">⏳</div>
@@ -370,10 +278,11 @@
                 <div class="col-text">
                     <p>宝物不是永远存在的，我们要给它贴个“过期时间标签”。</p>
                     <div class="code-box">
-                        <span class="k">def</span> <span class="f">spawnValuable</span>(<span class="v">type</span>, <span class="v">lifetime</span>):<br>
-                        &nbsp;&nbsp;<span class="v">item</span> = <span class="v">game</span>.<span class="f">spawnXY</span>(<span class="v">type</span>, <span class="v">x</span>, <span class="v">y</span>)<br>
-                        &nbsp;&nbsp;<span class="c"># 设定销毁时间 = 当前时间 + 寿命</span><br>
-                        &nbsp;&nbsp;<span class="v">item</span>.<span class="p">destroyTime</span> = <span class="v">game</span>.<span class="p">time</span> + <span class="v">lifetime</span>
+<span class="t">auto</span> <span class="f">spawnValuable</span>(<span class="t">auto</span> <span class="v">type</span>, <span class="t">auto</span> <span class="v">lifetime</span>) {
+    <span class="t">auto</span> <span class="v">item</span> = <span class="v">game</span>.<span class="f">spawnXY</span>(<span class="v">type</span>, <span class="v">x</span>, <span class="v">y</span>);
+    <span class="c">// 设定销毁时间 = 当前时间 + 寿命</span>
+    <span class="v">item</span>.<span class="p">destroyTime</span> = <span class="v">game</span>.<span class="p">time</span> + <span class="v">lifetime</span>;
+}
                     </div>
                     <p><b>item.destroyTime</b>：这是一个自定义属性，记下它该消失的时间点。</p>
                 </div>
@@ -387,7 +296,6 @@
             </div>
         </div>
 
-        <!-- Slide 4: 监控与销毁 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🗑️</div>
@@ -397,12 +305,15 @@
                 <div class="col-text">
                     <p>宝物一出生，就开始倒计时检查。</p>
                     <div class="code-box">
-                        <span class="k">def</span> <span class="f">onSpawn</span>(event):<br>
-                        &nbsp;&nbsp;<span class="v">item</span> = event.<span class="p">target</span><br>
-                        &nbsp;&nbsp;<span class="kw">while</span> True:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 检查：如果当前时间 > 销毁时间</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> <span class="v">game</span>.<span class="p">time</span> > <span class="v">item</span>.<span class="p">destroyTime</span>:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="v">item</span>.<span class="f">destroy</span>() <span class="c"># 消失！</span>
+<span class="t">auto</span> <span class="f">onSpawn</span>(<span class="t">auto</span> event) {
+    <span class="t">auto</span> <span class="v">item</span> = event.<span class="p">target</span>;
+    <span class="k">while</span>(<span class="k">true</span>) {
+        <span class="c">// 检查：如果当前时间 > 销毁时间</span>
+        <span class="k">if</span>(<span class="v">game</span>.<span class="p">time</span> > <span class="v">item</span>.<span class="p">destroyTime</span>) {
+            <span class="v">item</span>.<span class="f">destroy</span>(); <span class="c">// 消失！</span>
+        }
+    }
+}
                     </div>
                     <div class="card" style="border-left-color: var(--destroy-color); background: #ffebee; color: #c0392b;">
                         destroy() 会把对象从场景中移除，节省电脑资源。
@@ -420,7 +331,6 @@
             </div>
         </div>
 
-        <!-- Slide 5: 弓箭手防守：清理尸体 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🏹</div>
@@ -430,10 +340,11 @@
                 <div class="col-text">
                     <p>在防守战中，怪很多。如果尸体一直堆在地上，电脑会变卡。</p>
                     <div class="code-box">
-                        <span class="k">def</span> <span class="f">onDefeat</span>(event):<br>
-                        &nbsp;&nbsp;<span class="v">unit</span> = event.<span class="p">target</span><br>
-                        &nbsp;&nbsp;<span class="v">game</span>.<span class="p">defeated</span> += <span class="n">1</span><br>
-                        &nbsp;&nbsp;<span class="v">unit</span>.<span class="f">destroy</span>() <span class="c"># 彻底清除！</span>
+<span class="t">auto</span> <span class="f">onDefeat</span>(<span class="t">auto</span> event) {
+    <span class="t">auto</span> <span class="v">unit</span> = event.<span class="p">target</span>;
+    <span class="v">game</span>.<span class="p">defeated</span> += <span class="n">1</span>;
+    <span class="v">unit</span>.<span class="f">destroy</span>(); <span class="c">// 彻底清除！</span>
+}
                     </div>
                     <p><b>逻辑：</b> 打败(defeat) → 计数 → 销毁(destroy)。<br>
                     这叫 <b>资源管理 (Resource Management)</b>。</p>
@@ -460,7 +371,6 @@
             </div>
         </div>
 
-        <!-- Slide 6: 全局计时器 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🌊</div>
@@ -470,10 +380,11 @@
                 <div class="col-text">
                     <p>怎么控制一波一波刷怪？用 <code>spawnTime</code>。</p>
                     <div class="code-box">
-                        <span class="kw">if</span> <span class="v">game</span>.<span class="p">time</span> > <span class="v">game</span>.<span class="p">spawnTime</span>:<br>
-                        &nbsp;&nbsp;<span class="f">spawnWave</span>() <span class="c"># 刷一波</span><br>
-                        &nbsp;&nbsp;<span class="c"># 闹钟往后调 3 秒</span><br>
-                        &nbsp;&nbsp;<span class="v">game</span>.<span class="p">spawnTime</span> += <span class="n">3</span>
+<span class="k">if</span> (<span class="v">game</span>.<span class="p">time</span> > <span class="v">game</span>.<span class="p">spawnTime</span>) {
+    <span class="f">spawnWave</span>(); <span class="c">// 刷一波</span>
+    <span class="c">// 闹钟往后调 3 秒</span>
+    <span class="v">game</span>.<span class="p">spawnTime</span> += <span class="n">3</span>;
+}
                     </div>
                     <p>就像海浪一样，每隔一段时间来一波。</p>
                 </div>
@@ -489,7 +400,6 @@
             </div>
         </div>
 
-        <!-- Slide 7: 数据库与高分 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">💾</div>
@@ -499,11 +409,11 @@
                 <div class="col-text">
                     <p>想记住最高分？用数据库。</p>
                     <div class="code-box">
-                        <span class="c"># 读档</span><br>
-                        <span class="v">top</span> = <span class="v">db</span>.<span class="f">get</span>(<span class="s">"topScore"</span>)<br>
-                        <br>
-                        <span class="c"># 存档 (如果破纪录)</span><br>
-                        <span class="v">db</span>.<span class="f">set</span>(<span class="s">"topScore"</span>, <span class="v">currentScore</span>)
+<span class="c">// 读档</span>
+<span class="t">auto</span> <span class="v">top</span> = <span class="v">db</span>.<span class="f">get</span>(<span class="s">"topScore"</span>);
+
+<span class="c">// 存档 (如果破纪录)</span>
+<span class="v">db</span>.<span class="f">set</span>(<span class="s">"topScore"</span>, <span class="v">currentScore</span>);
                     </div>
                     <p>这样即使关掉游戏再打开，最高分还在！</p>
                 </div>
@@ -516,7 +426,6 @@
             </div>
         </div>
 
-        <!-- Slide 8: 总结 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🏆</div>
@@ -539,13 +448,11 @@
             </div>
         </div>
 
-        <!-- 底部进度条 -->
         <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
 
     </div>
 
-    <!-- 右按钮 -->
-    <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">
+    <button class="nav-btn" id="btnNext" onclick="moveSlide(1)">
         <div>♻️</div>
     </button>
 

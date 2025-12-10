@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第25关 平衡</title>
+    <title>第25关：游戏平衡 (C++)</title>
     <style>
         /* --- 1. 基础设置 --- */
         :root {
@@ -15,13 +15,19 @@
             --success: #4cd137;        /* 平衡绿 */
             --text-main: #2f3640;
             
-            /* 代码高亮 */
+            /* 代码高亮 (C++ 风格) */
             --code-bg: #1e272e;
             --code-fg: #dcdde1;
             --tok-const: #e1b12c;      /* 常量 */
             --tok-num: #4cd137;        /* 数字 */
             --tok-op: #0097e6;         /* 运算符 */
             --tok-cm: #718093;         /* 注释 */
+            --tok-kw: #ff6b81;         /* 关键字 */
+            --tok-func: #70a1ff;       /* 函数 */
+            --tok-var: #fbc531;        /* 变量 */
+            --tok-prop: #7bed9f;       /* 属性 */
+            --tok-type: #a29bfe;       /* 类型 auto/void */
+            --tok-str: #ff9ff3;        /* 字符串 */
         }
 
         body {
@@ -29,7 +35,6 @@
             padding: 0;
             font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
             background-color: var(--bg-color);
-            /* 蓝图网格背景 */
             background-image: 
                 linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
@@ -44,42 +49,22 @@
 
         /* --- 2. 舞台布局 --- */
         .stage {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 70px;
-            width: 98vw;
-            max-width: 1400px;
-            position: relative;
-            z-index: 10;
+            display: flex; align-items: center; justify-content: center; gap: 70px;
+            width: 98vw; max-width: 1400px; position: relative; z-index: 10;
         }
 
-        /* --- 3. 旋钮按钮 (外部) --- */
+        /* --- 3. 旋钮按钮 --- */
         .nav-btn {
-            width: 90px;
-            height: 90px;
-            background: #353b48;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            position: relative;
-            box-shadow: 
-                0 10px 20px rgba(0,0,0,0.5),
-                inset 0 2px 5px rgba(255,255,255,0.1);
-            transition: transform 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 90px; height: 90px; background: #353b48; border-radius: 50%; border: none;
+            cursor: pointer; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 2px 5px rgba(255,255,255,0.1);
+            transition: transform 0.2s; display: flex; align-items: center; justify-content: center;
         }
         
-        /* 旋钮上的刻度 */
         .knob-dial {
             width: 100%; height: 100%; border-radius: 50%;
             background: conic-gradient(#2f3640 0deg 300deg, transparent 300deg 360deg);
-            position: absolute; transform: rotate(-150deg);
-            border: 4px solid #718093; box-sizing: border-box;
+            position: absolute; transform: rotate(-150deg); border: 4px solid #718093; box-sizing: border-box;
         }
-        /* 旋钮指示点 */
         .knob-point {
             position: absolute; top: 10px; left: 50%; width: 8px; height: 8px;
             background: var(--accent); border-radius: 50%; transform: translateX(-50%);
@@ -91,42 +76,24 @@
         .nav-btn:active { transform: scale(0.95); }
         
         .btn-prev .knob-point { background: var(--secondary); box-shadow: 0 0 5px var(--secondary); }
-        
         .disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
 
         /* --- 4. 控制台容器 --- */
         .console-container {
-            width: 960px;
-            height: 640px;
-            background: var(--panel-bg);
-            border-radius: 20px;
-            /* 拟物化面板 */
-            box-shadow: 
-                inset 0 2px 0 rgba(255,255,255,0.5),
-                0 0 0 10px #353b48,
-                0 30px 60px rgba(0,0,0,0.7);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            width: 960px; height: 640px; background: var(--panel-bg); border-radius: 20px;
+            box-shadow: inset 0 2px 0 rgba(255,255,255,0.5), 0 0 0 10px #353b48, 0 30px 60px rgba(0,0,0,0.7);
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
         }
 
         /* 顶部状态栏 */
         .status-panel {
-            height: 60px;
-            background: #2d3436;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-            border-bottom: 4px solid #7f8fa6;
-            z-index: 20;
+            height: 60px; background: #2d3436; display: flex; justify-content: space-between;
+            align-items: center; padding: 0 30px; border-bottom: 4px solid #7f8fa6; z-index: 20;
         }
         
         .game-info { color: #dcdde1; font-family: monospace; font-weight: bold; font-size: 16px; }
         .info-tag { background: var(--primary); color: white; padding: 2px 8px; border-radius: 4px; margin-right: 10px; }
         
-        /* LED 灯 */
         .led-group { display: flex; gap: 10px; }
         .led { width: 12px; height: 12px; border-radius: 50%; background: #444; box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
         .led.on { background: var(--success); box-shadow: 0 0 10px var(--success); }
@@ -134,29 +101,18 @@
 
         /* 幻灯片 */
         .slide {
-            display: none;
-            flex: 1;
-            padding: 40px 60px;
-            flex-direction: column;
-            animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            overflow-y: auto;
-            background-image: radial-gradient(#dcdde1 1px, transparent 1px);
+            display: none; flex: 1; padding: 40px 60px;
+            flex-direction: column; animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow-y: auto; background-image: radial-gradient(#dcdde1 1px, transparent 1px);
             background-size: 20px 20px;
         }
         .slide.active { display: flex; }
-
-        @keyframes slideUp { 
-            0% { opacity: 0; transform: translateY(20px); } 
-            100% { opacity: 1; transform: translateY(0); } 
-        }
+        @keyframes slideUp { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
 
         /* 内容布局 */
         .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 25px;
-            border-bottom: 2px solid #dcdde1;
-            padding-bottom: 10px;
+            display: flex; align-items: center; margin-bottom: 25px;
+            border-bottom: 2px solid #dcdde1; padding-bottom: 10px;
         }
         .icon { font-size: 50px; margin-right: 20px; }
         h1 { margin: 0; color: var(--text-main); font-size: 36px; letter-spacing: 1px; }
@@ -164,56 +120,41 @@
         .layout { display: flex; gap: 40px; height: 100%; }
         .col-text { flex: 1.1; font-size: 19px; line-height: 1.7; color: var(--text-main); }
         .col-visual { 
-            flex: 0.9; 
-            background: #fff;
-            border: 1px solid #dcdde1; 
-            border-radius: 10px;
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            flex: 0.9; background: #fff; border: 1px solid #dcdde1; border-radius: 10px; 
+            display: flex; justify-content: center; align-items: center; position: relative; 
+            overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
         }
 
-        /* 代码块 */
+        /* C++ 代码块 */
         .code-box {
-            background: var(--code-bg);
-            color: var(--code-fg);
-            padding: 15px 20px;
-            border-radius: 5px;
-            font-family: 'Consolas', monospace;
-            font-size: 17px;
-            margin-top: 15px;
-            border-left: 5px solid var(--accent);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            position: relative;
+            background: var(--code-bg); color: var(--code-fg); padding: 15px 20px;
+            border-radius: 5px; font-family: 'Consolas', monospace; font-size: 17px;
+            margin-top: 15px; border-left: 5px solid var(--accent);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; white-space: pre; overflow-x: auto;
         }
         
         .const { color: var(--tok-const); font-weight: bold; }
         .num { color: var(--tok-num); }
         .op { color: var(--tok-op); }
         .cm { color: var(--tok-cm); font-style: italic; font-size: 0.9em; }
+        .k { color: var(--tok-kw); font-weight: bold; }
+        .f { color: var(--tok-func); }
+        .v { color: var(--tok-var); }
+        .p { color: var(--tok-prop); }
+        .t { color: var(--tok-type); font-weight: bold; }
+        .s { color: var(--tok-str); }
 
         /* 卡片 */
         .card {
-            background: #eaf0f9;
-            border-left: 5px solid var(--primary);
-            color: #2c3e50;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 0 5px 5px 0;
-            font-size: 18px;
-            font-weight: bold;
+            background: #eaf0f9; border-left: 5px solid var(--primary);
+            color: #2c3e50; padding: 15px 20px; margin-bottom: 15px;
+            border-radius: 0 5px 5px 0; font-size: 18px; font-weight: bold;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
         }
 
-        /* --- 5. 视觉化组件 --- */
-        
-        /* 天平平衡演示 */
+        /* 视觉组件 */
         .balance-scale {
-            position: relative; width: 300px; height: 200px;
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            position: relative; width: 300px; height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
         }
         .scale-base { width: 100px; height: 20px; background: #2d3436; border-radius: 5px 5px 0 0; z-index: 2; }
         .scale-post { width: 10px; height: 100px; background: #2d3436; }
@@ -232,32 +173,14 @@
         .btn-ctrl { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; background: #333; }
         .btn-ctrl:hover { background: #555; }
 
-        /* 滑块演示 */
-        .slider-demo {
-            width: 80%; display: flex; flex-direction: column; gap: 20px;
-        }
+        .slider-demo { width: 80%; display: flex; flex-direction: column; gap: 20px; }
         .slider-group label { font-weight: bold; display: block; margin-bottom: 5px; color: var(--text-main); }
-        .slider-track {
-            width: 100%; height: 10px; background: #ddd; border-radius: 5px; position: relative; cursor: pointer;
-        }
-        .slider-thumb {
-            width: 20px; height: 20px; background: var(--primary); border-radius: 50%;
-            position: absolute; top: -5px; left: 50%; transition: left 0.1s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-        .race-track {
-            margin-top: 20px; width: 100%; height: 60px; background: #333; border-radius: 5px; position: relative; overflow: hidden;
-        }
-        .racer {
-            font-size: 30px; position: absolute; top: 10px; transition: left 0.5s linear;
-        }
+        .race-track { margin-top: 20px; width: 100%; height: 60px; background: #333; border-radius: 5px; position: relative; overflow: hidden; }
+        .racer { font-size: 30px; position: absolute; top: 10px; transition: left 0.5s linear; }
         .racer-hero { top: 5px; }
         .racer-ogre { top: 30px; filter: hue-rotate(90deg); }
 
-        /* 魔法数字对比 */
-        .compare-box {
-            display: flex; flex-direction: column; gap: 10px; width: 90%;
-        }
+        .compare-box { display: flex; flex-direction: column; gap: 10px; width: 90%; }
         .code-snippet {
             padding: 15px; border-radius: 5px; font-family: monospace; font-size: 14px;
             position: relative; transition: all 0.3s; cursor: pointer;
@@ -270,31 +193,13 @@
         .label-bad { background: var(--secondary); }
         .label-good { background: var(--success); }
 
-        /* 风险回报 */
-        .risk-box {
-            display: flex; align-items: center; justify-content: center; gap: 20px;
-        }
+        .risk-box { display: flex; align-items: center; justify-content: center; gap: 20px; }
         .coin-pile { font-size: 50px; position: relative; }
         .clock-icon { font-size: 40px; color: var(--secondary); }
-        .math-text { font-size: 24px; font-weight: bold; color: var(--text-main); }
 
-        /* 进度条 */
-        .progress-bar {
-            height: 8px;
-            background: #dcdde1;
-            width: 100%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
-            width: 0%;
-            transition: width 0.3s;
-        }
+        .progress-bar { height: 6px; background: #dcdde1; width: 100%; position: absolute; bottom: 0; left: 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; transition: width 0.3s; }
 
-        /* 动画 */
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
@@ -303,12 +208,10 @@
 <body>
 
 <div class="stage">
-    <!-- 左按钮 -->
     <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">
         <span class="btn-icon">🎛️</span>
     </button>
 
-    <!-- 控制台容器 -->
     <div class="console-container">
         <div class="status-panel">
             <div class="game-info">
@@ -322,7 +225,6 @@
             </div>
         </div>
 
-        <!-- Slide 1: 封面 -->
         <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
             <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">⚖️</div>
             <h1 style="font-size: 50px; margin: 10px 0; color: var(--primary);">游戏平衡 (Balance)</h1>
@@ -333,7 +235,6 @@
             </div>
         </div>
 
-        <!-- Slide 2: 什么是平衡 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🤔</div>
@@ -352,9 +253,7 @@
                 <div class="col-visual">
                     <div class="balance-scale">
                         <div class="scale-beam" id="scaleBeam">
-                            <div class="pan pan-left">😈</div> <!-- 难度 -->
-                            <div class="pan pan-right">😊</div> <!-- 乐趣 -->
-                        </div>
+                            <div class="pan pan-left">😈</div> <div class="pan pan-right">😊</div> </div>
                         <div class="scale-post"></div>
                         <div class="scale-base"></div>
                         <div class="balance-controls">
@@ -372,7 +271,6 @@
             </div>
         </div>
 
-        <!-- Slide 3: 常量 (Constant) -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🎛️</div>
@@ -382,10 +280,10 @@
                 <div class="col-text">
                     <p>我们在代码最上面定义一组<b>“全大写”</b>的变量，这就是游戏的<b>配置面板</b>。</p>
                     <div class="code-box">
-                        <span class="cm"># 游戏参数配置</span><br>
-                        <span class="const">HERO_SPEED</span> <span class="op">=</span> <span class="num">20</span><br>
-                        <span class="const">OGRE_SPEED</span> <span class="op">=</span> <span class="num">10</span><br>
-                        <span class="const">POWER_TIME</span> <span class="op">=</span> <span class="num">4</span>
+<span class="cm">// 游戏参数配置</span>
+<span class="t">auto</span> <span class="const">HERO_SPEED</span> <span class="o">=</span> <span class="num">20</span>;
+<span class="t">auto</span> <span class="const">OGRE_SPEED</span> <span class="o">=</span> <span class="num">10</span>;
+<span class="t">auto</span> <span class="const">POWER_TIME</span> <span class="o">=</span> <span class="num">4</span>;
                     </div>
                     <div class="card">
                         "就像写在黑板上的规则：全大写，表示这是固定配置，不要随便在别处乱改。"
@@ -400,7 +298,6 @@
             </div>
         </div>
 
-        <!-- Slide 4: 魔法数字 vs 常量 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🪄</div>
@@ -415,14 +312,16 @@
                     <div class="compare-box">
                         <div class="code-snippet bad-code" onclick="highlightCode(this)">
                             <div class="code-label label-bad">Bad</div>
-                            if item.type == "coin":<br>
-                            &nbsp;&nbsp;game.score += <span style="color:red; font-weight:bold;">1</span> <span style="color:#999;">(这是啥?)</span>
+                            if(item.type == "coin") {<br>
+                             &nbsp;&nbsp;game.score += <span style="color:red; font-weight:bold;">1</span> <span style="color:#999;">// 这是啥?</span><br>
+                            }
                         </div>
                         <div class="code-snippet good-code" onclick="highlightCode(this)">
                             <div class="code-label label-good">Good</div>
                             <span class="const">COIN_SCORE</span> = <span class="num">1</span><br>
-                            if item.type == "coin":<br>
-                            &nbsp;&nbsp;game.score += <span class="const">COIN_SCORE</span>
+                            if(item.type == "coin") {<br>
+                             &nbsp;&nbsp;game.score += <span class="const">COIN_SCORE</span><br>
+                            }
                         </div>
                     </div>
                     <script>
@@ -441,7 +340,6 @@
             </div>
         </div>
 
-        <!-- Slide 5: 数据流向 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🌊</div>
@@ -451,11 +349,11 @@
                 <div class="col-text">
                     <p>参数是在游戏开始时“流”进对象里的。</p>
                     <div class="code-box">
-                        <span class="cm"># 1. 定义参数</span><br>
-                        <span class="const">HERO_SPEED</span> <span class="op">=</span> <span class="num">22</span><br>
-                        <br>
-                        <span class="cm"># 2. 应用到对象</span><br>
-                        <span class="v">player</span>.<span class="v">maxSpeed</span> <span class="op">=</span> <span class="const">HERO_SPEED</span>
+<span class="cm">// 1. 定义参数</span>
+<span class="t">auto</span> <span class="const">HERO_SPEED</span> <span class="o">=</span> <span class="num">22</span>;
+
+<span class="cm">// 2. 应用到对象</span>
+<span class="v">player</span>.<span class="p">maxSpeed</span> <span class="o">=</span> <span class="const">HERO_SPEED</span>;
                     </div>
                     <p>当你修改顶部的 <code>HERO_SPEED</code>，下面的 <code>player</code> 就会自动变快。</p>
                 </div>
@@ -472,7 +370,6 @@
             </div>
         </div>
 
-        <!-- Slide 6: 速度平衡实验 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🏎️</div>
@@ -498,8 +395,8 @@
                             <div class="racer racer-hero" id="raceHero">🤠</div>
                             <div class="racer racer-ogre" id="raceOgre">👹</div>
                         </div>
-                        <button class="btn-start" onclick="startRace()" style="margin-top: 10px; padding: 5px 15px; background: var(--primary); color: white; border: none; border-radius: 5px; cursor: pointer;">开始赛跑</button>
-                        <div id="raceResult" style="margin-top: 5px; font-weight: bold;"></div>
+                        <button class="btn-ctrl" onclick="startRace()" style="margin-top: 10px; background: var(--primary); width: 100%;">开始赛跑</button>
+                        <div id="raceResult" style="margin-top: 5px; font-weight: bold; text-align: center;"></div>
                     </div>
                     <script>
                         let hSpeed = 20, oSpeed = 10;
@@ -531,7 +428,6 @@
             </div>
         </div>
 
-        <!-- Slide 7: 风险与回报 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">⚖️</div>
@@ -565,10 +461,9 @@
             </div>
         </div>
 
-        <!-- Slide 8: 总结 -->
         <div class="slide">
             <div class="header">
-                <div class="icon">🎓</div>
+                <div class="icon">🏆</div>
                 <h1>平衡大师口诀</h1>
             </div>
             <div class="layout">
@@ -588,12 +483,10 @@
             </div>
         </div>
 
-        <!-- 底部进度条 -->
         <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
 
     </div>
 
-    <!-- 右按钮 (旋钮) -->
     <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">
         <div class="knob-dial"></div>
         <div class="knob-point"></div>
