@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第18-21关：游戏开发1 - 进阶 (C++版)</title>
+    <style>
+        :root {
+            --bg-color: #2b3a42;
+            --slide-bg: #ffffff;
+            --primary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --code-bg: #282c34;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .container {
+            display: flex;
+            align-items: center;
+            width: 95%;
+            max-width: 1200px;
+            gap: 20px;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            border: 4px solid #fff;
+            color: white;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            font-size: 35px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+            outline: none;
+            z-index: 10;
+        }
+
+        .nav-btn:hover { transform: scale(1.1) rotate(5deg); background: linear-gradient(135deg, #f39c12, #d35400); }
+        .nav-btn:active { transform: scale(0.95); }
+
+        .viewport {
+            flex: 1;
+            aspect-ratio: 16/9;
+            background: var(--slide-bg);
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            border: 10px solid #ecf0f1;
+        }
+
+        .header-bar {
+            position: absolute;
+            top: 25px;
+            left: 40px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .map-name { background: #34495e; color: white; padding: 8px 20px; border-radius: 20px; font-weight: bold; font-size: 1.1em; }
+        .level-tag { background: var(--accent-color); color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 1.1em; }
+
+        .slide {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; opacity: 0; transform: scale(0.9);
+            transition: all 0.5s ease; pointer-events: none;
+            padding: 100px 50px 50px 50px; box-sizing: border-box;
+        }
+        .slide.active { opacity: 1; transform: scale(1); pointer-events: all; }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.3fr; /* 给代码区域更多宽度 */
+            gap: 40px;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+        }
+
+        .text-part { display: flex; flex-direction: column; justify-content: center; }
+        h1 { font-size: 2.5em; color: var(--primary-color); margin: 0 0 10px 0; text-shadow: 2px 2px 0 rgba(0,0,0,0.1); }
+        h2 { font-size: 1.4em; color: #7f8c8d; margin: 0 0 20px 0; font-weight: normal; }
+
+        .concept-card {
+            background: #f8f9fa;
+            border-left: 6px solid var(--success-color);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.05em;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        /* 核心代码块样式 */
+        .code-box {
+            background: var(--code-bg);
+            border-radius: 15px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace; /* 强制等宽字体 */
+            font-size: 0.95em;
+            color: #d4d4d4;
+            line-height: 1.5;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            border: 4px solid #3e4451;
+            position: relative;
+            overflow-x: auto;
+            white-space: pre; /* 关键：保留源代码中的空格和换行 */
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .code-box::after {
+            content: "C++";
+            position: absolute;
+            top: 0; right: 20px;
+            background: #e06c75;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 0 0 8px 8px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        /* C++ 代码高亮 */
+        .c-kw { color: #c678dd; font-weight: bold; } /* return */
+        .c-type { color: #569cd6; font-weight: bold; } /* int, void, auto */
+        .c-func { color: #dcdcaa; } /* main, spawnXY */
+        .c-str { color: #ce9178; } /* "string" */
+        .c-num { color: #b5cea8; } /* numbers */
+        .c-obj { color: #4ec9b0; } /* objects */
+        .c-com { color: #6a9955; font-style: italic; } /* comments */
+
+        .visual-demo {
+            position: absolute; bottom: 20px; right: 20px;
+            opacity: 0.2; font-size: 120px; pointer-events: none;
+            animation: float 3s infinite ease-in-out;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+        .ui-mockup {
+            background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
+            border-radius: 10px; display: inline-block; margin-top: 10px;
+            font-family: monospace; border: 2px solid gold;
+        }
+
+        .eco-system {
+            display: flex; justify-content: space-around; align-items: center;
+            background: #eaffea; padding: 15px; border-radius: 15px;
+            border: 2px dashed #2ecc71; margin-top: 15px;
+        }
+        .eco-item { text-align: center; }
+        .arrow-anim { font-size: 2em; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.2);} 100% {transform: scale(1);} }
+
+        /* C++ 介绍页背景 */
+        .bg-cpp-intro { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <button class="nav-btn" onclick="prevSlide()">❮</button>
+
+        <div class="viewport">
+            
+            <div class="slide active bg-cpp-intro">
+                <div class="header-bar">
+                    <span class="map-name" style="background:#2980b9">📘 C++ 基础</span>
+                    <span class="level-tag">Intro</span>
+                </div>
+                <div class="content-grid">
+                    <div class="text-part">
+                        <h1>CodeCombat C++ ⚡</h1>
+                        <h2>Basic Syntax</h2>
+                        <div class="concept-card">
+                            <p><b>👋 欢迎使用 C++！</b><br>
+                            与 Python 不同，C++ 需要更严谨的格式：</p>
+                            <ul style="line-height: 1.8;">
+                                <li>📦 <b>int main() { ... }</b><br>所有主要代码都必须写在这个大括号里。</li>
+                                <li>🛑 <b>; (分号)</b><br>每行代码结束必须加分号，不能忘！</li>
+                                <li>✨ <b>auto</b><br>用来自动推断变量类型，比如 <code>auto player = ...</code></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="code-box">
+<span class="c-type">int</span> <span class="c-func">main</span>() {
+    <span class="c-com">// 这是你的主程序</span>
+    <span class="c-com">// 记得用分号结束每一行</span>
+    
+    <span class="c-type">auto</span> <span class="c-obj">hero</span> = <span class="c-obj">game</span>.<span class="c-func">spawnXY</span>(<span class="c-str">"knight"</span>, <span class="c-num">40</span>, <span class="c-num">40</span>);
+    <span class="c-obj">hero</span>.<span class="c-obj">maxHealth</span> = <span class="c-num">100</span>;
+    
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+                    </div>
+                </div>
+                <div class="visual-demo">💻</div>
+            </div>
+
+            <div class="slide">
+                <div class="header-bar">
+                    <span class="map-name">🎮 游戏开发1：眼见为实</span>
+                    <span class="level-tag">第 18 关</span>
+                </div>
+                <div class="content-grid">
+                    <div class="text-part">
+                        <h1>用户界面 (UI) 🖥️</h1>
+                        <h2>User Interface</h2>
+                        <div class="concept-card">
+                            <p><b>👀 怎么让玩家看到分数？</b><br>
+                            我们需要使用 <code>ui.track()</code> 把藏在代码里的数字（比如击败数）展示在屏幕上。</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <div>👇 屏幕上会显示这个 👇</div>
+                            <div class="ui-mockup">
+                                💀 Defeated: 5 <br>
+                                ⏳ Time: 12s
+                            </div>
+                        </div>
+                    </div>
+                    <div class="code-box">
+<span class="c-type">int</span> <span class="c-func">main</span>() {
+    <span class="c-type">auto</span> <span class="c-obj">player</span> = <span class="c-obj">game</span>.<span class="c-func">spawnPlayerXY</span>(<span class="c-str">"samurai"</span>, <span class="c-num">20</span>, <span class="c-num">20</span>);
+    <span class="c-obj">game</span>.<span class="c-func">addSurviveGoal</span>(<span class="c-num">20</span>);
+    
+    <span class="c-type">auto</span> <span class="c-obj">spawner</span> = <span class="c-obj">game</span>.<span class="c-func">spawnXY</span>(<span class="c-str">"generator"</span>, <span class="c-num">50</span>, <span class="c-num">50</span>);
+    <span class="c-obj">spawner</span>.<span class="c-obj">spawnType</span> = <span class="c-str">"munchkin"</span>;
+    
+    <span class="c-com">// UI 追踪显示</span>
+    <span class="c-obj">ui</span>.<span class="c-func">track</span>(<span class="c-obj">game</span>, <span class="c-str">"time"</span>);
+    <span class="c-obj">ui</span>.<span class="c-func">track</span>(<span class="c-obj">game</span>, <span class="c-str">"defeated"</span>);
+    
+    <span class="c-obj">player</span>.<span class="c-obj">maxSpeed</span> = <span class="c-num">20</span>;
+    
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+                    </div>
+                </div>
+                <div class="visual-demo">📊</div>
+            </div>
+
+            <div class="slide">
+                <div class="header-bar">
+                    <span class="map-name">🎮 游戏开发1：生存时间</span>
+                    <span class="level-tag">第 19 关</span>
+                </div>
+                <div class="content-grid">
+                    <div class="text-part">
+                        <h1>生存目标 ⏱️</h1>
+                        <h2>Survival Goal</h2>
+                        <div class="concept-card">
+                            <p><b>🛡️ 活下去就是胜利！</b><br>
+                            在这一关，我们给玩家定了一个小目标：<b>坚持20秒！</b><br>
+                            使用 <code>game.addSurviveGoal(20);</code> 来实现。</p>
+                        </div>
+                        <div style="background: #ffeaa7; padding: 10px; border-radius: 10px; text-align: center; color: #d35400;">
+                            <b>⚠️ 挑战模式：</b><br>敌人会源源不断涌来，保护好你的血条！
+                        </div>
+                    </div>
+                    <div class="code-box">
+<span class="c-type">int</span> <span class="c-func">main</span>() {
+    <span class="c-com">// 告诉游戏：玩家必须存活20秒</span>
+    <span class="c-obj">game</span>.<span class="c-func">addSurviveGoal</span>(<span class="c-num">20</span>);
+    
+    <span class="c-com">// 使用 auto 定义生成器</span>
+    <span class="c-type">auto</span> <span class="c-obj">generator</span> = <span class="c-obj">game</span>.<span class="c-func">spawnXY</span>(<span class="c-str">"generator"</span>, <span class="c-num">60</span>, <span class="c-num">40</span>);
+    <span class="c-obj">generator</span>.<span class="c-obj">spawnType</span> = <span class="c-str">"munchkin"</span>;
+    
+    <span class="c-type">auto</span> <span class="c-obj">player</span> = <span class="c-obj">game</span>.<span class="c-func">spawnPlayerXY</span>(<span class="c-str">"knight"</span>, <span class="c-num">15</span>, <span class="c-num">15</span>);
+    <span class="c-obj">player</span>.<span class="c-obj">maxHealth</span> = <span class="c-num">100</span>;
+    <span class="c-obj">player</span>.<span class="c-obj">attackDamage</span> = <span class="c-num">10</span>;
+    
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+                    </div>
+                </div>
+                <div class="visual-demo">⏳</div>
+            </div>
+
+            <div class="slide">
+                <div class="header-bar">
+                    <span class="map-name">🎮 游戏开发1：持续付出</span>
+                    <span class="level-tag">第 20 关</span>
+                </div>
+                <div class="content-grid">
+                    <div class="text-part">
+                        <h1>数据库 💾</h1>
+                        <h2>Database</h2>
+                        <div class="concept-card">
+                            <p><b>📝 永远记住你！</b><br>
+                            <b>数据库 (db)</b> 就像一个永久的笔记本。<br>
+                            它可以记录你玩了多少次、总共赢了多少局。哪怕你关掉电脑明天再来，数据还在！</p>
+                        </div>
+                    </div>
+                    <div class="code-box">
+<span class="c-com">// 胜利时的回调函数 (定义在 main 之前)</span>
+<span class="c-type">void</span> <span class="c-func">onVictory</span>(<span class="c-type">auto</span> <span class="c-obj">event</span>) {
+    <span class="c-obj">db</span>.<span class="c-func">add</span>(<span class="c-str">"wins"</span>, <span class="c-num">1</span>);
+    <span class="c-obj">db</span>.<span class="c-func">add</span>(<span class="c-str">"total defeated"</span>, <span class="c-obj">game</span>.<span class="c-obj">defeated</span>);
+}
+
+<span class="c-type">int</span> <span class="c-func">main</span>() {
+    <span class="c-type">auto</span> <span class="c-obj">player</span> = <span class="c-obj">game</span>.<span class="c-func">spawnPlayerXY</span>(<span class="c-str">"raider"</span>, <span class="c-num">36</span>, <span class="c-num">30</span>);
+    <span class="c-obj">game</span>.<span class="c-func">addSurviveGoal</span>(<span class="c-num">8</span>);
+    
+    <span class="c-com">// 写入数据库：游玩次数 + 1</span>
+    <span class="c-obj">db</span>.<span class="c-func">add</span>(<span class="c-str">"plays"</span>, <span class="c-num">1</span>);
+    
+    <span class="c-com">// 显示数据库记录</span>
+    <span class="c-obj">ui</span>.<span class="c-func">track</span>(<span class="c-obj">db</span>, <span class="c-str">"plays"</span>);
+    <span class="c-obj">ui</span>.<span class="c-func">track</span>(<span class="c-obj">db</span>, <span class="c-str">"wins"</span>);
+    
+    <span class="c-com">// 监听胜利事件</span>
+    <span class="c-obj">game</span>.<span class="c-func">on</span>(<span class="c-str">"victory"</span>, <span class="c-func">onVictory</span>);
+    
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+                    </div>
+                </div>
+                <div class="visual-demo">🗄️</div>
+            </div>
+
+            <div class="slide">
+                <div class="header-bar">
+                    <span class="map-name">🎮 游戏开发1：农夫与小矮人</span>
+                    <span class="level-tag">第 21 关</span>
+                </div>
+                <div class="content-grid">
+                    <div class="text-part">
+                        <h1>生态系统模拟 🦁</h1>
+                        <h2>Ecosystem Simulation</h2>
+                        <div class="concept-card">
+                            <p><b>🌍 上帝视角创造世界</b><br>
+                            我们要模拟一个真实的生态圈：<br>
+                            1. <b>食人魔</b> 是捕食者 🐺<br>
+                            2. <b>农民</b> 是猎物 🐑<br>
+                            3. <b>硬币</b> 是食物 🌿<br>
+                            通过调整变量，观察生态平衡！</p>
+                        </div>
+                        <div class="eco-system">
+                            <div class="eco-item">👹<br>食人魔</div>
+                            <div class="arrow-anim">👊</div>
+                            <div class="eco-item">👨‍🌾<br>农民</div>
+                            <div class="arrow-anim">🤏</div>
+                            <div class="eco-item">🪙<br>硬币</div>
+                        </div>
+                    </div>
+                    <div class="code-box">
+<span class="c-type">int</span> <span class="c-func">main</span>() {
+    <span class="c-com">// --- 食人魔设定 (捕食者) ---</span>
+    <span class="c-obj">game</span>.<span class="c-obj">startingOgres</span> = <span class="c-num">8</span>;   <span class="c-com">// 初始数量</span>
+    <span class="c-obj">game</span>.<span class="c-obj">ogreSpeed</span> = <span class="c-num">15</span>;      <span class="c-com">// 移动速度</span>
+    <span class="c-obj">game</span>.<span class="c-obj">ogreSplit</span> = <span class="c-num">3</span>;       <span class="c-com">// 繁殖需求</span>
+    
+    <span class="c-com">// --- 农民设定 (猎物) ---</span>
+    <span class="c-obj">game</span>.<span class="c-obj">startingPeasants</span> = <span class="c-num">15</span>;
+    <span class="c-obj">game</span>.<span class="c-obj">peasantSpeed</span> = <span class="c-num">6</span>;
+    
+    <span class="c-com">// --- 硬币设定 ---</span>
+    <span class="c-obj">game</span>.<span class="c-obj">coinSpawnTime</span> = <span class="c-num">1</span>;
+    <span class="c-obj">game</span>.<span class="c-obj">coinSpawnAmount</span> = <span class="c-num">8</span>;
+    
+    <span class="c-com">// 实时监控数据</span>
+    <span class="c-obj">ui</span>.<span class="c-func">track</span>(<span class="c-obj">game</span>, <span class="c-str">"humans"</span>);
+    <span class="c-obj">ui</span>.<span class="c-func">track</span>(<span class="c-obj">game</span>, <span class="c-str">"ogres"</span>);
+    
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+                    </div>
+                </div>
+                <div class="visual-demo">🌍</div>
+            </div>
+
+        </div>
+
+        <button class="nav-btn" onclick="nextSlide()">❯</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+
+        function showSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            
+            // 循环逻辑
+            if (index >= slides.length) index = 0;
+            if (index < 0) index = slides.length - 1;
+            
+            currentSlide = index;
+            slides[currentSlide].classList.add('active');
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        // 键盘左右键支持
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "ArrowRight") nextSlide();
+            if (e.key === "ArrowLeft") prevSlide();
+        });
+    </script>
+</body>
+</html>

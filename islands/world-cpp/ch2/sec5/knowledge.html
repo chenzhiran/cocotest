@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第22-23关 游戏项目的设计与开发 (C++版)</title>
+    <style>
+        :root {
+            --bg-color: #2c3e50;
+            --slide-bg: #fdfefe;
+            --primary: #3498db;
+            --accent: #e74c3c;
+            --code-bg: #282c34;
+            --text-main: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(30deg, #34495e 12%, transparent 12.5%, transparent 87%, #34495e 87.5%, #34495e),
+                linear-gradient(150deg, #34495e 12%, transparent 12.5%, transparent 87%, #34495e 87.5%, #34495e),
+                linear-gradient(30deg, #34495e 12%, transparent 12.5%, transparent 87%, #34495e 87.5%, #34495e),
+                linear-gradient(150deg, #34495e 12%, transparent 12.5%, transparent 87%, #34495e 87.5%, #34495e),
+                linear-gradient(60deg, #34495e77 25%, transparent 25.5%, transparent 75%, #34495e77 75%, #34495e77),
+                linear-gradient(60deg, #34495e77 25%, transparent 25.5%, transparent 75%, #34495e77 75%, #34495e77);
+            background-size: 80px 140px;
+            background-position: 0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 主容器 */
+        .main-container {
+            display: flex;
+            align-items: center;
+            width: 95%;
+            max-width: 1300px;
+            gap: 25px;
+        }
+
+        /* 按钮样式 */
+        .nav-btn {
+            background: white;
+            border: 4px solid var(--primary);
+            color: var(--primary);
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            font-size: 30px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 0 #2980b9;
+            z-index: 100;
+            outline: none;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-3px);
+            background: var(--primary);
+            color: white;
+            border-color: white;
+        }
+
+        .nav-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        /* 幻灯片视窗 */
+        .viewport {
+            flex: 1;
+            aspect-ratio: 16/9;
+            background: var(--slide-bg);
+            border-radius: 25px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            border: 10px solid #ecf0f1;
+        }
+
+        /* 顶部标签 */
+        .header-tag {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            background: var(--text-main);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .level-badge {
+            background: #f1c40f;
+            color: #333;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+
+        /* 幻灯片通用样式 */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            pointer-events: none;
+            padding: 80px 40px 40px 40px; /* 顶部留给 header-tag */
+            box-sizing: border-box;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: all;
+        }
+
+        /* 内容布局 */
+        .content-layout {
+            display: flex;
+            width: 100%;
+            gap: 40px;
+            height: 100%;
+        }
+
+        .text-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .code-section {
+            flex: 1.3; /* 给代码更多空间 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* 文本样式 */
+        h1 {
+            font-size: 2.5em;
+            color: var(--primary);
+            margin: 0 0 10px 0;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            font-size: 1.4em;
+            color: #7f8c8d;
+            margin: 0 0 20px 0;
+            font-weight: normal;
+        }
+
+        .info-box {
+            background: #eaf2f8;
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 5px solid var(--primary);
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        /* 代码编辑器样式 */
+        .code-window {
+            background: var(--code-bg);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace; /* 强制等宽字体 */
+            font-size: 0.95em;
+            color: #d4d4d4;
+            line-height: 1.5;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid #444;
+            position: relative;
+            max-height: 500px;
+            overflow: auto; /* 允许滚动 */
+            white-space: pre; /* 关键：保留源代码中的空格和换行 */
+        }
+
+        .window-dots {
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .red { background: #ff5f56; }
+        .yellow { background: #ffbd2e; }
+        .green { background: #27c93f; }
+
+        /* C++ 代码高亮 */
+        .kwd { color: #c678dd; font-weight: bold; } /* 关键字 return */
+        .type { color: #569cd6; font-weight: bold; } /* 类型 int, void, auto */
+        .str { color: #98c379; } /* 字符串 */
+        .num { color: #d19a66; } /* 数字 */
+        .func { color: #dcdcaa; } /* 函数 */
+        .com { color: #6a9955; font-style: italic; } /* 注释 */
+        .prop { color: #9cdcfe; } /* 属性 */
+        .obj { color: #4ec9b0; } /* 对象 game, ui */
+
+        /* 装饰元素 */
+        .floating-icon {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 80px;
+            opacity: 0.15;
+            animation: float 4s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* C++ 介绍页背景 */
+        .bg-cpp-intro { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+
+        /* 开发流程图样式 (Slide 4) */
+        .roadmap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .step {
+            background: white;
+            border: 2px solid #bdc3c7;
+            border-radius: 15px;
+            padding: 15px;
+            width: 200px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+
+        .step:hover { transform: scale(1.05); border-color: var(--primary); }
+        .step-icon { font-size: 2.5em; margin-bottom: 10px; display: block; }
+        .step-title { font-weight: bold; color: var(--text-main); display: block; margin-bottom: 5px; }
+        .step-desc { font-size: 0.8em; color: #7f8c8d; }
+        .arrow-right { font-size: 1.5em; color: var(--primary); display: flex; align-items: center; }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <button class="nav-btn" onclick="prevSlide()">❮</button>
+
+        <div class="viewport">
+            
+            <div class="slide active bg-cpp-intro">
+                <div class="header-tag">
+                    <span>📘 C++ 基础</span>
+                    <span class="level-badge">Intro</span>
+                </div>
+                <div class="content-layout">
+                    <div class="text-section">
+                        <h1>C++ 游戏架构 🏛️</h1>
+                        <h2>Game Architecture</h2>
+                        <div class="info-box">
+                            <p><b>📐 如何构建一个大型游戏？</b><br>
+                            在 C++ 中，我们不能随意写代码。我们需要结构：</p>
+                            <ul>
+                                <li><b>全局变量</b>：定义在最外面，所有地方都能用。</li>
+                                <li><b>回调函数</b>：比如 <code>onVictory</code>，当事情发生时被调用。</li>
+                                <li><b>int main()</b>：游戏的主入口，一切从这里开始。</li>
+                            </ul>
+                            
+                        </div>
+                    </div>
+                    <div class="code-section">
+                        <div class="code-window">
+                            <div class="window-dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+<span class="com">// 1. 定义事件处理函数 (在 main 之前)</span>
+<span class="type">void</span> <span class="func">onVictory</span>(<span class="type">auto</span> <span class="obj">event</span>) {
+    <span class="com">// 胜利时要做的事...</span>
+}
+
+<span class="com">// 2. 主程序入口</span>
+<span class="type">int</span> <span class="func">main</span>() {
+    <span class="com">// 3. 在这里设置游戏</span>
+    <span class="obj">game</span>.<span class="func">spawnMaze</span>(<span class="num">1</span>);
+    
+    <span class="kwd">return</span> <span class="num">0</span>;
+}
+                        </div>
+                    </div>
+                </div>
+                <div class="floating-icon">🏗️</div>
+            </div>
+
+            <div class="slide">
+                <div class="header-tag">
+                    <span>🎮 游戏开发1：丛林游戏</span>
+                    <span class="level-badge">第 22 关</span>
+                </div>
+                <div class="content-layout">
+                    <div class="text-section">
+                        <h1>游戏元素的生成 🏗️</h1>
+                        <h2>Game Element Spawning</h2>
+                        <div class="info-box">
+                            <p><b>🌍 建造你的世界！</b><br>
+                            生成（Spawning）就像变魔术，让物体凭空出现在地图上。<br>
+                            我们需要使用 <code>game.spawnXY()</code> 命令。这不仅能造人，还能造宝箱、钥匙、甚至会源源不断吐出怪物的“生成器”！</p>
+                            
+                        </div>
+                        <div style="background: #fff3cd; padding: 10px; border-radius: 10px; text-align: center; color: #856404;">
+                            🔑 <b>小任务：</b><br>把钥匙藏在角落，把宝箱锁起来！
+                        </div>
+                    </div>
+                    <div class="code-section">
+                        <div class="code-window">
+                            <div class="window-dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+<span class="com">// 胜利回调函数</span>
+<span class="type">void</span> <span class="func">onVictory</span>(<span class="type">auto</span> <span class="obj">event</span>) {
+    <span class="obj">db</span>.<span class="func">add</span>(<span class="str">"defeated"</span>, <span class="obj">game</span>.<span class="obj">defeated</span>);
+}
+
+<span class="type">int</span> <span class="func">main</span>() {
+    <span class="com">// 1. 创建迷宫</span>
+    <span class="obj">game</span>.<span class="func">spawnMaze</span>(<span class="num">1</span>);
+
+    <span class="com">// 2. 召唤主角</span>
+    <span class="type">auto</span> <span class="obj">player</span> = <span class="obj">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">"raider"</span>, <span class="num">28</span>, <span class="num">60</span>);
+    <span class="obj">player</span>.<span class="obj">maxHealth</span> = <span class="num">200</span>;
+
+    <span class="com">// 3. 添加游戏目标</span>
+    <span class="obj">game</span>.<span class="func">addCollectGoal</span>();
+    <span class="obj">game</span>.<span class="func">addSurviveGoal</span>();
+
+    <span class="com">// 4. 放置道具和敌人</span>
+    <span class="obj">game</span>.<span class="func">spawnXY</span>(<span class="str">"locked-chest"</span>, <span class="num">44</span>, <span class="num">28</span>);
+    <span class="obj">game</span>.<span class="func">spawnXY</span>(<span class="str">"silver-key"</span>, <span class="num">43</span>, <span class="num">60</span>);
+    
+    <span class="type">auto</span> <span class="obj">s1</span> = <span class="obj">game</span>.<span class="func">spawnXY</span>(<span class="str">"skeleton"</span>, <span class="num">43</span>, <span class="num">50</span>);
+    <span class="obj">s1</span>.<span class="obj">behavior</span> = <span class="str">"Defends"</span>;
+
+    <span class="obj">game</span>.<span class="func">on</span>(<span class="str">"victory"</span>, <span class="func">onVictory</span>);
+    <span class="kwd">return</span> <span class="num">0</span>;
+}
+                        </div>
+                    </div>
+                </div>
+                <div class="floating-icon">🗝️</div>
+            </div>
+
+            <div class="slide">
+                <div class="header-tag">
+                    <span>🎮 游戏开发1：白手起家</span>
+                    <span class="level-badge">第 23 关</span>
+                </div>
+                <div class="content-layout">
+                    <div class="text-section">
+                        <h1>项目设计与开发 🎨</h1>
+                        <h2>Design & Development</h2>
+                        <div class="info-box">
+                            <p><b>🧠 你是游戏导演！</b><br>
+                            现在，你有一张白纸。你需要结合之前学的所有知识：<br>
+                            生成主角、设置敌人AI、放置道具，最后还要用<b>数据库</b>记录胜利次数！</p>
+                            
+                        </div>
+                        <div style="text-align: center;">
+                            <span style="font-size: 3em; margin: 0 10px;">🛡️</span>
+                            <span style="font-size: 3em; margin: 0 10px;">🆚</span>
+                            <span style="font-size: 3em; margin: 0 10px;">👹</span>
+                        </div>
+                    </div>
+                    <div class="code-section">
+                        <div class="code-window">
+                            <div class="window-dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+<span class="type">void</span> <span class="func">onVictory</span>(<span class="type">auto</span> <span class="obj">event</span>) {
+    <span class="obj">db</span>.<span class="func">add</span>(<span class="str">"wins"</span>, <span class="num">1</span>);
+}
+
+<span class="type">int</span> <span class="func">main</span>() {
+    <span class="com">// 1. 设定目标</span>
+    <span class="obj">game</span>.<span class="func">addDefeatGoal</span>();
+    <span class="obj">game</span>.<span class="func">addSurviveGoal</span>();
+
+    <span class="com">// 2. 生成主角</span>
+    <span class="type">auto</span> <span class="obj">player</span> = <span class="obj">game</span>.<span class="func">spawnPlayerXY</span>(<span class="str">"knight"</span>, <span class="num">40</span>, <span class="num">40</span>);
+
+    <span class="com">// 3. 生成敌人并设置AI</span>
+    <span class="type">auto</span> <span class="obj">e1</span> = <span class="obj">game</span>.<span class="func">spawnXY</span>(<span class="str">"ogre"</span>, <span class="num">30</span>, <span class="num">40</span>);
+    <span class="obj">e1</span>.<span class="obj">behavior</span> = <span class="str">"AttacksNearest"</span>;
+
+    <span class="type">auto</span> <span class="obj">e2</span> = <span class="obj">game</span>.<span class="func">spawnXY</span>(<span class="str">"ogre"</span>, <span class="num">50</span>, <span class="num">20</span>);
+    <span class="obj">e2</span>.<span class="obj">behavior</span> = <span class="str">"AttacksNearest"</span>;
+
+    <span class="com">// 4. 监听胜利事件</span>
+    <span class="obj">game</span>.<span class="func">on</span>(<span class="str">"victory"</span>, <span class="func">onVictory</span>);
+    
+    <span class="kwd">return</span> <span class="num">0</span>;
+}
+                        </div>
+                    </div>
+                </div>
+                <div class="floating-icon">🏆</div>
+            </div>
+
+            <div class="slide">
+                <div class="header-tag">
+                    <span>🚀 附加知识</span>
+                    <span class="level-badge">游戏开发流程</span>
+                </div>
+                <div style="display: flex; flex-direction: column; height: 100%; justify-content: center;">
+                    <h1 style="text-align: center; margin-bottom: 30px;">如何从零开始做一个游戏？🗺️</h1>
+                    
+                    <div class="roadmap">
+                        <div class="step">
+                            <span class="step-icon">💡</span>
+                            <span class="step-title">1. 构思与规划</span>
+                            <span class="step-desc">决定主题：是冒险？射击？还是解谜？</span>
+                        </div>
+                        <div class="arrow-right">➜</div>
+                        <div class="step">
+                            <span class="step-icon">🧱</span>
+                            <span class="step-title">2. 设计元素</span>
+                            <span class="step-desc">生成主角、敌人、场景和道具。</span>
+                        </div>
+                        <div class="arrow-right">➜</div>
+                        <div class="step">
+                            <span class="step-icon">📜</span>
+                            <span class="step-title">3. 设置规则</span>
+                            <span class="step-desc">怎么赢？怎么输？设定游戏目标。</span>
+                        </div>
+                    </div>
+
+                    <div class="roadmap" style="margin-top: 30px;">
+                        <div class="step">
+                            <span class="step-icon">⚙️</span>
+                            <span class="step-title">4. 实现逻辑</span>
+                            <span class="step-desc">编写交互代码，让游戏动起来。</span>
+                        </div>
+                        <div class="arrow-right">➜</div>
+                        <div class="step">
+                            <span class="step-icon">🐛</span>
+                            <span class="step-title">5. 调试与优化</span>
+                            <span class="step-desc">测试游戏，修复Bug，让体验更流畅。</span>
+                        </div>
+                        <div class="arrow-right">➜</div>
+                        <div class="step">
+                            <span class="step-icon">📢</span>
+                            <span class="step-title">6. 分享与展示</span>
+                            <span class="step-desc">邀请朋友来玩，收集反馈！</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="floating-icon">🚀</div>
+            </div>
+
+        </div>
+
+        <button class="nav-btn" onclick="nextSlide()">❯</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+
+        function showSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            
+            if (index >= slides.length) index = 0;
+            if (index < 0) index = slides.length - 1;
+            
+            currentSlide = index;
+            slides[currentSlide].classList.add('active');
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "ArrowRight") nextSlide();
+            if (e.key === "ArrowLeft") prevSlide();
+        });
+    </script>
+</body>
+</html>
