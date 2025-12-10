@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第15-18关 认识嵌套循环</title>
+    <title>C++ 第15-18关：嵌套循环 (Nested Loops)</title>
     <style>
         /* --- 1. 基础设置 --- */
         :root {
@@ -15,169 +15,98 @@
             --core-pink: #FF4081;      /* 核心粉 */
             --text-main: #2C3E50;
             
-            /* 代码高亮 */
+            /* C++ 代码高亮 (Monokai-ish for Space) */
             --code-bg: #1a1a1a;
             --code-fg: #c5c6c7;
-            --tok-kw: #66FCF1;         /* 关键字 while */
-            --tok-func: #45A29E;       /* 函数 */
-            --tok-var: #FFD700;        /* 变量 */
-            --tok-num: #FF4081;        /* 数字 */
-            --tok-cm: #6c7a89;         /* 注释 */
+            --tok-kw: #66FCF1;         /* 关键字 while, if (青) */
+            --tok-func: #45A29E;       /* 函数 (深青) */
+            --tok-var: #FFD700;        /* 变量 (金) */
+            --tok-num: #FF4081;        /* 数字 (粉) */
+            --tok-cm: #6c7a89;         /* 注释 (灰) */
+            --tok-str: #a8e6cf;        /* 字符串 (淡绿) */
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', 'Consolas', sans-serif;
             background-color: var(--bg-space);
-            /* 星轨背景 */
             background-image: 
                 radial-gradient(white 1px, transparent 1px),
-                radial-gradient(white 1px, transparent 1px);
+                radial-gradient(rgba(255,255,255,0.2) 1px, transparent 1px);
             background-size: 50px 50px;
-            background-position: 0 0, 25px 25px;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            user-select: none;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; user-select: none;
         }
 
         /* 旋转星轨动画 */
         .orbit-bg {
-            position: absolute;
-            border: 1px dashed rgba(255,255,255,0.1);
-            border-radius: 50%;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            animation: spinBg 60s infinite linear;
-            pointer-events: none;
+            position: absolute; border: 1px dashed rgba(255,255,255,0.1); border-radius: 50%;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            animation: spinBg 60s infinite linear; pointer-events: none;
         }
         .ob-1 { width: 600px; height: 600px; animation-duration: 40s; }
         .ob-2 { width: 900px; height: 900px; animation-duration: 80s; animation-direction: reverse; }
-        
         @keyframes spinBg { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
 
         /* --- 2. 舞台布局 --- */
         .stage {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 60px;
-            width: 98vw;
-            max-width: 1400px;
-            position: relative;
-            z-index: 10;
+            display: flex; align-items: center; justify-content: center; gap: 60px;
+            width: 98vw; max-width: 1400px; position: relative; z-index: 10;
         }
 
-        /* --- 3. 星系旋钮按钮 (外部) --- */
+        /* --- 3. 星系旋钮按钮 --- */
         .nav-btn {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            position: relative;
-            transition: transform 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 90px; height: 90px; border-radius: 50%; border: none; background: transparent;
+            cursor: pointer; position: relative; transition: transform 0.2s;
+            display: flex; align-items: center; justify-content: center;
         }
-        
         .nav-body {
-            width: 100%; height: 100%;
-            background: radial-gradient(circle at 30% 30%, #45A29E, #1F2833);
-            border-radius: 50%;
-            border: 4px solid var(--orbit-cyan);
-            box-shadow: 0 0 20px rgba(69, 162, 158, 0.4);
-            position: relative;
+            width: 100%; height: 100%; background: radial-gradient(circle at 30% 30%, #45A29E, #1F2833);
+            border-radius: 50%; border: 4px solid var(--orbit-cyan);
+            box-shadow: 0 0 20px rgba(69, 162, 158, 0.4); position: relative;
         }
-        
-        /* 旋钮上的行星 */
         .nav-planet {
             position: absolute; top: 10px; left: 50%; width: 15px; height: 15px;
-            background: var(--star-gold); border-radius: 50%;
-            transform: translateX(-50%); box-shadow: 0 0 10px var(--star-gold);
+            background: var(--star-gold); border-radius: 50%; transform: translateX(-50%);
+            box-shadow: 0 0 10px var(--star-gold);
         }
-
         .btn-next .nav-body { transform: rotate(90deg); }
         .btn-prev .nav-body { transform: rotate(-90deg); }
-        
-        .nav-icon {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 30px; color: white; z-index: 2;
-        }
+        .nav-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 30px; color: white; z-index: 2; }
 
-        .nav-btn:hover { transform: scale(1.1); }
-        .nav-btn:active { transform: scale(0.95); }
-        
+        .nav-btn:hover { transform: scale(1.1); } .nav-btn:active { transform: scale(0.95); }
         .disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
 
         /* --- 4. 导航仪容器 --- */
         .navigator-container {
-            width: 960px;
-            height: 620px;
-            background: var(--panel-bg);
-            border-radius: 30px;
-            /* 全息投影边框 */
-            box-shadow: 
-                0 0 0 5px #0B0C10,
-                0 0 30px var(--orbit-cyan),
-                inset 0 0 100px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            width: 960px; height: 620px; background: var(--panel-bg); border-radius: 30px;
+            box-shadow: 0 0 0 5px #0B0C10, 0 0 30px var(--orbit-cyan), inset 0 0 100px rgba(0,0,0,0.5);
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
             border: 2px solid var(--orbit-cyan);
         }
 
         /* 顶部全息栏 */
         .holo-bar {
-            height: 50px;
-            background: rgba(69, 162, 158, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-            color: var(--orbit-cyan);
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            font-size: 18px;
-            border-bottom: 1px solid var(--orbit-cyan);
-            z-index: 20;
+            height: 50px; background: rgba(69, 162, 158, 0.1); display: flex; justify-content: space-between;
+            align-items: center; padding: 0 30px; color: var(--orbit-cyan); font-family: 'Courier New', monospace;
+            font-weight: bold; font-size: 18px; border-bottom: 1px solid var(--orbit-cyan); z-index: 20;
             text-shadow: 0 0 5px var(--orbit-cyan);
         }
-        .map-tag {
-            background: var(--orbit-cyan); color: #000; padding: 2px 10px; border-radius: 2px; margin-right: 10px;
-        }
+        .map-tag { background: var(--orbit-cyan); color: #000; padding: 2px 10px; border-radius: 2px; margin-right: 10px; }
 
         /* 幻灯片 */
         .slide {
-            display: none;
-            flex: 1;
-            padding: 40px 60px;
-            flex-direction: column;
+            display: none; flex: 1; padding: 40px 60px; flex-direction: column;
             animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-            overflow-y: auto;
-            background: var(--screen-bg);
-            position: relative;
+            overflow-y: auto; background: var(--screen-bg); position: relative;
         }
         .slide.active { display: flex; }
-
-        @keyframes fadeIn { 
-            0% { opacity: 0; transform: scale(0.95); filter: blur(5px); } 
-            100% { opacity: 1; transform: scale(1); filter: blur(0); } 
-        }
+        @keyframes fadeIn { 0% { opacity: 0; transform: scale(0.95); filter: blur(5px); } 100% { opacity: 1; transform: scale(1); filter: blur(0); } }
 
         /* 内容布局 */
         .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 3px solid #d1d8e0;
-            padding-bottom: 10px;
+            display: flex; align-items: center; margin-bottom: 20px; border-bottom: 3px solid #d1d8e0; padding-bottom: 10px;
         }
         .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(0 0 5px var(--orbit-cyan)); }
         h1 { margin: 0; color: var(--text-main); font-size: 34px; letter-spacing: 1px; }
@@ -185,157 +114,74 @@
         .layout { display: flex; gap: 40px; height: 100%; }
         .col-text { flex: 1.1; font-size: 19px; line-height: 1.6; color: var(--text-main); }
         .col-visual { 
-            flex: 0.9; 
-            background: #fff;
-            border: 2px solid #d1d8e0; 
-            border-radius: 15px;
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            flex: 0.9; background: #fff; border: 2px solid #d1d8e0; border-radius: 15px;
+            display: flex; justify-content: center; align-items: center; position: relative;
+            overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
         }
 
-        /* 代码块 */
+        /* C++ 代码块优化 */
         .code-box {
-            background: var(--code-bg);
-            color: var(--code-fg);
-            padding: 15px 20px;
-            border-radius: 10px;
-            font-family: 'Consolas', monospace;
-            font-size: 16px;
-            margin-top: 15px;
-            border-left: 5px solid var(--orbit-cyan);
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
-            position: relative;
+            background: var(--code-bg); color: var(--code-fg); padding: 15px 20px; border-radius: 10px;
+            font-family: 'Consolas', monospace; font-size: 16px; margin-top: 15px;
+            border-left: 5px solid var(--orbit-cyan); box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            position: relative; white-space: pre; overflow-x: auto; tab-size: 4; line-height: 1.5;
         }
         
         /* 缩进辅助线 */
-        .indent-guide {
-            position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.1);
-        }
-        .ig-1 { left: 35px; }
-        .ig-2 { left: 55px; }
-        .ig-3 { left: 75px; }
+        .indent-guide { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.1); }
+        .ig-1 { left: 40px; } .ig-2 { left: 60px; } .ig-3 { left: 80px; }
         
         .k { color: var(--tok-kw); font-weight: bold; } 
         .f { color: var(--tok-func); } 
         .v { color: var(--tok-var); } 
         .n { color: var(--tok-num); } 
-        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+        .c { color: var(--tok-cm); font-style: italic; }
+        .s { color: var(--tok-str); }
 
         /* 卡片 */
         .card {
-            background: #e0f7fa;
-            border-left: 5px solid var(--orbit-cyan);
-            color: #006064;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 0 10px 10px 0;
-            font-size: 18px;
-            font-weight: bold;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            background: #e0f7fa; border-left: 5px solid var(--orbit-cyan); color: #006064;
+            padding: 15px 20px; margin-bottom: 15px; border-radius: 0 10px 10px 0;
+            font-size: 18px; font-weight: bold; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* --- 5. 视觉化组件 --- */
-        
         /* 轨道系统动画 */
-        .solar-system {
-            width: 100%; height: 100%; position: relative; display: flex; justify-content: center; align-items: center;
-            background: #000;
-        }
-        .orbit {
-            border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; position: absolute;
-            animation: orbitSpin linear infinite;
-        }
+        .solar-system { width: 100%; height: 100%; position: relative; display: flex; justify-content: center; align-items: center; background: #000; }
+        .orbit { border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; position: absolute; animation: orbitSpin linear infinite; }
         .sun { width: 40px; height: 40px; background: #FFD700; border-radius: 50%; box-shadow: 0 0 20px #FFD700; z-index: 10; }
-        
         .orbit-1 { width: 150px; height: 150px; animation-duration: 10s; }
-        .planet-1 { 
-            width: 20px; height: 20px; background: #45A29E; border-radius: 50%; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-        }
-        
+        .planet-1 { width: 20px; height: 20px; background: #45A29E; border-radius: 50%; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); }
         .orbit-2 { width: 300px; height: 300px; animation-duration: 20s; }
-        .planet-2 {
-            width: 30px; height: 30px; background: #FF4081; border-radius: 50%; position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
-        }
-        .moon-orbit {
-            width: 60px; height: 60px; position: absolute; top: -15px; left: 0; border: 1px dashed rgba(255,255,255,0.3); border-radius: 50%;
-            animation: orbitSpin 3s linear infinite;
-        }
-        .moon {
-            width: 8px; height: 8px; background: #fff; border-radius: 50%; position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
-        }
-        
+        .planet-2 { width: 30px; height: 30px; background: #FF4081; border-radius: 50%; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); }
+        .moon-orbit { width: 60px; height: 60px; position: absolute; top: -15px; left: 0; border: 1px dashed rgba(255,255,255,0.3); border-radius: 50%; animation: orbitSpin 3s linear infinite; }
+        .moon { width: 8px; height: 8px; background: #fff; border-radius: 50%; position: absolute; top: -4px; left: 50%; transform: translateX(-50%); }
         @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         /* 剧集播放器演示 */
-        .tv-container {
-            width: 80%; background: #333; border-radius: 10px; padding: 20px; color: white; font-family: monospace;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center;
-        }
-        .tv-screen {
-            height: 100px; background: #000; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; color: var(--orbit-cyan); font-size: 24px; border: 2px solid #555;
-        }
-        .progress-block {
-            display: flex; gap: 5px; justify-content: center; margin-top: 5px;
-        }
+        .tv-container { width: 80%; background: #333; border-radius: 10px; padding: 20px; color: white; font-family: monospace; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; }
+        .tv-screen { height: 100px; background: #000; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; color: var(--orbit-cyan); font-size: 24px; border: 2px solid #555; }
+        .progress-block { display: flex; gap: 5px; justify-content: center; margin-top: 5px; }
         .p-seg { width: 20px; height: 10px; background: #555; }
         .p-seg.active { background: var(--core-pink); box-shadow: 0 0 5px var(--core-pink); }
 
         /* 攻击模拟器 */
-        .battle-box {
-            position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .enemy-unit {
-            font-size: 60px; transition: all 0.2s; position: relative;
-        }
-        .hp-bar {
-            width: 80px; height: 10px; background: #333; border: 1px solid #fff; margin-top: 5px;
-        }
+        .battle-box { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .enemy-unit { font-size: 60px; transition: all 0.2s; position: relative; }
+        .hp-bar { width: 80px; height: 10px; background: #333; border: 1px solid #fff; margin-top: 5px; }
         .hp-val { width: 100%; height: 100%; background: #ff4757; transition: width 0.2s; }
-        .damage-text {
-            position: absolute; font-size: 30px; color: #ff4757; font-weight: bold; opacity: 0; top: -20px;
-        }
-        .btn-attack {
-            margin-top: 20px; padding: 10px 20px; background: var(--core-pink); border: none; color: white; font-weight: bold; border-radius: 5px; cursor: pointer;
-        }
+        .damage-text { position: absolute; font-size: 30px; color: #ff4757; font-weight: bold; opacity: 0; top: -20px; }
+        .btn-attack { margin-top: 20px; padding: 10px 20px; background: var(--core-pink); border: none; color: white; font-weight: bold; border-radius: 5px; cursor: pointer; }
         .btn-attack:active { transform: scale(0.95); }
 
         /* 缩进透视镜 */
-        .scope-container {
-            position: relative; cursor: crosshair; width: 100%;
-        }
-        .code-layer {
-            padding: 10px; border-left: 4px solid transparent; margin: 5px 0; transition: all 0.3s;
-        }
+        .scope-container { position: relative; cursor: crosshair; width: 100%; }
+        .code-layer { padding: 10px; border-left: 4px solid transparent; margin: 5px 0; transition: all 0.3s; }
         .code-layer:hover { background: rgba(69, 162, 158, 0.1); border-left-color: var(--orbit-cyan); transform: translateX(10px); }
-        .layer-label {
-            font-size: 12px; color: #aaa; text-transform: uppercase; margin-bottom: 2px;
-        }
+        .layer-label { font-size: 12px; color: #aaa; text-transform: uppercase; margin-bottom: 2px; }
 
         /* 进度条 */
-        .progress-bar {
-            height: 6px;
-            background: #222;
-            width: 100%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--orbit-cyan), var(--core-pink));
-            width: 0%;
-            transition: width 0.3s;
-            box-shadow: 0 0 10px var(--core-pink);
-        }
-
-        /* 动画 */
-        @keyframes pop { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
+        .progress-bar { height: 6px; background: #222; width: 100%; position: absolute; bottom: 0; left: 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--orbit-cyan), var(--core-pink)); width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--core-pink); }
     </style>
 </head>
 <body>
@@ -344,13 +190,11 @@
 <div class="orbit-bg ob-2"></div>
 
 <div class="stage">
-    <!-- 左按钮 -->
     <button class="nav-btn" id="btnPrev" onclick="moveSlide(-1)">
         <div class="nav-body"><div class="nav-planet"></div></div>
         <div class="nav-icon">❮</div>
     </button>
 
-    <!-- 导航仪容器 -->
     <div class="navigator-container">
         <div class="holo-bar">
             <div>
@@ -360,18 +204,16 @@
             <div style="color: var(--core-pink);">NESTED LOOPS</div>
         </div>
 
-        <!-- Slide 1: 封面 -->
         <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
-            <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">🪐</div>
+            <div style="font-size: 100px; margin-bottom: 20px;">🪐</div>
             <h1 style="font-size: 50px; margin: 10px 0; color: var(--text-main);">认识嵌套循环</h1>
             <h2 style="font-size: 26px; color: var(--orbit-cyan); font-weight: bold; margin-top: 0;">Nested Loops</h2>
             <div style="margin-top: 40px; display: flex; gap: 30px;">
-                <div style="padding: 15px 30px; background: var(--orbit-cyan); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #2c7a7b;">🌀 外层循环</div>
-                <div style="padding: 15px 30px; background: var(--core-pink); color: white; border-radius: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #c2185b;">🔄 内层循环</div>
+                <div style="padding: 15px 30px; background: var(--orbit-cyan); color: white; border-radius: 10px; font-weight: bold; font-size: 20px;">🌀 外层循环</div>
+                <div style="padding: 15px 30px; background: var(--core-pink); color: white; border-radius: 10px; font-weight: bold; font-size: 20px;">🔄 内层循环</div>
             </div>
         </div>
 
-        <!-- Slide 2: 什么是嵌套循环 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">📺</div>
@@ -405,9 +247,7 @@
                                 season.innerText = `Season ${s}`;
                                 season.style.color = s===1 ? '#45A29E' : '#FF4081';
                                 for(let e=0; e<3; e++) {
-                                    // Reset segs if new season
                                     if(e==0) for(let seg of segs) seg.className = 'p-seg';
-                                    
                                     screen.innerText = `Episode ${e+1}`;
                                     segs[e].classList.add('active');
                                     await new Promise(r => setTimeout(r, 800));
@@ -420,7 +260,6 @@
             </div>
         </div>
 
-        <!-- Slide 3: 语法结构 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">📐</div>
@@ -429,15 +268,18 @@
             <div class="layout">
                 <div class="col-text">
                     <div class="code-box">
-                        <span class="k">while</span> <span class="v">外层条件</span>:<br>
-                        &nbsp;&nbsp;<span class="c"># 外层做的事</span><br>
-                        &nbsp;&nbsp;<span class="k">while</span> <span class="v">内层条件</span>:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># 内层反复做的事</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">do_something</span>()
-                    </div>
+<span class="indent-guide ig-1"></span><span class="indent-guide ig-2"></span>
+<span class="k">while</span> (<span class="v">外层条件</span>) {
+    <span class="c">// 外层做的事</span>
+    <span class="k">while</span> (<span class="v">内层条件</span>) {
+        <span class="c">// 内层反复做的事</span>
+        <span class="f">do_something</span>();
+    }
+}</div>
                     <p>注意<b>缩进 (Indentation)</b>！<br>多缩进一层的代码，就属于里面的循环。</p>
                 </div>
                 <div class="col-visual" style="background: #000;">
+                    
                     <div class="solar-system">
                         <div class="sun"></div>
                         <div class="orbit orbit-2">
@@ -451,7 +293,6 @@
             </div>
         </div>
 
-        <!-- Slide 4: 关卡《游魂》分析 I -->
         <div class="slide">
             <div class="header">
                 <div class="icon">👻</div>
@@ -462,13 +303,15 @@
                     <p><b>外层：</b> 遍历敌人列表 (一个个点名)。<br>
                     <b>内层：</b> 攻击当前敌人直到死。</p>
                     <div class="code-box">
-                        <span class="k">while</span> <span class="v">index</span> <span class="o"><</span> <span class="f">len</span>(<span class="v">enemies</span>):<br>
-                        &nbsp;&nbsp;<span class="v">enemy</span> = <span class="v">enemies</span>[<span class="v">index</span>]<br>
-                        &nbsp;&nbsp;<span class="c"># 死磕到底!</span><br>
-                        &nbsp;&nbsp;<span class="k">while</span> <span class="v">enemy.health</span> <span class="o">></span> <span class="n">0</span>:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">attack</span>(<span class="v">enemy</span>)<br>
-                        &nbsp;&nbsp;<span class="v">index</span> += <span class="n">1</span>
-                    </div>
+<span class="indent-guide ig-1"></span><span class="indent-guide ig-2"></span><span class="indent-guide ig-3"></span>
+<span class="k">while</span> (<span class="v">index</span> <span class="kw">&lt;</span> <span class="v">enemies</span>.<span class="f">size</span>()) {
+    <span class="kw">auto</span> <span class="v">enemy</span> <span class="kw">=</span> <span class="v">enemies</span>[<span class="v">index</span>];
+    <span class="c">// 死磕到底!</span>
+    <span class="k">while</span> (<span class="v">enemy.health</span> <span class="kw">&gt;</span> <span class="n">0</span>) {
+        <span class="f">attack</span>(<span class="v">enemy</span>);
+    }
+    <span class="v">index</span><span class="kw">++</span>;
+}</div>
                 </div>
                 <div class="col-visual">
                     <div class="battle-box">
@@ -485,7 +328,6 @@
                             if(hp < 0) hp = 0;
                             document.getElementById('demoHp').style.width = hp + '%';
                             
-                            // Anim
                             const e = document.getElementById('demoEnemy');
                             const d = document.getElementById('dmgText');
                             e.style.transform = 'scale(0.9)';
@@ -513,7 +355,6 @@
             </div>
         </div>
 
-        <!-- Slide 5: 关卡《游魂》分析 II -->
         <div class="slide">
             <div class="header">
                 <div class="icon">💎</div>
@@ -524,13 +365,15 @@
                     <p><b>外层：</b> 遍历物品列表。<br>
                     <b>内层：</b> 只要距离还远，就继续走。</p>
                     <div class="code-box">
-                        <span class="k">while</span> <span class="v">itemIndex</span> <span class="o"><</span> <span class="f">len</span>(<span class="v">items</span>):<br>
-                        &nbsp;&nbsp;<span class="v">item</span> = <span class="v">items</span>[<span class="v">itemIndex</span>]<br>
-                        &nbsp;&nbsp;<span class="c"># 没走到就一直走</span><br>
-                        &nbsp;&nbsp;<span class="k">while</span> <span class="f">distanceTo</span>(<span class="v">item</span>) <span class="o">></span> <span class="n">2</span>:<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="f">moveXY</span>(<span class="v">item.pos.x</span>, <span class="v">item.pos.y</span>)<br>
-                        &nbsp;&nbsp;<span class="v">itemIndex</span> += <span class="n">1</span>
-                    </div>
+<span class="indent-guide ig-1"></span><span class="indent-guide ig-2"></span><span class="indent-guide ig-3"></span>
+<span class="k">while</span> (<span class="v">itemIndex</span> <span class="kw">&lt;</span> <span class="v">items</span>.<span class="f">size</span>()) {
+    <span class="kw">auto</span> <span class="v">item</span> <span class="kw">=</span> <span class="v">items</span>[<span class="v">itemIndex</span>];
+    <span class="c">// 没走到就一直走</span>
+    <span class="k">while</span> (<span class="f">distanceTo</span>(<span class="v">item</span>) <span class="kw">&gt;</span> <span class="n">2</span>) {
+        <span class="f">moveXY</span>(<span class="v">item.pos.x</span>, <span class="v">item.pos.y</span>);
+    }
+    <span class="v">itemIndex</span><span class="kw">++</span>;
+}</div>
                     <div class="card">
                         就像你在追一个泡泡，只要没抓到，就一直追。
                     </div>
@@ -548,7 +391,6 @@
             </div>
         </div>
 
-        <!-- Slide 6: 关卡《潜伏》条件过滤 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🔍</div>
@@ -560,33 +402,31 @@
                     <div class="scope-container">
                         <div class="code-layer">
                             <div class="layer-label">外层：遍历所有</div>
-                            <span class="k">while</span> <span class="v">i</span> <span class="o"><</span> <span class="f">len</span>(<span class="v">enemies</span>):
+                            <span class="k">while</span> (<span class="v">i</span> <span class="kw">&lt;</span> <span class="v">enemies</span>.<span class="f">size</span>()) {
                         </div>
                         <div class="code-layer" style="margin-left: 20px;">
                             <div class="layer-label">过滤：只选萨满</div>
-                            <span class="k">if</span> <span class="v">enemy.type</span> <span class="o">==</span> <span class="s">"shaman"</span>:
+                            <span class="k">if</span> (<span class="v">enemy.type</span> <span class="kw">==</span> <span class="s">"shaman"</span>) {
                         </div>
                         <div class="code-layer" style="margin-left: 40px;">
                             <div class="layer-label">内层：死磕</div>
-                            <span class="k">while</span> <span class="v">enemy.health</span> <span class="o">></span> <span class="n">0</span>:<br>
-                            &nbsp;&nbsp;<span class="f">attack</span>(<span class="v">enemy</span>)
+                            <span class="k">while</span> (<span class="v">enemy.health</span> <span class="kw">&gt;</span> <span class="n">0</span>) {
+                                <span class="f">attack</span>(<span class="v">enemy</span>);
+                            }
                         </div>
                     </div>
                 </div>
                 <div class="col-visual">
-                    <div style="font-size: 60px; display: flex; gap: 20px;">
+                    
+                    <div style="font-size: 60px; display: flex; gap: 20px; justify-content: center; align-items: center; height: 100%;">
                         <div style="opacity: 0.3;">🐂</div>
-                        <div>🧙‍♂️</div>
+                        <div style="border: 2px dashed var(--core-pink); padding: 10px; border-radius: 10px;">🧙‍♂️</div>
                         <div style="opacity: 0.3;">🐂</div>
-                    </div>
-                    <div style="position: absolute; bottom: 20px; color: var(--core-pink); font-weight: bold;">
-                        TARGET LOCKED
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 7: 乘法表 (Math) -->
         <div class="slide">
             <div class="header">
                 <div class="icon">✖️</div>
@@ -595,14 +435,13 @@
             <div class="layout">
                 <div class="col-text">
                     <p>如果有 3 个敌人，每个要打 4 下。</p>
-                    <div class="card" style="text-align: center; font-size: 24px; background: #fff3e0; color: #e65100;">
+                    <div class="card" style="text-align: center; font-size: 24px; background: #e0f7fa; color: #006064;">
                         3 (外层) × 4 (内层) <br>= 12 次攻击
                     </div>
                     <p>这就是为什么嵌套循环做事情特别多！要注意效率哦。</p>
                 </div>
                 <div class="col-visual">
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 80%;">
-                        <!-- 3 cols, 4 items each -->
                         <div style="background:#eee; padding:5px; text-align:center;">💀<br>🗡️🗡️🗡️🗡️</div>
                         <div style="background:#eee; padding:5px; text-align:center;">💀<br>🗡️🗡️🗡️🗡️</div>
                         <div style="background:#eee; padding:5px; text-align:center;">💀<br>🗡️🗡️🗡️🗡️</div>
@@ -611,7 +450,6 @@
             </div>
         </div>
 
-        <!-- Slide 8: 总结 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🎓</div>
@@ -634,12 +472,10 @@
             </div>
         </div>
 
-        <!-- 底部进度条 -->
         <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
 
     </div>
 
-    <!-- 右按钮 -->
     <button class="nav-btn" id="btnNext" onclick="moveSlide(1)">
         <div class="nav-body"><div class="nav-planet"></div></div>
         <div class="nav-icon">❯</div>

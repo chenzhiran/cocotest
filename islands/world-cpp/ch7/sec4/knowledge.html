@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第14关 第一单元复习：银行突袭</title>
+    <title>C++ 第14关：银行突袭 (复习)</title>
     <style>
         /* --- 1. 基础设置 --- */
         :root {
@@ -16,136 +16,85 @@
             --code-blue: #3498db;      /* 代码蓝 */
             --text-main: #2c3e50;
             
-            /* 代码高亮 */
+            /* C++ 代码高亮 (Vault Theme) */
             --code-bg: #2f3640;
             --code-fg: #dcdde1;
-            --tok-kw: #ff79c6;         /* 关键字 while, if */
-            --tok-func: #8be9fd;       /* 函数 */
-            --tok-var: #f1c40f;        /* 变量 */
+            --tok-kw: #ff79c6;         /* 关键字 while, if, int, auto */
+            --tok-func: #8be9fd;       /* 函数 findEnemies */
+            --tok-var: #f1c40f;        /* 变量 enemies, index */
             --tok-num: #bd93f9;        /* 数字 */
-            --tok-op: #ff79c6;         /* 运算符 */
+            --tok-op: #ff79c6;         /* 运算符 < ++ */
             --tok-cm: #6272a4;         /* 注释 */
+            --tok-prop: #50fa7b;       /* 属性 .size */
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', 'Consolas', sans-serif;
             background-color: var(--bg-vault);
             /* 金库金属纹理 */
             background-image: 
                 radial-gradient(circle at 50% 50%, rgba(255,215,0,0.05) 0%, transparent 50%),
                 repeating-linear-gradient(45deg, #1a1a2e 0, #1a1a2e 10px, #16213e 10px, #16213e 20px);
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            user-select: none;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; user-select: none; color: var(--text-main);
         }
 
         /* 漂浮的金币粒子 */
         .coin-particle {
             position: absolute; width: 10px; height: 10px; background: var(--gold-main);
             border-radius: 50%; box-shadow: 0 0 10px var(--gold-main);
-            animation: floatCoin 5s infinite linear;
+            animation: floatCoin 5s infinite linear; pointer-events: none;
         }
         @keyframes floatCoin {
             0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-            20% { opacity: 0.8; }
-            80% { opacity: 0.8; }
+            20% { opacity: 0.8; } 80% { opacity: 0.8; }
             100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
         }
 
         /* --- 2. 舞台布局 --- */
         .stage {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 60px;
-            width: 98vw;
-            max-width: 1400px;
-            position: relative;
-            z-index: 10;
+            display: flex; align-items: center; justify-content: center; gap: 60px;
+            width: 98vw; max-width: 1400px; position: relative; z-index: 10;
         }
 
         /* --- 3. 宝藏按钮 (外部) --- */
         .nav-btn {
-            width: 100px;
-            height: 100px;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            position: relative;
-            transition: transform 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100px; height: 100px; background: transparent; border: none; cursor: pointer;
+            position: relative; transition: transform 0.2s; display: flex; align-items: center; justify-content: center;
             filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
         }
 
         /* 左：钱袋子 */
-        .btn-prev::before {
-            content: '💰'; font-size: 80px; position: absolute;
-        }
-        
+        .btn-prev::before { content: '💰'; font-size: 80px; position: absolute; }
         /* 右：金砖 */
-        .btn-next::before {
-            content: '🧱'; font-size: 80px; position: absolute; filter: hue-rotate(45deg) brightness(1.5); /* 调成金色 */
-        }
+        .btn-next::before { content: '🧱'; font-size: 80px; position: absolute; filter: hue-rotate(45deg) brightness(1.5); }
 
-        .nav-btn:hover { transform: scale(1.1); }
-        .nav-btn:active { transform: scale(0.95); }
-        
+        .nav-btn:hover { transform: scale(1.1); } .nav-btn:active { transform: scale(0.95); }
         .disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
 
         /* --- 4. 任务终端容器 --- */
         .terminal-container {
-            width: 960px;
-            height: 640px;
-            background: var(--panel-bg);
-            border-radius: 20px;
-            /* 金属边框 */
+            width: 960px; height: 640px; background: var(--panel-bg); border-radius: 20px;
             border: 4px solid #303952;
-            box-shadow: 
-                0 0 0 10px #57606f,
-                0 20px 50px rgba(0,0,0,0.8),
-                inset 0 0 100px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            box-shadow: 0 0 0 10px #57606f, 0 20px 50px rgba(0,0,0,0.8), inset 0 0 100px rgba(0,0,0,0.5);
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
         }
 
         /* 顶部状态栏 */
         .status-bar {
-            height: 50px;
-            background: #000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-            color: var(--gold-main);
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            font-size: 18px;
-            border-bottom: 2px solid var(--gold-dark);
-            z-index: 20;
+            height: 50px; background: #000; display: flex; justify-content: space-between;
+            align-items: center; padding: 0 30px; color: var(--gold-main);
+            font-family: 'Courier New', monospace; font-weight: bold; font-size: 18px;
+            border-bottom: 2px solid var(--gold-dark); z-index: 20;
         }
-        .map-tag {
-            background: var(--code-blue); color: white; padding: 2px 10px; border-radius: 4px; margin-right: 10px;
-        }
+        .map-tag { background: var(--code-blue); color: white; padding: 2px 10px; border-radius: 4px; margin-right: 10px; }
 
         /* 幻灯片 */
         .slide {
-            display: none;
-            flex: 1;
-            padding: 40px 60px;
-            flex-direction: column;
-            animation: screenOn 0.4s ease-out;
-            overflow-y: auto;
-            background: var(--screen-bg);
-            position: relative;
+            display: none; flex: 1; padding: 40px 60px; flex-direction: column;
+            animation: screenOn 0.4s ease-out; overflow-y: auto; background: var(--screen-bg); position: relative;
         }
         .slide::before { /* 扫描线 */
             content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -153,19 +102,11 @@
             background-size: 100% 4px; pointer-events: none; z-index: 5;
         }
         .slide.active { display: flex; }
-
-        @keyframes screenOn { 
-            0% { opacity: 0; transform: scaleY(0); } 
-            100% { opacity: 1; transform: scaleY(1); } 
-        }
+        @keyframes screenOn { 0% { opacity: 0; transform: scaleY(0); } 100% { opacity: 1; transform: scaleY(1); } }
 
         /* 内容布局 */
         .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 3px solid var(--gold-main);
-            padding-bottom: 10px;
+            display: flex; align-items: center; margin-bottom: 20px; border-bottom: 3px solid var(--gold-main); padding-bottom: 10px;
         }
         .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2)); }
         h1 { margin: 0; color: var(--text-main); font-size: 34px; letter-spacing: 1px; }
@@ -173,151 +114,59 @@
         .layout { display: flex; gap: 40px; height: 100%; }
         .col-text { flex: 1.2; font-size: 19px; line-height: 1.6; color: var(--text-main); }
         .col-visual { 
-            flex: 0.8; 
-            background: #fff;
-            border: 2px solid #ccc; 
-            border-radius: 10px;
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            flex: 0.8; background: #fff; border: 2px solid #ccc; border-radius: 10px;
+            display: flex; justify-content: center; align-items: center; position: relative;
+            overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.05); flex-direction: column;
         }
 
-        /* 代码块 */
+        /* C++ 代码块优化 */
         .code-box {
-            background: var(--code-bg);
-            color: var(--code-fg);
-            padding: 15px 20px;
-            border-radius: 8px;
-            font-family: 'Consolas', monospace;
-            font-size: 16px;
-            margin-top: 15px;
-            border-left: 5px solid var(--gold-main);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            position: relative;
+            background: var(--code-bg); color: var(--code-fg); padding: 15px 20px; border-radius: 8px;
+            font-family: 'Consolas', monospace; font-size: 16px; margin-top: 15px;
+            border-left: 5px solid var(--gold-main); box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            white-space: pre; line-height: 1.5; overflow-x: auto; tab-size: 4;
         }
         
         .kw { color: var(--tok-kw); font-weight: bold; } 
         .f { color: var(--tok-func); } 
         .v { color: var(--tok-var); } 
         .n { color: var(--tok-num); } 
-        .op { color: var(--tok-op); } 
-        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+        .o { color: var(--tok-op); } 
+        .c { color: var(--tok-cm); font-style: italic; }
+        .p { color: var(--tok-prop); font-weight: bold; }
 
         /* 卡片 */
         .card {
-            background: #fff8e1;
-            border-left: 5px solid var(--gold-dark);
-            color: #d35400;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 0 5px 5px 0;
-            font-size: 18px;
-            font-weight: bold;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            background: #fff8e1; border-left: 5px solid var(--gold-dark); color: #d35400;
+            padding: 15px 20px; margin-bottom: 15px; border-radius: 0 5px 5px 0;
+            font-size: 18px; font-weight: bold; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* --- 5. 视觉化组件 --- */
+        /* 技能网格 */
+        .skill-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; padding: 10px; }
+        .skill-card { background: #f1f2f6; padding: 10px; border-radius: 8px; text-align: center; border: 2px solid #ddd; }
+        .skill-icon { font-size: 30px; display: block; margin-bottom: 5px; }
+        .skill-title { font-weight: bold; color: var(--text-main); font-size: 16px; }
+
+        /* 银行突袭演示 */
+        .raid-map { width: 100%; height: 100%; position: relative; background: #2c3e50; }
+        .hero-dot { width: 20px; height: 20px; background: #3498db; border-radius: 50%; position: absolute; top: 50%; left: 10%; transition: all 0.5s; z-index: 10; border: 2px solid white; box-shadow: 0 0 10px #3498db; }
+        .enemy-dot { width: 20px; height: 20px; background: #e74c3c; border-radius: 50%; position: absolute; box-shadow: 0 0 5px #e74c3c; transition: opacity 0.3s; }
+        .coin-dot { width: 15px; height: 15px; background: #f1c40f; border-radius: 50%; position: absolute; box-shadow: 0 0 5px #f1c40f; transition: opacity 0.3s; }
         
-        /* 1. 三大技能展示 */
-        .skill-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%; padding: 10px;
-        }
-        .skill-card {
-            background: #f1f2f6; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #dfe4ea;
-            transition: transform 0.2s;
-        }
-        .skill-card:hover { transform: translateY(-5px); border-color: var(--gold-main); }
-        .skill-icon { font-size: 40px; margin-bottom: 10px; }
-        .skill-title { font-weight: bold; color: var(--text-main); margin-bottom: 5px; }
-        .skill-desc { font-size: 12px; color: #666; }
-
-        /* 2. 循环与计数演示 */
-        .loop-box {
-            position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .counter-display {
-            font-size: 40px; font-weight: bold; color: var(--code-blue); font-family: monospace; margin: 10px;
-        }
-        .progress-track {
-            width: 80%; height: 10px; background: #ddd; border-radius: 5px; overflow: hidden;
-        }
-        .progress-value {
-            height: 100%; width: 0%; background: var(--code-blue); transition: width 0.3s;
-        }
-        .btn-action {
-            margin-top: 15px; padding: 8px 20px; border: none; border-radius: 5px; background: var(--gold-main); color: #3e2723; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #e67e22;
-        }
+        /* 按钮 */
+        .btn-action { padding: 8px 15px; border: none; border-radius: 5px; font-weight: bold; color: white; cursor: pointer; margin-top: 10px; background: var(--gold-dark); box-shadow: 0 4px 0 #b9770e; position: absolute; bottom: 10px; right: 10px; z-index: 20; }
         .btn-action:active { transform: translateY(4px); box-shadow: none; }
 
-        /* 3. 赋值 vs 比较 */
-        .compare-box {
-            display: flex; gap: 20px; align-items: stretch; width: 90%;
-        }
-        .op-card {
-            flex: 1; background: #eee; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #ccc;
-        }
-        .op-sym { font-size: 40px; font-weight: bold; display: block; }
-        .op-eq { color: var(--danger-red); }
-        .op-assign { color: var(--code-blue); }
-
-        /* 4. 列表索引演示 */
-        .list-row {
-            display: flex; gap: 10px; align-items: flex-end; height: 100px;
-        }
-        .chest {
-            width: 60px; height: 60px; background: #5d4037; border-radius: 5px 5px 0 0; position: relative;
-            display: flex; justify-content: center; align-items: center; font-size: 30px; color: #fff;
-            border: 2px solid #3e2723;
-        }
-        .chest-idx {
-            position: absolute; bottom: -30px; width: 100%; text-align: center; font-family: monospace; font-weight: bold;
-        }
-        .finger {
-            font-size: 40px; position: absolute; bottom: 70px; left: 0; transition: left 0.5s;
-        }
-
-        /* 5. 银行突袭主循环 */
-        .raid-map {
-            width: 100%; height: 100%; position: relative; background: #2c3e50;
-        }
-        .hero-dot {
-            width: 20px; height: 20px; background: #3498db; border-radius: 50%; position: absolute; top: 50%; left: 10%; transition: all 0.5s; z-index: 10; border: 2px solid white;
-        }
-        .enemy-dot {
-            width: 20px; height: 20px; background: #e74c3c; border-radius: 50%; position: absolute;
-        }
-        .coin-dot {
-            width: 15px; height: 15px; background: #f1c40f; border-radius: 50%; position: absolute;
-        }
-
         /* 进度条 */
-        .progress-bar {
-            height: 6px;
-            background: #2f3640;
-            width: 100%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--gold-main), var(--danger-red));
-            width: 0%;
-            transition: width 0.3s;
-        }
+        .progress-bar { height: 6px; background: #2f3640; width: 100%; position: absolute; bottom: 0; left: 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold-main), var(--danger-red)); width: 0%; transition: width 0.3s; }
 
-        /* 动画 */
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
     </style>
 </head>
 <body>
 
-<!-- 金币粒子生成 -->
 <script>
     for(let i=0; i<20; i++) {
         let c = document.createElement('div');
@@ -329,10 +178,8 @@
 </script>
 
 <div class="stage">
-    <!-- 左按钮 -->
     <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)"></button>
 
-    <!-- 终端容器 -->
     <div class="terminal-container">
         <div class="status-bar">
             <div>
@@ -342,7 +189,6 @@
             <div style="color: var(--gold-main);">UNIT 1 REVIEW</div>
         </div>
 
-        <!-- Slide 1: 封面 -->
         <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
             <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">🏦</div>
             <h1 style="font-size: 50px; margin: 10px 0; color: var(--text-main);">第一单元大复习</h1>
@@ -354,7 +200,6 @@
             </div>
         </div>
 
-        <!-- Slide 2: 三大超能力 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🦸‍♂️</div>
@@ -362,255 +207,208 @@
             </div>
             <div class="layout">
                 <div class="col-text">
-                    <p>要想通关银行突袭，你需要掌握这三把钥匙：</p>
+                    <p>要想通关银行突袭，你需要熟练掌握这三把钥匙：</p>
+                    <div class="card">
+                        <b>目标：</b><br>
+                        1. 消灭所有敌人<br>
+                        2. 收集所有金币<br>
+                        3. 循环往复
+                    </div>
                 </div>
                 <div class="col-visual" style="background: transparent; border: none; box-shadow: none;">
                     <div class="skill-grid">
                         <div class="skill-card">
                             <div class="skill-icon">🔄</div>
                             <div class="skill-title">while 循环</div>
-                            <div class="skill-desc">一直做，直到停</div>
+                            <div style="font-size: 12px; color: #666;">While true</div>
                         </div>
                         <div class="skill-card">
-                            <div class="skill-icon">🧮</div>
-                            <div class="skill-title">比较与计数</div>
-                            <div class="skill-desc">&lt; &gt; == +=</div>
+                            <div class="skill-icon">📋</div>
+                            <div class="skill-title">数组列表</div>
+                            <div style="font-size: 12px; color: #666;">Arrays</div>
                         </div>
                         <div class="skill-card">
-                            <div class="skill-icon">📜</div>
-                            <div class="skill-title">一维列表</div>
-                            <div class="skill-desc">排排队，点点名</div>
+                            <div class="skill-icon">🔢</div>
+                            <div class="skill-title">索引遍历</div>
+                            <div style="font-size: 12px; color: #666;">Index & Loop</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 3: 复习 while 循环 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🔄</div>
-                <h1>1. while 循环 (Loop)</h1>
+                <h1>复习：遍历数组</h1>
             </div>
             <div class="layout">
                 <div class="col-text">
-                    <p><b>当 (while)</b> 条件为真，就一直做。</p>
-                    <div class="code-box">
-                        <span class="kw">while</span> <span class="v">count</span> <span class="op"><</span> <span class="n">5</span>:<br>
-                        &nbsp;&nbsp;<span class="f">attack</span>()<br>
-                        &nbsp;&nbsp;<span class="v">count</span> <span class="op">+=</span> <span class="n">1</span> <span class="c"># 计数器</span>
+                    <p>这是处理一群敌人或一堆金币的标准模板。</p>
+                    <div class="code-box"><span class="c">// 1. 获取列表</span>
+<span class="kw">auto</span> <span class="v">enemies</span> <span class="o">=</span> <span class="v">hero</span>.<span class="f">findEnemies</span>();
+
+<span class="c">// 2. 设置索引</span>
+<span class="kw">int</span> <span class="v">index</span> <span class="o">=</span> <span class="n">0</span>;
+
+<span class="c">// 3. 循环遍历</span>
+<span class="kw">while</span> (<span class="v">index</span> <span class="o">&lt;</span> <span class="v">enemies</span>.<span class="p">size</span>()) {
+    <span class="kw">auto</span> <span class="v">enemy</span> <span class="o">=</span> <span class="v">enemies</span>[<span class="v">index</span>];
+    <span class="v">hero</span>.<span class="f">attack</span>(<span class="v">enemy</span>);
+    
+    <span class="c">// 4. 下一个！</span>
+    <span class="v">index</span><span class="o">++</span>;
+}</div>
+                </div>
+                <div class="col-visual">
+                    <div style="text-align: center;">
+                        <div style="font-size: 60px;">📋 ➡️ ⚔️</div>
+                        <p>Get List -> Loop -> Action</p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="header">
+                <div class="icon">⚔️</div>
+                <h1>阶段一：清理战场</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>首先，我们需要消灭所有在场的敌人。</p>
+                    <div class="code-box"><span class="kw">auto</span> <span class="v">enemies</span> <span class="o">=</span> <span class="v">hero</span>.<span class="f">findEnemies</span>();
+<span class="kw">int</span> <span class="v">enemyIndex</span> <span class="o">=</span> <span class="n">0</span>;
+
+<span class="kw">while</span> (<span class="v">enemyIndex</span> <span class="o">&lt;</span> <span class="v">enemies</span>.<span class="p">size</span>()) {
+    <span class="kw">auto</span> <span class="v">target</span> <span class="o">=</span> <span class="v">enemies</span>[<span class="v">enemyIndex</span>];
+    <span class="v">hero</span>.<span class="f">attack</span>(<span class="v">target</span>);
+    <span class="v">enemyIndex</span><span class="o">++</span>;
+}</div>
                     <div class="card">
-                        "一定要有让条件变假的代码(比如 count += 1)，否则就是死循环！"
+                        注意：<code>enemyIndex</code> 必须每次循环都增加，否则你会盯着同一个死掉的敌人发呆！
                     </div>
                 </div>
                 <div class="col-visual">
-                    <div class="loop-box">
-                        <div class="counter-display" id="loopCount">0</div>
-                        <div class="progress-track"><div class="progress-value" id="loopBar"></div></div>
-                        <button class="btn-action" onclick="runLoop()">执行一次 (+1)</button>
-                        <div style="margin-top: 10px; font-size: 12px; color: #666;">条件: count < 5</div>
-                    </div>
-                    <script>
-                        let count = 0;
-                        function runLoop() {
-                            if(count < 5) {
-                                count++;
-                                document.getElementById('loopCount').innerText = count;
-                                document.getElementById('loopBar').style.width = (count/5*100) + '%';
-                            } else {
-                                alert("条件 count < 5 不成立，循环结束！");
-                                count = 0; // reset
-                                document.getElementById('loopCount').innerText = count;
-                                document.getElementById('loopBar').style.width = '0%';
-                            }
-                        }
-                    </script>
+                    <div style="font-size: 80px; text-align: center;">👹 💀 💀</div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 4: 赋值 vs 比较 -->
         <div class="slide">
             <div class="header">
-                <div class="icon">⚖️</div>
-                <h1>2. 赋值(=) vs 比较(==)</h1>
+                <div class="icon">💰</div>
+                <h1>阶段二：收集战利品</h1>
             </div>
             <div class="layout">
                 <div class="col-text">
-                    <p>这是编程里最大的坑，一定要分清！</p>
-                    <ul style="list-style: none; padding: 0; font-size: 18px;">
-                        <li style="margin-bottom: 15px;">👉 <b>= 赋值 (Assignment)</b><br>把右边的东西“塞进”左边。</li>
-                        <li>👉 <b>== 比较 (Comparison)</b><br>问问题：左右两边一样吗？</li>
-                    </ul>
+                    <p>敌人清理完毕后，就可以安全地收集金币了。</p>
+                    <div class="code-box"><span class="kw">auto</span> <span class="v">coins</span> <span class="o">=</span> <span class="v">hero</span>.<span class="f">findItems</span>();
+<span class="kw">int</span> <span class="v">coinIndex</span> <span class="o">=</span> <span class="n">0</span>;
+
+<span class="kw">while</span> (<span class="v">coinIndex</span> <span class="o">&lt;</span> <span class="v">coins</span>.<span class="p">size</span>()) {
+    <span class="kw">auto</span> <span class="v">coin</span> <span class="o">=</span> <span class="v">coins</span>[<span class="v">coinIndex</span>];
+    <span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">coin</span>.<span class="v">pos</span>.<span class="v">x</span>, <span class="v">coin</span>.<span class="v">pos</span>.<span class="v">y</span>);
+    <span class="v">coinIndex</span><span class="o">++</span>;
+}</div>
                 </div>
                 <div class="col-visual">
-                    <div class="compare-box">
-                        <div class="op-card">
-                            <div class="op-sym op-assign">=</div>
-                            <div>我给你</div>
-                            <div style="font-size: 12px; color: #666; margin-top: 5px;">gold = 10</div>
-                        </div>
-                        <div class="op-card">
-                            <div class="op-sym op-eq">==</div>
-                            <div>一样吗?</div>
-                            <div style="font-size: 12px; color: #666; margin-top: 5px;">hp == max</div>
-                        </div>
-                    </div>
+                    <div style="font-size: 80px; text-align: center;">🪙 🏃 🪙</div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 5: 列表与索引 -->
         <div class="slide">
             <div class="header">
-                <div class="icon">🔢</div>
-                <h1>3. 列表与索引 (List & Index)</h1>
+                <div class="icon">🕹️</div>
+                <h1>战术模拟 (Simulation)</h1>
             </div>
             <div class="layout">
                 <div class="col-text">
-                    <p><b>列表 (List)</b> 是一排排好队的东西。</p>
-                    <p><b>索引 (Index)</b> 是它们的编号，从 <b>0</b> 开始。</p>
-                    <div class="code-box">
-                        <span class="v">enemies</span> <span class="op">=</span> <span class="v">hero</span>.<span class="f">findEnemies</span>()<br>
-                        <span class="v">first</span> <span class="op">=</span> <span class="v">enemies</span>[<span class="n">0</span>]<br>
-                        <span class="v">second</span> <span class="op">=</span> <span class="v">enemies</span>[<span class="n">1</span>]
-                    </div>
-                    <p><b>len(list)</b>：列表有多长（有几个元素）。</p>
-                </div>
-                <div class="col-visual">
-                    <div style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
-                        <div class="list-row">
-                            <div class="chest" id="c0">👾</div>
-                            <div class="chest" id="c1">👾</div>
-                            <div class="chest" id="c2">👾</div>
-                        </div>
-                        <div style="display: flex; gap: 45px; margin-top: 5px; font-family: monospace; font-weight: bold; color: #555;">
-                            <span>0</span><span>1</span><span>2</span>
-                        </div>
-                        <div style="margin-top: 20px; font-weight: bold; color: var(--code-blue);">len(enemies) = 3</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 6: 遍历列表 (模板) -->
-        <div class="slide">
-            <div class="header">
-                <div class="icon">👆</div>
-                <h1>遍历模板 (Traversal)</h1>
-            </div>
-            <div class="layout">
-                <div class="col-text">
-                    <p>用 <code>index</code> 变量像手指一样，一个一个指过去。</p>
-                    <div class="code-box">
-                        <span class="v">index</span> <span class="op">=</span> <span class="n">0</span><br>
-                        <span class="kw">while</span> <span class="v">index</span> <span class="op"><</span> <span class="f">len</span>(<span class="v">enemies</span>):<br>
-                        &nbsp;&nbsp;<span class="v">enemy</span> <span class="op">=</span> <span class="v">enemies</span>[<span class="v">index</span>]<br>
-                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">attack</span>(<span class="v">enemy</span>)<br>
-                        &nbsp;&nbsp;<span class="v">index</span> <span class="op">+=</span> <span class="n">1</span>
-                    </div>
-                </div>
-                <div class="col-visual" style="overflow: visible;">
-                    <div style="position: relative; width: 100%; height: 150px; display: flex; justify-content: center; align-items: center;">
-                         <div class="list-row">
-                            <div class="chest" id="t0">👾</div>
-                            <div class="chest" id="t1">👾</div>
-                            <div class="chest" id="t2">👾</div>
-                        </div>
-                        <div class="finger" id="finger" style="left: 30%; bottom: -10px; position: absolute; font-size: 40px; transition: left 0.3s;">👆</div>
-                    </div>
-                    <button class="btn-action" onclick="nextIndex()">下一个 (index++)</button>
-                    <script>
-                        let idx = 0;
-                        function nextIndex() {
-                            idx = (idx + 1) % 3;
-                            const positions = ['30%', '48%', '66%'];
-                            document.getElementById('finger').style.left = positions[idx];
-                        }
-                    </script>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 7: 银行突袭逻辑 -->
-        <div class="slide">
-            <div class="header">
-                <div class="icon">🏦</div>
-                <h1>关卡攻略：银行突袭</h1>
-            </div>
-            <div class="layout">
-                <div class="col-text">
-                    <p>这是双层循环结构：</p>
-                    <div class="code-box" style="font-size: 14px;">
-                        <span class="kw">while</span> <span class="kw">True</span>: <span class="c"># 主循环</span><br>
-                        &nbsp;&nbsp;<span class="c"># 1. 打光所有敌人</span><br>
-                        &nbsp;&nbsp;<span class="kw">while</span> <span class="v">enemyIndex</span> <span class="op"><</span> <span class="f">len</span>(<span class="v">enemies</span>): ...<br>
-                        <br>
-                        &nbsp;&nbsp;<span class="c"># 2. 捡光所有金币</span><br>
-                        &nbsp;&nbsp;<span class="kw">while</span> <span class="v">coinIndex</span> <span class="op"><</span> <span class="f">len</span>(<span class="v">coins</span>): ...
-                    </div>
-                    <div class="card">
-                        "先清场，再收钱，一波接一波！"
-                    </div>
+                    <p>将两个步骤放入 <code>while(true)</code> 主循环中。</p>
+                    <ol>
+                        <li>Loop 1: 打败所有敌人。</li>
+                        <li>Loop 2: 收集所有金币。</li>
+                        <li>重复...</li>
+                    </ol>
                 </div>
                 <div class="col-visual">
                     <div class="raid-map" id="raidMap">
                         <div class="hero-dot" id="raidHero"></div>
-                        <!-- Enemies -->
-                        <div class="enemy-dot" style="top: 20%; left: 60%;"></div>
-                        <div class="enemy-dot" style="top: 40%; left: 70%;"></div>
-                        <!-- Coins -->
-                        <div class="coin-dot" style="top: 60%; left: 30%;"></div>
-                        <div class="coin-dot" style="top: 80%; left: 50%;"></div>
+                        <div class="enemy-dot" id="e1" style="top: 30%; left: 30%;"></div>
+                        <div class="enemy-dot" id="e2" style="top: 40%; left: 70%;"></div>
+                        <div class="enemy-dot" id="e3" style="top: 60%; left: 50%;"></div>
+                        <div class="coin-dot" id="c1" style="top: 20%; left: 80%;"></div>
+                        <div class="coin-dot" id="c2" style="top: 80%; left: 20%;"></div>
                     </div>
-                    <button class="btn-action" style="position: absolute; bottom: 10px; right: 10px;" onclick="simRaid()">模拟突袭</button>
+                    <button class="btn-action" onclick="runSim()">开始突袭</button>
                     <script>
-                        function simRaid() {
+                        function runSim() {
                             const h = document.getElementById('raidHero');
-                            // Phase 1: Enemies
-                            h.style.left = '60%'; h.style.top = '20%';
-                            setTimeout(() => { h.style.left = '70%'; h.style.top = '40%'; }, 500);
-                            // Phase 2: Coins
-                            setTimeout(() => { h.style.left = '30%'; h.style.top = '60%'; }, 1000);
-                            setTimeout(() => { h.style.left = '50%'; h.style.top = '80%'; }, 1500);
+                            const enemies = [document.getElementById('e1'), document.getElementById('e2'), document.getElementById('e3')];
+                            const coins = [document.getElementById('c1'), document.getElementById('c2')];
+                            
                             // Reset
-                            setTimeout(() => { h.style.left = '10%'; h.style.top = '50%'; }, 2000);
+                            h.style.left = '10%'; h.style.top = '50%';
+                            enemies.forEach(e => e.style.opacity = 1);
+                            coins.forEach(c => c.style.opacity = 1);
+
+                            // Attack sequence
+                            setTimeout(() => { h.style.left = '30%'; h.style.top = '30%'; enemies[0].style.opacity=0; }, 500);
+                            setTimeout(() => { h.style.left = '70%'; h.style.top = '40%'; enemies[1].style.opacity=0; }, 1200);
+                            setTimeout(() => { h.style.left = '50%'; h.style.top = '60%'; enemies[2].style.opacity=0; }, 1900);
+
+                            // Collect sequence
+                            setTimeout(() => { h.style.left = '80%'; h.style.top = '20%'; coins[0].style.opacity=0; }, 2800);
+                            setTimeout(() => { h.style.left = '20%'; h.style.top = '80%'; coins[1].style.opacity=0; }, 3700);
+                            
+                            // Return
+                            setTimeout(() => { h.style.left = '10%'; h.style.top = '50%'; }, 4500);
                         }
                     </script>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 8: 总结 -->
         <div class="slide">
             <div class="header">
-                <div class="icon">🎓</div>
-                <h1>通关口诀</h1>
+                <div class="icon">📜</div>
+                <h1>完整解决方案</h1>
             </div>
             <div class="layout">
-                <div class="col-text" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
-                    <div class="card" style="background: #e3f2fd; border-color: var(--code-blue); color: #0d47a1;">
-                        "<b>while</b> 循环看条件，<br>
-                        变量自增 <b>+= 1</b>。"
-                    </div>
-                    <div class="card" style="background: #fff3e0; border-color: var(--gold-main); color: #e65100; margin-top: 20px;">
-                        "<b>List</b> 列表排排坐，<br>
-                        <b>Index</b> 手指一个个过！"
-                    </div>
-                </div>
-                <div class="col-visual" style="border: none; background: transparent; box-shadow: none;">
-                    <div style="font-size: 120px; animation: floatCoin 3s infinite;">🏆</div>
+                <div class="col-text" style="flex: 2;">
+                    <div class="code-box" style="font-size: 14px;"><span class="kw">int</span> <span class="f">main</span>() {
+    <span class="kw">while</span>(<span class="kw">true</span>) {
+        <span class="c">// 第一步：攻击所有敌人</span>
+        <span class="kw">auto</span> <span class="v">enemies</span> <span class="o">=</span> <span class="v">hero</span>.<span class="f">findEnemies</span>();
+        <span class="kw">int</span> <span class="v">enemyIndex</span> <span class="o">=</span> <span class="n">0</span>;
+        
+        <span class="kw">while</span> (<span class="v">enemyIndex</span> <span class="o">&lt;</span> <span class="v">enemies</span>.<span class="p">size</span>()) {
+            <span class="kw">auto</span> <span class="v">enemy</span> <span class="o">=</span> <span class="v">enemies</span>[<span class="v">enemyIndex</span>];
+            <span class="v">hero</span>.<span class="f">attack</span>(<span class="v">enemy</span>);
+            <span class="v">enemyIndex</span><span class="o">++</span>;
+        }
+        
+        <span class="c">// 第二步：收集所有金币</span>
+        <span class="kw">auto</span> <span class="v">coins</span> <span class="o">=</span> <span class="v">hero</span>.<span class="f">findItems</span>();
+        <span class="kw">int</span> <span class="v">coinIndex</span> <span class="o">=</span> <span class="n">0</span>;
+        
+        <span class="kw">while</span> (<span class="v">coinIndex</span> <span class="o">&lt;</span> <span class="v">coins</span>.<span class="p">size</span>()) {
+            <span class="kw">auto</span> <span class="v">coin</span> <span class="o">=</span> <span class="v">coins</span>[<span class="v">coinIndex</span>];
+            <span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">coin</span>.<span class="v">pos</span>.<span class="v">x</span>, <span class="v">coin</span>.<span class="v">pos</span>.<span class="v">y</span>);
+            <span class="v">coinIndex</span><span class="o">++</span>;
+        }
+    }
+    <span class="kw">return</span> <span class="n">0</span>;
+}</div>
                 </div>
             </div>
         </div>
 
-        <!-- 底部进度条 -->
         <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
 
     </div>
 
-    <!-- 右按钮 -->
     <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)"></button>
 
 </div>

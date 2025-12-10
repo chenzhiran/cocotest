@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第9-13关 一维列表</title>
+    <title>C++ 第9-13关：一维列表 (List/Array)</title>
     <style>
         /* --- 1. 基础设置 --- */
         :root {
@@ -13,22 +13,22 @@
             --highlight: #FFC107;      /* 高亮金 */
             --text-main: #3E2723;
             --text-sub: #5D4037;
+            
+            /* C++ 代码高亮 (Monokai-ish) */
             --code-bg: #263238;
             --code-fg: #ECEFF1;
-            
-            /* 代码高亮色 */
-            --tok-kw: #FF8A80;         /* 关键字 */
-            --tok-func: #82B1FF;       /* 函数 */
-            --tok-var: #FFCC80;        /* 变量 */
-            --tok-num: #A5D6A7;        /* 数字 */
-            --tok-str: #CE93D8;        /* 字符串 */
-            --tok-cm: #90A4AE;         /* 注释 */
+            --tok-kw: #FF8A80;         /* 关键字 (红粉) */
+            --tok-func: #82B1FF;       /* 函数 (淡蓝) */
+            --tok-var: #FFCC80;        /* 变量 (淡橙) */
+            --tok-num: #A5D6A7;        /* 数字 (淡绿) */
+            --tok-str: #CE93D8;        /* 字符串 (紫) */
+            --tok-cm: #90A4AE;         /* 注释 (灰蓝) */
+            --tok-op: #80CBC4;         /* 运算符 (青) */
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Consolas', sans-serif;
             background-color: var(--bg-wood);
             /* 菱形地毯背景 */
             background-image: 
@@ -38,137 +38,74 @@
                 linear-gradient(315deg, #4E342E 25%, transparent 25%);
             background-position: 10px 0, 10px 0, 0 0, 0 0;
             background-size: 20px 20px;
-            background-repeat: repeat;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            user-select: none;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; user-select: none;
         }
 
         /* --- 2. 舞台布局 --- */
         .stage {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 60px;
-            width: 98vw;
-            max-width: 1400px;
-            position: relative;
-            z-index: 10;
+            display: flex; align-items: center; justify-content: center; gap: 60px;
+            width: 98vw; max-width: 1400px; position: relative; z-index: 10;
         }
 
         /* --- 3. 宝物按钮 (外部) --- */
         .nav-btn {
-            width: 90px;
-            height: 90px;
-            border: none;
-            cursor: pointer;
-            position: relative;
-            transition: transform 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: transparent;
-            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+            width: 90px; height: 90px; border: none; cursor: pointer; position: relative;
+            transition: transform 0.2s; display: flex; align-items: center; justify-content: center;
+            background: transparent; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
         }
 
         /* 左：卷轴 */
         .btn-prev .scroll-icon {
-            width: 70px; height: 60px;
-            background: #eee;
-            border: 4px solid #8D6E63;
-            border-radius: 5px;
-            position: relative;
+            width: 70px; height: 60px; background: #eee; border: 4px solid #8D6E63; border-radius: 5px; position: relative;
         }
         .btn-prev .scroll-icon::before, .btn-prev .scroll-icon::after {
-            content: ''; position: absolute; width: 10px; height: 70px;
-            background: #5D4037; top: -9px; border-radius: 5px;
+            content: ''; position: absolute; width: 10px; height: 70px; background: #5D4037; top: -9px; border-radius: 5px;
         }
-        .btn-prev .scroll-icon::before { left: -5px; }
-        .btn-prev .scroll-icon::after { right: -5px; }
+        .btn-prev .scroll-icon::before { left: -5px; } .btn-prev .scroll-icon::after { right: -5px; }
         .btn-prev span { position: absolute; font-size: 30px; color: #3E2723; font-weight: bold; }
 
         /* 右：宝箱 */
         .btn-next .chest-icon {
-            width: 80px; height: 60px;
-            background: #FFB300;
-            border: 4px solid #E65100;
-            border-radius: 10px 10px 5px 5px;
-            position: relative;
+            width: 80px; height: 60px; background: #FFB300; border: 4px solid #E65100; border-radius: 10px 10px 5px 5px; position: relative;
         }
         .btn-next .chest-icon::after {
-            content: ''; position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            width: 20px; height: 20px; background: #3E2723; border-radius: 50%; border: 3px solid #FFD54F;
+            content: ''; position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; background: #3E2723; border-radius: 50%; border: 3px solid #FFD54F;
         }
         .btn-next span { position: absolute; font-size: 30px; color: #E65100; font-weight: bold; right: -20px; }
 
-        .nav-btn:hover { transform: scale(1.1); }
-        .nav-btn:active { transform: scale(0.95); }
-        
+        .nav-btn:hover { transform: scale(1.1); } .nav-btn:active { transform: scale(0.95); }
         .disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
 
         /* --- 4. 物品栏容器 --- */
         .inventory-container {
-            width: 960px;
-            height: 620px;
-            background: var(--paper-bg);
-            border-radius: 15px;
-            /* 皮革装订效果 */
+            width: 960px; height: 620px; background: var(--paper-bg); border-radius: 15px;
             border: 20px solid #5D4037;
-            box-shadow: 
-                inset 0 0 50px rgba(0,0,0,0.2),
-                0 0 0 5px #3E2723,
-                0 30px 60px rgba(0,0,0,0.6);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.2), 0 0 0 5px #3E2723, 0 30px 60px rgba(0,0,0,0.6);
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
         }
-
+        
         /* 顶部标签 */
         .map-badge {
-            position: absolute;
-            top: 0; left: 50%; transform: translateX(-50%);
-            background: #3E2723;
-            color: #FFD54F;
-            padding: 5px 30px;
-            border-radius: 0 0 15px 15px;
-            font-family: monospace;
-            font-weight: bold;
-            font-size: 18px;
-            box-shadow: 0 5px 10px rgba(0,0,0,0.3);
-            z-index: 20;
-            border: 2px solid #FFD54F;
-            border-top: none;
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            background: #3E2723; color: #FFD54F; padding: 5px 30px; border-radius: 0 0 15px 15px;
+            font-family: monospace; font-weight: bold; font-size: 18px; z-index: 20;
+            border: 2px solid #FFD54F; border-top: none; box-shadow: 0 5px 10px rgba(0,0,0,0.3);
         }
 
         /* 幻灯片 */
         .slide {
-            display: none;
-            flex: 1;
-            padding: 60px 70px 40px 70px;
-            flex-direction: column;
-            animation: fadeIn 0.5s ease-out;
-            overflow-y: auto;
-            /* 羊皮纸纹理 */
+            display: none; flex: 1; padding: 60px 70px 40px 70px; flex-direction: column;
+            animation: fadeIn 0.5s ease-out; overflow-y: auto;
             background-image: url('data:image/svg+xml;utf8,<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.05"/></svg>');
         }
         .slide.active { display: flex; }
-
-        @keyframes fadeIn { 
-            0% { opacity: 0; transform: scale(0.98); } 
-            100% { opacity: 1; transform: scale(1); } 
-        }
+        @keyframes fadeIn { 0% { opacity: 0; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }
 
         /* 内容布局 */
         .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 25px;
-            border-bottom: 3px double #8D6E63;
-            padding-bottom: 10px;
+            display: flex; align-items: center; margin-bottom: 25px; border-bottom: 3px double #8D6E63; padding-bottom: 10px;
         }
         .icon { font-size: 50px; margin-right: 20px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1)); }
         h1 { margin: 0; color: var(--text-main); font-size: 34px; letter-spacing: 1px; }
@@ -177,28 +114,16 @@
         .layout { display: flex; gap: 40px; height: 100%; }
         .col-text { flex: 1.1; font-size: 19px; line-height: 1.6; color: var(--text-main); }
         .col-visual { 
-            flex: 0.9; 
-            background: rgba(0,0,0,0.05);
-            border: 2px dashed #8D6E63; 
-            border-radius: 10px;
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: relative;
-            overflow: hidden;
+            flex: 0.9; background: rgba(0,0,0,0.05); border: 2px dashed #8D6E63; border-radius: 10px;
+            display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden;
         }
 
-        /* 代码块 */
+        /* C++ 代码块优化 */
         .code-box {
-            background: var(--code-bg);
-            color: var(--code-fg);
-            padding: 15px 20px;
-            border-radius: 5px;
-            font-family: 'Consolas', monospace;
-            font-size: 17px;
-            margin-top: 15px;
-            border-left: 5px solid var(--highlight);
-            box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+            background: var(--code-bg); color: var(--code-fg); padding: 15px 20px; border-radius: 5px;
+            font-family: 'Consolas', monospace; font-size: 17px; margin-top: 15px;
+            border-left: 5px solid var(--highlight); box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+            white-space: pre; line-height: 1.5; overflow-x: auto; tab-size: 4;
         }
         
         .kw { color: var(--tok-kw); font-weight: bold; } 
@@ -206,57 +131,39 @@
         .v { color: var(--tok-var); } 
         .n { color: var(--tok-num); } 
         .s { color: var(--tok-str); } 
-        .c { color: var(--tok-cm); font-style: italic; font-size: 0.9em; } 
+        .c { color: var(--tok-cm); font-style: italic; }
+        .op { color: var(--tok-op); }
 
         /* 卡片 */
         .card {
-            background: #FFF8E1;
-            border-left: 5px solid #FF6F00;
-            color: #E65100;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 0 5px 5px 0;
-            font-size: 18px;
-            font-weight: bold;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            background: #FFF8E1; border-left: 5px solid #FF6F00; color: #E65100;
+            padding: 15px 20px; margin-bottom: 15px; border-radius: 0 5px 5px 0;
+            font-size: 18px; font-weight: bold; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* --- 5. 视觉化组件 --- */
-        
         /* 排排坐演示 */
-        .chair-row {
-            display: flex; gap: 15px; align-items: flex-end;
-        }
+        .chair-row { display: flex; gap: 15px; align-items: flex-end; }
         .chair {
-            width: 60px; height: 80px; background: #8D6E63; border-radius: 5px 5px 0 0;
-            position: relative; display: flex; justify-content: center; align-items: center;
-            font-size: 30px; transition: all 0.3s; border-bottom: 4px solid #5D4037;
+            width: 60px; height: 80px; background: #8D6E63; border-radius: 5px 5px 0 0; position: relative;
+            display: flex; justify-content: center; align-items: center; font-size: 30px;
+            transition: all 0.3s; border-bottom: 4px solid #5D4037;
         }
         .chair:hover { transform: translateY(-5px); }
-        .chair-index {
-            position: absolute; bottom: -30px; width: 100%; text-align: center;
-            font-family: monospace; font-weight: bold; color: #5D4037; font-size: 18px;
-        }
+        .chair-index { position: absolute; bottom: -30px; width: 100%; text-align: center; font-family: monospace; font-weight: bold; color: #5D4037; font-size: 18px; }
         .chair-tooltip {
-            position: absolute; top: -40px; background: #333; color: #fff; padding: 2px 8px;
-            border-radius: 4px; font-size: 12px; opacity: 0; transition: opacity 0.2s; pointer-events: none;
+            position: absolute; top: -40px; background: #333; color: #fff; padding: 2px 8px; border-radius: 4px;
+            font-size: 12px; opacity: 0; transition: opacity 0.2s; pointer-events: none;
         }
         .chair:hover .chair-tooltip { opacity: 1; }
-        .chair.active { background: #FFB74D; box-shadow: 0 0 10px #FFB74D; }
 
         /* 列表长度演示 */
-        .list-box {
-            display: flex; flex-direction: column; align-items: center; width: 80%;
-        }
+        .list-box { display: flex; flex-direction: column; align-items: center; width: 80%; }
         .list-container {
-            display: flex; gap: 5px; padding: 10px; background: #5D4037; border-radius: 10px; min-height: 60px; min-width: 200px; justify-content: center;
-            margin-bottom: 10px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            display: flex; gap: 5px; padding: 10px; background: #5D4037; border-radius: 10px; min-height: 60px; min-width: 200px;
+            justify-content: center; margin-bottom: 10px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
-        .list-item {
-            width: 40px; height: 40px; background: #FFCC80; border-radius: 5px; display: flex; justify-content: center; align-items: center; font-size: 20px; animation: popIn 0.3s;
-        }
+        .list-item { width: 40px; height: 40px; background: #FFCC80; border-radius: 5px; display: flex; justify-content: center; align-items: center; font-size: 20px; animation: popIn 0.3s; }
         .len-display { font-family: monospace; font-size: 24px; font-weight: bold; color: #E65100; }
-        
         .btn-action {
             padding: 5px 15px; border: none; border-radius: 5px; font-weight: bold; color: white; cursor: pointer; margin: 0 5px;
             background: #2E7D32; box-shadow: 0 3px 0 #1B5E20;
@@ -265,56 +172,27 @@
         .btn-danger { background: #C62828; box-shadow: 0 3px 0 #B71C1C; }
 
         /* 遍历演示 */
-        .roster-box {
-            width: 250px; background: #FFF; border: 2px solid #333; padding: 10px; position: relative;
-        }
-        .roster-item {
-            padding: 8px; border-bottom: 1px solid #eee; font-family: monospace; font-size: 18px; display: flex; justify-content: space-between;
-        }
+        .roster-box { width: 250px; background: #FFF; border: 2px solid #333; padding: 10px; position: relative; }
+        .roster-item { padding: 8px; border-bottom: 1px solid #eee; font-family: monospace; font-size: 18px; display: flex; justify-content: space-between; }
         .roster-item.highlight { background: #FFF9C4; color: #F57F17; font-weight: bold; }
-        .finger {
-            position: absolute; left: -40px; font-size: 30px; transition: top 0.5s;
-        }
-
-        /* 空列表演示 */
-        .empty-box {
-            width: 150px; height: 150px; border: 4px dashed #999; border-radius: 10px;
-            display: flex; justify-content: center; align-items: center; font-size: 60px; color: #ccc;
-            position: relative;
-        }
-        .empty-label { position: absolute; bottom: 10px; font-size: 14px; color: #999; font-weight: bold; }
+        .finger { position: absolute; left: -40px; font-size: 30px; transition: top 0.5s; }
 
         /* 进度条 */
-        .progress-bar {
-            height: 8px;
-            background: #D7CCC8;
-            width: 100%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #FFB74D, #FF6F00);
-            width: 0%;
-            transition: width 0.3s;
-        }
+        .progress-bar { height: 8px; background: #D7CCC8; width: 100%; position: absolute; bottom: 0; left: 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #FFB74D, #FF6F00); width: 0%; transition: width 0.3s; }
 
         @keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
     </style>
 </head>
 <body>
 
 <div class="stage">
-    <!-- 左按钮 -->
     <button class="nav-btn btn-prev" id="btnPrev" onclick="moveSlide(-1)">
         <div class="scroll-icon"></div>
         <span>❮</span>
     </button>
 
-    <!-- 物品栏容器 -->
     <div class="inventory-container">
         <div class="map-badge">计算机科学 3</div>
         
@@ -322,31 +200,29 @@
             <div class="level-info">第 9-13 关</div>
         </div>
 
-        <!-- Slide 1: 封面 -->
         <div class="slide active" style="justify-content: center; align-items: center; text-align: center;">
             <div style="font-size: 100px; margin-bottom: 20px; animation: float 3s infinite;">📜</div>
-            <h1 style="font-size: 50px; margin: 10px 0; color: #3E2723;">一维列表 (List)</h1>
-            <h2 style="font-size: 26px; color: #E65100; font-weight: bold; margin-top: 0;">One-Dimensional Lists</h2>
+            <h1 style="font-size: 50px; margin: 10px 0; color: #3E2723;">一维列表 (List / Array)</h1>
+            <h2 style="font-size: 26px; color: #E65100; font-weight: bold; margin-top: 0;">Collections of Data</h2>
             <div style="margin-top: 40px; display: flex; gap: 30px;">
                 <div style="padding: 15px 30px; background: #FFF8E1; color: #F57F17; border: 2px dashed #F57F17; border-radius: 10px; font-weight: bold; font-size: 20px;">🔢 0号开始</div>
                 <div style="padding: 15px 30px; background: #E8F5E9; color: #2E7D32; border: 2px solid #2E7D32; border-radius: 10px; font-weight: bold; font-size: 20px;">🔄 自动点名</div>
             </div>
         </div>
 
-        <!-- Slide 2: 什么是列表 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🎒</div>
-                <h1>什么是列表 (List / Array)？</h1>
+                <h1>什么是列表 (List)？</h1>
             </div>
             <div class="layout">
                 <div class="col-text">
+                    
                     <p>可以把它想象成：<b>一排排好队的椅子</b>。</p>
                     <p>每个椅子上坐着一个人（元素），每个椅子都有一个号码（索引）。</p>
-                    <div class="code-box">
-                        <span class="v">friends</span> <span class="op">=</span> [<span class="s">'Joan'</span>, <span class="s">'Ronan'</span>, <span class="s">'Nikita'</span>]
-                    </div>
-                    <p>方括号 <code>[]</code> 表示这是一个列表。</p>
+                    <div class="code-box"><span class="c">// C++ 中通常使用 vector 来表示动态列表</span>
+<span class="kw">auto</span> <span class="v">friends</span> <span class="op">=</span> {<span class="s">"Joan"</span>, <span class="s">"Ronan"</span>, <span class="s">"Nikita"</span>};</div>
+                    <p>大括号 <code>{}</code> 或函数返回的数组表示这是一个列表。</p>
                 </div>
                 <div class="col-visual">
                     <div style="text-align: center;">
@@ -361,7 +237,6 @@
             </div>
         </div>
 
-        <!-- Slide 3: 索引 (Index) -->
         <div class="slide">
             <div class="header">
                 <div class="icon">0️⃣</div>
@@ -370,15 +245,13 @@
             <div class="layout">
                 <div class="col-text">
                     <p>在程序世界里，第一个位置是 <b>0</b>，不是 1！</p>
-                    <div class="code-box">
-                        <span class="v">items</span> <span class="op">=</span> <span class="v">hero</span>.<span class="f">findItems</span>()<br>
-                        <br>
-                        <span class="v">gem0</span> <span class="op">=</span> <span class="v">items</span>[<span class="n">0</span>] <span class="c"># 第1个</span><br>
-                        <span class="v">gem1</span> <span class="op">=</span> <span class="v">items</span>[<span class="n">1</span>] <span class="c"># 第2个</span><br>
-                        <span class="v">gem2</span> <span class="op">=</span> <span class="v">items</span>[<span class="n">2</span>] <span class="c"># 第3个</span>
-                    </div>
+                    <div class="code-box"><span class="kw">auto</span> <span class="v">items</span> <span class="op">=</span> <span class="v">hero</span>.<span class="f">findItems</span>();
+
+<span class="kw">auto</span> <span class="v">gem0</span> <span class="op">=</span> <span class="v">items</span>[<span class="n">0</span>]; <span class="c">// 第1个</span>
+<span class="kw">auto</span> <span class="v">gem1</span> <span class="op">=</span> <span class="v">items</span>[<span class="n">1</span>]; <span class="c">// 第2个</span>
+<span class="kw">auto</span> <span class="v">gem2</span> <span class="op">=</span> <span class="v">items</span>[<span class="n">2</span>]; <span class="c">// 第3个</span></div>
                     <div class="card">
-                        "0-based index: 就像数轴从0开始。"
+                        "0-based index: 就像尺子刻度从0开始。"
                     </div>
                 </div>
                 <div class="col-visual">
@@ -387,31 +260,61 @@
                         <div class="chair" onmouseover="showTip(this, 'items[1]')">💎<div class="chair-tooltip">items[1]</div><div class="chair-index">1</div></div>
                         <div class="chair" onmouseover="showTip(this, 'items[2]')">💎<div class="chair-tooltip">items[2]</div><div class="chair-index">2</div></div>
                     </div>
-                    <script>
-                        function showTip(el, text) {
-                            // Tooltip handled by CSS
-                        }
-                    </script>
                     <div style="position: absolute; bottom: 20px; color: #90A4AE; font-size: 14px;">鼠标悬停查看代码</div>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 4: 长度 len() -->
         <div class="slide">
             <div class="header">
-                <div class="icon">📏</div>
-                <h1>列表长度：len()</h1>
+                <div class="icon">🤝</div>
+                <h1>实战 I：团队合作</h1>
             </div>
             <div class="layout">
                 <div class="col-text">
-                    <p>想知道队伍里有几个人？用 <code>len()</code> 函数。</p>
-                    <div class="code-box">
-                        <span class="v">enemies</span> <span class="op">=</span> <span class="v">hero</span>.<span class="f">findEnemies</span>()<br>
-                        <span class="kw">if</span> <span class="f">len</span>(<span class="v">enemies</span>) <span class="op">></span> <span class="n">0</span>:<br>
-                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">attack</span>(<span class="v">enemies</span>[<span class="n">0</span>])
+                    <p>我们要分别指挥每个人去拿不同的宝石。</p>
+                    <div class="code-box"><span class="kw">int</span> <span class="f">main</span>() {
+    <span class="kw">auto</span> <span class="v">items</span> <span class="op">=</span> <span class="v">hero</span>.<span class="f">findItems</span>();
+    
+    <span class="c">// 第1颗给 Bruno</span>
+    <span class="kw">auto</span> <span class="v">gem0</span> <span class="op">=</span> <span class="v">items</span>[<span class="n">0</span>];
+    <span class="v">hero</span>.<span class="f">say</span>(<span class="s">"Bruno "</span> <span class="op">+</span> <span class="v">gem0</span>);
+    
+    <span class="c">// 第2颗给 Matilda</span>
+    <span class="v">hero</span>.<span class="f">say</span>(<span class="s">"Matilda "</span> <span class="op">+</span> <span class="v">items</span>[<span class="n">1</span>]);
+    
+    <span class="c">// 第3颗我自己拿</span>
+    <span class="kw">auto</span> <span class="v">gem2</span> <span class="op">=</span> <span class="v">items</span>[<span class="n">2</span>];
+    <span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">gem2</span>.<span class="v">pos</span>.<span class="v">x</span>, <span class="v">gem2</span>.<span class="v">pos</span>.<span class="v">y</span>);
+    <span class="kw">return</span> <span class="n">0</span>;
+}</div>
+                </div>
+                <div class="col-visual">
+                    <div style="font-size: 60px; text-align: center;">
+                        💎 💎 💎<br>
+                        👇 👇 👇<br>
+                        👱‍♂️ 👩‍🦰 🤠
                     </div>
-                    <p><b>安全检查：</b><br>只有当长度 > 0 时，才能去打第 0 个敌人。否则会扑空（报错）！</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="header">
+                <div class="icon">📏</div>
+                <h1>列表长度：size()</h1>
+            </div>
+            <div class="layout">
+                <div class="col-text">
+                    <p>想知道队伍里有几个人？用 <code>.size()</code> 方法。</p>
+                    <div class="code-box"><span class="kw">auto</span> <span class="v">enemies</span> <span class="op">=</span> <span class="v">hero</span>.<span class="f">findEnemies</span>();
+
+<span class="c">// 安全检查：确保有人再打</span>
+<span class="kw">if</span> (<span class="v">enemies</span>.<span class="f">size</span>() <span class="op">&gt;</span> <span class="n">0</span>) {
+    <span class="kw">auto</span> <span class="v">first</span> <span class="op">=</span> <span class="v">enemies</span>[<span class="n">0</span>];
+    <span class="v">hero</span>.<span class="f">attack</span>(<span class="v">first</span>);
+}</div>
+                    <p><b>安全检查：</b>只有当长度 > 0 时，才能去打第 0 个敌人。否则会扑空（报错）！</p>
                 </div>
                 <div class="col-visual">
                     <div class="list-box">
@@ -419,7 +322,7 @@
                             <div class="list-item">👾</div>
                             <div class="list-item">👾</div>
                         </div>
-                        <div class="len-display">len() = <span id="lenVal">2</span></div>
+                        <div class="len-display">size() = <span id="lenVal">2</span></div>
                         <div style="margin-top: 10px;">
                             <button class="btn-action" onclick="modList(1)">+ 添加敌人</button>
                             <button class="btn-action btn-danger" onclick="modList(-1)">- 减少敌人</button>
@@ -447,81 +350,53 @@
             </div>
         </div>
 
-        <!-- Slide 5: 安全检查 (Safety Check) -->
-        <div class="slide">
-            <div class="header">
-                <div class="icon">🛡️</div>
-                <h1>防止越界 (Out of Range)</h1>
-            </div>
-            <div class="layout">
-                <div class="col-text">
-                    <p>如果你想拿第 2 个宝石 <code>items[1]</code>，必须确保至少有 2 个宝石。</p>
-                    <div class="code-box">
-                        <span class="v">items</span> <span class="op">=</span> <span class="v">hero</span>.<span class="f">findItems</span>()<br>
-                        <span class="kw">if</span> <span class="f">len</span>(<span class="v">items</span>) <span class="op">>=</span> <span class="n">2</span>:<br>
-                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">moveXY</span>(<span class="v">items</span>[<span class="n">1</span>].pos.x...)<br>
-                        <span class="kw">else</span>:<br>
-                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">say</span>(<span class="s">"不够两个！"</span>)
-                    </div>
-                </div>
-                <div class="col-visual">
-                    <div style="display: flex; gap: 20px; align-items: flex-end;">
-                        <div style="text-align: center;">
-                            <div class="chair">💎</div>
-                            <div>[0]</div>
-                        </div>
-                        <div style="text-align: center; opacity: 0.3;">
-                            <div class="chair" style="border-style: dashed; background: transparent;">❌</div>
-                            <div>[1]</div>
-                        </div>
-                    </div>
-                    <div style="position: absolute; bottom: 20px; color: #D32F2F; font-weight: bold;">Index 1 不存在!</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 6: 实时更新 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🔄</div>
-                <h1>列表需要更新</h1>
+                <h1>实时更新 (Update)</h1>
             </div>
             <div class="layout">
                 <div class="col-text">
                     <p>战场瞬息万变，每一轮循环都要重新“点名”。</p>
-                    <div class="code-box">
-                        <span class="kw">while</span> <span class="kw">True</span>:<br>
-                        &nbsp;&nbsp;<span class="c"># 每一轮重新找</span><br>
-                        &nbsp;&nbsp;<span class="v">enemies</span> <span class="op">=</span> <span class="v">hero</span>.<span class="f">findEnemies</span>()<br>
-                        &nbsp;&nbsp;<span class="c"># ...</span>
-                    </div>
+                    <div class="code-box"><span class="kw">while</span> (<span class="kw">true</span>) {
+    <span class="c">// 每一轮重新获取最新名单</span>
+    <span class="kw">auto</span> <span class="v">neutrals</span> <span class="op">=</span> <span class="v">hero</span>.<span class="f">findEnemies</span>();
+    
+    <span class="kw">if</span> (<span class="v">neutrals</span>.<span class="f">size</span>()) {
+        <span class="v">hero</span>.<span class="f">say</span>(<span class="v">neutrals</span>[<span class="n">0</span>]);
+    } <span class="kw">else</span> {
+        <span class="v">hero</span>.<span class="f">say</span>(<span class="s">"没人了"</span>);
+    }
+}</div>
                     <div class="card">
                         "不能拿着旧名单去点名，新同学可能刚进来，旧同学可能走了。"
                     </div>
                 </div>
                 <div class="col-visual">
                     <div style="text-align: center; font-size: 60px;">📸</div>
-                    <p>每一帧都是一张新快照</p>
+                    <p>Loop 里的每一次 find<br>都是一张新快照</p>
                 </div>
             </div>
         </div>
 
-        <!-- Slide 7: 遍历列表 (Traversal) -->
         <div class="slide">
             <div class="header">
                 <div class="icon">👉</div>
-                <h1>遍历：一个个点名</h1>
+                <h1>遍历：挨个点名</h1>
             </div>
             <div class="layout">
                 <div class="col-text">
                     <p>用 <code>while</code> 循环加上 <code>index</code> 变量，可以把列表里的每个人都问候一遍。</p>
-                    <div class="code-box">
-                        <span class="v">index</span> <span class="op">=</span> <span class="n">0</span><br>
-                        <span class="kw">while</span> <span class="v">index</span> <span class="op"><</span> <span class="f">len</span>(<span class="v">friends</span>):<br>
-                        &nbsp;&nbsp;<span class="v">friend</span> <span class="op">=</span> <span class="v">friends</span>[<span class="v">index</span>]<br>
-                        &nbsp;&nbsp;<span class="v">hero</span>.<span class="f">say</span>(<span class="s">"Hi "</span> <span class="op">+</span> <span class="v">friend</span>)<br>
-                        &nbsp;&nbsp;<span class="v">index</span> <span class="op">+=</span> <span class="n">1</span>
-                    </div>
+                    <div class="code-box"><span class="kw">int</span> <span class="v">friendIndex</span> <span class="op">=</span> <span class="n">0</span>;
+
+<span class="c">// 只要索引小于总人数</span>
+<span class="kw">while</span> (<span class="v">friendIndex</span> <span class="op">&lt;</span> <span class="v">friendNames</span>.<span class="f">size</span>()) {
+    <span class="kw">auto</span> <span class="v">name</span> <span class="op">=</span> <span class="v">friendNames</span>[<span class="v">friendIndex</span>];
+    <span class="v">hero</span>.<span class="f">say</span>(<span class="v">name</span> <span class="op">+</span> <span class="s">", go home!"</span>);
+    
+    <span class="c">// 指向下一位</span>
+    <span class="v">friendIndex</span> <span class="op">+=</span> <span class="n">1</span>;
+}</div>
                 </div>
                 <div class="col-visual">
                     <div class="roster-box">
@@ -536,15 +411,11 @@
                         let rIndex = 0;
                         function nextRoster() {
                             document.querySelectorAll('.roster-item').forEach(i => i.classList.remove('highlight'));
-                            
                             if(rIndex > 3) rIndex = 0;
-                            
                             const item = document.getElementById('r'+rIndex);
                             const finger = document.getElementById('finger');
-                            
                             item.classList.add('highlight');
                             finger.style.top = (item.offsetTop + 10) + 'px';
-                            
                             rIndex++;
                         }
                     </script>
@@ -552,7 +423,6 @@
             </div>
         </div>
 
-        <!-- Slide 8: 总结 -->
         <div class="slide">
             <div class="header">
                 <div class="icon">🎓</div>
@@ -565,7 +435,7 @@
                         <b>index</b> 0 是排头兵。"
                     </div>
                     <div class="card" style="background: #E8F5E9; border-color: #2E7D32; color: #1B5E20; margin-top: 20px;">
-                        "<b>len()</b> 告诉你有多长，<br>
+                        "<b>.size()</b> 告诉你有多长，<br>
                         <b>while</b> 循环挨个查！"
                     </div>
                 </div>
@@ -575,12 +445,10 @@
             </div>
         </div>
 
-        <!-- 底部进度条 -->
         <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
 
     </div>
 
-    <!-- 右按钮 -->
     <button class="nav-btn btn-next" id="btnNext" onclick="moveSlide(1)">
         <div class="chest-icon"><span>❯</span></div>
     </button>
