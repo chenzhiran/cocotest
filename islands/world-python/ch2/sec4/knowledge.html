@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第18-21关：认识用户界面、生存目标、数据库与生态模拟</title>
+    <style>
+        :root {
+            --bg-color: #2b3a42; /* 深蓝灰背景 */
+            --slide-bg: #ffffff;
+            --primary-color: #3498db; /* 科技蓝 */
+            --accent-color: #e74c3c; /* 活力红 */
+            --success-color: #2ecc71; /* 成功绿 */
+            --code-bg: #282c34;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 主容器 */
+        .container {
+            display: flex;
+            align-items: center;
+            width: 95%;
+            max-width: 1200px;
+            gap: 20px;
+        }
+
+        /* 导航按钮 */
+        .nav-btn {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            border: 4px solid #fff;
+            color: white;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            font-size: 35px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+            outline: none;
+            z-index: 10;
+        }
+
+        .nav-btn:hover {
+            transform: scale(1.1) rotate(5deg);
+            background: linear-gradient(135deg, #f39c12, #d35400);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 视口区域 */
+        .viewport {
+            flex: 1;
+            aspect-ratio: 16/9;
+            background: var(--slide-bg);
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            border: 10px solid #ecf0f1;
+        }
+
+        /* 顶部标题条 */
+        .header-bar {
+            position: absolute;
+            top: 25px;
+            left: 40px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .map-name {
+            background: #34495e;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+
+        .level-tag {
+            background: var(--accent-color);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 4px 0 rgba(192, 57, 43, 0.4);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        /* 幻灯片 */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.5s ease;
+            pointer-events: none;
+            padding: 100px 50px 50px 50px; /* Top padding for header */
+            box-sizing: border-box;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: all;
+        }
+
+        /* 内容布局 */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+        }
+
+        .text-part {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .text-part h1 {
+            font-size: 2.5em;
+            color: var(--primary-color);
+            margin: 0 0 10px 0;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        .text-part h2 {
+            font-size: 1.4em;
+            color: #7f8c8d;
+            margin: 0 0 20px 0;
+            font-weight: normal;
+        }
+
+        .concept-card {
+            background: #f8f9fa;
+            border-left: 6px solid var(--success-color);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            line-height: 1.6;
+            color: #555;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        /* 代码编辑器 */
+        .code-box {
+            background: var(--code-bg);
+            border-radius: 15px;
+            padding: 25px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 1.05em;
+            color: #abb2bf;
+            line-height: 1.6;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            border: 4px solid #3e4451;
+            position: relative;
+        }
+
+        .code-box::after {
+            content: "Python";
+            position: absolute;
+            top: 0;
+            right: 20px;
+            background: #e06c75;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 0 0 8px 8px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #c678dd; font-weight: bold; } /* 关键字 def, if */
+        .c-func { color: #61afef; } /* 函数 track, spawn */
+        .c-str { color: #98c379; } /* 字符串 */
+        .c-num { color: #d19a66; } /* 数字 */
+        .c-obj { color: #e5c07b; } /* 对象 game, ui */
+        .c-com { color: #5c6370; font-style: italic; } /* 注释 */
+
+        /* 装饰动画元素 */
+        .visual-demo {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            opacity: 0.2;
+            font-size: 120px;
+            pointer-events: none;
+            animation: float 3s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* 第18关 UI模拟 */
+        .ui-mockup {
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 10px;
+            font-family: monospace;
+            border: 2px solid gold;
+        }
+
+        /* 第21关 生态模拟 */
+        .eco-system {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: #eaffea;
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px dashed #2ecc71;
+            margin-top: 15px;
+        }
+        .eco-item { text-align: center; }
+        .arrow-anim { font-size: 2em; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.2);} 100% {transform: scale(1);} }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <button class="nav-btn" onclick="prevSlide()">❮</button>
+
+        <div class="viewport">
+            
+            <div class="slide active">
+                <div class="header-bar">
+                    <span class="map-name">🎮 游戏开发1：眼见为实</span>
+                    <span class="level-tag">第 18 关</span>
+                </div>
+                <div class="content-grid">
+                    <div class="text-part">
+                        <h1>用户界面 (UI) 🖥️</h1>
+                        <h2>User Interface</h2>
+                        <div class="concept-card">
+                            <p><b>👀 怎么让玩家看到分数？</b><br>
+                            就像汽车仪表盘显示速度一样，游戏需要一个界面来告诉玩家当前的状态。<br>
+                            我们使用 <code>ui.track()</code> 把藏在代码里的数字（比如打败了多少怪物）展示在屏幕上。</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <div>👇 屏幕上会显示这个 👇</div>
+                            <div class="ui-mockup">
+                                💀 Defeated: 5 <br>
+                                ⏳ Time: 12s
+                            </div>
+                        </div>
+                    </div>
+                    <div class="code-box">
+<span class="c-com"># 1. 设置生存时间</span><br>
+<span class="c-obj">game</span>.<span class="c-func">addSurviveGoal</span>(<span class="c-num">20</span>)<br><br>
+<span class="c-com"># 2. 生成一个怪物生成器</span><br>
+<span class="c-obj">spawner</span> = <span class="c-obj">game</span>.<span class="c-func">spawnXY</span>(<span class="c-str">"generator"</span>, <span class="c-num">50</span>, <span class="c-num">50</span>)<br>
+<span class="c-obj">spawner</span>.<span class="c-obj">spawnType</span> = <span class="c-str">"munchkin"</span><br><br>
+<span class="c-com"># 3. 关键一步！把"击败数"显示出来</span><br>
+<span class="c-obj">ui</span>.<span class="c-func">track</span>(<span class="c-obj">game</span>, <span class="c-str">"defeated"</span>)
+                    </div>
+                </div>
+                <div class="visual-demo">📊</div>
+            </div>
+
+            <div class="slide">
+                <div class="header-bar">
+                    <span class="map-name">🎮 游戏开发1：生存时间</span>
+                    <span class="level-tag">第 19 关</span>
+                </div>
+                <div class="content-grid">
+                    <div class="text-part">
+                        <h1>生存目标 ⏱️</h1>
+                        <h2>Survival Goal</h2>
+                        <div class="concept-card">
+                            <p><b>🛡️ 活下去就是胜利！</b><br>
+                            并不是所有游戏都要打败魔王。有时候，只要坚持住不倒下就算赢。<br>
+                            在这一关，我们给玩家定了一个小目标：<b>坚持20秒！</b></p>
+                        </div>
+                        <div style="background: #ffeaa7; padding: 10px; border-radius: 10px; text-align: center; color: #d35400;">
+                            <b>⚠️ 挑战模式：</b><br>敌人会源源不断涌来，保护好你的血条！
+                        </div>
+                    </div>
+                    <div class="code-box">
+<span class="c-com"># 告诉游戏：玩家只要活过20秒就算赢</span><br>
+<span class="c-obj">game</span>.<span class="c-func">addSurviveGoal</span>(<span class="c-num">20</span>)<br><br>
+<span class="c-com"># 生成我们的英雄</span><br>
+<span class="c-obj">player</span> = <span class="c-obj">game</span>.<span class="c-func">spawnPlayerXY</span>(<span class="c-str">"knight"</span>, <span class="c-num">15</span>, <span class="c-num">15</span>)<br><br>
+<span class="c-com"># 稍微增强一点属性，不然太容易挂了</span><br>
+<span class="c-obj">player</span>.<span class="c-obj">maxHealth</span> = <span class="c-num">100</span><br>
+<span class="c-obj">player</span>.<span class="c-obj">attackDamage</span> = <span class="c-num">10</span>
+                    </div>
+                </div>
+                <div class="visual-demo">⏳</div>
+            </div>
+
+            <div class="slide">
+                <div class="header-bar">
+                    <span class="map-name">🎮 游戏开发1：持续付出</span>
+                    <span class="level-tag">第 20 关</span>
+                </div>
+                <div class="content-grid">
+                    <div class="text-part">
+                        <h1>数据库 💾</h1>
+                        <h2>Database</h2>
+                        <div class="concept-card">
+                            <p><b>📝 永远记住你！</b><br>
+                            普通的变量重启游戏就没了。但<b>数据库 (db)</b> 就像一个永久的笔记本。<br>
+                            它可以记录你玩了多少次、总共赢了多少局。哪怕你关掉电脑明天再来，数据还在！</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; justify-content: center;">
+                            <span style="font-size: 3em;">🎮</span>
+                            <span style="font-size: 3em;">➡️</span>
+                            <span style="font-size: 3em;">💾</span>
+                        </div>
+                    </div>
+                    <div class="code-box">
+<span class="c-com"># 每次运行代码，都在"plays"这个格子里加1</span><br>
+<span class="c-obj">db</span>.<span class="c-func">add</span>(<span class="c-str">"plays"</span>, <span class="c-num">1</span>)<br><br>
+<span class="c-com"># 把数据库里的记录显示在屏幕上</span><br>
+<span class="c-obj">ui</span>.<span class="c-func">track</span>(<span class="c-obj">db</span>, <span class="c-str">"plays"</span>)<br><br>
+<span class="c-com"># 第一次玩显示: 1</span><br>
+<span class="c-com"># 第二次玩显示: 2</span><br>
+<span class="c-com"># ...以此类推</span>
+                    </div>
+                </div>
+                <div class="visual-demo">🗄️</div>
+            </div>
+
+            <div class="slide">
+                <div class="header-bar">
+                    <span class="map-name">🎮 游戏开发1：农夫与小矮人</span>
+                    <span class="level-tag">第 21 关</span>
+                </div>
+                <div class="content-grid">
+                    <div class="text-part">
+                        <h1>生态系统模拟 🦁🐑</h1>
+                        <h2>Ecosystem Simulation</h2>
+                        <div class="concept-card">
+                            <p><b>🌍 上帝视角创造世界</b><br>
+                            我们要模拟一个真实的生态圈：<br>
+                            1. <b>食人魔 (Ogres)</b> 是捕食者 🐺<br>
+                            2. <b>农民 (Peasants)</b> 是猎物 🐑<br>
+                            3. <b>硬币 (Coins)</b> 是食物 🌿<br>
+                            通过调整它们的速度和繁殖规则，观察这个世界是平衡发展还是走向灭绝！</p>
+                        </div>
+                        <div class="eco-system">
+                            <div class="eco-item">👹<br>食人魔</div>
+                            <div class="arrow-anim">👊</div>
+                            <div class="eco-item">👨‍🌾<br>农民</div>
+                            <div class="arrow-anim">🤏</div>
+                            <div class="eco-item">🪙<br>硬币</div>
+                        </div>
+                    </div>
+                    <div class="code-box">
+<span class="c-com"># --- 食人魔设定 (捕食者) ---</span><br>
+<span class="c-obj">game</span>.<span class="c-obj">startingOgres</span> = <span class="c-num">10</span>  <span class="c-com"># 初始数量</span><br>
+<span class="c-obj">game</span>.<span class="c-obj">ogreSpeed</span> = <span class="c-num">15</span>      <span class="c-com"># 跑得快吗？</span><br>
+<span class="c-obj">game</span>.<span class="c-obj">ogreLifespan</span> = <span class="c-num">8</span>    <span class="c-com"># 寿命短</span><br><br>
+<span class="c-com"># --- 农民设定 (猎物) ---</span><br>
+<span class="c-obj">game</span>.<span class="c-obj">startingPeasants</span> = <span class="c-num">15</span><br>
+<span class="c-obj">game</span>.<span class="c-obj">peasantSpeed</span> = <span class="c-num">6</span>    <span class="c-com"># 跑得慢</span><br><br>
+<span class="c-com"># --- 实时监控数据 ---</span><br>
+<span class="c-obj">ui</span>.<span class="c-func">track</span>(<span class="c-obj">game</span>, <span class="c-str">"humans"</span>)<br>
+<span class="c-obj">ui</span>.<span class="c-func">track</span>(<span class="c-obj">game</span>, <span class="c-str">"ogres"</span>)
+                    </div>
+                </div>
+                <div class="visual-demo">🌍</div>
+            </div>
+
+        </div>
+
+        <button class="nav-btn" onclick="nextSlide()">❯</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+
+        function showSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            
+            // 循环逻辑
+            if (index >= slides.length) index = 0;
+            if (index < 0) index = slides.length - 1;
+            
+            currentSlide = index;
+            slides[currentSlide].classList.add('active');
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        // 键盘左右键支持
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "ArrowRight") nextSlide();
+            if (e.key === "ArrowLeft") prevSlide();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第1-6关 笛卡尔坐标、游戏的玩家元素、游戏的移动目标、游戏的收集目标、游戏的宝石元素</title>
+    <style>
+        :root {
+            --bg-color: #f0f8ff;
+            --card-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            --code-bg: #282c34;
+            --btn-color: #ff9a9e;
+            --btn-hover: #ff6f75;
+            --text-main: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#dbeaff 20%, transparent 20%),
+                              radial-gradient(#dbeaff 20%, transparent 20%);
+            background-position: 0 0, 25px 25px;
+            background-size: 50px 50px;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 布局容器 */
+        .main-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            width: 95%;
+            max-width: 1200px;
+        }
+
+        /* 按钮样式 */
+        .nav-btn {
+            background-color: white;
+            border: 4px solid var(--btn-color);
+            color: var(--btn-color);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4);
+            outline: none;
+            z-index: 10;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--btn-color);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 幻灯片视口 */
+        .slide-viewport {
+            flex: 1;
+            aspect-ratio: 16/9; /* PPT比例 */
+            background: white;
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+            border: 8px solid white;
+        }
+
+        /* 单个幻灯片内容 */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none; /* 默认隐藏 */
+            flex-direction: column;
+            padding: 40px;
+            box-sizing: border-box;
+            animation: fadeIn 0.5s ease;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 头部信息 */
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px dashed rgba(255,255,255,0.5);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .map-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            background: rgba(0,0,0,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        .level-badge {
+            font-size: 1.5em;
+            font-weight: 900;
+        }
+
+        /* 内容区域 */
+        .content-body {
+            display: flex;
+            flex: 1;
+            gap: 30px;
+        }
+
+        .text-part {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            color: white;
+        }
+
+        .text-part h1 {
+            font-size: 2.2em;
+            margin: 0 0 10px 0;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+
+        .text-part h2 {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin: 0 0 20px 0;
+            font-weight: normal;
+        }
+
+        .concept-box {
+            background: rgba(255,255,255,0.9);
+            color: #444;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .concept-title {
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 5px;
+        }
+
+        /* 代码部分 */
+        .code-part {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .code-window {
+            background-color: var(--code-bg);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 4px solid #3e4451;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 1.1em;
+            line-height: 1.6;
+            color: #abb2bf;
+            position: relative;
+        }
+
+        .code-window::before {
+            content: "● ● ●";
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            color: #5c6370;
+            font-size: 12px;
+            letter-spacing: 5px;
+        }
+
+        .code-content {
+            margin-top: 15px;
+        }
+
+        /* 代码高亮颜色 */
+        .c-func { color: #61afef; } /* game.spawnXY */
+        .c-str { color: #98c379; }  /* "fence" */
+        .c-num { color: #d19a66; }  /* 39 */
+        .c-com { color: #7f848e; font-style: italic; } /* # 注释 */
+        .c-key { color: #c678dd; } /* 关键字 */
+
+        /* 各种背景色 */
+        .bg-1 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        .bg-2 { background: linear-gradient(135deg, #fccb90 0%, #d57eeb 100%); }
+        .bg-3 { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); }
+        .bg-4 { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); }
+        .bg-5 { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
+        .bg-6 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .bg-intro { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+
+        /* 图示 */
+        .visual-aid {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 80px;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        /* 坐标系图示 */
+        .grid-demo {
+            width: 100%;
+            height: 100px;
+            background-image: linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px);
+            background-size: 20px 20px;
+            border: 2px solid #888;
+            position: relative;
+            margin-top: 10px;
+            border-radius: 8px;
+            background-color: rgba(255,255,255,0.8);
+        }
+        .grid-point {
+            width: 10px;
+            height: 10px;
+            background: red;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 30%;
+            left: 60%;
+        }
+        .grid-label {
+            font-size: 12px;
+            color: red;
+            position: absolute;
+            bottom: 45%;
+            left: 62%;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <button class="nav-btn" onclick="prevSlide()" title="上一页">❮</button>
+
+        <div class="slide-viewport">
+            
+            <div class="slide bg-intro active">
+                <div style="text-align: center; color: white; margin-top: 50px;">
+                    <h1 style="font-size: 3em; margin-bottom: 20px;">🎮 游戏开发 I 🗺️</h1>
+                    <h2>CodeCombat 编程冒险指南</h2>
+                    <div style="font-size: 5em; margin: 40px;">🏰 ⚔️ 💎</div>
+                    <p style="font-size: 1.2em;">准备好开始你的代码之旅了吗？<br>让我们一起去探索笛卡尔坐标和宝石的秘密！</p>
+                    <div style="margin-top: 30px; font-weight: bold;">包含关卡：第 1 - 6 关</div>
+                </div>
+            </div>
+
+            <div class="slide bg-1">
+                <div class="header-info">
+                    <span class="map-name">🗺️ 游戏开发1 - 越过花园墙</span>
+                    <span class="level-badge">LEVEL 1</span>
+                </div>
+                <div class="content-body">
+                    <div class="text-part">
+                        <h1>笛卡尔坐标系 📐</h1>
+                        <h2>Cartesian Coordinate System</h2>
+                        <div class="concept-box">
+                            <div class="concept-title">💡 什么是坐标？</div>
+                            想象你在一个大城市里。<b>X轴</b>是街道的宽度（左右走），<b>Y轴</b>是楼层的高度（上下走）。<br>
+                            每一个位置都有一个名字，比如 <code>(39, 16)</code>。
+                        </div>
+                        <div class="concept-box">
+                            <div class="concept-title">🚧 任务</div>
+                            我们需要在草地上修栅栏！
+                            <div class="grid-demo">
+                                <div class="grid-point"></div>
+                                <div class="grid-label">(39, 16)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="code-part">
+                        <div class="code-window">
+                            <div class="code-content">
+<span class="c-com"># game.spawnXY(类型, x坐标, y坐标)</span><br><br>
+<span class="c-com"># 在 x=39, y=16 的地方放一个围栏</span><br>
+<span class="c-func">game</span>.<span class="c-func">spawnXY</span>(<span class="c-str">"fence"</span>, <span class="c-num">39</span>, <span class="c-num">16</span>)<br><br>
+<span class="c-com"># 往上一点，y变成20，再放一个！</span><br>
+<span class="c-func">game</span>.<span class="c-func">spawnXY</span>(<span class="c-str">"fence"</span>, <span class="c-num">39</span>, <span class="c-num">20</span>)
+                            </div>
+                        </div>
+                        <div style="margin-top:10px; color: #333; font-size: 0.9em; text-align: center;">
+                            👉 改变 <b>Y</b> 坐标，物体就会垂直移动哦！
+                        </div>
+                    </div>
+                </div>
+                <div class="visual-aid">📏</div>
+            </div>
+
+            <div class="slide bg-2">
+                <div class="header-info">
+                    <span class="map-name">🗺️ 游戏开发1 - 点击步态</span>
+                    <span class="level-badge">LEVEL 2</span>
+                </div>
+                <div class="content-body">
+                    <div class="text-part">
+                        <h1>事件驱动编程 🖱️</h1>
+                        <h2>Event-driven Programming</h2>
+                        <div class="concept-box">
+                            <div class="concept-title">💡 什么是事件？</div>
+                            就像你按遥控器电视会换台一样。在游戏里，<b>"鼠标点击"</b>就是一个事件。<br>
+                            程序会监听你的点击，然后命令角色走过去。
+                        </div>
+                        <div class="concept-box">
+                            <div class="concept-title">🏃 任务</div>
+                            点击屏幕，告诉骑士要走到哪里去！
+                        </div>
+                    </div>
+                    <div class="code-part">
+                        <div class="code-window">
+                            <div class="code-content">
+<span class="c-com"># 1. 先把骑士召唤出来</span><br>
+<span class="c-func">game</span>.<span class="c-func">spawnPlayerXY</span>(<span class="c-str">"knight"</span>, <span class="c-num">5</span>, <span class="c-num">8</span>)<br><br>
+<span class="c-com"># 2. 告诉系统：如果玩家点击了，就走到这里</span><br>
+<span class="c-func">game</span>.<span class="c-func">addMoveGoalXY</span>(<span class="c-num">10</span>, <span class="c-num">18</span>)<br>
+<span class="c-func">game</span>.<span class="c-func">addMoveGoalXY</span>(<span class="c-num">10</span>, <span class="c-num">38</span>)
+                            </div>
+                        </div>
+                        <div style="margin-top:10px; color: white; font-size: 0.9em; text-align: center; background: rgba(0,0,0,0.2); border-radius: 5px; padding: 5px;">
+                            👆 addMoveGoalXY 就是在设置移动的目标点
+                        </div>
+                    </div>
+                </div>
+                <div class="visual-aid">👆</div>
+            </div>
+
+            <div class="slide bg-3">
+                <div class="header-info">
+                    <span class="map-name">🗺️ 游戏开发1 - 英雄的旅程</span>
+                    <span class="level-badge">LEVEL 3</span>
+                </div>
+                <div class="content-body">
+                    <div class="text-part">
+                        <h1>游戏目标 🏁</h1>
+                        <h2>Game Goals</h2>
+                        <div class="concept-box">
+                            <div class="concept-title">💡 为什么要设置目标？</div>
+                            没有目标的游戏就像没有球门的足球赛！<br>
+                            我们需要告诉玩家：“嘿，你得走到那个位置才能赢！”。
+                        </div>
+                        <div class="concept-box">
+                            <div class="concept-title">🦸 任务</div>
+                            我是队长(Captain)，我要走到地图的尽头 (53, 45)！
+                        </div>
+                    </div>
+                    <div class="code-part">
+                        <div class="code-window">
+                            <div class="code-content">
+<span class="c-com"># 生成一个叫 "captain" 的英雄</span><br>
+<span class="c-func">game</span>.<span class="c-func">spawnPlayerXY</span>(<span class="c-str">"captain"</span>, <span class="c-num">9</span>, <span class="c-num">9</span>)<br><br>
+<span class="c-com"># 设定获胜条件：走到 (53, 45)</span><br>
+<span class="c-func">game</span>.<span class="c-func">addMoveGoalXY</span>(<span class="c-num">53</span>, <span class="c-num">45</span>)
+                            </div>
+                        </div>
+                         <div style="margin-top:10px; color: #444; font-size: 0.9em; text-align: center;">
+                            🚀 只要走到那个坐标，屏幕就会显示 VICTORY (胜利)！
+                        </div>
+                    </div>
+                </div>
+                <div class="visual-aid">🏆</div>
+            </div>
+
+            <div class="slide bg-4">
+                <div class="header-info">
+                    <span class="map-name">🗺️ 游戏开发1 - 太-棒-了</span>
+                    <span class="level-badge">LEVEL 4</span>
+                </div>
+                <div class="content-body">
+                    <div class="text-part">
+                        <h1>收集目标 🎒</h1>
+                        <h2>Collecting Goals</h2>
+                        <div class="concept-box">
+                            <div class="concept-title">💡 寻宝游戏</div>
+                            除了走路，我们还可以让玩家去<b>收集东西</b>。<br>
+                            比如金币、钥匙、或者神秘的宝箱。
+                        </div>
+                        <div class="concept-box">
+                            <div class="concept-title">💎 任务</div>
+                            看到那个宝箱了吗？我们需要设置一个“收集目标”，玩家必须把它捡起来才能赢。
+                        </div>
+                    </div>
+                    <div class="code-part">
+                        <div class="code-window">
+                            <div class="code-content">
+<span class="c-com"># 告诉游戏：玩家必须收集完所有物品</span><br>
+<span class="c-func">game</span>.<span class="c-func">addCollectGoal</span>()<br><br>
+<span class="c-com"># 在 (8, 14) 放一个宝箱</span><br>
+<span class="c-func">game</span>.<span class="c-func">spawnXY</span>(<span class="c-str">"chest"</span>, <span class="c-num">8</span>, <span class="c-num">14</span>)<br><br>
+<span class="c-com"># 顺便种棵树装饰一下</span><br>
+<span class="c-func">game</span>.<span class="c-func">spawnXY</span>(<span class="c-str">"forest"</span>, <span class="c-num">26</span>, <span class="c-num">51</span>)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="visual-aid">📦</div>
+            </div>
+
+            <div class="slide bg-5">
+                <div class="header-info">
+                    <span class="map-name">🗺️ 游戏开发1 - 宝石太棒了</span>
+                    <span class="level-badge">LEVEL 5</span>
+                </div>
+                <div class="content-body">
+                    <div class="text-part">
+                        <h1>宝石元素 💎</h1>
+                        <h2>Gem Elements</h2>
+                        <div class="concept-box">
+                            <div class="concept-title">💡 亮闪闪的奖励</div>
+                            宝石 (Gem) 是游戏里最常见的奖励。<br>
+                            它们通常代表分数或者通关的关键道具。
+                        </div>
+                        <div class="concept-box">
+                            <div class="concept-title">✨ 任务</div>
+                            在地图的不同角落撒下宝石，让玩家去探索吧！
+                        </div>
+                    </div>
+                    <div class="code-part">
+                        <div class="code-window">
+                            <div class="code-content">
+<span class="c-com"># 这里有一颗...</span><br>
+<span class="c-func">game</span>.<span class="c-func">spawnXY</span>(<span class="c-str">"gem"</span>, <span class="c-num">28</span>, <span class="c-num">28</span>)<br><br>
+<span class="c-com"># 那里也有一颗...</span><br>
+<span class="c-func">game</span>.<span class="c-func">spawnXY</span>(<span class="c-str">"gem"</span>, <span class="c-num">69</span>, <span class="c-num">10</span>)<br><br>
+<span class="c-com"># 别忘了角落里这颗！</span><br>
+<span class="c-func">game</span>.<span class="c-func">spawnXY</span>(<span class="c-str">"gem"</span>, <span class="c-num">9</span>, <span class="c-num">36</span>)
+                            </div>
+                        </div>
+                         <div style="margin-top:10px; color: #225522; font-size: 0.9em; text-align: center;">
+                            Tip: 坐标间隔远一点，游戏会更好玩！
+                        </div>
+                    </div>
+                </div>
+                <div class="visual-aid">✨</div>
+            </div>
+
+             <div class="slide bg-6">
+                <div class="header-info">
+                    <span class="map-name">🗺️ 游戏开发1 - 风险与回报</span>
+                    <span class="level-badge">LEVEL 6</span>
+                </div>
+                <div class="content-body">
+                    <div class="text-part">
+                        <h1>条件设置 🔢</h1>
+                        <h2>Conditional Settings</h2>
+                        <div class="concept-box">
+                            <div class="concept-title">💡 制定规则</div>
+                            游戏不能太简单！我们可以设置更具体的规则。<br>
+                            比如：“你不需要收集所有宝石，但你必须<b>至少收集6颗</b>才能过关。”
+                        </div>
+                        <div class="concept-box">
+                            <div class="concept-title">🎲 任务</div>
+                            设置一个数字条件。这就叫“风险与回报”，玩家需要自己决定走哪条路去凑够6颗宝石。
+                        </div>
+                    </div>
+                    <div class="code-part">
+                        <div class="code-window">
+                            <div class="code-content">
+<span class="c-com"># 设置收集目标为：6</span><br>
+<span class="c-func">game</span>.<span class="c-func">addCollectGoal</span>(<span class="c-num">6</span>)<br><br>
+<span class="c-com"># (地图上可能生成了10颗宝石，</span><br>
+<span class="c-com"># 但玩家只需要找到其中6颗就行)</span>
+                            </div>
+                        </div>
+                         <div style="margin-top:10px; color: #630000; font-size: 0.9em; text-align: center; background: rgba(255,255,255,0.4); padding: 5px; border-radius: 5px;">
+                            📝 括号里的数字就是通关条件！
+                        </div>
+                    </div>
+                </div>
+                <div class="visual-aid">🎲</div>
+            </div>
+
+        </div>
+
+        <button class="nav-btn" onclick="nextSlide()" title="下一页">❯</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+
+        function showSlide(index) {
+            // 移除当前活动状态
+            slides[currentSlide].classList.remove('active');
+            
+            // 计算新索引
+            currentSlide = (index + slides.length) % slides.length;
+            
+            // 添加新的活动状态
+            slides[currentSlide].classList.add('active');
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        // 键盘控制支持
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "ArrowRight") {
+                nextSlide();
+            } else if (event.key === "ArrowLeft") {
+                prevSlide();
+            }
+        });
+    </script>
+</body>
+</html>
