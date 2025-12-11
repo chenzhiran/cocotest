@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编程小英雄挑战赛 - UI与综合逻辑篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 (紫色现代风格) --- */
+        :root {
+            --primary-color: #6C5CE7; /* 主色调：紫色 */
+            --secondary-color: #A29BFE;
+            --bg-color: #DFE6E9;     /* 背景灰 */
+            --card-bg: #FFFFFF;
+            --text-color: #2D3436;   /* 深色文字 */
+            --correct-color: #00b894;/* 正确绿 */
+            --wrong-color: #d63031;  /* 错误红 */
+            --accent-yellow: #fdcb6e;/* 强调黄 */
+            
+            /* 代码高亮颜色 */
+            --code-bg: #2d2d2d;
+            --code-text: #ccc;
+            --code-kw: #cc99cd; /* 关键字 */
+            --code-fn: #6196cc; /* 函数 */
+            --code-num: #f08d49; /* 数字 */
+            --code-str: #7ec699; /* 字符串 */
+            --code-cmt: #777777; /* 注释 */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            /* 恢复点阵背景纹理 */
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* --- 游戏容器 --- */
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 700px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden; /* 防止烟花溢出 */
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目区域 --- */
+        .question-area {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        
+        .question-area h2 {
+            color: var(--text-color);
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* --- 代码高亮样式 --- */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', monospace;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 保留换行和空格 */
+            text-align: left;
+            font-size: 0.95rem;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+        }
+        /* 简单的语法着色 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1.05rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            position: relative;
+            top: 0;
+            box-shadow: 0 5px 0 #bdc3c7;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #aab0b3;
+        }
+
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+        }
+        
+        .option-btn[disabled] {
+            cursor: default;
+        }
+
+        /* --- 答题状态 --- */
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析区域 (新) --- */
+        .feedback-section {
+            display: none; /* 默认隐藏 */
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+
+        .feedback-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+
+        .explanation-text {
+            color: #636e72;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        /* --- 下一题按钮 --- */
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 5px 0 #5649c0;
+            transition: all 0.2s;
+            float: right; /* 右浮动 */
+        }
+        .next-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .next-btn:active { transform: translateY(5px); box-shadow: none; }
+
+        /* --- 结算画面 --- */
+        .end-screen {
+            display: none;
+            padding: 20px 0;
+        }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score-box {
+            background: var(--accent-yellow);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 25px;
+            display: inline-block;
+            margin: 30px 0;
+            box-shadow: 0 8px 0 #e1b12c;
+        }
+        .end-score { font-size: 3.5rem; font-weight: bold; line-height: 1; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+        
+        /* 满分特效字 */
+        .perfect-score-text {
+            background: linear-gradient(45deg, #FFD700, #FF8C00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        /* --- 动画定义 --- */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* 烟花粒子 */
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall {
+            to { transform: translateY(80vh) rotate(720deg); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 8</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container">
+                </div>
+
+            <div class="options-grid" id="options-container">
+                </div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;"> <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen">
+            </div>
+    </div>
+
+    <script>
+        // --- 题目数据 (基于 CodeCombat 游戏开发关卡 7关) ---
+        const quizData = [
+            {
+                q: "在代码 game.nextPotionIn = game.potionSpawnTime - game.time; 中，计算的结果是什么？",
+                code: "game.nextPotionIn = \ngame.potionSpawnTime - game.time;",
+                options: ["A. 下一瓶药水的生成时间", "B. 距离药水生成还剩多少秒（倒计时）", "C. 游戏已经过去的时间", "D. 药水的总数量"],
+                correct: 1, // B
+                desc: "这个减法算式的含义是：预定的生成时间 减去 当前的游戏时间，得到的就是剩下的等待时间（倒计时）。"
+            },
+            {
+                q: "ui.track(game, \"nextPotionIn\"); 这行代码的作用是？",
+                code: "ui.track(game, \"nextPotionIn\");",
+                options: ["A. 让药水追踪玩家", "B. 在屏幕上显示 nextPotionIn 变量的值", "C. 生成一瓶新药水", "D. 隐藏药水"],
+                correct: 1, // B
+                desc: "ui.track 的作用是在游戏界面上实时显示某个变量的数值。这里显示的是我们算出来的药水倒计时。"
+            },
+            {
+                q: "为什么我们要使用 updateTimers() 函数并在 while(true) 中调用它？",
+                code: "while (true) {\n    updateTimers();\n}",
+                options: ["A. 为了让计时器只运行一次", "B. 为了让计时器在游戏的每一帧都进行检查和更新", "C. 为了暂停游戏", "D. 为了让代码变慢"],
+                correct: 1, // B
+                desc: "游戏是动态的，时间每秒都在变。我们需要不断地（每一帧）检查时间是否到了，并更新倒计时显示，所以必须放在无限循环里调用。"
+            },
+            {
+                q: "如果 game.time > game.munchkinSpawnTime，意味着什么？",
+                code: "if (game.time > game.munchkinSpawnTime) {\n    ...\n}",
+                options: ["A. 还没到生成矮人的时间", "B. 矮人生成时间到了（或过了），该生成新矮人了", "C. 矮人已经死光了", "D. 游戏结束了"],
+                correct: 1, // B
+                desc: "当前时间大于预设时间，说明等待的时间已经结束，条件满足，应该执行生成逻辑。"
+            },
+            {
+                q: "在“茶点时间”关卡中，我们设置了几个独立的计时器？",
+                options: ["A. 1个", "B. 2个", "C. 3个（矮人、投矛手、药水）", "D. 10个"],
+                correct: 2, // C
+                desc: "关卡中分别有 game.munchkinSpawnTime, game.throwerSpawnTime 和 game.potionSpawnTime，分别控制三种不同的生成逻辑。"
+            },
+            {
+                q: "game.potionSpawnTime = game.potionSpawnTime + 6; 这行代码的目的是？",
+                code: "game.potionSpawnTime = \ngame.potionSpawnTime + 6;",
+                options: ["A. 让药水立刻生成", "B. 将下一次生成时间推迟到 6 秒后", "C. 生成 6 瓶药水", "D. 减少 6 秒时间"],
+                correct: 1, // B
+                desc: "这行代码更新了计时器目标，把下一次生成的时间点设定为“上一次目标时间 + 6秒”，实现每隔6秒生成一次的循环。"
+            },
+            {
+                q: "spawnMunchkins() 是什么？",
+                code: "spawnMunchkins();",
+                options: ["A. 游戏自带的命令", "B. 我们自己定义的函数，用来封装生成矮人的逻辑", "C. 一个变量", "D. 一个事件"],
+                correct: 1, // B
+                desc: "spawnMunchkins() 是自定义函数。我们将生成矮人并设置属性的代码打包在这个函数里，让主逻辑 updateTimers 更整洁。"
+            },
+            {
+                q: "UI 是什么意思？",
+                options: ["A. User Interface (用户界面)", "B. Under Ice (冰下)", "C. Ultra Instinct (自在极意)", "D. Unit Info (单位信息)"],
+                correct: 0, // A
+                desc: "UI 是 User Interface 的缩写，指玩家看到的游戏画面上的信息展示部分，比如血条、分数、计时器等。"
+            }
+        ];
+
+        // --- 游戏状态变量 ---
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false; // 当前题是否已作答
+
+        // --- DOM 元素 ---
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        // 解析相关元素
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        // --- 初始化游戏 ---
+        function loadQuestion() {
+            answered = false; // 重置作答状态
+            feedbackArea.style.display = 'none'; // 隐藏解析区域
+            
+            const data = quizData[currentQuestion];
+            
+            // 更新顶部UI
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            // 渲染题目和代码
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                // --- 修复后的安全高亮逻辑 (使用占位符) ---
+                // 1. 先进行HTML转义
+                let codeHtml = escapeHtml(data.code);
+                
+                var placeholders = [];
+                var phIndex = 0;
+
+                // 辅助函数：存储占位
+                function store(str) {
+                    placeholders.push(str);
+                    return "___PH" + (phIndex++) + "___";
+                }
+
+                // 2. 提取字符串 ("...") - 防止关键字匹配到字符串内部
+                codeHtml = codeHtml.replace(/(".*?")/g, function(match) {
+                    return store('<span class="str">' + match + '</span>');
+                });
+
+                // 3. 提取注释 (//...)
+                codeHtml = codeHtml.replace(/(\/\/.*)/g, function(match) {
+                    return store('<span class="cmt">' + match + '</span>');
+                });
+
+                // 4. 高亮关键字 (现在安全了)
+                codeHtml = codeHtml.replace(/\b(hero|game|ui|player|munchkin|on|spawn|setActionFor|attack|moveXY|findNearestEnemy|while|true|false|if|else|auto|void|event|target|unit|pos|time|nextPotionIn|potionSpawnTime|munchkinSpawnTime|throwerSpawnTime|updateTimers|spawnMunchkins|spawnThrowers|spawnPotion|track)\b/g, '<span class="kw">$1</span>');
+
+                // 5. 高亮数字
+                codeHtml = codeHtml.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+
+                // 6. 高亮方法/函数 (.xxx)
+                codeHtml = codeHtml.replace(/(\.\w+)/g, '<span class="fn">$1</span>');
+                // 增加自定义函数名高亮 (单词后面跟左括号)
+                codeHtml = codeHtml.replace(/(\b\w+)(?=\()/g, '<span class="fn">$1</span>');
+
+                // 7. 还原占位符 (把字符串和注释放回去)
+                codeHtml = codeHtml.replace(/___PH(\d+)___/g, function(match, id) {
+                    return placeholders[id];
+                });
+
+                html += `<div class="code-block">${codeHtml}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            // 渲染选项
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                // 点击事件传递索引和按钮对象
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // --- 检查答案 ---
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return; // 防止重复作答
+            answered = true;
+
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            
+            // 锁定所有按钮
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                // --- 答对了 ---
+                btnElement.classList.add('correct');
+                score += 100; // 每题100分
+                scoreDisplay.innerText = score;
+                createConfetti(); // 撒花特效
+                // 显示解析：正确样式
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                // --- 答错了 ---
+                btnElement.classList.add('wrong');
+                // 高亮正确答案给用户看
+                setTimeout(() => {
+                   allBtns[data.correct].classList.add('correct');
+                }, 400);
+                // 显示解析：错误样式，并告知正确答案
+                const rightAnswerStr = data.options[data.correct].charAt(0); // 获取 A/B/C/D
+                showFeedback(false, `❌ 回答错误，正确答案是 ${rightAnswerStr}`, data.desc);
+            }
+        }
+
+        // --- 显示解析区域 ---
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            // 平滑滚动到解析区域，防止被挡住
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // --- 下一题 ---
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        // --- 结束画面 ---
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            // 进度条拉满
+            progressBar.parentElement.style.display = 'none'; 
+
+            const totalScore = quizData.length * 100;
+            const isPerfect = (score === totalScore);
+            
+            let html = '';
+            if (isPerfect) {
+                // 满分特效
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 逻辑架构师！ 🎉</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score perfect-score-text">${score}</div></div>`;
+                html += `<div class="end-desc">太棒了！你已经能熟练处理复杂的时间逻辑和界面反馈了，这是一个专业游戏开发者的标志！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score">${score} / ${totalScore}</div></div>`;
+                html += `<div class="end-desc">做得不错！继续加油，让你的游戏逻辑更加严密！</div>`;
+            }
+            // 再玩一次按钮
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; font-size:1.2rem; padding: 15px 40px;">🔄 再玩一次</button>`;
+            
+            endScreen.innerHTML = html;
+        }
+
+        // --- 工具：简易撒花特效 ---
+        function createConfetti() {
+            const colors = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#fdcb6e'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-20px';
+                // 随机大小和旋转
+                const scale = Math.random() * 0.6 + 0.4;
+                confetti.style.transform = `scale(${scale}) rotate(${Math.random()*360}deg)`;
+                // 随机下落时间和延迟
+                confetti.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                
+                container.appendChild(confetti);
+                // 动画结束后清理
+                setTimeout(() => confetti.remove(), 2500);
+            }
+        }
+
+        // --- 工具：HTML转义 ---
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // --- 启动游戏 ---
+        loadQuestion();
+
+    </script>
+</body>
+</html>
