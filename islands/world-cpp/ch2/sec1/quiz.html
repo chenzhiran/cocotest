@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>编程小英雄挑战赛</title>
+    <title>编程小英雄挑战赛 - 游戏开发篇</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
     <style>
         /* --- 基础设置 (恢复最初风格) --- */
@@ -24,6 +24,7 @@
             --code-fn: #6196cc; /* 函数 */
             --code-num: #f08d49; /* 数字 */
             --code-str: #7ec699; /* 字符串 */
+            --code-cmt: #777777; /* 注释 */
         }
 
         body {
@@ -127,6 +128,7 @@
         .fn { color: var(--code-fn); }
         .num { color: var(--code-num); }
         .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
 
         /* --- 选项按钮 --- */
         .options-grid {
@@ -292,7 +294,7 @@
     <div class="game-container">
         <div id="quiz-view">
             <div class="header-stats">
-                <span id="level-indicator">Level 1 / 10</span>
+                <span id="level-indicator">Level 1 / 8</span>
                 <div class="score-box">⭐ <span id="score">0</span></div>
             </div>
 
@@ -319,73 +321,63 @@
     </div>
 
     <script>
-        // --- 题目数据 (集成您提供的内容，并添加了 code 字段用于高亮) ---
+        // --- 题目数据 (基于 CodeCombat 游戏开发关卡 C++ 内容) ---
         const quizData = [
             {
-                q: "在代码 hero.moveRight() 中，hero 是什么？",
-                code: "hero.moveRight()",
-                options: ["A. 方法", "B. 参数", "C. 对象", "D. 整数"],
-                correct: 2, // C
-                desc: "hero 是对象，就像故事里的主角，拥有各种能力可以执行动作。"
-            },
-            {
-                q: "hero.moveUp() 中的 moveUp 在编程中叫什么？",
-                code: "hero.moveUp()",
-                options: ["A. 对象", "B. 方法", "C. 参数", "D. 注释"],
+                q: "在代码 game.spawnXY(\"fence\", 39, 16); 中，spawnXY 的作用是什么？",
+                code: "game.spawnXY(\"fence\", 39, 16);",
+                options: ["A. 移动英雄", "B. 生成一个物体", "C. 消除一个物体", "D. 播放音乐"],
                 correct: 1, // B
-                desc: "moveUp 是方法，就像英雄会的技能，总是带着小括号()。"
+                desc: "spawnXY 是用来在游戏地图的特定位置（坐标）生成新物体的方法，比如生成围栏、森林或宝石。"
             },
             {
-                q: "在 hero.moveRight(2) 中，数字 2 扮演什么角色？",
-                code: "hero.moveRight(2)",
-                options: ["A. 对象", "B. 方法", "C. 参数", "D. 字符串"],
+                q: "在代码 game.spawnXY(\"fence\", 39, 16); 中，括号里的数字 39 和 16 代表什么？",
+                code: "game.spawnXY(\"fence\", 39, 16);",
+                options: ["A. 围栏的数量", "B. 围栏的价格", "C. 坐标位置 (X和Y)", "D. 围栏的大小"],
                 correct: 2, // C
-                desc: "2 是参数，它告诉方法要用多大的力气，这里表示移动 2 步。"
+                desc: "这两个数字代表坐标，X表示左右位置，Y表示上下位置，它们决定了围栏出现在地图的哪里。"
             },
             {
-                q: "下面哪个是整数？",
-                options: ["A. 1.5", "B. 2.3", "C. 3.14", "D. 4"],
-                correct: 3, // D
-                desc: "整数是完整的数字，没有小数点，4 就是整数。"
-            },
-            {
-                q: "下面哪个是正数？",
-                options: ["A. -5", "B. 0", "C. 3", "D. -1"],
+                q: "如果你想在游戏中创建一个玩家控制的英雄，应该使用哪行代码？",
+                code: "// 哪个是创建英雄的正确代码？",
+                options: ["A. game.spawnXY(\"hero\", ...)", "B. game.addMoveGoalXY(...)", "C. game.spawnPlayerXY(\"captain\", ...)", "D. hero.moveRight()"],
                 correct: 2, // C
-                desc: "正数是大于零的数，3 是正数，代表着前进的方向。"
+                desc: "game.spawnPlayerXY 是专门用来生成玩家角色的命令，它会让这个角色听从玩家的鼠标点击来移动。"
             },
             {
-                q: "下面哪个数字是小数？",
-                options: ["A. 10", "B. -5", "C. 0.5", "D. 0"],
-                correct: 2, // C
-                desc: "小数是带小数点的数字，0.5 就是小数，就像移动半步。"
-            },
-            {
-                q: "如果要让英雄向左移动，应该使用哪个方法？",
-                options: ["A. hero.moveRight()", "B. hero.moveUp()", "C. hero.moveLeft()", "D. hero.moveDown()"],
-                correct: 2, // C
-                desc: "moveLeft 就是向左移动的方法，让英雄往左边走。"
-            },
-            {
-                q: "下面哪个是负数？",
-                options: ["A. 1", "B. 2", "C. -3", "D. 4"],
-                correct: 2, // C
-                desc: "负数是小于零的数，-3 就是负数，代表着后退的方向。"
-            },
-            // 关卡程序应用题
-            {
-                q: "在关卡程序中，hero.moveRight(2) 会让英雄移动几步？",
-                code: "hero.moveRight(2)",
-                options: ["A. 1步", "B. 2步", "C. 3步", "D. 4步"],
+                q: "game.addMoveGoalXY(10, 20); 这行代码的作用是什么？",
+                code: "game.addMoveGoalXY(10, 20);",
+                options: ["A. 让英雄立即传送到 (10, 20)", "B. 增加一个移动目标，玩家走到那里就赢了", "C. 生成一个敌人", "D. 增加分数"],
                 correct: 1, // B
-                desc: "因为有参数 2，所以英雄会向右移动 2 步。"
+                desc: "addMoveGoalXY 用来设置游戏目标。当并在地上显示一个红色的X，玩家控制英雄走到那里就算完成目标。"
             },
             {
-                q: "如果没有参数，hero.moveLeft() 默认移动几步？",
-                code: "hero.moveLeft()",
-                options: ["A. 0步", "B. 1步", "C. 2步", "D. 3步"],
+                q: "在 game.spawnXY(\"forest\", 20, 20); 中，为什么 forest 要加双引号？",
+                code: "game.spawnXY(\"forest\", 20, 20);",
+                options: ["A. 因为它是一个字符串(String)", "B. 因为它是一个数字", "C. 因为它是一个变量", "D. 没有原因，随便加的"],
+                correct: 0, // A
+                desc: "在编程中，文本信息需要用双引号括起来，这叫做字符串。这里 forest 是物体的名字，所以是字符串。"
+            },
+            {
+                q: "如果你想让玩家通过“收集所有宝石”来赢得游戏，应该使用哪个命令？",
+                code: "// 设置收集目标",
+                options: ["A. game.spawnXY(\"gem\")", "B. game.addCollectGoal()", "C. game.addMoveGoalXY()", "D. hero.attack(\"gem\")"],
                 correct: 1, // B
-                desc: "当方法没有参数时，英雄默认移动 1 步。"
+                desc: "addCollectGoal() 会告诉游戏系统：玩家必须收集关卡里的宝石才能获胜。"
+            },
+            {
+                q: "代码 game.addCollectGoal(6); 中的数字 6 表示什么？",
+                code: "game.addCollectGoal(6);",
+                options: ["A. 必须收集 6 个宝石", "B. 必须在 6 秒内收集完", "C. 宝石价值 6 金币", "D. 必须收集第 6 号宝石"],
+                correct: 0, // A
+                desc: "当 addCollectGoal 括号里有数字时，表示玩家只需要收集指定数量的物品即可获胜，不需要收集全部。"
+            },
+            {
+                q: "在制作游戏时，生成 forest (森林) 通常是用作什么？",
+                code: "game.spawnXY(\"forest\", 34, 22);",
+                options: ["A. 给玩家加血", "B. 当作障碍物或迷宫墙壁", "C. 当作敌人", "D. 当作宝箱"],
+                correct: 1, // B
+                desc: "在 CodeCombat 的游戏开发关卡中，森林（forest）通常用来构建迷宫的墙壁，阻挡玩家直接通过。"
             }
         ];
 
@@ -422,11 +414,42 @@
             // 渲染题目和代码
             let html = `<h2>${data.q}</h2>`;
             if (data.code) {
-                // 简单的高亮替换正则
-                let codeHtml = escapeHtml(data.code)
-                    .replace(/(hero)/g, '<span class="kw">$1</span>') // 关键字
-                    .replace(/(\.\w+)/g, '<span class="fn">$1</span>') // 方法名
-                    .replace(/(\d+)/g, '<span class="num">$1</span>'); // 数字
+                let codeHtml = escapeHtml(data.code);
+                
+                // --- 修复后的安全高亮逻辑 (使用占位符) ---
+                var placeholders = [];
+                var phIndex = 0;
+
+                // 辅助函数：存储占位
+                function store(str) {
+                    placeholders.push(str);
+                    return "___PH" + (phIndex++) + "___";
+                }
+
+                // 1. 提取字符串 ("...") - 防止关键字匹配到字符串内部
+                codeHtml = codeHtml.replace(/(".*?")/g, function(match) {
+                    return store('<span class="str">' + match + '</span>');
+                });
+
+                // 2. 提取注释 (//...)
+                codeHtml = codeHtml.replace(/(\/\/.*)/g, function(match) {
+                    return store('<span class="cmt">' + match + '</span>');
+                });
+
+                // 3. 高亮关键字 (现在安全了)
+                codeHtml = codeHtml.replace(/\b(game|hero|while|true|false|if|else|break|auto|int|return|void)\b/g, '<span class="kw">$1</span>');
+
+                // 4. 高亮数字
+                codeHtml = codeHtml.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+
+                // 5. 高亮方法/函数 (.xxx)
+                codeHtml = codeHtml.replace(/(\.\w+)/g, '<span class="fn">$1</span>');
+
+                // 6. 还原占位符 (把字符串和注释放回去)
+                codeHtml = codeHtml.replace(/___PH(\d+)___/g, function(match, id) {
+                    return placeholders[id];
+                });
+
                 html += `<div class="code-block">${codeHtml}</div>`;
             }
             questionContainer.innerHTML = html;
@@ -510,9 +533,9 @@
             if (isPerfect) {
                 // 满分特效
                 for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
-                html += `<div class="end-title">🎉 完美的编程小英雄！ 🎉</div>`;
+                html += `<div class="end-title">🎉 这里的游戏大师就是你！ 🎉</div>`;
                 html += `<div class="end-score-box">总得分 <div class="end-score perfect-score-text">${score}</div></div>`;
-                html += `<div class="end-desc">太棒了！你掌握了所有的知识点，简直是天才！</div>`;
+                html += `<div class="end-desc">太棒了！你已经掌握了创建游戏的所有基础知识！</div>`;
             } else {
                 html += `<div class="end-title">挑战完成！</div>`;
                 html += `<div class="end-score-box">总得分 <div class="end-score">${score} / ${totalScore}</div></div>`;
