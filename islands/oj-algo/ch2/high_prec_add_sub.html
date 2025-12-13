@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高精度运算互动实验室 | High-Precision Arithmetic Lab</title>
+    <style>
+        :root {
+            --primary: #4e54c8;
+            --secondary: #8f94fb;
+            --accent: #ff6b6b;
+            --success: #00b894;
+            --text-dark: #2d3436;
+            --text-light: #dfe6e9;
+            --bg-card: #ffffff;
+            --bg-body: #f1f2f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        /* --- Header Section --- */
+        header {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            padding: 3rem 1rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .subtitle {
+            font-weight: 300;
+            opacity: 0.9;
+            margin-top: 10px;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Canvas Background */
+        #bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.3;
+        }
+
+        /* --- Main Container --- */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* --- Card Styles --- */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border-left: 5px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid #f1f2f6;
+            padding-bottom: 10px;
+        }
+
+        .badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            vertical-align: middle;
+        }
+
+        /* --- Knowledge Visualization (Storage) --- */
+        .storage-viz {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .arrow-icon {
+            font-size: 2rem;
+            color: var(--secondary);
+        }
+
+        .data-box {
+            background: var(--text-dark);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            position: relative;
+        }
+
+        .data-box::after {
+            content: attr(data-label);
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #666;
+            font-size: 0.8rem;
+            font-family: sans-serif;
+            white-space: nowrap;
+        }
+
+        /* --- Addition Animation Section --- */
+        .vertical-calc {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 50px); /* Hundreds, Tens, Ones */
+            grid-gap: 5px;
+            position: relative;
+        }
+
+        .digit {
+            width: 50px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .operator {
+            position: absolute;
+            left: -30px;
+            bottom: 70px;
+            color: var(--primary);
+        }
+
+        .line {
+            grid-column: 1 / span 3;
+            height: 4px;
+            background-color: var(--text-dark);
+            margin-top: 5px;
+        }
+
+        /* Carry Animation Elements */
+        .carry-indicator {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: 60px; /* Start at ones place sum */
+            right: 10px; /* Align with ones */
+            opacity: 0;
+            z-index: 10;
+        }
+
+        /* Animation Keyframes */
+        @keyframes carryFloat {
+            0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+            20% { opacity: 1; transform: translate(0, 0) scale(1.2); }
+            50% { transform: translate(-55px, -80px) scale(1); } /* Move to top of tens column */
+            80% { opacity: 1; transform: translate(-55px, -40px); } /* Settle down */
+            100% { opacity: 0; transform: translate(-55px, -40px); }
+        }
+
+        .animate-carry {
+            animation: carryFloat 3s infinite;
+        }
+
+        /* Highlight for current calculation column */
+        .highlight-col {
+            background-color: rgba(255, 234, 167, 0.3);
+            border-radius: 5px;
+        }
+
+        /* --- Subtraction Interaction Section --- */
+        .borrow-demo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .number-blocks {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .block-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .block {
+            width: 60px;
+            height: 60px;
+            background: #dfe6e9;
+            border: 2px solid #b2bec3;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .block.active-borrow {
+            background: var(--accent);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .block.active-receive {
+            background: var(--success);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .borrow-btn {
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .borrow-btn:hover {
+            background: var(--secondary);
+            transform: scale(1.05);
+        }
+
+        .borrow-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .explanation-bubble {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid #ffeeba;
+            max-width: 400px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .explanation-bubble.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- Simulator Section --- */
+        .simulator {
+            background: #2d3436;
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .sim-input-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .sim-input {
+            background: #636e72;
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            width: 150px;
+            text-align: right;
+        }
+
+        .sim-btn {
+            background: var(--success);
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .sim-log-container {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.2);
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            border-left: 3px solid var(--success);
+        }
+
+        .log-item {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .log-highlight {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* --- Footer --- */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #636e72;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .vertical-calc { font-size: 2rem; }
+            .calc-grid { grid-template-columns: repeat(3, 40px); }
+            .digit { height: 50px; width: 40px; }
+            .storage-viz { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <canvas id="bg-canvas"></canvas>
+        <h1>高精度运算实验室</h1>
+        <div class="subtitle">High-Precision Arithmetic: Addition & Subtraction</div>
+    </header>
+
+    <div class="container">
+
+        <section class="card">
+            <h2>💡 核心概念：大数存储 <span class="badge">Storage</span></h2>
+            <p>普通计算机变量（如 <code>long long</code>）最多只能存约19位数字。当数字超过这个长度时，我们会发生<b>溢出 (Overflow)</b>。</p>
+            <p>为了解决这个问题，我们使用<b>数组 (Array)</b> 来存储每一位数字。这就好比把一大桶水（大数）分装到许多小杯子（数组元素）里。</p>
+            
+            <div class="storage-viz">
+                <div class="data-box" data-label="字符串输入 (String)">"123"</div>
+                <div class="arrow-icon">➡</div>
+                <div class="data-box" style="background: var(--accent);" data-label="反转 (Reverse)">"321"</div>
+                <div class="arrow-icon">➡</div>
+                <div class="data-box" style="background: var(--primary);" data-label="数组存储 (Array)">A[0]=3, A[1]=2, A[2]=1</div>
+            </div>
+            <p><i>⚠️ 注意：我们通常将数字<b>倒序</b>存储，这样个位就在数组下标 0 的位置，方便处理进位。</i></p>
+        </section>
+
+        <section class="card">
+            <h2>➕ 高精度加法：进位的艺术 <span class="badge">Addition</span></h2>
+            <p>核心原理：<code>A[i] + B[i] + t</code>。其中 <code>t</code> 是进位 (Carry)。</p>
+            <ul style="color: #555;">
+                <li>如果和 \ge 10，保留个位，进位 <code>t = 1</code>。</li>
+                <li>如果和 < 10，进位 <code>t = 0</code>。</li>
+            </ul>
+
+            <div class="vertical-calc">
+                <div class="operator">+</div>
+                <div class="calc-grid">
+                    <div class="digit"></div><div class="digit">1</div><div class="digit">8</div>
+                    <div class="digit"></div><div class="digit">2</div><div class="digit">5</div>
+                    <div class="line"></div>
+                    <div class="digit"></div><div class="digit" style="color:var(--primary)">4</div><div class="digit" style="color:var(--primary)">3</div>
+                    
+                    <div class="carry-indicator animate-carry">1</div>
+                </div>
+            </div>
+            <p style="text-align: center; color: #666;">
+                <small>👆 观察动画：8 + 5 = 13，写 3，<b>进 1</b> 到十位。</small>
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>➖ 高精度减法：借位的奥义 <span class="badge">Subtraction</span></h2>
+            <p>核心原理：如果当前位不够减（即 A[i] < B[i]），就向高位<b>借一当十 (Borrow)</b>。</p>
+            
+            <div class="borrow-demo">
+                <div class="number-blocks">
+                    <div class="block-col">
+                        <small>十位 (Tens)</small>
+                        <div id="tens-block" class="block">3</div>
+                    </div>
+                    <div class="block-col">
+                        <small>个位 (Ones)</small>
+                        <div id="ones-block" class="block">2</div>
+                    </div>
+                </div>
+                
+                <div style="font-size: 2rem;">- 5</div>
+                
+                <div id="bubble" class="explanation-bubble">
+                    个位 2 减 5 不够减！需要借位。
+                </div>
+
+                <button id="borrow-btn" class="borrow-btn" onclick="triggerBorrow()">
+                    <span>🖐 向十位借 1 (Borrow)</span>
+                </button>
+
+                <div id="result-text" style="font-weight: bold; margin-top: 10px; min-height: 1.6em;"></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>💻 运算模拟器 <span class="badge">Simulator</span></h2>
+            <p>输入两个大整数，查看详细的加法逐位运算过程。</p>
+            
+            <div class="simulator">
+                <div class="sim-input-group">
+                    <input type="number" id="numA" class="sim-input" placeholder="Num A" value="856">
+                    <span style="font-size: 1.5rem; align-self: center;">+</span>
+                    <input type="number" id="numB" class="sim-input" placeholder="Num B" value="47">
+                    <button class="sim-btn" onclick="runSimulation()">开始计算 (Calculate)</button>
+                </div>
+
+                <div id="sim-log" class="sim-log-container">
+                    <div class="log-item">等待输入... (Waiting for input)</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" style="background: linear-gradient(to right, #f8f9fa, #e9ecef);">
+            <h2>📝 知识点速记 <span class="badge">Summary</span></h2>
+            <ul style="line-height: 2;">
+                <li>📌 <b>存储：</b> 使用 <code>string</code> 读入，反转存入 <code>int</code> 数组。</li>
+                <li>📌 <b>加法 (Add)：</b> C[i] = A[i] + B[i] + t。进位 t = C[i] / 10，本位 C[i]  %= 10。</li>
+                <li>📌 <b>减法 (Sub)：</b> 若 A[i] < B[i]，则 A[i] += 10 且 A[i+1]-- (借位)。</li>
+                <li>📌 <b>前导零 (Leading Zeros)：</b> 运算结束后，需循环删除数组末尾（即高位）多余的 0。</li>
+                <li>📌 <b>适用场景：</b> 适用于超过 <code>long long</code> 范围的超大整数运算。</li>
+            </ul>
+        </section>
+
+    </div>
+
+    <footer>
+        Designed with ❤️ for Learning | EdTech 2025
+    </footer>
+
+    <script>
+        // --- 1. Canvas Background Effect ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let particles = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = document.querySelector('header').offsetHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 1;
+                this.vy = (Math.random() - 0.5) * 1;
+                this.size = Math.random() * 2 + 1;
+                this.color = Math.random() > 0.5 ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.2)';
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if(this.x < 0 || this.x > width) this.vx *= -1;
+                if(this.y < 0 || this.y > height) this.vy *= -1;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for(let i=0; i<30; i++) particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        initParticles();
+        animate();
+
+        // --- 2. Subtraction Interaction Logic ---
+        function triggerBorrow() {
+            const tensEl = document.getElementById('tens-block');
+            const onesEl = document.getElementById('ones-block');
+            const btn = document.getElementById('borrow-btn');
+            const bubble = document.getElementById('bubble');
+            const resultText = document.getElementById('result-text');
+
+            // 1. Show Borrowing visual on Tens
+            tensEl.classList.add('active-borrow');
+            bubble.innerText = "从十位借走 1...";
+            bubble.classList.add('show');
+            btn.disabled = true;
+
+            setTimeout(() => {
+                // Change Tens Value
+                tensEl.innerText = "2"; 
+                tensEl.classList.remove('active-borrow');
+
+                // 2. Show Receiving visual on Ones
+                onesEl.classList.add('active-receive');
+                bubble.innerText = "...个位增加 10，变成 12！";
+                
+                setTimeout(() => {
+                    onesEl.innerText = "12";
+                    onesEl.classList.remove('active-receive');
+                    
+                    // 3. Final Result
+                    bubble.innerText = "现在够减了：12 - 5 = 7";
+                    resultText.innerHTML = "最终结果：<span style='color:var(--primary)'>27</span> (十位剩2，个位得7)";
+                    
+                    // Reset Logic (Optional, for replay)
+                    setTimeout(() => {
+                        btn.innerHTML = "↺ 重置演示 (Reset)";
+                        btn.disabled = false;
+                        btn.onclick = resetBorrow;
+                        btn.style.background = "#2d3436";
+                    }, 1000);
+                }, 800);
+            }, 800);
+        }
+
+        function resetBorrow() {
+            document.getElementById('tens-block').innerText = "3";
+            document.getElementById('ones-block').innerText = "2";
+            document.getElementById('bubble').classList.remove('show');
+            document.getElementById('result-text').innerText = "";
+            const btn = document.getElementById('borrow-btn');
+            btn.innerHTML = "🖐 向十位借 1 (Borrow)";
+            btn.style.background = ""; // reset color
+            btn.onclick = triggerBorrow;
+        }
+
+        // --- 3. Simulator Logic ---
+        function runSimulation() {
+            const aStr = document.getElementById('numA').value || "0";
+            const bStr = document.getElementById('numB').value || "0";
+            const logContainer = document.getElementById('sim-log');
+            
+            logContainer.innerHTML = ""; // Clear log
+
+            // Helper to log
+            function log(msg, highlight=false) {
+                const div = document.createElement('div');
+                div.className = 'log-item';
+                div.innerHTML = msg;
+                if(highlight) div.classList.add('log-highlight');
+                logContainer.appendChild(div);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+
+            // 1. Array Conversion
+            let A = aStr.split('').reverse().map(Number);
+            let B = bStr.split('').reverse().map(Number);
+            let C = [];
+            
+            log(`➡️ 步骤1：字符串转数组并反转 (Reverse)`);
+            log(`A: [{A.join(', ')}]`);
+            log(`B: [{B.join(', ')}]`);
+
+            // 2. Addition Loop
+            let t = 0;
+            let len = Math.max(A.length, B.length);
+            
+            for(let i=0; i < len; i++) {
+                let valA = (i < A.length) ? A[i] : 0;
+                let valB = (i < B.length) ? B[i] : 0;
+                
+                t = valA + valB + t;
+                let digit = t % 10;
+                C.push(digit);
+                
+                log(`🔹 第 {i} 位 (个位是0): {valA} + {valB} + 进位 = {t}`);
+                log(`&nbsp;&nbsp;&nbsp;保留: {digit}, 新进位: {Math.floor(t/10)}`, true);
+                
+                t = Math.floor(t / 10);
+            }
+            
+            if(t > 0) {
+                C.push(t);
+                log(`🔸 最高位还有进位: {t}, 追加到数组末尾`, true);
+            }
+
+            // 3. Result
+            let result = C.reverse().join('');
+            log(`✅ 步骤3：数组反转输出结果`);
+            log(`Result: {result}`, true);
+        }
+    </script>
+</body>
+</html>

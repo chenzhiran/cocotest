@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高精度乘法探索 | High-Precision Multiplication Explorer</title>
+    <style>
+        :root {
+            --primary: #6C5CE7;
+            --secondary: #00CEC9;
+            --accent: #FD79A8;
+            --dark-bg: #2D3436;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #2d3436;
+            --code-bg: #1e1e1e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* --- Header & Canvas --- */
+        header {
+            position: relative;
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        #bgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+            animation: slideDown 1s ease-out;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            background: rgba(0,0,0,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        /* --- Main Layout --- */
+        main {
+            max-width: 900px;
+            margin: -40px auto 40px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* --- Cards --- */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        h2 {
+            color: var(--primary);
+            border-left: 5px solid var(--secondary);
+            padding-left: 15px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* --- Animations --- */
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* --- Concept Visualization --- */
+        .concept-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .concept-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #eee;
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .icon-large {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .highlight-text {
+            color: var(--primary);
+            font-weight: bold;
+            background: rgba(108, 92, 231, 0.1);
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        /* --- Pseudocode Block --- */
+        .code-block {
+            background: var(--code-bg);
+            color: #d4d4d4;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.95rem;
+            overflow-x: auto;
+            border-left: 4px solid var(--accent);
+            margin: 1rem 0;
+            line-height: 1.5;
+        }
+        .code-keyword { color: #569cd6; }
+        .code-comment { color: #6a9955; }
+        .code-func { color: #dcdcaa; }
+        .code-var { color: #9cdcfe; }
+
+        /* --- Vertical Calculation Visual --- */
+        .vertical-calc-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            align-items: flex-start;
+            justify-content: center;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .vertical-grid {
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            line-height: 2rem;
+            text-align: right;
+            letter-spacing: 0.5rem;
+        }
+
+        .calc-explanation {
+            flex: 1;
+            min-width: 250px;
+            font-size: 0.95rem;
+        }
+
+        .digit-circle {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 0 2px;
+        }
+        .c-orange { background-color: #e67e22; }
+        .c-green { background-color: #27ae60; }
+        .c-blue { background-color: #2980b9; }
+        .c-red { background-color: #c0392b; }
+        .c-purple { background-color: #8e44ad; }
+        .c-cyan { background-color: #16a085; }
+
+        /* --- The Interactive Visualizer --- */
+        .math-viz-stage {
+            background: var(--code-bg);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            position: relative;
+            overflow: hidden;
+            min-height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .array-row {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .digit-box {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            background: #333;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .digit-box.active {
+            border-color: var(--secondary);
+            background: var(--primary);
+            transform: scale(1.15);
+            z-index: 10;
+        }
+
+        .digit-box.target {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        .digit-box span.index {
+            position: absolute;
+            top: -15px;
+            font-size: 0.7rem;
+            color: #888;
+        }
+
+        .formula-display {
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        /* --- Interactive Section Controls --- */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        input[type="number"] {
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            width: 100px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 0 #4834d4; }
+        .btn-primary:active { transform: translateY(4px); box-shadow: none; }
+        .btn-reset { background: var(--accent); color: white; box-shadow: 0 4px 0 #d63031; }
+        .btn-reset:active { transform: translateY(4px); box-shadow: none; }
+
+        .log-panel {
+            background: #f1f2f6;
+            padding: 15px;
+            border-radius: 8px;
+            height: 120px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            border-left: 4px solid var(--primary);
+        }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #ddd; padding-bottom: 2px; }
+
+        /* --- Footer --- */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+            background: rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2rem; }
+            .digit-box { width: 30px; height: 30px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <canvas id="bgCanvas"></canvas>
+    <div class="header-content">
+        <h1>高精度乘法</h1>
+        <div class="subtitle">High-Precision Multiplication</div>
+    </div>
+</header>
+
+<main>
+    <section class="card">
+        <h2>📐 竖式深度解析 (Visual Analysis)</h2>
+        <p>高精度乘法的本质是模拟我们小学学习的列竖式计算。但程序中我们不需要像手算那样"错位相加"，而是利用数组下标的规律直接累加。</p>
+        <p><strong>核心规律：</strong>参与运算的两个数 <var>A</var> 的第 <var>i</var> 位与 <var>B</var> 的第 <var>j</var> 位相乘，结果会贡献到 <var>C</var> 的第 <var>i+j</var> 位（假设从低位到高位下标为0, 1, 2...）。</p>
+        
+        <div class="vertical-calc-wrapper">
+            <div class="vertical-grid">
+                <div><span class="digit-circle c-orange">1</span><span class="digit-circle c-orange">2</span><span class="digit-circle c-green">3</span><span class="digit-circle c-blue">4</span></div>
+                <div>× &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="digit-circle c-green">5</span><span class="digit-circle c-red">6</span></div>
+                <div style="border-bottom: 2px solid #333; margin: 5px 0;"></div>
+                <div><span class="digit-circle c-purple">7</span><span class="digit-circle c-orange">4</span><span class="digit-circle c-cyan">0</span><span class="digit-circle c-blue">4</span></div>
+                <div><span class="digit-circle c-purple">6</span><span class="digit-circle c-purple">1</span><span class="digit-circle c-orange">7</span><span class="digit-circle c-cyan">0</span>&nbsp;</div>
+                <div style="border-bottom: 2px solid #333; margin: 5px 0;"></div>
+                <div><span class="digit-circle c-purple">6</span><span class="digit-circle c-green">9</span><span class="digit-circle c-blue">1</span><span class="digit-circle c-green">0</span><span class="digit-circle c-blue">4</span></div>
+            </div>
+
+            <div class="calc-explanation">
+                <h3>位置对应关系 (Index Logic)</h3>
+                <ul style="list-style: none; padding-left: 0;">
+                    <li style="margin-bottom: 8px;">
+                        <span class="digit-circle c-blue" style="width:20px;height:20px;line-height:20px;font-size:0.8rem">4</span> 与 <span class="digit-circle c-red" style="width:20px;height:20px;line-height:20px;font-size:0.8rem">6</span> 相乘，贡献至第 0 位。
+                    </li>
+                    <li style="margin-bottom: 8px;">
+                        <span class="digit-circle c-green" style="width:20px;height:20px;line-height:20px;font-size:0.8rem">3</span> 与 <span class="digit-circle c-red" style="width:20px;height:20px;line-height:20px;font-size:0.8rem">6</span>，<span class="digit-circle c-blue" style="width:20px;height:20px;line-height:20px;font-size:0.8rem">4</span> 与 <span class="digit-circle c-green" style="width:20px;height:20px;line-height:20px;font-size:0.8rem">5</span> 相乘，贡献至第 1 位。
+                    </li>
+                    <li style="margin-bottom: 8px;">
+                        <span class="digit-circle c-orange" style="width:20px;height:20px;line-height:20px;font-size:0.8rem">2</span> 与 <span class="digit-circle c-red" style="width:20px;height:20px;line-height:20px;font-size:0.8rem">6</span>，<span class="digit-circle c-green" style="width:20px;height:20px;line-height:20px;font-size:0.8rem">3</span> 与 <span class="digit-circle c-green" style="width:20px;height:20px;line-height:20px;font-size:0.8rem">5</span> 相乘，贡献至第 2 位。
+                    </li>
+                </ul>
+                <div style="margin-top: 15px; padding: 10px; background: #eef; border-radius: 6px;">
+                    <strong>结论：</strong> 高精度乘法的运算时间与参与运算的两个整数中长度较长者的位数有关，确切地说是 <span class="highlight-text">O(n²)</span>（其中n为总位数）。位数越多，需要遍历计算的 <var>i*j</var> 组合就越多。
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>💻 核心算法与伪代码 (Algorithm)</h2>
+        <p>以下是 Python 和 C++ 通用的算法逻辑。核心在于三步：<strong>倒序存储</strong>、<strong>不进位累加</strong>、<strong>统一处理进位</strong>。</p>
+        
+        <div class="code-block">
+<pre>
+<span class="code-comment">// 假设 A 和 B 已经是倒序存储数字的数组/列表
+// 例如 123 存储为 [3, 2, 1]
+// C 是结果数组，初始化为 0</span>
+
+<span class="code-func">Function</span> HighPrecisionMultiply(A, B):
+    <span class="code-comment">// 1. 初始化结果数组，最大长度为两数长度之和</span>
+    lenA = Length(A)
+    lenB = Length(B)
+    C = NewArray(Size = lenA + lenB, InitValue = 0)
+
+    <span class="code-comment">// 2. 逐位相乘 (核心逻辑)</span>
+    <span class="code-keyword">For</span> i <span class="code-keyword">From</span> 0 <span class="code-keyword">To</span> lenA - 1:
+        <span class="code-keyword">For</span> j <span class="code-keyword">From</span> 0 <span class="code-keyword">To</span> lenB - 1:
+            <span class="code-comment">// 此时先不处理进位，只管累加</span>
+            C[i + j] = C[i + j] + (A[i] * B[j])
+
+    <span class="code-comment">// 3. 统一处理进位</span>
+    <span class="code-keyword">For</span> k <span class="code-keyword">From</span> 0 <span class="code-keyword">To</span> Length(C) - 2:
+        <span class="code-keyword">If</span> C[k] >= 10:
+            C[k + 1] = C[k + 1] + (C[k] / 10)  <span class="code-comment">// 进位到下一位</span>
+            C[k] = C[k] % 10                   <span class="code-comment">// 当前位保留个位</span>
+
+    <span class="code-comment">// 4. 去除前导零并反转输出</span>
+    RemoveTrailingZeros(C) <span class="code-comment">// 因为是倒序，高位在数组末尾</span>
+    Reverse(C)
+    <span class="code-keyword">Return</span> C
+</pre>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>🚀 互动演示 (Interactive Demo)</h2>
+        <p>输入两个较小的数字（为了演示效果，建议2-3位），观察高精度乘法是如何逐位计算的。</p>
+        
+        <div class="controls">
+            <input type="number" id="numA" value="13" placeholder="Num A" min="1" max="999">
+            <span style="font-size:1.5rem; align-self:center;">×</span>
+            <input type="number" id="numB" value="5" placeholder="Num B" min="1" max="999">
+            <button class="btn-primary" onclick="startSimulation()">▶ 开始演示 (Start)</button>
+            <button class="btn-reset" onclick="resetDemo()">↺ 重置 (Reset)</button>
+        </div>
+
+        <div class="math-viz-stage" id="vizStage">
+            <div style="opacity: 0.5;">点击“开始演示”查看动画过程...</div>
+        </div>
+
+        <div class="formula-display" id="formulaDisplay">
+            当前计算: 等待开始...
+        </div>
+
+        <div class="log-panel" id="logPanel"></div>
+    </section>
+
+    <section class="card" style="border-left-color: var(--accent);">
+        <h2>📝 知识点总结 (Summary)</h2>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li style="margin-bottom: 10px; display: flex; align-items: start;">
+                <span style="margin-right: 10px; color: var(--secondary);">✔</span>
+                <div>
+                    <strong>数据结构:</strong> 使用 <code>int</code> 数组存储每一位数字，必须先<strong>反转</strong>字符串，让个位对齐数组下标 0。
+                </div>
+            </li>
+            <li style="margin-bottom: 10px; display: flex; align-items: start;">
+                <span style="margin-right: 10px; color: var(--secondary);">✔</span>
+                <div>
+                    <strong>核心公式:</strong> <var>C[i + j]</var> += <var>A[i]</var> × <var>B[j]</var>。这是理解高精度乘法最关键的一步。
+                </div>
+            </li>
+            <li style="margin-bottom: 10px; display: flex; align-items: start;">
+                <span style="margin-right: 10px; color: var(--secondary);">✔</span>
+                <div>
+                    <strong>进位策略:</strong> 推荐“先全乘，后进位”。这样代码写起来更简洁，不容易出错。
+                </div>
+            </li>
+            <li style="margin-bottom: 10px; display: flex; align-items: start;">
+                <span style="margin-right: 10px; color: var(--secondary);">✔</span>
+                <div>
+                    <strong>时间复杂度:</strong> 每一位都要和另一数的每一位相乘，所以是 <span class="highlight-text">O(N × M)</span>，即平方级别复杂度。
+                </div>
+            </li>
+        </ul>
+    </section>
+</main>
+
+<footer>
+    Designed with Logic & Magic | EdTech 2025
+</footer>
+
+<script>
+    // --- Canvas Background (Particles) ---
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width, height;
+    let particles = [];
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = 250;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.vx = (Math.random() - 0.5) * 1;
+            this.vy = (Math.random() - 0.5) * 1;
+            this.size = Math.random() * 2;
+            this.alpha = Math.random() * 0.5 + 0.1;
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if(this.x < 0) this.x = width;
+            if(this.x > width) this.x = 0;
+            if(this.y < 0) this.y = height;
+            if(this.y > height) this.y = 0;
+        }
+        draw() {
+            ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    for(let i=0; i<60; i++) particles.push(new Particle());
+
+    function animateBg() {
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        requestAnimationFrame(animateBg);
+    }
+    animateBg();
+
+    // --- High Precision Logic & Visualization ---
+
+    const vizStage = document.getElementById('vizStage');
+    const logPanel = document.getElementById('logPanel');
+    const formulaDisplay = document.getElementById('formulaDisplay');
+    let isRunning = false;
+
+    function log(msg) {
+        const div = document.createElement('div');
+        div.className = 'log-entry';
+        div.innerHTML = msg;
+        logPanel.appendChild(div);
+        logPanel.scrollTop = logPanel.scrollHeight;
+    }
+
+    function createDigitBox(num, index, idPrefix) {
+        const box = document.createElement('div');
+        box.className = 'digit-box';
+        box.id = `${idPrefix}-${index}`;
+        box.innerHTML = `${num}<span class="index">${index}</span>`;
+        return box;
+    }
+
+    function resetDemo() {
+        vizStage.innerHTML = '<div style="opacity: 0.5;">准备就绪，点击开始...</div>';
+        logPanel.innerHTML = '';
+        formulaDisplay.innerHTML = '等待开始...';
+        formulaDisplay.style.background = 'rgba(255,255,255,0.1)';
+        formulaDisplay.style.color = '#fff';
+        isRunning = false;
+    }
+
+    async function wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function startSimulation() {
+        if(isRunning) return;
+        isRunning = true;
+        
+        const strA = document.getElementById('numA').value;
+        const strB = document.getElementById('numB').value;
+
+        // 1. Data Preparation (Reverse)
+        const A = strA.split('').reverse().map(Number);
+        const B = strB.split('').reverse().map(Number);
+        const lenC = A.length + B.length;
+        const C = new Array(lenC).fill(0);
+
+        // 2. Setup UI
+        vizStage.innerHTML = '';
+        logPanel.innerHTML = '';
+        
+        // Container for A
+        const rowA = document.createElement('div');
+        rowA.className = 'array-row';
+        rowA.innerHTML = '<div style="width:30px; line-height:40px;">A:</div>';
+        A.forEach((n, i) => rowA.appendChild(createDigitBox(n, i, 'a')));
+        vizStage.appendChild(rowA);
+
+        // Container for B
+        const rowB = document.createElement('div');
+        rowB.className = 'array-row';
+        rowB.innerHTML = '<div style="width:30px; line-height:40px;">B:</div>';
+        B.forEach((n, i) => rowB.appendChild(createDigitBox(n, i, 'b')));
+        vizStage.appendChild(rowB);
+
+        // Separator
+        const hr = document.createElement('hr');
+        hr.style.width = '100%';
+        hr.style.borderColor = '#555';
+        hr.style.margin = '10px 0';
+        vizStage.appendChild(hr);
+
+        // Container for C (Result)
+        const rowC = document.createElement('div');
+        rowC.className = 'array-row';
+        rowC.innerHTML = '<div style="width:30px; line-height:40px;">C:</div>';
+        // Create C boxes
+        for(let k=0; k<lenC; k++) {
+            rowC.appendChild(createDigitBox(0, k, 'c'));
+        }
+        vizStage.appendChild(rowC);
+        
+        log("🔢 <strong>Step 1:</strong> 字符串反转存储到数组 A 和 B。");
+        await wait(1000);
+
+        // 3. Multiplication Phase
+        log("✖️ <strong>Step 2:</strong> 逐位相乘 (Accumulation)");
+        
+        for(let i=0; i<A.length; i++) {
+            for(let j=0; j<B.length; j++) {
+                // Highlight A[i] and B[j]
+                const boxA = document.getElementById(`a-${i}`);
+                const boxB = document.getElementById(`b-${j}`);
+                const boxC = document.getElementById(`c-${i+j}`);
+
+                boxA.classList.add('active');
+                boxB.classList.add('active');
+                boxC.classList.add('target');
+
+                const product = A[i] * B[j];
+                const oldVal = C[i+j];
+                C[i+j] += product;
+
+                formulaDisplay.innerHTML = `i=${i}, j=${j} <br> <strong>C[${i}+${j}]</strong> += A[${i}] × B[${j}] <br> C[${i+j}] = ${oldVal} + ${A[i]}×${B[j]} = <strong>${C[i+j]}</strong>`;
+                
+                log(`A[${i}](${A[i]}) × B[${j}](${B[j]}) = ${product}. 加入到 C[${i+j}]`);
+                
+                // Update C visual
+                boxC.innerHTML = `${C[i+j]}<span class="index">${i+j}</span>`;
+                boxC.style.transform = 'scale(1.2)';
+
+                await wait(1200);
+
+                // Reset styles
+                boxA.classList.remove('active');
+                boxB.classList.remove('active');
+                boxC.classList.remove('target');
+                boxC.style.transform = 'scale(1)';
+                await wait(300);
+            }
+        }
+
+        // 4. Carry Phase
+        log("⬆️ <strong>Step 3:</strong> 统一进位处理 (Carry Processing)");
+        formulaDisplay.innerHTML = "正在处理进位...";
+        
+        for(let k=0; k<lenC; k++) {
+            if(C[k] >= 10) {
+                const boxC = document.getElementById(`c-${k}`);
+                const boxNext = document.getElementById(`c-${k+1}`);
+                
+                boxC.classList.add('active');
+                if(boxNext) boxNext.classList.add('target');
+
+                const val = C[k];
+                const carry = Math.floor(val / 10);
+                const remain = val % 10;
+                
+                C[k] = remain;
+                if(k+1 < lenC) {
+                    C[k+1] += carry;
+                }
+
+                log(`C[${k}] 是 ${val}。保留 ${remain}，进位 ${carry} 到 C[${k+1}]`);
+                
+                formulaDisplay.innerHTML = `C[${k}] >= 10 <br> 保留: ${remain}, 进位: ${carry}`;
+
+                await wait(500);
+                
+                // Update visuals
+                boxC.innerHTML = `${C[k]}<span class="index">${k}</span>`;
+                if(boxNext) {
+                    boxNext.innerHTML = `${C[k+1]}<span class="index">${k+1}</span>`;
+                }
+
+                await wait(800);
+                boxC.classList.remove('active');
+                if(boxNext) boxNext.classList.remove('target');
+            }
+        }
+
+        // 5. Final Result
+        // Remove leading zeros
+        let realLen = lenC;
+        while(realLen > 1 && C[realLen-1] === 0) {
+            const box = document.getElementById(`c-${realLen-1}`);
+            if(box) box.style.opacity = '0.2';
+            realLen--;
+        }
+
+        const finalResult = C.slice(0, realLen).reverse().join('');
+        formulaDisplay.innerHTML = `计算完成!`;
+        formulaDisplay.style.background = 'var(--secondary)';
+        formulaDisplay.style.color = '#000';
+        
+        log(`✅ <strong>Step 4:</strong> 去除前导零，倒序输出。`);
+        log(`🎉 最终结果: <span style="font-size:1.2rem; color:var(--primary)">${finalResult}</span>`);
+
+        isRunning = false;
+    }
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高精度除法深度解析 | High-Precision Division</title>
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #00cec9;
+            --accent: #fd79a8;
+            --bg-dark: #2d3436;
+            --text-light: #dfe6e9;
+            --card-bg: rgba(255, 255, 255, 0.98);
+            --code-bg: #282c34;
+            --success: #00b894;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%);
+            margin: 0;
+            padding: 0;
+            color: #2d3436;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* --- Header --- */
+        header { text-align: center; padding: 2.5rem 1rem; color: white; }
+        h1 { font-size: 2.2rem; margin-bottom: 0.5rem; text-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .subtitle { background: rgba(255,255,255,0.15); padding: 5px 20px; border-radius: 20px; font-size: 0.95rem; }
+
+        /* --- Container & Cards --- */
+        .container { max-width: 1000px; margin: 0 auto 3rem; padding: 0 15px; }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: var(--primary);
+            border-left: 5px solid var(--secondary);
+            padding-left: 12px;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        h3 { margin-top: 1.5rem; color: #444; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+
+        /* --- 竖式计算通用样式 --- */
+        .vertical-calc-stage {
+            background: #fdfdfd;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* 每一行容器 */
+        .math-row {
+            display: flex;
+            justify-content: flex-end; /* 数字靠右排列 */
+            align-items: center;
+            height: 24px;
+            line-height: 24px;
+        }
+
+        /* 核心：固定宽度的数字盒子，确保上下严格对齐 */
+        .digit {
+            display: inline-block;
+            width: 20px;       /* 固定宽度 */
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+            flex-shrink: 0;    /* 防止压缩 */
+        }
+
+        /* 解释文字 (不参与对齐，在右侧展示) */
+        .note {
+            margin-left: 15px;
+            font-size: 0.8rem;
+            color: #999;
+            min-width: 120px; /* 保证文字区域宽度 */
+        }
+
+        /* 分割线 */
+        .math-line {
+            height: 1px;
+            background-color: #888;
+            margin: 2px 0;
+            width: 100%;
+        }
+
+        /* --- 颜色高亮系统 --- */
+        .c-red { color: #e74c3c; font-weight: 900; }
+        .c-green { color: #27ae60; font-weight: 900; }
+        .c-blue { color: #2980b9; font-weight: 900; }
+        .c-yellow { color: #f39c12; font-weight: 900; }
+        .c-gray { color: #b2bec3; }
+
+        .badge {
+            display: inline-block;
+            width: 16px; height: 16px;
+            line-height: 16px; text-align: center;
+            border-radius: 50%;
+            color: white; font-size: 11px;
+            margin-right: 4px;
+        }
+        .bg-red { background: #e74c3c; }
+        .bg-green { background: #27ae60; }
+        .bg-blue { background: #2980b9; }
+        .bg-yellow { background: #f39c12; }
+
+        /* --- 做法二：分步展示布局 --- */
+        .step-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .step-block {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            min-width: 260px;
+        }
+        
+        .step-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        /* --- 代码块样式 --- */
+        pre {
+            background: var(--code-bg);
+            color: #abb2bf;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-top: 1rem;
+            white-space: pre; 
+        }
+        
+        .code-keyword { color: #c678dd; } 
+        .code-func { color: #61afef; }    
+        .code-var { color: #e06c75; }     
+        .code-comment { color: #98c379; font-style: italic; } 
+        .code-num { color: #d19a66; }     
+
+        /* --- Footer --- */
+        footer { text-align: center; padding: 2rem; color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+        
+        #bgCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+    </style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<header>
+    <h1>高精度除法实验室</h1>
+    <div class="subtitle">High-Precision Division: Two Core Approaches</div>
+</header>
+
+<div class="container">
+
+    <section class="card">
+        <h2>1. 高精度 ÷ 低精度 (High ÷ Low)</h2>
+        <p><strong>场景：</strong> 被除数 A 是大整数（如字符串），除数 b 是普通整数。</p>
+        <p><strong>原理：</strong> 模拟手算竖式。从最高位开始，<span class="c-blue">上一位的余数 × 10 + 当前位</span>，然后对 b 试商、求余。</p>
+
+        <div class="vertical-calc-stage" style="display:flex; gap:40px; justify-content:center;">
+            <div>
+                <div class="math-row"><span class="digit">0</span><span class="digit c-blue">3</span><span class="digit c-blue">1</span></div>
+                <div class="math-line"></div>
+                <div class="math-row"><span class="digit">4</span><span class="digit">)</span><span class="digit">1</span><span class="digit">2</span><span class="digit">5</span></div>
+                <div class="math-row"><span class="digit c-gray"> </span><span class="digit c-gray"> </span><span class="digit c-gray"> </span></div>
+                <div class="math-line"></div>
+                <div class="math-row"><span class="digit">1</span><span class="digit">2</span></div>
+                <div class="math-row"><span class="digit">1</span><span class="digit">2</span></div>
+                <div class="math-line"></div>
+                <div class="math-row"><span class="digit">0</span><span class="digit">5</span></div>
+                <div class="math-row"><span class="digit"> </span><span class="digit">4</span></div>
+                <div class="math-line"></div>
+                <div class="math-row"><span class="digit c-red">1</span> <span class="note" style="color:#e74c3c">(最终余数)</span></div>
+            </div>
+            
+            <div style="flex:1; font-size:0.95rem; border-left:2px dashed #eee; padding-left:20px;">
+                <p><strong>计算流程：</strong></p>
+                <ul>
+                    <li><strong>第1步：</strong> 1 ÷ 4 = 0 ... 余 1</li>
+                    <li><strong>第2步：</strong> 余数1传给下一位 -> 12。 12 ÷ 4 = 3 ... 余 0</li>
+                    <li><strong>第3步：</strong> 余数0传给下一位 -> 5。 5 ÷ 4 = 1 ... 余 1</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>💻 核心代码 (Python/C++ 通用逻辑)</h3>
+        <pre><code><span class="code-comment">// A 是被除数(大整数数组), b 是除数(整数)</span>
+<span class="code-keyword">function</span> <span class="code-func">div_high_low</span>(A, b):
+    result = []
+    r = <span class="code-num">0</span>  <span class="code-comment">// r 代表余数 (remainder)</span>
+    
+    <span class="code-comment">// 从最高位开始遍历 (假设 A[0] 是最高位)</span>
+    <span class="code-keyword">for</span> i <span class="code-keyword">from</span> <span class="code-num">0</span> <span class="code-keyword">to</span> length(A) - <span class="code-num">1</span>:
+        <span class="code-comment">// 核心公式：余数推导</span>
+        current = r * <span class="code-num">10</span> + A[i]
+        
+        <span class="code-comment">// 计算当前位的商和新的余数</span>
+        quotient = current / b
+        r = current % b
+        
+        result.append(quotient)
+    
+    <span class="code-comment">// 最后记得去除前导零 (如 031 -> 31)</span>
+    <span class="code-keyword">return</span> result, r</code></pre>
+    </section>
+
+    <section class="card">
+        <h2>2. 高精度 ÷ 高精度 (High ÷ High)</h2>
+        <p><strong>场景：</strong> 被除数 A 和 除数 B 都是超大整数。</p>
+        <p><strong>原理 (减法模拟法)：</strong> 就像图片中展示的那样，通过<strong>移位对齐</strong>，看能减去多少个 B。减了多少次，这一位的商就是多少。</p>
+        
+        <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px; text-align:center;">
+            <strong>演示案例：531518 ÷ 123</strong> <br>
+            <span style="font-size:0.9rem; color:#666;">(通过移位，我们将 123 放大为 123000, 12300, 1230... 来减)</span>
+        </div>
+
+        <div class="step-wrapper">
+
+            <div class="step-block">
+                <div class="step-title c-red">第一阶段：千位 (商4)</div>
+                <div class="math-row"><span class="digit">5</span><span class="digit">3</span><span class="digit">1</span><span class="digit">5</span><span class="digit">1</span><span class="digit">8</span> <span class="note">初始被除数</span></div>
+                
+                <div class="math-line"></div>
+                <div class="math-row c-red"><span class="digit">-</span><span class="digit">1</span><span class="digit">2</span><span class="digit">3</span><span class="digit">0</span><span class="digit">0</span><span class="digit">0</span> <span class="note"><span class="badge bg-red">1</span>减第1次</span></div>
+                <div class="math-row"><span class="digit">4</span><span class="digit">0</span><span class="digit">8</span><span class="digit">5</span><span class="digit">1</span><span class="digit">8</span> <span class="note"> </span></div>
+                
+                <div class="math-row c-red"><span class="digit">-</span><span class="digit">1</span><span class="digit">2</span><span class="digit">3</span><span class="digit">0</span><span class="digit">0</span><span class="digit">0</span> <span class="note"><span class="badge bg-red">2</span>减第2次</span></div>
+                <div class="math-row"><span class="digit">2</span><span class="digit">8</span><span class="digit">5</span><span class="digit">5</span><span class="digit">1</span><span class="digit">8</span> <span class="note"> </span></div>
+                
+                <div class="math-row c-red"><span class="digit">-</span><span class="digit">1</span><span class="digit">2</span><span class="digit">3</span><span class="digit">0</span><span class="digit">0</span><span class="digit">0</span> <span class="note"><span class="badge bg-red">3</span>减第3次</span></div>
+                <div class="math-row"><span class="digit">1</span><span class="digit">6</span><span class="digit">2</span><span class="digit">5</span><span class="digit">1</span><span class="digit">8</span> <span class="note"> </span></div>
+
+                <div class="math-row c-red"><span class="digit">-</span><span class="digit">1</span><span class="digit">2</span><span class="digit">3</span><span class="digit">0</span><span class="digit">0</span><span class="digit">0</span> <span class="note"><span class="badge bg-red">4</span>减第4次</span></div>
+                <div class="math-line"></div>
+                <div class="math-row" style="background:#fff0f0"><span class="digit">3</span><span class="digit">9</span><span class="digit">5</span><span class="digit">1</span><span class="digit">8</span> <span class="note c-red">剩余</span></div>
+            </div>
+
+            <div class="step-block">
+                <div class="step-title c-green">第二阶段：百位 (商3)</div>
+                <div class="math-row"><span class="digit">3</span><span class="digit">9</span><span class="digit">5</span><span class="digit">1</span><span class="digit">8</span> <span class="note">承接上一步</span></div>
+                
+                <div class="math-line"></div>
+                <div class="math-row c-green"><span class="digit">-</span><span class="digit">1</span><span class="digit">2</span><span class="digit">3</span><span class="digit">0</span><span class="digit">0</span> <span class="note"><span class="badge bg-green">1</span>减第1次</span></div>
+                <div class="math-row"><span class="digit">2</span><span class="digit">7</span><span class="digit">2</span><span class="digit">1</span><span class="digit">8</span> <span class="note"> </span></div>
+                
+                <div class="math-row c-green"><span class="digit">-</span><span class="digit">1</span><span class="digit">2</span><span class="digit">3</span><span class="digit">0</span><span class="digit">0</span> <span class="note"><span class="badge bg-green">2</span>减第2次</span></div>
+                <div class="math-row"><span class="digit">1</span><span class="digit">4</span><span class="digit">9</span><span class="digit">1</span><span class="digit">8</span> <span class="note"> </span></div>
+                
+                <div class="math-row c-green"><span class="digit">-</span><span class="digit">1</span><span class="digit">2</span><span class="digit">3</span><span class="digit">0</span><span class="digit">0</span> <span class="note"><span class="badge bg-green">3</span>减第3次</span></div>
+                <div class="math-line"></div>
+                <div class="math-row" style="background:#f0fff4"><span class="digit">2</span><span class="digit">6</span><span class="digit">1</span><span class="digit">8</span> <span class="note c-green">剩余</span></div>
+            </div>
+
+            <div class="step-block">
+                <div class="step-title c-blue">第三阶段：十位 (商2)</div>
+                <div class="math-row"><span class="digit">2</span><span class="digit">6</span><span class="digit">1</span><span class="digit">8</span> <span class="note">承接上一步</span></div>
+                
+                <div class="math-line"></div>
+                <div class="math-row c-blue"><span class="digit">-</span><span class="digit">1</span><span class="digit">2</span><span class="digit">3</span><span class="digit">0</span> <span class="note"><span class="badge bg-blue">1</span>减第1次</span></div>
+                <div class="math-row"><span class="digit">1</span><span class="digit">3</span><span class="digit">8</span><span class="digit">8</span> <span class="note"> </span></div>
+                
+                <div class="math-row c-blue"><span class="digit">-</span><span class="digit">1</span><span class="digit">2</span><span class="digit">3</span><span class="digit">0</span> <span class="note"><span class="badge bg-blue">2</span>减第2次</span></div>
+                <div class="math-line"></div>
+                <div class="math-row" style="background:#f0f8ff"><span class="digit">1</span><span class="digit">5</span><span class="digit">8</span> <span class="note c-blue">剩余</span></div>
+            </div>
+
+             <div class="step-block">
+                <div class="step-title c-yellow">第四阶段：个位 (商1)</div>
+                <div class="math-row"><span class="digit">1</span><span class="digit">5</span><span class="digit">8</span> <span class="note">承接上一步</span></div>
+                
+                <div class="math-line"></div>
+                <div class="math-row c-yellow"><span class="digit">-</span><span class="digit">1</span><span class="digit">2</span><span class="digit">3</span> <span class="note"><span class="badge bg-yellow">1</span>减第1次</span></div>
+                <div class="math-line"></div>
+                <div class="math-row" style="background:#fffbf0"><span class="digit">3</span><span class="digit">5</span> <span class="note c-yellow" style="font-weight:bold;">最终余数</span></div>
+            </div>
+            
+        </div>
+
+        <h3>💻 核心代码 (Python/C++ 通用逻辑)</h3>
+        <pre><code><span class="code-comment">// A, B 都是大整数数组 (假设正序存储)</span>
+<span class="code-keyword">function</span> <span class="code-func">div_high_high</span>(A, B):
+    result = []
+    
+    <span class="code-comment">// 1. 计算位数差，决定B需要左移(补0)多少位</span>
+    <span class="code-comment">// 比如 A=531518(6位), B=123(3位), 差3位</span>
+    shift = length(A) - length(B)
+    
+    <span class="code-keyword">for</span> i <span class="code-keyword">from</span> <span class="code-num">0</span> <span class="code-keyword">to</span> shift:
+        <span class="code-comment">// 构造移位后的 B (即 B * 10^k)</span>
+        <span class="code-comment">// 在代码中通常通过指针移动或补0实现</span>
+        B_shifted = shift_left(B, shift - i)
+        
+        count = <span class="code-num">0</span>
+        <span class="code-comment">// 减法循环：只要 A 够减，就一直减</span>
+        <span class="code-keyword">while</span> compare(A, B_shifted) >= <span class="code-num">0</span>:
+            A = subtract(A, B_shifted)
+            count = count + <span class="code-num">1</span>
+            
+        <span class="code-comment">// 这一位减了多少次，这一位的商就是多少</span>
+        result.append(count)
+    
+    remainder = A <span class="code-comment">// 剩下的 A 就是余数</span>
+    <span class="code-keyword">return</span> result, remainder</code></pre>
+    </section>
+
+</div>
+
+<footer>
+    Designed for Learning | High-Precision Division 2025
+</footer>
+
+<script>
+    // --- Canvas Background ---
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+        constructor() { this.reset(); }
+        reset() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.size = Math.random() * 2 + 1;
+            this.speedX = (Math.random() - 0.5) * 0.5;
+            this.speedY = (Math.random() - 0.5) * 0.5;
+            this.alpha = Math.random() * 0.5 + 0.1;
+        }
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            if(this.x<0 || this.x>width || this.y<0 || this.y>height) this.reset();
+        }
+        draw() {
+            ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const particles = Array.from({length: 40}, () => new Particle());
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        requestAnimationFrame(animate);
+    }
+    animate();
+</script>
+
+</body>
+</html>
