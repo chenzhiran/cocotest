@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天际之战：云端荣耀对决</title>
+    <style>
+        /* 🎨 基础风格设置 - 天空与魔法主题 */
+        :root {
+            --sky-blue: #87CEEB;
+            --cloud-white: #F0F8FF;
+            --royal-gold: #FFD700;
+            --magic-purple: #9370DB;
+            --text-dark: #333;
+            --card-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            --font-main: "Comic Sans MS", "Chalkboard SE", "Arial Rounded MT Bold", sans-serif;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: linear-gradient(to bottom, #E0F7FA, #B3E5FC);
+            margin: 0;
+            padding: 0;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* 🌈 英雄横幅 */
+        .hero-header {
+            background-color: #0277bd;
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+            border-bottom: 5px solid var(--royal-gold);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .hero-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 0px #004c8c;
+        }
+
+        .hero-header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* 📦 内容容器 */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 🖼️ 图片展示区 */
+        .image-showcase {
+            text-align: center;
+            margin: -30px auto 30px; /* 上移一点，制造层叠感 */
+            padding: 10px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            max-width: 90%;
+            position: relative;
+            z-index: 10;
+        }
+
+        .image-showcase img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            display: block;
+        }
+
+        /* 🧙‍♂️ 对话泡泡 */
+        .dialog-box {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: flex-start;
+            box-shadow: var(--card-shadow);
+            border-left: 8px solid var(--magic-purple);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            background-color: #eee;
+            border-radius: 50%;
+            margin-right: 20px;
+            font-size: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid var(--magic-purple);
+            flex-shrink: 0;
+        }
+
+        /* 🃏 卡片布局 */
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px) scale(1.01);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .card h2 {
+            color: #0277bd;
+            border-bottom: 2px dashed #ddd;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        /* 💻 代码区域 */
+        .code-panel {
+            background: #282c34;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+            border: 2px solid #444;
+        }
+
+        .tab-bar {
+            background: #21252b;
+            display: flex;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
+            flex: 1;
+            transition: background 0.2s;
+        }
+
+        .tab-btn:hover { background: #333; }
+
+        .tab-btn.active {
+            background: #282c34;
+            color: var(--sky-blue);
+            border-top: 3px solid var(--sky-blue);
+        }
+
+        .code-content {
+            padding: 20px;
+            display: none;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #abb2bf;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        .code-content.active { display: block; }
+
+        /* 代码高亮简易版 */
+        .hl-k { color: #c678dd; font-weight: bold; } /* keyword */
+        .hl-s { color: #98c379; } /* string */
+        .hl-f { color: #61aeee; } /* function */
+        .hl-c { color: #7f848e; font-style: italic; } /* comment */
+        .hl-n { color: #d19a66; } /* number */
+
+        /* ⚔️ 兵种网格 */
+        .unit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .unit-card {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .unit-card:hover {
+            border-color: var(--royal-gold);
+            background: #fff;
+        }
+
+        .unit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .unit-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        .unit-cost {
+            background: var(--royal-gold);
+            color: #555;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .skill-badge {
+            display: inline-block;
+            background: #e1f5fe;
+            color: #0277bd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin: 2px;
+            border: 1px solid #b3e5fc;
+        }
+
+        /* 💡 互动按钮 */
+        .quiz-box {
+            background: #fff9c4;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px dashed #fbc02d;
+            margin-top: 30px;
+        }
+
+        .quiz-btn {
+            background-color: var(--magic-purple);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 10px;
+            transition: transform 0.2s;
+            font-family: inherit;
+        }
+
+        .quiz-btn:hover { transform: scale(1.1); background-color: #7e57c2; }
+
+        .hidden-tip {
+            display: none;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 0.9rem;
+            background-color: rgba(255,255,255,0.6);
+            margin-top: 40px;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 600px) {
+            .hero-header h1 { font-size: 1.8rem; }
+            .unit-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="hero-header">
+        <h1>☁️ 天际之战：云端荣耀对决 ☁️</h1>
+        <p>The Battle of Sky Span</p>
+    </header>
+
+    <div class="container">
+
+        <div class="image-showcase">
+            
+            <img src="src/the-battle-of-sky-span_bg.png" alt="天际之战战场全景">
+            <p style="font-size: 0.9rem; color: #666; margin-top: 5px;">传说中的天空之桥，勇者的试炼场</p>
+        </div>
+
+        <div class="dialog-box">
+            <div class="avatar">🧙‍♂️</div>
+            <div>
+                <p><strong>陈之然老师：</strong> “各位编程魔法师，欢迎来到传说中的‘天际之战’！这里是云端最惊险的战场。”</p>
+                <p>“看！那座横跨天空的魔法桥。你的任务是指挥你的英雄，招募军队，并在这场史诗般的对决中击败红方或蓝方的对手。”</p>
+                <p><strong>🎯 获胜目标：</strong> 击败敌方英雄，并保证自己的英雄存活！</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📜 第一课：指挥官的基本功</h2>
+            <p>在战场上，你就是总指挥！你需要用代码来招募士兵，并给他们下达命令。</p>
+            <ul>
+                <li><strong>招募 (Summon)：</strong> 使用 <code>hero.summon("兵种名")</code> 呼叫援军。</li>
+                <li><strong>命令 (Command)：</strong> 使用 <code>hero.command(单位, "行动", 目标)</code> 指挥他们。</li>
+            </ul>
+            <p>所有的单位都听得懂两个基本指令：<code>"move"</code> (移动) 和 <code>"attack"</code> (攻击)。</p>
+
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'basic-py')">Python 🐍</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'basic-cpp')">C++ ⚙️</button>
+                </div>
+                
+                <div id="basic-py" class="code-content active">
+<span class="hl-c"># 招募一个步兵</span>
+<span class="hl-k">hero</span>.summon(<span class="hl-s">"soldier"</span>)
+
+<span class="hl-c"># 找到所有的朋友</span>
+friends = <span class="hl-k">hero</span>.findFriends()
+
+<span class="hl-k">while</span> <span class="hl-k">True</span>:
+    <span class="hl-c"># 简单的循环指挥所有朋友攻击</span>
+    <span class="hl-k">for</span> friend <span class="hl-k">in</span> friends:
+        enemy = friend.findNearestEnemy()
+        <span class="hl-k">if</span> enemy:
+            <span class="hl-k">hero</span>.command(friend, <span class="hl-s">"attack"</span>, enemy)
+</div>
+
+                <div id="basic-cpp" class="code-content">
+<span class="hl-c">// 招募一个步兵</span>
+<span class="hl-k">hero</span>.summon(<span class="hl-s">"soldier"</span>);
+
+<span class="hl-c">// 找到所有的朋友</span>
+<span class="hl-k">auto</span> friends = <span class="hl-k">hero</span>.findFriends();
+
+<span class="hl-k">while</span>(<span class="hl-k">true</span>) {
+    <span class="hl-c">// 指挥朋友攻击</span>
+    <span class="hl-k">for</span>(<span class="hl-k">auto</span> friend : friends) {
+        <span class="hl-k">auto</span> enemy = friend.findNearestEnemy();
+        <span class="hl-k">if</span>(enemy) {
+            <span class="hl-k">hero</span>.command(friend, <span class="hl-s">"attack"</span>, enemy);
+        }
+    }
+}
+</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>⚔️ 皇家兵种大百科</h2>
+            <p>除了基础士兵，你还可以花费金币（Gold）招募更强大的英雄单位！他们每个人都身怀绝技。</p>
+            
+            <div class="unit-grid">
+                <div class="unit-card">
+                    <div class="unit-header">
+                        <span class="unit-name">💂 Soldier (士兵)</span>
+                        <span class="unit-cost">20 Gold</span>
+                    </div>
+                    <p>最勇敢的基础步兵，近战攻击。</p>
+                </div>
+
+                <div class="unit-card">
+                    <div class="unit-header">
+                        <span class="unit-name">🏹 Archer (弓箭手)</span>
+                        <span class="unit-cost">25 Gold</span>
+                    </div>
+                    <p>基础远程射手，可以在远处攻击敌人。</p>
+                </div>
+
+                <div class="unit-card">
+                    <div class="unit-header">
+                        <span class="unit-name">🦅 Griffin Rider (狮鹫)</span>
+                        <span class="unit-cost">65 Gold</span>
+                    </div>
+                    <p>飞得很快！远程攻击，还带有轻微的<strong>击退</strong>效果。</p>
+                </div>
+
+                <div class="unit-card" style="background-color: #fffde7;">
+                    <div class="unit-header">
+                        <span class="unit-name">🛡️ Paladin (圣骑士)</span>
+                        <span class="unit-cost">85 Gold</span>
+                    </div>
+                    <p>强力辅助与肉盾。</p>
+                    <div>
+                        <span class="skill-badge">cast "heal" (治疗)</span>
+                        <span class="skill-badge">shield (盾防)</span>
+                    </div>
+                </div>
+
+                <div class="unit-card" style="background-color: #fffde7;">
+                    <div class="unit-header">
+                        <span class="unit-name">⚔️ Knight (骑士)</span>
+                        <span class="unit-cost">100 Gold</span>
+                    </div>
+                    <p>重装坦克，非常抗揍。</p>
+                    <div>
+                        <span class="skill-badge">shield (盾防)</span>
+                        <span class="skill-badge">bash (盾击击退)</span>
+                        <span class="skill-badge">cleave (范围劈斩)</span>
+                    </div>
+                </div>
+
+                <div class="unit-card" style="background-color: #f3e5f5;">
+                    <div class="unit-header">
+                        <span class="unit-name">👹 Goliath (巨人)</span>
+                        <span class="unit-cost">100 Gold</span>
+                    </div>
+                    <p>体型巨大，破坏力惊人。</p>
+                    <div>
+                        <span class="skill-badge">stomp (重踩)</span>
+                        <span class="skill-badge">hurl (投掷敌人)</span>
+                        <span class="skill-badge">warcry (战嚎buff)</span>
+                    </div>
+                </div>
+
+                <div class="unit-card" style="background-color: #e0f2f1;">
+                    <div class="unit-header">
+                        <span class="unit-name">🕸️ Trapper (诱捕者)</span>
+                        <span class="unit-cost">100 Gold</span>
+                    </div>
+                    <p>擅长设陷阱的猎人。</p>
+                    <div>
+                        <span class="skill-badge">buildXY "bear-trap" (捕熊夹)</span>
+                        <span class="skill-badge">scattershot (散射)</span>
+                        <span class="skill-badge">throw (扔炸弹)</span>
+                    </div>
+                </div>
+
+                <div class="unit-card" style="background-color: #ffebee;">
+                    <div class="unit-header">
+                        <span class="unit-name">🥷 Ninja (忍者)</span>
+                        <span class="unit-cost">100 Gold</span>
+                    </div>
+                    <p>来无影去无踪的刺客。</p>
+                    <div>
+                        <span class="skill-badge">dash (冲刺)</span>
+                        <span class="skill-badge">backstab (背刺)</span>
+                        <span class="skill-badge">throw (回旋镖)</span>
+                    </div>
+                </div>
+
+                <div class="unit-card" style="background-color: #e3f2fd;">
+                    <div class="unit-header">
+                        <span class="unit-name">📚 Librarian (图书管理员)</span>
+                        <span class="unit-cost">100 Gold</span>
+                    </div>
+                    <p>拥有增益魔法的智者。</p>
+                    <div>
+                        <span class="skill-badge">cast "haste" (加速)</span>
+                        <span class="skill-badge">cast "grow" (变大变强!)</span>
+                        <span class="skill-badge">cast "force-bolt" (力栓)</span>
+                    </div>
+                </div>
+
+                <div class="unit-card" style="background-color: #f3e5f5;">
+                    <div class="unit-header">
+                        <span class="unit-name">💀 Necromancer (死灵法师)</span>
+                        <span class="unit-cost">100 Gold</span>
+                    </div>
+                    <p>操控亡灵的大师。</p>
+                    <div>
+                        <span class="skill-badge">cast "summon-undead" (召唤亡灵)</span>
+                        <span class="skill-badge">cast "soul-link" (灵魂链)</span>
+                        <span class="skill-badge">cast "sacrifice" (牺牲)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>✨ 第二课：精准施法 (Advanced Magic)</h2>
+            <p>强大的技能通常需要休息（冷却时间）才能再次使用。如果技能还没准备好就下命令，士兵会发呆哦！</p>
+            <p>你需要使用 <code>unit.isReady("技能名")</code> 或 <code>unit.canCast("法术名")</code> 来检查。</p>
+
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'adv-py')">Python 🐍</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'adv-cpp')">C++ ⚙️</button>
+                </div>
+                
+                <div id="adv-py" class="code-content active">
+<span class="hl-c"># 如果忍者的 "dash" (冲刺) 准备好了</span>
+<span class="hl-k">if</span> unit.isReady(<span class="hl-s">"dash"</span>):
+    <span class="hl-k">hero</span>.command(unit, <span class="hl-s">"dash"</span>, point)
+
+<span class="hl-c"># 或者，如果图书管理员能施放 "grow" (变大)</span>
+<span class="hl-k">elif</span> unit.canCast(<span class="hl-s">"grow"</span>):
+    <span class="hl-k">hero</span>.command(unit, <span class="hl-s">"cast"</span>, <span class="hl-s">"grow"</span>, unit2)
+</div>
+                <div id="adv-cpp" class="code-content">
+<span class="hl-c">// 如果忍者的 "dash" (冲刺) 准备好了</span>
+<span class="hl-k">if</span> (unit.isReady(<span class="hl-s">"dash"</span>)) {
+    <span class="hl-k">hero</span>.command(unit, <span class="hl-s">"dash"</span>, point);
+} 
+<span class="hl-c">// 或者，如果图书管理员能施放 "grow" (变大)</span>
+<span class="hl-k">else</span> <span class="hl-k">if</span> (unit.canCast(<span class="hl-s">"grow"</span>)) {
+    <span class="hl-k">hero</span>.command(unit, <span class="hl-s">"cast"</span>, <span class="hl-s">"grow"</span>, unit2);
+}
+</div>
+            </div>
+        </div>
+
+        <div class="quiz-box">
+            <h3>🎓 魔法学院随堂考</h3>
+            <p>如果你的英雄有 <strong>100 金币 (Gold)</strong>，你想召唤一个能给队友加血，还能当肉盾的单位，你应该选谁？</p>
+            <button class="quiz-btn" onclick="showTip(false)">选 Ninja (忍者)</button>
+            <button class="quiz-btn" onclick="showTip(true)">选 Paladin (圣骑士)</button>
+            <button class="quiz-btn" onclick="showTip(false)">选 Goliath (巨人)</button>
+            
+            <div id="tip-msg" class="hidden-tip"></div>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>☁️ 愿代码之力指引你在云端获胜！ ☁️</p>
+        <p>来自扣哒世界教研团队 (CodeCombat Team)</p>
+    </footer>
+
+    <script>
+        // 简单的标签页切换逻辑
+        function switchTab(btn, contentId) {
+            // 找到当前按钮所在的面板
+            const panel = btn.parentElement.parentElement;
+            
+            // 移除该面板内所有按钮的active类
+            const buttons = panel.querySelectorAll('.tab-btn');
+            buttons.forEach(b => b.classList.remove('active'));
+            
+            // 激活当前点击的按钮
+            btn.classList.add('active');
+            
+            // 隐藏该面板内所有代码内容
+            const contents = panel.querySelectorAll('.code-content');
+            contents.forEach(c => c.classList.remove('active'));
+            
+            // 显示目标代码内容
+            panel.querySelector('#' + contentId).classList.add('active');
+        }
+
+        // 显示测验提示
+        function showTip(isCorrect) {
+            const msgBox = document.getElementById('tip-msg');
+            msgBox.style.display = 'block';
+            if (isCorrect) {
+                msgBox.style.color = '#2e7d32'; // Green
+                msgBox.innerHTML = "✅ 回答正确！圣骑士 (Paladin) 花费 85金，可以治疗 (Heal) 和 盾防 (Shield)，非常可靠！";
+            } else {
+                msgBox.style.color = '#c62828'; // Red
+                msgBox.innerHTML = "❌ 哎呀，再想想！忍者是刺客，巨人是战士。找找那个会 'heal' (治疗) 的单位！";
+            }
+        }
+    </script>
+</body>
+</html>

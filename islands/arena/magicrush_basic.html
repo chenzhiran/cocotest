@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔力冲刺：极速代码挑战赛</title>
+    <style>
+        /* 🎨 童趣风格配色 */
+        :root {
+            --primary-color: #6200ea; /* 魔法深紫 */
+            --accent-color: #00d2ff; /* 闪电蓝 */
+            --danger-color: #ff4081; /* 炸弹红 */
+            --success-color: #00e676; /* 金币绿 */
+            --gold-color: #ffd700;
+            --bg-color: #f3e5f5;
+            --card-bg: #ffffff;
+            --font-main: "Comic Sans MS", "Chalkboard SE", "Arial Rounded MT Bold", sans-serif;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* 🖼️ 英雄横幅与背景 */
+        .hero-header {
+            position: relative;
+            width: 100%;
+            height: 420px;
+            background-color: #333;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 5px solid var(--accent-color);
+        }
+
+        .hero-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.85;
+            z-index: 1;
+        }
+
+        .hero-title-box {
+            position: relative;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px 50px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(98, 0, 234, 0.6);
+            border: 4px solid var(--primary-color);
+            animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        h1 { margin: 0; color: var(--primary-color); font-size: 2.8rem; text-shadow: 2px 2px 0px #eee; }
+        .subtitle { font-size: 1.2rem; color: var(--danger-color); font-weight: bold; margin-top: 10px; }
+
+        /* 📦 主容器 */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 3;
+        }
+
+        /* 💬 角色对话框 */
+        .dialog-box {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: flex-start;
+            border-left: 8px solid var(--accent-color);
+        }
+
+        .avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: #e0f7fa;
+            margin-right: 20px;
+            border: 3px solid var(--primary-color);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 45px;
+            overflow: hidden;
+        }
+
+        /* 🃏 规则卡片 */
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 25px rgba(0,0,0,0.1); }
+        
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        }
+
+        h2 { color: var(--primary-color); border-bottom: 2px dashed #ddd; padding-bottom: 10px; }
+        h3 { color: #333; margin-top: 20px; }
+
+        /* 💻 魔法代码面板 */
+        .code-panel {
+            background: #2d2d2d;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+            border: 2px solid #555;
+        }
+
+        .tab-header {
+            display: flex;
+            background: #1a1a1a;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
+            flex: 1;
+        }
+
+        .tab-btn.active {
+            background: #2d2d2d;
+            color: var(--accent-color);
+            border-top: 3px solid var(--accent-color);
+        }
+
+        .code-content {
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e0e0e0;
+            white-space: pre-wrap;
+            display: none;
+            font-size: 0.95rem;
+        }
+
+        .code-content.active { display: block; }
+
+        /* 代码高亮简易版 */
+        .hl-k { color: #cc99cd; } /* Keyword */
+        .hl-s { color: #7ec699; } /* String */
+        .hl-f { color: #61aeee; } /* Function */
+        .hl-n { color: #f08d49; } /* Number */
+        .hl-c { color: #999; font-style: italic; } /* Comment */
+
+        /* 🏃 跑道可视化 */
+        .lane-viz {
+            display: flex;
+            flex-direction: column-reverse; /* 0在下，5在上 */
+            gap: 5px;
+            background: #ddd;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        .lane-row {
+            background: white;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            font-size: 0.8rem;
+            color: #666;
+            border-radius: 5px;
+        }
+        .lane-row:nth-child(1) { background: #ffcdd2; } /* Lane 5 warning */
+        .lane-row:nth-child(6) { background: #ffcdd2; } /* Lane 0 warning */
+
+        /* 🦸 英雄选择网格 */
+        .hero-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .hero-card {
+            background: #f9f9f9;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .hero-card:hover { border-color: var(--primary-color); background: #f3e5f5; }
+        .hero-icon { font-size: 2rem; margin-bottom: 5px; }
+
+        /* 📊 物品与技能表格 */
+        .magic-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        .magic-table th { background: var(--primary-color); color: white; padding: 10px; text-align: left; }
+        .magic-table td { border-bottom: 1px solid #eee; padding: 8px; }
+        .badge {
+            background: var(--gold-color);
+            color: #555;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        /* 💡 互动区域 */
+        .quiz-section {
+            background: #e1f5fe;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px dashed var(--accent-color);
+        }
+        .quiz-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .quiz-btn:hover { transform: scale(1.1); background: var(--accent-color); }
+        #quiz-feedback { margin-top: 10px; font-weight: bold; height: 20px; }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .hero-header { height: 300px; }
+            .lane-viz { font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="hero-header">
+        <img src="src/magic-rush_bg.png" alt="魔力冲刺竞技场背景" class="hero-img">
+        <div class="hero-title-box">
+            <h1>⚡ 魔力冲刺大赛 ⚡</h1>
+            <div class="subtitle">Magic Rush: 速度与代码的魔法对决</div>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <div class="dialog-box">
+            <div class="avatar">👨‍🏫</div>
+            <div>
+                <p><strong>陈之然老师：</strong> “各位小编程英雄，欢迎来到‘魔力极速隧道’！这里是扣哒世界最刺激的赛跑竞技场。”</p>
+                <p>“在这个赛场上，你不是在跑步，而是在用代码控制你的英雄飞奔！跑道上充满了金币、药水，还有危险的炸弹和电墙。你的目标只有一个：”</p>
+                <p style="color: var(--primary-color); font-weight: bold; font-size: 1.2rem;">
+                    🏁 比对手存活得更久，跑得更远！
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🏟️ 认识你的赛道 (The Playfield)</h2>
+            <p>想象一个巨大的跑步机，它正在以 <strong>16米/秒</strong> 的速度向左飞速移动！</p>
+            <p>你拥有 <strong>6条跑道</strong> (编号 0 到 5)。每条跑道宽 4米。</p>
+            
+            <div class="lane-viz">
+                <div class="lane-row">Lane 5 (顶部边缘 - 小心撞墙！)</div>
+                <div class="lane-row">Lane 4</div>
+                <div class="lane-row">Lane 3</div>
+                <div class="lane-row">Lane 2</div>
+                <div class="lane-row">Lane 1</div>
+                <div class="lane-row">Lane 0 (底部边缘 - 小心撞墙！)</div>
+            </div>
+            <p>⚠️ <strong>注意：</strong> 千万不要试图跑进对手的场地，也别在 0号 或 5号 跑道外侧移动，否则你会撞墙浪费时间！</p>
+        </div>
+
+        <div class="card">
+            <h2>🧙‍♂️ 第一步：变身！选择你的英雄</h2>
+            <p>在代码的第一行，你必须告诉竞技场你想成为谁。使用 <code>hero.playAs("名字")</code>。</p>
+            
+            <div class="hero-grid">
+                <div class="hero-card">
+                    <div class="hero-icon">🔥</div>
+                    <strong>Librarian</strong><br>图书管理员<br>
+                    <span style="font-size:0.8rem; color:#666;">发射火球，炸毁一圈炸弹 (半径6米)</span>
+                </div>
+                <div class="hero-card">
+                    <div class="hero-icon">⚡</div>
+                    <strong>Sorcerer</strong><br>术士<br>
+                    <span style="font-size:0.8rem; color:#666;">魔法飞弹，穿透整条线的炸弹</span>
+                </div>
+                <div class="hero-card">
+                    <div class="hero-icon">🧪</div>
+                    <strong>Potion-Master</strong><br>魔药大师<br>
+                    <span style="font-size:0.8rem; color:#666;">近距闪电，只打最近的 (20米内)</span>
+                </div>
+                <div class="hero-card">
+                    <div class="hero-icon">💀</div>
+                    <strong>Necromancer</strong><br>死灵法师<br>
+                    <span style="font-size:0.8rem; color:#666;">死亡光束，瞬间摧毁整条线 (最小16米)</span>
+                </div>
+            </div>
+
+            <div class="code-panel">
+                <div class="tab-header">
+                    <button class="tab-btn active" onclick="switchTab(this, 'hero-py')">Python 🐍</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hero-cpp')">C++ ⚙️</button>
+                </div>
+                <div id="hero-py" class="code-content active">
+<span class="hl-c"># 必须是代码的第一行！</span>
+<span class="hl-k">hero</span>.playAs(<span class="hl-s">"sorcerer"</span>)
+</div>
+                <div id="hero-cpp" class="code-content">
+<span class="hl-c">// 必须是代码的第一行！</span>
+<span class="hl-k">hero</span>.playAs(<span class="hl-s">"sorcerer"</span>);
+</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🏃 第二步：跑动与战斗 (Actions)</h2>
+            <p>你的英雄需要时间来执行动作。如果动作还没做完，代码会暂停等待哦。</p>
+            
+            <table class="magic-table">
+                <thead>
+                    <tr>
+                        <th>动作命令</th>
+                        <th>⏳ 耗时 (秒)</th>
+                        <th>效果说明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>hero.moveUp()</code></td>
+                        <td><strong>0.25s</strong></td>
+                        <td>向上移动一条跑道。别在 5号道 使用！</td>
+                    </tr>
+                    <tr>
+                        <td><code>hero.moveDown()</code></td>
+                        <td><strong>0.25s</strong></td>
+                        <td>向下移动一条跑道。别在 0号道 使用！</td>
+                    </tr>
+                    <tr>
+                        <td><code>hero.shoot()</code></td>
+                        <td><strong>0.5s</strong></td>
+                        <td>发射魔法攻击前方的障碍物。</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="dialog-box" style="padding: 15px; margin-top: 15px; background: #fff3e0;">
+                <div class="avatar" style="width:50px; height:50px; font-size:25px;">💡</div>
+                <div>
+                    <p><strong>之然老师的小贴士：</strong> “躲避 (move) 比 攻击 (shoot) 更快！只有在躲不开的时候再攻击，这样能跑得更远！”</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>💎 宝贝与陷阱 (Objects)</h2>
+            <p>跑道上有很多东西，你需要用代码的“魔法眼”去发现它们。</p>
+            <ul>
+                <li>❌ <strong>Wall (电墙):</strong> 碰一下扣 <strong>1 HP</strong>。打不破，只能躲！</li>
+                <li>💣 <strong>Bomb (机器炸弹):</strong> 碰一下扣 <strong>2 HP</strong>。可以被射击摧毁。</li>
+                <li>💰 <strong>Coin (金币):</strong> 收集它！用来购买超能力。价值 1-3 金币。</li>
+                <li>🍷 <strong>Potion (药水):</strong> 如果血量低于10，喝下它恢复 <strong>1 HP</strong>。</li>
+            </ul>
+
+            <h3>📡 魔法雷达 (Sensors)</h3>
+            <p>使用这些函数来探测周围：</p>
+            <ul>
+                <li><code>hero.findNearestInLane(laneNumber)</code>: 找某条跑道最近的东西。</li>
+                <li><code>hero.findNearestCoin()</code> / <code>hero.findNearestBomb()</code>: 找全场最近的金币/炸弹。</li>
+                <li><code>hero.distanceInLane(target)</code>: 计算距离。</li>
+                <li><code>hero.isSafeStay</code>: 当前跑道安全吗？（16米内无障碍）</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2>✨ 终极奥义：超能力 (Powers)</h2>
+            <p>赚够了金币 (Gold)，就可以释放大招给对手制造麻烦，或者保护自己！</p>
+            <p>使用方法：<code>hero.usePower("技能名", 参数)</code>，耗时 <strong>0.5秒</strong>。</p>
+
+            <table class="magic-table">
+                <thead>
+                    <tr>
+                        <th>技能名</th>
+                        <th>💰 花费</th>
+                        <th>效果</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>"blink"</code></td>
+                        <td>3</td>
+                        <td><strong>瞬移！</strong> 瞬间移动到指定跑道。<br>例如: <code>hero.usePower("blink", 3)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>"bomb-wall"</code></td>
+                        <td>6</td>
+                        <td>在对手那边制造 6个炸弹！</td>
+                    </tr>
+                    <tr>
+                        <td><code>"long-wall"</code></td>
+                        <td>9</td>
+                        <td>在对手那边制造 5个墙壁！</td>
+                    </tr>
+                    <tr>
+                        <td><code>"shield"</code></td>
+                        <td>24</td>
+                        <td>无敌护盾！短时间内免疫伤害。</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="code-panel">
+                <div class="tab-header">
+                    <button class="tab-btn active" onclick="switchTab(this, 'power-py')">Python 🐍</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'power-cpp')">C++ ⚙️</button>
+                </div>
+                <div id="power-py" class="code-content active">
+<span class="hl-c"># 如果钱够了，就瞬移到 2号跑道躲避危险！</span>
+<span class="hl-k">if</span> <span class="hl-k">hero</span>.gold >= <span class="hl-k">hero</span>.costOfPower(<span class="hl-s">"blink"</span>):
+    <span class="hl-k">hero</span>.usePower(<span class="hl-s">"blink"</span>, <span class="hl-n">2</span>)
+</div>
+                <div id="power-cpp" class="code-content">
+<span class="hl-c">// 如果钱够了，就瞬移到 2号跑道躲避危险！</span>
+<span class="hl-k">if</span> (<span class="hl-k">hero</span>.gold >= <span class="hl-k">hero</span>.costOfPower(<span class="hl-s">"blink"</span>)) {
+    <span class="hl-k">hero</span>.usePower(<span class="hl-s">"blink"</span>, <span class="hl-n">2</span>);
+}
+</div>
+            </div>
+        </div>
+
+        <div class="quiz-section">
+            <h3>🎓 魔法学院随堂考</h3>
+            <p>如果前方有一堵电墙 (Wall)，使用哪种方式通过最快、最不浪费时间？</p>
+            <button class="quiz-btn" onclick="checkAnswer('shoot')">A. 用 shoot() 射击它</button>
+            <button class="quiz-btn" onclick="checkAnswer('move')">B. 用 moveUp() 躲开它</button>
+            <button class="quiz-btn" onclick="checkAnswer('wait')">C. 原地等待</button>
+            <p id="quiz-feedback"></p>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>🚀 准备好你的代码，冲向胜利吧！ 🚀</p>
+        <p>来自扣哒世界教研团队 (CodeCombat Team)</p>
+    </footer>
+
+    <script>
+        // 简单的标签页切换逻辑
+        function switchTab(btn, contentId) {
+            // 找到当前按钮所在的面板
+            const panel = btn.parentElement.parentElement;
+            
+            // 重置按钮状态
+            const buttons = panel.querySelectorAll('.tab-btn');
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // 重置内容显示
+            const contents = panel.querySelectorAll('.code-content');
+            contents.forEach(c => c.classList.remove('active'));
+            
+            // 显示目标内容
+            panel.querySelector('#' + contentId).classList.add('active');
+        }
+
+        // 测验逻辑
+        function checkAnswer(answer) {
+            const feedback = document.getElementById('quiz-feedback');
+            if (answer === 'move') {
+                feedback.style.color = 'green';
+                feedback.textContent = "✅ 正确！移动只需要 0.25秒，而且墙是打不破的！";
+            } else if (answer === 'shoot') {
+                feedback.style.color = 'red';
+                feedback.textContent = "❌ 哎呀！电墙是无敌的，射击只会浪费 0.5秒！";
+            } else {
+                feedback.style.color = 'orange';
+                feedback.textContent = "❌ 等待就会被卷出屏幕啦！快跑！";
+            }
+        }
+    </script>
+</body>
+</html>
