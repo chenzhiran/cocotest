@@ -16,20 +16,10 @@
         }
 
         /* 自定义滚动条 */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #88c0d0; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #5e81ac; 
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #88c0d0; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #5e81ac; }
 
         /* 卡片悬停特效 */
         .level-card {
@@ -41,9 +31,7 @@
         }
 
         /* 按钮动画 */
-        .btn-bounce:active {
-            transform: scale(0.92);
-        }
+        .btn-bounce:active { transform: scale(0.92); }
         
         /* 小按钮样式 */
         .pill-btn {
@@ -51,12 +39,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem; /* text-xs */
+            font-size: 0.75rem;
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
             font-weight: bold;
             box-shadow: 0 2px 0 rgba(0,0,0,0.05);
-            text-decoration: none; /* 确保链接没有下划线 */
+            text-decoration: none;
+            cursor: pointer; /* 确保鼠标变成手型 */
         }
         .pill-btn:hover {
             transform: translateY(-1px);
@@ -76,9 +65,40 @@
             0% { transform: translateX(-100px); }
             100% { transform: translateX(100vw); }
         }
+
+        /* 悬浮 Bug 按钮 */
+        .bug-float-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 50;
+            background: #FF6B6B;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            border: 4px solid white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .bug-float-btn:hover {
+            transform: scale(1.05) rotate(-2deg);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+        }
+
+        /* 弹窗动画 */
+        .modal-enter { animation: modalFadeIn 0.3s forwards; }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
     </style>
 </head>
-<body class="pb-20">
+<body class="pb-20 relative min-h-screen flex flex-col">
 
     <div class="cloud w-32 h-12 top-10 left-0"></div>
     <div class="cloud w-48 h-20 top-40 left-10 delay-1000"></div>
@@ -93,10 +113,42 @@
         </p>
     </header>
 
-    <main class="container mx-auto px-4">
+    <main class="container mx-auto px-4 flex-grow">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="level-container">
             </div>
     </main>
+
+    <footer class="text-center py-8 text-gray-400 font-bold text-sm mt-8">
+        来自扣哒世界教研团队
+    </footer>
+
+    <button onclick="showBugModal()" class="bug-float-btn btn-bounce">
+        <span>🐞</span> 捉虫反馈
+    </button>
+
+    <div id="msgModal" class="hidden fixed inset-0 bg-black/50 z-[100] flex items-center justify-center backdrop-blur-sm p-4" onclick="closeModals()">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl relative modal-enter" onclick="event.stopPropagation()">
+            <div class="text-5xl mb-4">🚧</div>
+            <h3 class="text-2xl font-black text-gray-800 mb-3">精彩，即将上线</h3>
+            <p class="text-gray-600 leading-relaxed mb-6 font-bold">
+                我们正在紧锣密鼓地准备中，<br>马上为您呈现更丰富的内容。<br>敬请期待！
+            </p>
+            <button onclick="closeModals()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-8 rounded-full transition-colors btn-bounce">
+                我知道啦
+            </button>
+        </div>
+    </div>
+
+    <div id="bugModal" class="hidden fixed inset-0 bg-black/50 z-[100] flex items-center justify-center backdrop-blur-sm p-4" onclick="closeModals()">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl relative modal-enter" onclick="event.stopPropagation()">
+            <button onclick="closeModals()" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-red-100 hover:text-red-500 font-bold transition-colors">✕</button>
+            <h3 class="text-xl font-black text-gray-800 mb-4">📷 扫码反馈问题</h3>
+            <div class="bg-gray-100 rounded-xl p-2 mb-2">
+                <img src="bug_qr.jpeg" alt="Bug Feedback QR" class="w-full h-auto rounded-lg object-contain" onerror="this.src='https://via.placeholder.com/300x300?text=二维码加载失败'">
+            </div>
+            <p class="text-gray-400 text-xs font-bold mt-2">感谢您的反馈，这能帮助我们做得更好！</p>
+        </div>
+    </div>
 
     <script>
         // 定义等级数据结构
@@ -118,14 +170,46 @@
 
         const container = document.getElementById('level-container');
 
+        // 弹窗控制函数
+        function showMsg() {
+            document.getElementById('msgModal').classList.remove('hidden');
+        }
+
+        function showBugModal() {
+            document.getElementById('bugModal').classList.remove('hidden');
+        }
+
+        function closeModals() {
+            document.getElementById('msgModal').classList.add('hidden');
+            document.getElementById('bugModal').classList.add('hidden');
+        }
+
         // 生成卡片 HTML
         levels.forEach(level => {
             const card = document.createElement('div');
-            card.className = `level-card bg-white rounded-3xl border-b-[6px] ${level.color} p-5 relative overflow-hidden`;
+            card.className = `level-card bg-white rounded-3xl border-b-[6px] ${level.color} p-5 relative overflow-hidden flex flex-col h-full`;
             
             // 构建真题列表 HTML
             let examListHtml = '';
             examDates.forEach(date => {
+                // 逻辑判断：是否是目标开放的按钮 (一级/二级 + 2025年9月 + Python)
+                // 注意：date.id 是字符串 "202509"
+                const isOpenLevel = (level.id === 1 || level.id === 2);
+                const isTargetDate = (date.id === "202509");
+                const shouldOpenPython = isOpenLevel && isTargetDate;
+
+                // Python 按钮属性
+                const pyQuizAttr = shouldOpenPython 
+                    ? `href="level${level.id}/${date.id}/python_quiz.html"` 
+                    : `onclick="showMsg()"`;
+                
+                const pySumAttr = shouldOpenPython 
+                    ? `href="level${level.id}/${date.id}/python_summary.html"` 
+                    : `onclick="showMsg()"`;
+
+                // C++ 按钮属性 (全部关闭)
+                const cppAttr = `onclick="showMsg()"`;
+
                 examListHtml += `
                     <div class="mb-4 bg-white border-2 border-dashed border-gray-200 rounded-xl p-3 hover:border-blue-300 transition-colors">
                         <div class="flex items-center justify-center mb-2">
@@ -138,11 +222,11 @@
                                 <span class="text-sm font-bold text-yellow-800">Python</span>
                             </div>
                             <div class="flex space-x-2">
-                                <a href="level${level.id}/${date.id}/python_quiz.html" 
+                                <a ${pyQuizAttr} 
                                    class="btn-bounce pill-btn bg-yellow-400 text-white border-b-2 border-yellow-600">
                                    ✍️ 做题
                                 </a>
-                                <a href="level${level.id}/${date.id}/python_summary.html" 
+                                <a ${pySumAttr} 
                                    class="btn-bounce pill-btn bg-white text-yellow-600 border border-yellow-200 hover:bg-yellow-100">
                                    📝 总结
                                 </a>
@@ -155,11 +239,11 @@
                                 <span class="text-sm font-bold text-blue-800">C++</span>
                             </div>
                             <div class="flex space-x-2">
-                                <a href="level${level.id}/${date.id}/cpp_quiz.html" 
+                                <a ${cppAttr}
                                    class="btn-bounce pill-btn bg-blue-400 text-white border-b-2 border-blue-600">
                                    ✍️ 做题
                                 </a>
-                                <a href="level${level.id}/${date.id}/cpp_summary.html" 
+                                <a ${cppAttr} 
                                    class="btn-bounce pill-btn bg-white text-blue-600 border border-blue-200 hover:bg-blue-100">
                                    📝 总结
                                 </a>
@@ -182,17 +266,17 @@
                     </div>
                 </div>
 
-                <a href="level${level.id}/syllabus.html" 
+                <button onclick="showMsg()" 
                    class="btn-bounce group flex items-center justify-center w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-2 rounded-xl shadow-md mb-5 hover:shadow-lg transition-all decoration-transparent">
                     <span class="mr-2">📜</span> 学习大纲知识点
                     <span class="ml-1 opacity-70 text-xs font-normal group-hover:translate-x-1 transition-transform">-></span>
-                </a>
+                </button>
 
                 <div class="text-center mb-2">
                     <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">历史真题 & 总结</span>
                 </div>
 
-                <div class="overflow-y-auto max-h-[300px] pr-1 custom-scrollbar">
+                <div class="overflow-y-auto max-h-[300px] pr-1 custom-scrollbar flex-grow">
                     ${examListHtml}
                 </div>
                 
