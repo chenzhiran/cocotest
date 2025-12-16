@@ -3,520 +3,1052 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSP-J 编程题解展示</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>第一章、顺序结构 - 题解演示</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai-sublime.min.css">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        /* ================= 全局样式 ================= */
+        :root {
+            --bg-color: #1a1a2e;
+            --card-bg: rgba(22, 33, 62, 0.85);
+            --accent-pink: #ff2e63;
+            --accent-cyan: #08d9d6;
+            --accent-yellow: #eae962;
+            --accent-purple: #a29bfe;
+            --text-main: #ffffff;
+            --text-sub: #b2b2b2;
+            --nav-bg: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-cyan) var(--bg-color);
+        }
 
         body {
-            font-family: 'Noto Sans SC', sans-serif;
+            font-family: "Comic Sans MS", "Microsoft YaHei", "Rounded Mplus 1c", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 10% 20%, rgba(8, 217, 214, 0.1) 0%, transparent 20%),
+                              radial-gradient(circle at 90% 80%, rgba(255, 46, 99, 0.1) 0%, transparent 20%);
+            color: var(--text-main);
+            overflow: hidden; /* 防止body滚动，由container滚动 */
+        }
+
+        /* 滚动容器 */
+        .slides-container {
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
             scroll-behavior: smooth;
         }
 
+        /* 单页幻灯片结构 */
         .slide {
-            min-height: 100vh;
-            width: 100%;
+            height: 100vh;
+            width: 100vw;
+            scroll-snap-align: start;
+            display: flex;
+            padding: 20px 20px 20px 60px; /* 左侧留给导航条 */
+            gap: 20px;
+            position: relative;
+            border-bottom: 2px solid rgba(255,255,255,0.05);
+        }
+
+        /* ================= 左侧导航 ================= */
+        .side-nav {
+            position: fixed;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 100;
+            background: var(--nav-bg);
+            padding: 15px 5px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-dot:hover, .nav-dot.active {
+            background: var(--accent-cyan);
+            transform: scale(1.3);
+        }
+
+        .nav-dot::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 25px;
+            top: -4px;
+            background: var(--accent-pink);
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            transition: opacity 0.3s;
+            z-index: 101;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .nav-dot:hover::after {
+            opacity: 1;
+        }
+
+        /* ================= 首页任务大厅样式 ================= */
+        .intro-slide {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #2d3436 0%, #1a1a2e 100%);
+            text-align: center;
+        }
+
+        .intro-container {
+            display: flex;
+            gap: 40px;
+            max-width: 1000px;
+            width: 90%;
+            height: 80%;
+        }
+
+        .login-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 20px;
+            padding: 30px;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 2rem;
-            box-sizing: border-box;
-            border-bottom: 5px solid #e2e8f0;
+            box-shadow: 0 0 20px rgba(8, 217, 214, 0.2);
+        }
+
+        .login-info-row {
+            margin: 20px 0;
+            text-align: left;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid var(--accent-pink);
+        }
+        .login-label { color: var(--accent-cyan); font-size: 14px; margin-bottom: 5px; display: block; }
+        .login-val { color: #fff; font-size: 20px; font-weight: bold; font-family: monospace; }
+        
+        .task-list-card {
+            flex: 1.5;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--accent-yellow);
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .task-item:hover {
+            transform: translateX(10px);
+            background: rgba(234, 233, 98, 0.1);
+        }
+        .trophy { font-size: 24px; margin-right: 15px; }
+        .task-name { font-weight: bold; font-size: 18px; }
+
+        /* ================= 内容布局 (左文右码) ================= */
+        .content-left {
+            flex: 4;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .content-right {
+            flex: 6;
+            display: flex;
+            flex-direction: column;
+            background: #272822; /* 代码区深色背景 */
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid var(--accent-cyan);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .title-box h1 {
+            font-size: 24px;
+            color: var(--accent-cyan);
+            margin-bottom: 5px;
+        }
+        .title-box span {
+            font-size: 14px;
+            color: var(--accent-pink);
+            font-weight: bold;
+            background: rgba(255, 46, 99, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* 题目描述 */
+        .desc-text {
+            line-height: 1.6;
+            font-size: 15px;
+            color: #ddd;
+        }
+        .sample-box {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin-top: 10px;
+            border: 1px dashed #666;
+        }
+
+        /* 思路分析 */
+        .analysis-box ol {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+        .analysis-box li {
+            margin-bottom: 8px;
+            color: #eee;
+        }
+        .highlight-text {
+            color: var(--accent-yellow);
+            font-weight: bold;
+        }
+
+        /* 示意图容器 */
+        .diagram-container {
+            height: 120px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             position: relative;
+            overflow: hidden;
         }
 
-        .code-font {
-            font-family: 'JetBrains Mono', monospace;
+        /* ================= 代码区域 ================= */
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1e1e1e;
+            padding: 0 10px;
+            border-bottom: 1px solid #444;
         }
 
-        /* Connecting Blocks Logic */
-        .connect-row {
-            display: grid;
-            grid-template-columns: 1fr 0.8fr 1fr;
+        .tabs {
+            display: flex;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
+            transition: all 0.3s;
+            border-top: 3px solid transparent;
+        }
+
+        .tab-btn:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-cyan);
+            border-top: 3px solid var(--accent-cyan);
+            background: #272822;
+        }
+
+        .code-actions {
+            display: flex;
             gap: 10px;
             align-items: center;
-            margin-bottom: 8px;
-            padding: 8px;
-            border-radius: 8px;
-            transition: transform 0.2s;
-        }
-        
-        .connect-row:hover {
-            transform: scale(1.01);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        /* Color Themes for Logic Types */
-        .theme-output { background-color: #d1fae5; border-left: 5px solid #10b981; } /* Green */
-        .theme-input { background-color: #dbeafe; border-left: 5px solid #3b82f6; } /* Blue */
-        .theme-var { background-color: #fef3c7; border-left: 5px solid #f59e0b; } /* Amber */
-        .theme-struct { background-color: #f3f4f6; border-left: 5px solid #9ca3af; } /* Gray */
-
-        .section-badge {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: #334155;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.9rem;
+        .version-select {
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: none; /* 默认隐藏，JS控制显示 */
+            outline: none;
+            cursor: pointer;
+        }
+        .version-select:hover {
+            border-color: var(--accent-cyan);
         }
 
-        .thought-bubble {
-            background: #fff;
-            border: 2px solid #334155;
-            border-radius: 15px;
-            padding: 15px;
+        .copy-btn {
+            background: transparent;
+            border: 1px solid #555;
+            color: #aaa;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .copy-btn:hover {
+            border-color: #fff;
+            color: #fff;
+        }
+
+        .code-content {
+            flex: 1;
             position: relative;
+            overflow: auto;
         }
-        .thought-bubble:after {
-            content: '';
+
+        .code-pane {
+            display: none;
+            height: 100%;
+        }
+        .code-pane.active {
+            display: block;
+        }
+
+        pre {
+            margin: 0;
+            height: 100%;
+        }
+        code {
+            font-family: "Fira Code", Consolas, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            height: 100%;
+        }
+
+        /* ================= 简单的CSS动画示意图 ================= */
+        /* 门开启 */
+        .door {
+            width: 40px;
+            height: 60px;
+            background: #555;
+            border: 2px solid #333;
+            transition: transform 1s;
             position: absolute;
-            bottom: -10px;
-            left: 20px;
-            width: 0;
-            height: 0;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-top: 10px solid #334155;
+        }
+        .door-left { left: 40%; transform-origin: left; }
+        .door-right { right: 40%; transform-origin: right; }
+        .door-open .door-left { transform: perspective(100px) rotateY(-45deg); }
+        .door-open .door-right { transform: perspective(100px) rotateY(45deg); }
+        
+        /* 数据流动 */
+        .flow-box {
+            border: 2px solid var(--accent-cyan);
+            padding: 5px 10px;
+            color: var(--accent-cyan);
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .arrow-anim {
+            font-size: 24px;
+            color: var(--accent-yellow);
+            animation: moveRight 1s infinite;
+            margin: 0 15px;
+        }
+        @keyframes moveRight {
+            0% { transform: translateX(-5px); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(5px); opacity: 0; }
+        }
+
+        /* ================= 响应式 ================= */
+        @media (max-width: 768px) {
+            .slide {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                padding: 10px 10px 60px 10px; /* 底部留白给移动端导航 */
+            }
+            .side-nav {
+                top: auto;
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                flex-direction: row;
+            }
+            .nav-dot::after { display: none; } /* 移动端不显示tooltip */
+            .content-left, .content-right {
+                flex: none;
+                width: 100%;
+            }
+            .content-right {
+                height: 500px; /* 固定移动端代码高度 */
+            }
+            .intro-container {
+                flex-direction: column;
+                height: auto;
+            }
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800">
+<body>
 
-    <!-- Slide 1: CSP-J1101 巨门之钥1 -->
-    <section class="slide bg-white" id="p1">
-        <div class="section-badge">题目 1 / 6</div>
-        <div class="max-w-6xl mx-auto w-full">
-            <!-- Header -->
-            <div class="text-center mb-6">
-                <h1 class="text-4xl font-bold text-slate-800 mb-2">CSP-J1101 巨门之钥 1</h1>
-                <p class="text-lg text-slate-600">目标：输出字符串 "Hello World！"</p>
+<nav class="side-nav">
+    <div class="nav-dot active" onclick="scrollToSlide(0)" data-tooltip="🚀 任务大厅"></div>
+    <div class="nav-dot" onclick="scrollToSlide(1)" data-tooltip="1. 巨门之钥1"></div>
+    <div class="nav-dot" onclick="scrollToSlide(2)" data-tooltip="2. 巨门之钥2"></div>
+    <div class="nav-dot" onclick="scrollToSlide(3)" data-tooltip="3. 精灵朋友"></div>
+    <div class="nav-dot" onclick="scrollToSlide(4)" data-tooltip="4. 迟日江山丽"></div>
+    <div class="nav-dot" onclick="scrollToSlide(5)" data-tooltip="5. 鹦鹉学舌"></div>
+    <div class="nav-dot" onclick="scrollToSlide(6)" data-tooltip="6. 山居秋暝"></div>
+</nav>
+
+<main class="slides-container" id="scroller">
+
+    <section class="slide intro-slide">
+        <h1 style="font-size: 3em; color: var(--accent-cyan); margin-bottom: 20px; text-shadow: 0 0 10px var(--accent-cyan);">🚀 编程任务大厅</h1>
+        <div class="intro-container">
+            <div class="login-card">
+                <h2 style="color:var(--accent-pink); margin-bottom:20px;">👤 玩家登录信息</h2>
+                <div class="login-info-row">
+                    <span class="login-label">扣哒信奥OJ 网址入口</span>
+                    <a href="http://oj.koudashijie.com" target="_blank" class="login-val" style="color:#08d9d6; text-decoration:none;">oj.koudashijie.com</a>
+                </div>
+                <div class="login-info-row">
+                    <span class="login-label">用户名</span>
+                    <span class="login-val">中文姓名</span>
+                </div>
+                <div class="login-info-row">
+                    <span class="login-label">初始密码</span>
+                    <span class="login-val">12345678</span>
+                </div>
+                <p style="font-size:12px; color:#aaa; margin-top:auto;">⚠️ 登录出现问题记得联系老师哦</p>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Left: Thinking Analysis -->
-                <div class="col-span-1 bg-blue-50 p-6 rounded-2xl shadow-sm border border-blue-100">
-                    <h2 class="text-2xl font-bold text-blue-700 mb-4"><i class="fas fa-lightbulb text-yellow-500 mr-2"></i>思路分析</h2>
-                    <div class="space-y-4">
-                        <div class="flex items-start">
-                            <img src="https://api.iconify.design/noto:door.svg" class="w-12 h-12 mr-3" alt="Door">
-                            <div>
-                                <p class="font-bold">1. 观察门上的密码</p>
-                                <p class="text-sm">第二扇门的密码是 <code>Hello World！</code>。注意大小写和最后的感叹号是中文全角还是英文半角（题目样例给的是全角！）。</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <img src="https://api.iconify.design/noto:desktop-computer.svg" class="w-12 h-12 mr-3" alt="PC">
-                            <div>
-                                <p class="font-bold">2. 计算机的嘴巴</p>
-                                <p class="text-sm">想要让计算机“说”出密码，我们需要用输出语句。</p>
-                                <ul class="list-disc list-inside text-sm mt-2 text-slate-600">
-                                    <li>Python: <code>print()</code></li>
-                                    <li>C++: <code>cout << </code></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+            <div class="task-list-card">
+                <h2 style="color:var(--accent-yellow); margin-bottom:20px;">📜 本章悬赏任务</h2>
+                <p style="color:#aaa; margin-bottom:15px; text-align:left;">找到课程 “基础篇第一章顺序结构” 开始挑战：</p>
+                
+                <div class="task-item" onclick="scrollToSlide(1)">
+                    <span class="trophy">🏆</span>
+                    <span class="task-name">CSP-J1101、巨门之钥 1</span>
                 </div>
+                <div class="task-item" onclick="scrollToSlide(2)">
+                    <span class="trophy">🏆</span>
+                    <span class="task-name">CSP-J1102、巨门之钥 2</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(3)">
+                    <span class="trophy">🏆</span>
+                    <span class="task-name">CSP-J1103、精灵朋友</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(4)">
+                    <span class="trophy">🏆</span>
+                    <span class="task-name">CSP-J1104、迟日江山丽</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(5)">
+                    <span class="trophy">🏆</span>
+                    <span class="task-name">CSP-J1105、鹦鹉学舌</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(6)">
+                    <span class="trophy">🏆</span>
+                    <span class="task-name">CSP-J1106、山居秋暝</span>
+                </div>
+                <p style="margin-top:20px; font-size:14px; color:#fff;">👇 向下滑动查看详细题解</p>
+            </div>
+        </div>
+    </section>
 
-                <!-- Right: Code Comparison -->
-                <div class="col-span-2 bg-slate-50 p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h2 class="text-2xl font-bold text-slate-700 mb-4"><i class="fas fa-code text-blue-500 mr-2"></i>参考程序对照</h2>
-                    
-                    <div class="grid grid-cols-3 text-center font-bold mb-2 text-slate-500">
-                        <div>Python Code</div>
-                        <div>代码解释</div>
-                        <div>C++ Code</div>
-                    </div>
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1101</span>
+                <h1>巨门之钥 1</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">英雄面前有两扇门。第一扇门密码是“你好，世界！”，第二扇门密码是“Hello World！”。你需要补充程序第8行，输出正确的密码打开第二扇门。</p>
+                <div class="sample-box">
+                    <strong>输出样例：</strong><br>
+                    Hello World！
+                </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <div class="diagram-container door-open">
+                    <div class="door door-left"></div>
+                    <div class="door door-right"></div>
+                    <div style="z-index:1; color:#fff; font-weight:bold;">Hello World！</div>
+                </div>
+                <ol>
+                    <li>题目要求通过编程<strong>输出</strong>一句话。</li>
+                    <li>Python 中使用 <span class="highlight-text">print()</span> 函数。</li>
+                    <li>C++ 中使用 <span class="highlight-text">cout <<</span> 语句。</li>
+                    <li>注意：题目中的感叹号是中文全角 <span class="highlight-text">！</span>。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right" data-problem="p1">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <select class="version-select" onchange="switchVersion(this)">
+                        <option value="v1">解法一：单引号</option>
+                        <option value="v2">解法二：双引号</option>
+                    </select>
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制代码</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python" data-version="v1">
+<pre><code class="language-python"># 解法一：使用单引号包裹字符串
+# print 是输出函数，将内容显示在屏幕上
+print('Hello World！') 
+# 括号里的是字符串，单引号告诉计算机这是文字
+</code></pre>
+                </div>
+                <div class="code-pane python" data-version="v2">
+<pre><code class="language-python"># 解法二：使用双引号包裹字符串
+# Python 中单引号和双引号作用是一样的
+print("Hello World！")
+# 注意：感叹号必须是中文全角的 "！"
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">// 引入 C++ 标准输入输出库
+#include &lt;iostream&gt;
+// 使用标准命名空间，这样可以直接使用 cout
+using namespace std;
 
-                    <!-- Row 1: Boilerplate -->
-                    <div class="connect-row theme-struct">
-                        <div class="code-font text-xs text-gray-400"># Python不需要头文件</div>
-                        <div class="text-center text-xs font-bold text-gray-600">准备工作<br>(引入库)</div>
-                        <div class="code-font text-xs">#include &lt;iostream&gt;<br>using namespace std;<br>int main() {</div>
-                    </div>
-
-                    <!-- Row 2: The Core Logic -->
-                    <div class="connect-row theme-output">
-                        <div class="code-font text-lg text-emerald-800">print("Hello World！")</div>
-                        <div class="text-center text-sm font-bold text-emerald-700">
-                            <i class="fas fa-arrow-right"></i> 输出语句 <i class="fas fa-arrow-left"></i><br>
-                            向屏幕打印固定内容
-                        </div>
-                        <div class="code-font text-lg text-emerald-800">cout << "Hello World！";</div>
-                    </div>
-
-                    <!-- Row 3: Ending -->
-                    <div class="connect-row theme-struct">
-                        <div class="code-font text-xs text-gray-400"># 程序结束</div>
-                        <div class="text-center text-xs font-bold text-gray-600">结束</div>
-                        <div class="code-font text-xs">return 0;<br>}</div>
-                    </div>
-
-                    <!-- Tip Card -->
-                    <div class="mt-4 bg-yellow-50 p-3 rounded border border-yellow-200 text-sm text-yellow-800">
-                        <strong><i class="fas fa-info-circle"></i> 小贴士：</strong> 
-                        在C++中，千万不要忘记语句末尾的分号 <code>;</code> 哦！
-                    </div>
+int main() {
+    // 主函数，程序的入口
+    // cout 是输出流对象，<< 是插入运算符
+    // endl 表示换行 (End Line)
+    cout &lt;&lt; "Hello World！" &lt;&lt; endl; 
+    
+    return 0; // 程序结束返回 0
+}
+</code></pre>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Slide 2: CSP-J1102 巨门之钥2 -->
-    <section class="slide bg-slate-50" id="p2">
-        <div class="section-badge">题目 2 / 6</div>
-        <div class="max-w-6xl mx-auto w-full">
-            <div class="text-center mb-6">
-                <h1 class="text-4xl font-bold text-slate-800 mb-2">CSP-J1102 巨门之钥 2</h1>
-                <p class="text-lg text-slate-600">目标：输出中英文混合字符串 "Hello 扣哒世界！"</p>
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1102</span>
+                <h1>巨门之钥 2</h1>
             </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Thinking -->
-                <div class="col-span-1 bg-purple-50 p-6 rounded-2xl shadow-sm border border-purple-100">
-                    <h2 class="text-2xl font-bold text-purple-700 mb-4"><i class="fas fa-brain text-purple-500 mr-2"></i>思路分析</h2>
-                    <div class="thought-bubble mb-4 text-sm text-slate-700">
-                        哎呀，这次的密码有点特别！是英文和中文混合的。
-                    </div>
-                    <div class="space-y-4">
-                        <p class="text-sm">这道题和上一题非常像，唯一的区别就是括号里的内容变了。</p>
-                        <div class="bg-white p-3 rounded border border-purple-200 text-center">
-                            <span class="text-gray-400">旧密码：</span> Hello World！<br>
-                            <i class="fas fa-arrow-down text-purple-500 my-1"></i><br>
-                            <span class="font-bold text-purple-600">新密码：</span> Hello 扣哒世界！
-                        </div>
-                        <p class="text-xs text-slate-500">注意：只要把双引号 <code>""</code> 里面的内容替换掉就可以了，计算机很聪明的，中文英文它都认识。</p>
-                    </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">来到上一层，密码变了。这次第二扇门的密码是：“Hello 扣哒世界！”。请补充第8行代码。</p>
+                <div class="sample-box">
+                    <strong>输出样例：</strong><br>
+                    Hello 扣哒世界！
                 </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <ol>
+                    <li>这道题与上一题非常相似，核心是<strong>输出</strong>。</li>
+                    <li>只需要将引号内的文字修改为 <span class="highlight-text">Hello 扣哒世界！</span>。</li>
+                    <li>中英文混合输入时，注意引号必须是英文状态下的。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right" data-problem="p2">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <select class="version-select" onchange="switchVersion(this)">
+                        <option value="v1">解法一：双引号</option>
+                        <option value="v2">解法二：单引号</option>
+                    </select>
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制代码</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python" data-version="v1">
+<pre><code class="language-python"># 解法一：使用双引号
+# 输出指定的中英文混合字符串
+print("Hello 扣哒世界！") 
+# 双引号必须是英文标点 ""
+</code></pre>
+                </div>
+                <div class="code-pane python" data-version="v2">
+<pre><code class="language-python"># 解法二：使用单引号
+# 效果与双引号完全一致
+print('Hello 扣哒世界！')
+# 只要成对出现即可
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
 
-                <!-- Code -->
-                <div class="col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h2 class="text-2xl font-bold text-slate-700 mb-4"><i class="fas fa-laptop-code text-purple-500 mr-2"></i>参考程序对照</h2>
-                    
-                    <div class="grid grid-cols-3 text-center font-bold mb-2 text-slate-500">
-                        <div>Python</div>
-                        <div>功能解释</div>
-                        <div>C++</div>
-                    </div>
-
-                    <div class="connect-row theme-struct">
-                        <div class="code-font text-xs text-gray-400"># Python简洁模式</div>
-                        <div class="text-center text-xs font-bold text-gray-600">框架</div>
-                        <div class="code-font text-xs">#include &lt;iostream&gt;<br>using namespace std;<br>int main() {</div>
-                    </div>
-
-                    <div class="connect-row theme-output">
-                        <div class="code-font text-lg text-purple-800">print("Hello 扣哒世界！")</div>
-                        <div class="text-center text-sm font-bold text-purple-700">
-                            打印混合文本<br>
-                            <span class="text-xs font-normal">直接把文字放进双引号里</span>
-                        </div>
-                        <div class="code-font text-lg text-purple-800">cout << "Hello 扣哒世界！";</div>
-                    </div>
-
-                    <div class="connect-row theme-struct">
-                        <div class="code-font text-xs text-gray-400"></div>
-                        <div class="text-center text-xs font-bold text-gray-600">结束</div>
-                        <div class="code-font text-xs">return 0;<br>}</div>
-                    </div>
+int main() {
+    // C++ 中字符串必须使用双引号 ""
+    // 单引号 '' 在 C++ 中只能用于单个字符
+    cout &lt;&lt; "Hello 扣哒世界！"; 
+    
+    return 0;
+}
+</code></pre>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Slide 3: CSP-J1103 精灵朋友 -->
-    <section class="slide bg-white" id="p3">
-        <div class="section-badge">题目 3 / 6</div>
-        <div class="max-w-6xl mx-auto w-full">
-            <div class="text-center mb-6">
-                <h1 class="text-4xl font-bold text-slate-800 mb-2">CSP-J1103 精灵朋友</h1>
-                <p class="text-lg text-slate-600">目标：输入名字，输出 "Hello + 名字！"</p>
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1103</span>
+                <h1>精灵朋友</h1>
             </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Thinking -->
-                <div class="col-span-1 bg-green-50 p-6 rounded-2xl shadow-sm border border-green-100">
-                    <h2 class="text-2xl font-bold text-green-700 mb-4"><i class="fas fa-users text-green-500 mr-2"></i>思路分析</h2>
-                    <div class="flex flex-col space-y-4">
-                        <div class="bg-white p-4 rounded shadow-sm">
-                            <h3 class="font-bold text-green-800 text-sm">步骤一：准备一个盒子 (变量)</h3>
-                            <p class="text-xs mt-1">每个精灵名字不同，我们需要一个贴着“名字”标签的盒子来装它。</p>
-                            <div class="flex justify-center mt-2">
-                                <div class="w-16 h-16 border-2 border-dashed border-gray-400 rounded flex items-center justify-center text-xs bg-gray-50">name</div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-4 rounded shadow-sm">
-                            <h3 class="font-bold text-blue-800 text-sm">步骤二：放入名字 (输入)</h3>
-                            <p class="text-xs mt-1">精灵说出名字，我们把它存进盒子里。</p>
-                        </div>
-                        <div class="bg-white p-4 rounded shadow-sm">
-                            <h3 class="font-bold text-emerald-800 text-sm">步骤三：打招呼 (拼接输出)</h3>
-                            <p class="text-xs mt-1">输出时要像拼积木一样：<br><code>"Hello "</code> + <code>盒子里的名字</code> + <code>"！"</code></p>
-                        </div>
-                    </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">需要创建一个字符串变量存储精灵名字，输入名字后，输出“Hello 名字！”。</p>
+                <div class="sample-box">
+                    <strong>输入：</strong>陈之然<br>
+                    <strong>输出：</strong>Hello 陈之然！
                 </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <div class="diagram-container">
+                    <div class="flow-box">输入名字</div>
+                    <div class="arrow-anim">➡</div>
+                    <div class="flow-box" style="border-color:var(--accent-pink); color:var(--accent-pink)">变量 a</div>
+                    <div class="arrow-anim">➡</div>
+                    <div class="flow-box">拼接输出</div>
+                </div>
+                <ol>
+                    <li><strong>变量：</strong> 需要一个盒子（变量）来装精灵的名字。</li>
+                    <li><strong>输入：</strong> 使用 <span class="highlight-text">input()</span> 或 <span class="highlight-text">cin</span> 读取名字。</li>
+                    <li><strong>拼接：</strong> 将 "Hello "、名字变量、"！" 连起来输出。</li>
+                    <li>注意空格："Hello " 后面有一个空格。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right" data-problem="p3">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制代码</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python"># 1. 声明变量 a，并接收用户输入
+# input() 函数会暂停程序，等待用户输入一行文字
+a = input()
 
-                <!-- Code -->
-                <div class="col-span-2 bg-slate-50 p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h2 class="text-2xl font-bold text-slate-700 mb-4"><i class="fas fa-exchange-alt text-green-600 mr-2"></i>输入输出对接</h2>
-                    
-                    <div class="grid grid-cols-3 text-center font-bold mb-2 text-slate-500">
-                        <div>Python</div>
-                        <div>动作连接</div>
-                        <div>C++</div>
-                    </div>
+# 2. 字符串拼接
+# 将 "Hello " (含空格)、变量 a 的内容、"！" 连起来
+# '+' 号在这里起连接作用
+b = "Hello " + a + "！"
 
-                    <!-- Var Declaration -->
-                    <div class="connect-row theme-var">
-                        <div class="code-font text-sm text-amber-800"># Python 自动创建变量<br>(无需声明类型)</div>
-                        <div class="text-center text-xs font-bold text-amber-700">
-                            1. 创建变量<br>
-                            准备一个存字符串的盒子
-                        </div>
-                        <div class="code-font text-sm text-amber-800">string name;</div>
-                    </div>
+# 3. 输出拼接后的结果
+print(b)
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+#include &lt;string&gt; // 引入字符串库，以便使用 string 类型
+using namespace std;
 
-                    <!-- Input -->
-                    <div class="connect-row theme-input">
-                        <div class="code-font text-lg text-blue-800">name = input()</div>
-                        <div class="text-center text-sm font-bold text-blue-700">
-                            2. 输入<br>
-                            把键盘输入的内容存入 name
-                        </div>
-                        <div class="code-font text-lg text-blue-800">cin >> name;</div>
-                    </div>
-
-                    <!-- Output -->
-                    <div class="connect-row theme-output">
-                        <div class="code-font text-sm text-emerald-800">print("Hello", name + "！")<br><span class="text-xs text-gray-500"># 或者 print(f"Hello {name}！")</span></div>
-                        <div class="text-center text-sm font-bold text-emerald-700">
-                            3. 拼接输出<br>
-                            固定词 + 变量 + 符号
-                        </div>
-                        <div class="code-font text-sm text-emerald-800">cout << "Hello " << name << "！";</div>
-                    </div>
-
-                    <!-- Explanation Box -->
-                    <div class="mt-4 grid grid-cols-2 gap-4">
-                        <div class="bg-blue-100 p-2 rounded text-xs">
-                            <strong>Python input():</strong><br>
-                            这函数就像一只耳朵，专门听键盘输入了什么，然后变成字符串给左边的变量。
-                        </div>
-                        <div class="bg-amber-100 p-2 rounded text-xs">
-                            <strong>C++ string:</strong><br>
-                            C++比较严谨，必须先告诉计算机 <code>name</code> 是个 <code>string</code> (字符串) 类型的盒子，才能往里装字。
-                        </div>
-                    </div>
+int main() {
+    string a; // 1. 声明一个字符串类型的变量 a
+    cin &gt;&gt; a; // 2. 从键盘读取输入，存入 a
+    
+    // 3. 拼接并输出
+    // 使用 << 将多个部分连起来送给 cout
+    cout &lt;&lt; "Hello " &lt;&lt; a &lt;&lt; "！"; 
+    
+    return 0;
+}
+</code></pre>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Slide 4: CSP-J1104 迟日江山丽 -->
-    <section class="slide bg-slate-50" id="p4">
-        <div class="section-badge">题目 4 / 6</div>
-        <div class="max-w-6xl mx-auto w-full">
-            <div class="text-center mb-6">
-                <h1 class="text-4xl font-bold text-slate-800 mb-2">CSP-J1104 迟日江山丽</h1>
-                <p class="text-lg text-slate-600">目标：换行输出四句古诗</p>
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1104</span>
+                <h1>迟日江山丽</h1>
             </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="col-span-1 bg-red-50 p-6 rounded-2xl shadow-sm border border-red-100">
-                    <h2 class="text-2xl font-bold text-red-700 mb-4"><i class="fas fa-scroll text-red-500 mr-2"></i>思路分析</h2>
-                    <div class="space-y-4 text-sm">
-                        <p>英雄要背古诗，古诗是一行一行的。我们需要让程序也能一行一行地说话。</p>
-                        <div class="bg-white border-l-4 border-red-400 p-3 italic">
-                            迟日江山丽，<br>
-                            春风花草香。<br>
-                            泥融飞燕子，<br>
-                            沙暖睡鸳鸯。
-                        </div>
-                        <p>在编程里，“换行”很重要。</p>
-                        <ul class="list-disc list-inside">
-                            <li>Python的 <code>print</code> 默认就会换行。</li>
-                            <li>C++ 需要我们手动添加 <code>endl</code> (End Line) 或者 <code>\n</code>。</li>
-                        </ul>
-                    </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">背古诗给精灵听。按格式输出四行古诗，注意换行。</p>
+                <div class="sample-box">
+                    迟日江山丽，<br>
+                    春风花草香。<br>
+                    ...
+                </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <ol>
+                    <li>题目要求输出多行文本。</li>
+                    <li><strong>方法一：</strong> 写四个 print 语句，每个负责一行。</li>
+                    <li><strong>方法二：</strong> 使用三引号 <span class="highlight-text">''' ... '''</span> 包含多行文本一次性输出（Python特有）。</li>
+                    <li>C++ 中使用 <span class="highlight-text">endl</span> 进行换行。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right" data-problem="p4">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <select class="version-select" onchange="switchVersion(this)">
+                        <option value="v1">解法一：多行print</option>
+                        <option value="v2">解法二：三引号</option>
+                    </select>
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制代码</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python" data-version="v1">
+<pre><code class="language-python"># 解法一：使用多个 print 语句
+# 每一个 print() 执行完后，默认会自动换行
+print('迟日江山丽，') # 第一行
+print('春风花草香。') # 第二行
+print('泥融飞燕子，') # 第三行
+print('沙暖睡鸳鸯。') # 第四行
+# 字符串也可以用双引号 ""
+</code></pre>
+                </div>
+                <div class="code-pane python" data-version="v2">
+<pre><code class="language-python"># 解法二：使用三引号 ''' 或 """
+# 三引号可以直接保留字符串里的回车和格式
+print('''迟日江山丽，
+春风花草香。
+泥融飞燕子，
+沙暖睡鸳鸯。''')
+# 这种方法代码更简洁
+</code></pre>
                 </div>
 
-                <div class="col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h2 class="text-2xl font-bold text-slate-700 mb-4"><i class="fas fa-list-ol text-red-500 mr-2"></i>多行输出对照</h2>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
 
-                    <div class="connect-row theme-output">
-                        <div class="code-font text-sm text-emerald-800">print("迟日江山丽，")</div>
-                        <div class="text-center text-xs font-bold text-emerald-700">第一句</div>
-                        <div class="code-font text-sm text-emerald-800">cout << "迟日江山丽，" << endl;</div>
-                    </div>
-
-                    <div class="connect-row theme-output">
-                        <div class="code-font text-sm text-emerald-800">print("春风花草香。")</div>
-                        <div class="text-center text-xs font-bold text-emerald-700">第二句</div>
-                        <div class="code-font text-sm text-emerald-800">cout << "春风花草香。" << endl;</div>
-                    </div>
-
-                    <div class="connect-row theme-output">
-                        <div class="code-font text-sm text-emerald-800">print("泥融飞燕子，")</div>
-                        <div class="text-center text-xs font-bold text-emerald-700">第三句</div>
-                        <div class="code-font text-sm text-emerald-800">cout << "泥融飞燕子，" << endl;</div>
-                    </div>
-
-                    <div class="connect-row theme-output">
-                        <div class="code-font text-sm text-emerald-800">print("沙暖睡鸳鸯。")</div>
-                        <div class="text-center text-xs font-bold text-emerald-700">第四句</div>
-                        <div class="code-font text-sm text-emerald-800">cout << "沙暖睡鸳鸯。" << endl;</div>
-                    </div>
-
-                    <div class="mt-4 text-xs text-gray-500 text-center">
-                        * C++中的 endl 代表 "End Line" (结束这一行并回车)
-                    </div>
+int main() {
+    // C++ 中需要手动处理换行
+    // endl (End Line) 代表换行符
+    cout &lt;&lt; "迟日江山丽，" &lt;&lt; endl;
+    cout &lt;&lt; "春风花草香。" &lt;&lt; endl;
+    cout &lt;&lt; "泥融飞燕子，" &lt;&lt; endl;
+    cout &lt;&lt; "沙暖睡鸳鸯。" &lt;&lt; endl;
+    return 0;
+}
+</code></pre>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Slide 5: CSP-J1105 鹦鹉学舌 -->
-    <section class="slide bg-white" id="p5">
-        <div class="section-badge">题目 5 / 6</div>
-        <div class="max-w-6xl mx-auto w-full">
-            <div class="text-center mb-6">
-                <h1 class="text-4xl font-bold text-slate-800 mb-2">CSP-J1105 鹦鹉学舌</h1>
-                <p class="text-lg text-slate-600">目标：输入一句话，原封不动输出一句话</p>
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1105</span>
+                <h1>鹦鹉学舌</h1>
             </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Thinking -->
-                <div class="col-span-1 bg-orange-50 p-6 rounded-2xl shadow-sm border border-orange-100">
-                    <h2 class="text-2xl font-bold text-orange-700 mb-4"><i class="fas fa-crow text-orange-500 mr-2"></i>思路分析</h2>
-                    <div class="flex flex-col items-center">
-                        <img src="https://api.iconify.design/noto:parrot.svg" class="w-24 h-24 mb-4" alt="Parrot">
-                        <p class="text-sm text-center mb-4">鹦鹉不创造话，它只是搬运工。</p>
-                        
-                        <div class="w-full bg-white p-3 border border-orange-200 rounded-lg">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-xs font-bold">英雄说 (Input)</span>
-                                <i class="fas fa-arrow-right text-gray-400"></i>
-                                <span class="bg-yellow-100 px-2 py-1 rounded text-xs font-mono">变量 s</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="bg-yellow-100 px-2 py-1 rounded text-xs font-mono">变量 s</span>
-                                <i class="fas fa-arrow-right text-gray-400"></i>
-                                <span class="text-xs font-bold">鹦鹉说 (Output)</span>
-                            </div>
-                        </div>
-                        <p class="text-xs mt-3 text-slate-500">注意：这次没有 "Hello" 之类的额外文字，鹦鹉只重复听到的内容。</p>
-                    </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">鹦鹉会复述你说的话。输入一行字符串，原封不动地输出出来。</p>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <div class="diagram-container">
+                     <span style="font-size:40px; margin-right:20px;">🗣️</span>
+                     <span class="arrow-anim">➡</span>
+                     <span style="border:2px dashed #fff; padding:5px; border-radius:5px;">变量 a</span>
+                     <span class="arrow-anim">➡</span>
+                     <span style="font-size:40px; margin-left:20px;">🦜</span>
                 </div>
+                <ol>
+                    <li>这是最基础的 <strong>输入 -> 存储 -> 输出</strong> 逻辑。</li>
+                    <li>创建一个变量 <span class="highlight-text">a</span>。</li>
+                    <li>将输入的内容存入 <span class="highlight-text">a</span>。</li>
+                    <li>直接打印 <span class="highlight-text">a</span>。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right" data-problem="p5">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制代码</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python"># 1. 接收输入
+# 电脑等待你输入一句话，比如"你好"
+# 输入的内容被存放到变量 a 这个盒子里
+a = input()
 
-                <!-- Code -->
-                <div class="col-span-2 bg-slate-50 p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h2 class="text-2xl font-bold text-slate-700 mb-4"><i class="fas fa-copy text-orange-500 mr-2"></i>输入即输出</h2>
-                    
-                    <div class="grid grid-cols-3 text-center font-bold mb-2 text-slate-500">
-                        <div>Python</div>
-                        <div>解释</div>
-                        <div>C++</div>
-                    </div>
+# 2. 直接输出变量 a
+# 盒子 a 里装的是什么，print 就输出什么
+# 就像鹦鹉学舌一样
+print(a)
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+#include &lt;string&gt; // 记得引入 string 库
+using namespace std;
 
-                    <div class="connect-row theme-var">
-                        <div class="code-font text-sm text-gray-400"># 自动类型推断</div>
-                        <div class="text-center text-xs font-bold text-amber-700">定义变量</div>
-                        <div class="code-font text-sm text-amber-800">string s;</div>
-                    </div>
-
-                    <div class="connect-row theme-input">
-                        <div class="code-font text-lg text-blue-800">s = input()</div>
-                        <div class="text-center text-sm font-bold text-blue-700">
-                            听 (Input)<br>
-                            <span class="text-xs font-normal">内容存入 s</span>
-                        </div>
-                        <div class="code-font text-lg text-blue-800">cin >> s;</div>
-                    </div>
-
-                    <div class="connect-row theme-output">
-                        <div class="code-font text-lg text-emerald-800">print(s)</div>
-                        <div class="text-center text-sm font-bold text-emerald-700">
-                            说 (Output)<br>
-                            <span class="text-xs font-normal">打印 s 的内容</span>
-                        </div>
-                        <div class="code-font text-lg text-emerald-800">cout << s;</div>
-                    </div>
-                    
-                    <div class="mt-4 bg-orange-100 p-3 rounded text-sm text-orange-900">
-                        <strong>思考：</strong> 如果输入里有空格（比如 "I love coding"），Python的 <code>input()</code> 可以一次读完整行，但 C++ 的 <code>cin</code> 遇到空格会停止。这道题如果输入包含空格，C++可能需要使用 <code>getline(cin, s);</code>。不过对于基础题目，通常 <code>cin >> s</code> 足够处理无空格的字符串。
-                    </div>
+int main() {
+    string a; // 1. 准备一个名为 a 的字符串盒子
+    cin &gt;&gt; a; // 2. 读取用户输入的一串文字放进 a
+    cout &lt;&lt; a; // 3. 将 a 里面的内容输出到屏幕
+    return 0;
+}
+</code></pre>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Slide 6: CSP-J1106 山居秋暝 -->
-    <section class="slide bg-slate-50" id="p6">
-        <div class="section-badge">题目 6 / 6</div>
-        <div class="max-w-6xl mx-auto w-full">
-            <div class="text-center mb-6">
-                <h1 class="text-4xl font-bold text-slate-800 mb-2">CSP-J1106 山居秋暝</h1>
-                <p class="text-lg text-slate-600">目标：背诵《山居秋暝》，多行输出巩固练习</p>
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1106</span>
+                <h1>山居秋暝</h1>
             </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="col-span-1 bg-teal-50 p-6 rounded-2xl shadow-sm border border-teal-100">
-                    <h2 class="text-2xl font-bold text-teal-700 mb-4"><i class="fas fa-book-open text-teal-500 mr-2"></i>思路分析</h2>
-                    <p class="text-sm mb-4">这道题和“迟日江山丽”一模一样，只是内容变多了。这也是编程学习中很重要的一点：<strong>重复的逻辑可以套用</strong>。</p>
-                    <div class="p-4 bg-white rounded border border-teal-200 font-serif text-center text-slate-700">
-                        <p>空山新雨后，天气晚来秋。</p>
-                        <p>明月松间照，清泉石上流。</p>
-                        <p>竹喧归浣女，莲动下渔舟。</p>
-                        <p>随意春芳歇，王孙自可留。</p>
-                    </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">继续背古诗。输出《山居秋暝》的四句诗，注意换行。</p>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <ol>
+                    <li>与 CSP-J1104 类似，是多行输出的练习。</li>
+                    <li>注意每句诗的标点符号（逗号和句号）。</li>
+                    <li>确保每一句结束后都进行换行。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right" data-problem="p6">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
                 </div>
+                <div class="code-actions">
+                    <select class="version-select" onchange="switchVersion(this)">
+                        <option value="v1">解法一：逐行打印</option>
+                        <option value="v2">解法二：三引号</option>
+                    </select>
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制代码</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python" data-version="v1">
+<pre><code class="language-python"># 解法一：单引号逐行打印
+# 一行代码打印一句诗
+print('空山新雨后，天气晚来秋。')
+print('明月松间照，清泉石上流。')
+print('竹喧归浣女，莲动下渔舟。')
+print('随意春芳歇，王孙自可留。')
+# 每一句结尾的标点符号要看清楚哦
+</code></pre>
+                </div>
+                <div class="code-pane python" data-version="v2">
+<pre><code class="language-python"># 解法二：使用三引号一次性输出
+# 适合输出段落或者长篇古诗
+print('''空山新雨后，天气晚来秋。
+明月松间照，清泉石上流。
+竹喧归浣女，莲动下渔舟。
+随意春芳歇，王孙自可留。''')
+# 三引号内的换行会被保留在输出结果中
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
 
-                <div class="col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h2 class="text-2xl font-bold text-slate-700 mb-4"><i class="fas fa-layer-group text-teal-500 mr-2"></i>综合练习</h2>
-
-                    <!-- Python block -->
-                    <div class="mb-6">
-                        <h3 class="font-bold text-blue-600 mb-2">Python 参考程序 (使用多行技巧)</h3>
-                        <div class="bg-gray-800 text-white p-4 rounded-lg code-font text-sm relative">
-                            <span class="absolute top-2 right-2 text-xs text-gray-400">Python</span>
-                            <span class="text-pink-400">print</span>(<span class="text-green-300">"空山新雨后，天气晚来秋。"</span>)<br>
-                            <span class="text-pink-400">print</span>(<span class="text-green-300">"明月松间照，清泉石上流。"</span>)<br>
-                            <span class="text-pink-400">print</span>(<span class="text-green-300">"竹喧归浣女，莲动下渔舟。"</span>)<br>
-                            <span class="text-pink-400">print</span>(<span class="text-green-300">"随意春芳歇，王孙自可留。"</span>)
-                        </div>
-                    </div>
-
-                    <!-- C++ block -->
-                    <div>
-                        <h3 class="font-bold text-blue-600 mb-2">C++ 参考程序</h3>
-                        <div class="bg-gray-800 text-white p-4 rounded-lg code-font text-sm relative">
-                            <span class="absolute top-2 right-2 text-xs text-gray-400">C++</span>
-                            <span class="text-blue-400">cout</span> << <span class="text-green-300">"空山新雨后，天气晚来秋。"</span> << endl;<br>
-                            <span class="text-blue-400">cout</span> << <span class="text-green-300">"明月松间照，清泉石上流。"</span> << endl;<br>
-                            <span class="text-blue-400">cout</span> << <span class="text-green-300">"竹喧归浣女，莲动下渔舟。"</span> << endl;<br>
-                            <span class="text-blue-400">cout</span> << <span class="text-green-300">"随意春芳歇，王孙自可留。"</span> << endl;
-                        </div>
-                    </div>
-
+int main() {
+    // C++ 逐行输出
+    // 记得每一行后面都要加 endl 来换行
+    cout &lt;&lt; "空山新雨后，天气晚来秋。" &lt;&lt; endl;
+    cout &lt;&lt; "明月松间照，清泉石上流。" &lt;&lt; endl;
+    cout &lt;&lt; "竹喧归浣女，莲动下渔舟。" &lt;&lt; endl;
+    cout &lt;&lt; "随意春芳歇，王孙自可留。" &lt;&lt; endl;
+    return 0;
+}
+</code></pre>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer Navigation -->
-    <div class="fixed bottom-4 right-4 flex flex-col gap-2">
-        <a href="#p1" class="w-10 h-10 bg-slate-800 text-white rounded-full flex items-center justify-center hover:bg-slate-700 shadow-lg transition" title="Top"><i class="fas fa-arrow-up"></i></a>
-        <a href="#p2" class="w-8 h-8 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center hover:bg-slate-300 text-xs font-bold">2</a>
-        <a href="#p3" class="w-8 h-8 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center hover:bg-slate-300 text-xs font-bold">3</a>
-        <a href="#p4" class="w-8 h-8 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center hover:bg-slate-300 text-xs font-bold">4</a>
-        <a href="#p5" class="w-8 h-8 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center hover:bg-slate-300 text-xs font-bold">5</a>
-        <a href="#p6" class="w-8 h-8 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center hover:bg-slate-300 text-xs font-bold">6</a>
-    </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+
+<script>
+    // 初始化代码高亮
+    hljs.highlightAll();
+
+    // 滚动监听与导航点更新
+    const container = document.getElementById('scroller');
+    const dots = document.querySelectorAll('.nav-dot');
+    const slides = document.querySelectorAll('.slide');
+
+    function updateNav() {
+        const scrollPos = container.scrollTop;
+        const height = container.clientHeight;
+        const index = Math.round(scrollPos / height);
+
+        dots.forEach((dot, i) => {
+            if (i === index) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+    }
+
+    container.addEventListener('scroll', updateNav);
+
+    // 导航点击跳转
+    function scrollToSlide(index) {
+        slides[index].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 标签页切换逻辑
+    function switchTab(btn, lang) {
+        // 找到当前按钮所在的 code-header 的父级 content-right
+        const contentRight = btn.closest('.content-right');
+        
+        // 切换按钮状态
+        const buttons = contentRight.querySelectorAll('.tab-btn');
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // 控制版本选择器的显示 (仅在Python标签激活且有版本选择器时)
+        const select = contentRight.querySelector('.version-select');
+        if (select) {
+            select.style.display = (lang === 'python') ? 'block' : 'none';
+        }
+
+        // 切换代码面板
+        const panes = contentRight.querySelectorAll('.code-pane');
+        panes.forEach(pane => pane.classList.remove('active'));
+
+        // 如果是 Python 且有版本区分 (v1, v2)
+        if (lang === 'python' && select) {
+            const version = select.value;
+            const target = contentRight.querySelector(`.code-pane.python[data-version="${version}"]`);
+            if (target) target.classList.add('active');
+            else contentRight.querySelector(`.code-pane.python`).classList.add('active'); // fallback
+        } else {
+            // 普通切换
+            const target = contentRight.querySelector(`.code-pane.${lang}`);
+            if (target) target.classList.add('active');
+        }
+    }
+
+    // 多解法版本切换逻辑
+    function switchVersion(select) {
+        const contentRight = select.closest('.content-right');
+        const version = select.value;
+        
+        // 隐藏所有 python 面板
+        const pyPanes = contentRight.querySelectorAll('.code-pane.python');
+        pyPanes.forEach(p => p.classList.remove('active'));
+
+        // 显示选中的版本
+        const target = contentRight.querySelector(`.code-pane.python[data-version="${version}"]`);
+        if (target) target.classList.add('active');
+    }
+
+    // 复制代码功能
+    function copyCode(btn) {
+        const contentRight = btn.closest('.content-right');
+        const activePane = contentRight.querySelector('.code-pane.active');
+        const codeText = activePane.querySelector('code').innerText;
+
+        navigator.clipboard.writeText(codeText).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = "✅ 已复制";
+            setTimeout(() => {
+                btn.innerText = originalText;
+            }, 2000);
+        });
+    }
+
+    // 初始化：确保所有含下拉菜单的Python面板正确显示
+    document.addEventListener('DOMContentLoaded', () => {
+        const selects = document.querySelectorAll('.version-select');
+        selects.forEach(select => {
+            // 默认显示版本选择器（如果初始是Python标签）
+            const parent = select.closest('.content-right');
+            const activeTab = parent.querySelector('.tab-btn.active');
+            if (activeTab && activeTab.innerText.trim() === 'Python') {
+                select.style.display = 'block';
+            }
+        });
+    });
+
+</script>
 
 </body>
 </html>

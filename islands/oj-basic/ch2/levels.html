@@ -3,618 +3,1139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSP-J 编程题解 - 进阶深色版</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <title>第二章、基本运算 - 题解演示</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai-sublime.min.css">
+    
     <style>
-        /* 全局设置 */
-        body {
-            font-family: 'Noto Sans SC', sans-serif;
-            background-color: #0f172a; /* Slate 900 */
-            color: #e2e8f0;
-            scroll-behavior: smooth;
-            overflow-x: hidden;
+        /* ================= 全局样式 ================= */
+        :root {
+            --bg-color: #2c3e50; /* 深蓝灰背景 */
+            --card-bg: rgba(30, 40, 60, 0.9);
+            --accent-pink: #ff7675;
+            --accent-cyan: #55efc4;
+            --accent-yellow: #ffeaa7;
+            --accent-purple: #a29bfe;
+            --text-main: #dfe6e9;
+            --nav-bg: rgba(0, 0, 0, 0.3);
         }
 
-        /* 幻灯片容器 */
-        .slide {
-            min-height: 100vh;
-            width: 100%;
-            padding: 2rem;
+        * {
             box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            border-bottom: 2px solid #1e293b;
-            position: relative;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-cyan) var(--bg-color);
         }
 
-        /* 代码字体 */
-        .code-font {
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* 逻辑连接行样式 */
-        .logic-row {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr 1fr;
-            gap: 12px;
-            align-items: stretch;
-            margin-bottom: 10px;
-            border-radius: 8px;
+        body {
+            font-family: "Comic Sans MS", "Microsoft YaHei", "Rounded Mplus 1c", sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.05) 75%, transparent 75%, transparent),
+                linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.05) 75%, transparent 75%, transparent);
+            background-size: 60px 60px;
+            color: var(--text-main);
             overflow: hidden;
-            transition: transform 0.2s;
-        }
-        
-        .logic-row:hover {
-            transform: scale(1.01);
-            z-index: 10;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
         }
 
-        .code-block {
-            padding: 12px;
-            display: flex;
-            align-items: center;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            white-space: pre-wrap;
+        /* 滚动容器 */
+        .slides-container {
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
         }
 
-        .middle-explain {
+        /* 单页幻灯片结构 */
+        .slide {
+            height: 100vh;
+            width: 100vw;
+            scroll-snap-align: start;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            font-size: 0.85rem;
-            font-weight: bold;
-            color: #1e293b; /* 深色文字 */
-            padding: 8px;
+            padding: 20px 20px 20px 60px;
+            gap: 20px;
             position: relative;
+            border-bottom: 2px solid rgba(255,255,255,0.05);
         }
 
-        /* 颜色主题 - 霓虹风格 */
-        /* 变量定义 */
-        .theme-var .code-block { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border-left: 3px solid #fbbf24; }
-        .theme-var .middle-explain { background: #fbbf24; background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-
-        /* 输入 */
-        .theme-input .code-block { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-left: 3px solid #38bdf8; }
-        .theme-input .middle-explain { background: #38bdf8; background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
-
-        /* 计算/逻辑 */
-        .theme-calc .code-block { background: rgba(167, 139, 250, 0.1); color: #a78bfa; border-left: 3px solid #a78bfa; }
-        .theme-calc .middle-explain { background: #a78bfa; background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
-
-        /* 输出 */
-        .theme-output .code-block { background: rgba(52, 211, 153, 0.1); color: #34d399; border-left: 3px solid #34d399; }
-        .theme-output .middle-explain { background: #34d399; background: linear-gradient(90deg, #10b981, #34d399); }
-
-        /* 框架 */
-        .theme-base .code-block { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border-left: 3px solid #64748b; }
-        .theme-base .middle-explain { background: #94a3b8; color: #0f172a;}
-
-        /* 卡片样式 */
-        .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-        }
-
-        .section-title {
-            background: linear-gradient(to right, #60a5fa, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        /* 导航点 */
-        .nav-dots {
+        /* ================= 左侧导航 ================= */
+        .side-nav {
             position: fixed;
-            right: 20px;
+            left: 10px;
             top: 50%;
             transform: translateY(-50%);
             display: flex;
             flex-direction: column;
             gap: 15px;
             z-index: 100;
+            background: var(--nav-bg);
+            padding: 15px 5px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
         }
+
         .nav-dot {
             width: 12px;
             height: 12px;
-            background: #475569;
+            background: rgba(255,255,255,0.3);
             border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-dot:hover, .nav-dot.active {
+            background: var(--accent-cyan);
+            transform: scale(1.3);
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .nav-dot::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 25px;
+            top: -4px;
+            background: var(--accent-purple);
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            transition: opacity 0.3s;
+            z-index: 101;
+        }
+
+        .nav-dot:hover::after { opacity: 1; }
+
+        /* ================= 首页任务大厅 ================= */
+        .intro-slide {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #34495e 0%, #2c3e50 100%);
+            text-align: center;
+        }
+
+        .intro-title {
+            font-size: 3em;
+            color: var(--accent-cyan);
+            margin-bottom: 30px;
+            text-shadow: 0 0 15px rgba(85, 239, 196, 0.4);
+        }
+
+        .intro-container {
+            display: flex;
+            gap: 40px;
+            max-width: 1100px;
+            width: 90%;
+            height: 70%;
+        }
+
+        /* 登录信息卡片 */
+        .login-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(85, 239, 196, 0.1);
+        }
+
+        .login-info-row {
+            margin: 15px 0;
+            text-align: left;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid var(--accent-pink);
+            transition: transform 0.2s;
+        }
+        .login-info-row:hover { transform: translateX(5px); background: rgba(0,0,0,0.3); }
+
+        .login-label { color: var(--accent-cyan); font-size: 13px; display: block; margin-bottom: 5px; opacity: 0.8; }
+        .login-val { color: #fff; font-size: 18px; font-weight: bold; font-family: monospace; letter-spacing: 1px; }
+
+        /* 任务列表卡片 */
+        .task-list-card {
+            flex: 1.2;
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px solid var(--accent-yellow);
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            transition: transform 0.2s;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+        .task-item:hover {
+            transform: translateX(10px);
+            background: rgba(255,255,255,0.15);
+            border-left-color: var(--accent-cyan);
+        }
+        .task-id { 
+            background: var(--accent-pink); 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            font-size: 12px; 
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .task-name { font-weight: bold; font-size: 16px; }
+
+        /* ================= 内容布局 ================= */
+        .content-left {
+            flex: 4;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .content-right {
+            flex: 6;
+            display: flex;
+            flex-direction: column;
+            background: #272822;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid var(--accent-cyan);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .title-box h1 {
+            font-size: 24px;
+            color: var(--accent-cyan);
+            margin-top: 5px;
+        }
+        .title-box span {
+            font-size: 14px;
+            color: var(--accent-pink);
+            font-weight: bold;
+            background: rgba(255, 46, 99, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .desc-text {
+            line-height: 1.6;
+            font-size: 15px;
+            color: #ecf0f1;
+        }
+        
+        /* 样例框 */
+        .sample-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .sample-box {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            border: 1px dashed #7f8c8d;
+        }
+        .sample-label { color: var(--accent-yellow); font-size: 12px; display: block; margin-bottom: 5px; }
+
+        /* 思路分析列表 */
+        .analysis-box ol { padding-left: 20px; }
+        .analysis-box li { margin-bottom: 8px; color: #dfe6e9; }
+        .highlight-text { color: var(--accent-yellow); font-weight: bold; background: rgba(255,234,167,0.1); padding: 0 4px; border-radius: 3px; }
+
+        /* ================= 视觉示意图区域 ================= */
+        .diagram-container {
+            height: 100px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 变量盒子样式 */
+        .var-box {
+            width: 60px;
+            height: 60px;
+            border: 2px solid var(--accent-cyan);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--accent-cyan);
+            position: relative;
+            background: rgba(85, 239, 196, 0.1);
+            margin: 0 20px;
+        }
+        .var-box::before {
+            content: attr(data-name);
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        /* 交换动画 */
+        .swap-anim .var-box { animation: swapMove 2s infinite ease-in-out; }
+        .swap-anim .var-box:nth-child(1) { animation-name: swapLeft; }
+        .swap-anim .var-box:nth-child(2) { animation-name: swapRight; }
+
+        @keyframes swapLeft {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(100px); border-color: var(--accent-pink); color: var(--accent-pink); }
+            100% { transform: translateX(0); }
+        }
+        @keyframes swapRight {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(-100px); border-color: var(--accent-pink); color: var(--accent-pink); }
+            100% { transform: translateX(0); }
+        }
+
+        /* 圆形示意 */
+        .circle-shape {
+            width: 80px;
+            height: 80px;
+            border: 2px dashed var(--accent-yellow);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .circle-line {
+            position: absolute;
+            height: 2px;
+            background: var(--accent-pink);
+            width: 100%;
+            top: 50%;
+        }
+        .circle-text { font-size: 12px; color: var(--accent-yellow); margin-top: -30px; }
+
+        /* ================= 代码区域 ================= */
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1e1e1e;
+            padding: 0 10px;
+            border-bottom: 1px solid #444;
+            height: 50px;
+        }
+
+        .tabs { display: flex; height: 100%; }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 0 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
             transition: all 0.3s;
+            border-top: 3px solid transparent;
+            height: 100%;
+        }
+
+        .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .tab-btn.active { color: var(--accent-cyan); border-top: 3px solid var(--accent-cyan); background: #272822; }
+
+        .code-actions { display: flex; gap: 10px; align-items: center; }
+
+        .version-select {
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: none; /* JS控制 */
+            outline: none;
             cursor: pointer;
         }
-        .nav-dot:hover, .nav-dot.active {
-            background: #38bdf8;
-            transform: scale(1.3);
-            box-shadow: 0 0 10px #38bdf8;
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid #555;
+            color: #aaa;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .copy-btn:hover { border-color: #fff; color: #fff; }
+
+        .code-content { flex: 1; position: relative; overflow: hidden; }
+        .code-pane { display: none; height: 100%; overflow: auto; }
+        .code-pane.active { display: block; }
+
+        pre { margin: 0; height: 100%; }
+        code {
+            font-family: "Fira Code", Consolas, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            height: 100%;
+            padding: 20px !important;
+        }
+
+        /* ================= 响应式 ================= */
+        @media (max-width: 768px) {
+            .slide {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                padding: 10px 10px 60px 10px;
+            }
+            .side-nav {
+                top: auto;
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                flex-direction: row;
+                width: 90%;
+                justify-content: center;
+            }
+            .nav-dot::after { display: none; }
+            .content-left, .content-right { flex: none; width: 100%; }
+            .content-right { height: 400px; }
+            .intro-container { flex-direction: column; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 侧边导航 -->
-    <div class="nav-dots">
-        <a href="#s1" class="nav-dot" title="南瓜地的篱笆墙"></a>
-        <a href="#s2" class="nav-dot" title="花坛之梦"></a>
-        <a href="#s3" class="nav-dot" title="宝石宠物"></a>
-        <a href="#s4" class="nav-dot" title="勤劳之蜜"></a>
-        <a href="#s5" class="nav-dot" title="负重前行"></a>
-        <a href="#s6" class="nav-dot" title="方圆之争"></a>
-    </div>
+<nav class="side-nav">
+    <div class="nav-dot active" onclick="scrollToSlide(0)" data-tooltip="🚀 任务列表"></div>
+    <div class="nav-dot" onclick="scrollToSlide(1)" data-tooltip="J1201 篱笆墙"></div>
+    <div class="nav-dot" onclick="scrollToSlide(2)" data-tooltip="J1202 花坛"></div>
+    <div class="nav-dot" onclick="scrollToSlide(3)" data-tooltip="J1203 宝石"></div>
+    <div class="nav-dot" onclick="scrollToSlide(4)" data-tooltip="J1204 蜜蜂"></div>
+    <div class="nav-dot" onclick="scrollToSlide(5)" data-tooltip="J1205 负重"></div>
+    <div class="nav-dot" onclick="scrollToSlide(6)" data-tooltip="J1206 对角线"></div>
+</nav>
 
-    <!-- Slide 1: 南瓜地的篱笆墙 -->
-    <section id="s1" class="slide">
-        <div class="max-w-7xl mx-auto w-full h-full flex flex-col">
-            <header class="mb-6 border-b border-slate-700 pb-4">
-                <span class="bg-blue-600 text-xs font-bold px-2 py-1 rounded text-white mr-2">CSP-J1201</span>
-                <h1 class="text-3xl font-bold inline align-middle section-title">南瓜地的篱笆墙 (求圆周长)</h1>
-            </header>
+<main class="slides-container" id="scroller">
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
-                <!-- 左侧：思路分析 -->
-                <div class="lg:col-span-4 glass-card p-6 flex flex-col gap-4">
-                    <h2 class="text-xl font-bold text-blue-400"><i class="fas fa-lightbulb mr-2"></i>思路分析</h2>
-                    
-                    <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
-                        <h3 class="font-bold text-yellow-400 mb-2">题目目标</h3>
-                        <p class="text-sm text-slate-300">帮助农民计算南瓜地（圆形）的周长。</p>
-                        <p class="text-sm text-slate-300 mt-2">输入：直径 (double)</p>
-                        <p class="text-sm text-slate-300">输出：周长 (double)</p>
-                    </div>
+    <section class="slide intro-slide">
+        <h1 class="intro-title">🚀 编程任务大厅</h1>
+        <div class="intro-container">
+            <div class="login-card">
+                <h2 style="color:var(--accent-pink); margin-bottom:20px;">👤 玩家登录信息</h2>
+                <div class="login-info-row">
+                    <span class="login-label">扣哒信奥OJ 网址入口</span>
+                    <a href="http://oj.koudashijie.com" target="_blank" class="login-val" style="color:#55efc4; text-decoration:none;">oj.koudashijie.com</a>
+                </div>
+                <div class="login-info-row">
+                    <span class="login-label">用户名</span>
+                    <span class="login-val">中文姓名</span>
+                </div>
+                <div class="login-info-row">
+                    <span class="login-label">初始密码</span>
+                    <span class="login-val">12345678</span>
+                </div>
+                 <div class="login-info-row">
+                    <span class="login-label">当前课程</span>
+                    <span class="login-val" style="color:var(--accent-yellow)">基础篇第二章基本运算</span>
+                </div>
+                <p style="font-size:12px; color:#aaa; margin-top:auto;">⚠️ 登录出现问题记得联系老师哦</p>
+            </div>
 
-                    <div class="flex items-center justify-center p-4 bg-slate-800 rounded-lg border border-slate-700 flex-grow">
-                        <div class="text-center">
-                            <div class="w-32 h-32 rounded-full border-4 border-dashed border-orange-500 mx-auto flex items-center justify-center relative mb-2">
-                                <span class="text-orange-400 text-xs">南瓜地</span>
-                                <div class="absolute w-full h-0.5 bg-white top-1/2"></div>
-                                <span class="absolute top-1/2 -mt-6 bg-slate-900 px-1 text-xs text-white">直径 d</span>
-                            </div>
-                            <p class="font-mono text-lg text-green-400">周长 = 直径 × 3.14</p>
-                            <p class="font-mono text-lg text-green-400">C = d × 3.14</p>
-                        </div>
-                    </div>
+            <div class="task-list-card">
+                <h2 style="color:var(--accent-yellow); margin-bottom:20px;">📜 本章挑战任务</h2>
+                <p style="color:#aaa; margin-bottom:15px; text-align:left;">找到课程 “基础篇第二章基本运算” 开始挑战：</p>
+                
+                <div class="task-item" onclick="scrollToSlide(1)">
+                    <span class="task-id">J1201</span>
+                    <span class="task-name">南瓜地的篱笆墙 (圆周长)</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(2)">
+                    <span class="task-id">J1202</span>
+                    <span class="task-name">花坛之梦 (圆面积)</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(3)">
+                    <span class="task-id">J1203</span>
+                    <span class="task-name">宝石宠物 (加法)</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(4)">
+                    <span class="task-id">J1204</span>
+                    <span class="task-name">勤劳之蜜 (乘法)</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(5)">
+                    <span class="task-id">J1205</span>
+                    <span class="task-name">负重前行 (交换变量)</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(6)">
+                    <span class="task-id">J1206</span>
+                    <span class="task-name">画框的对角线 (勾股定理)</span>
                 </div>
 
-                <!-- 右侧：参考程序 -->
-                <div class="lg:col-span-8 glass-card p-6 flex flex-col">
-                    <div class="grid grid-cols-3 mb-2 font-bold text-slate-400 text-center">
-                        <div>Python Code</div>
-                        <div>程序逻辑</div>
-                        <div>C++ Code</div>
-                    </div>
+                <p style="margin-top:20px; font-size:14px; color:#aaa;">👇 向下滑动开始解题</p>
+            </div>
+        </div>
+    </section>
 
-                    <!-- 框架 -->
-                    <div class="logic-row theme-base">
-                        <div class="code-block code-font text-xs opacity-50"># Python无需头文件</div>
-                        <div class="middle-explain">程序框架</div>
-                        <div class="code-block code-font">#include &lt;iostream&gt;<br>using namespace std;<br>int main() {</div>
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1201</span>
+                <h1>南瓜地的篱笆墙</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">英雄需要帮助农民计算南瓜地（圆形）的周长来建造篱笆。输入圆的直径，输出它的周长。</p>
+                <div class="sample-grid">
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例</span>
+                        2
                     </div>
-
-                    <!-- 变量定义 -->
-                    <div class="logic-row theme-var">
-                        <div class="code-block code-font text-xs opacity-50"># 自动推断类型</div>
-                        <div class="middle-explain">
-                            <i class="fas fa-box mr-1"></i> 定义变量<br>
-                            <span class="text-xs font-normal opacity-80">存放小数(double)</span>
-                        </div>
-                        <div class="code-block code-font">double d;</div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例</span>
+                        6.28
                     </div>
-
-                    <!-- 输入 -->
-                    <div class="logic-row theme-input">
-                        <div class="code-block code-font">d = float(input())</div>
-                        <div class="middle-explain">
-                            <i class="fas fa-keyboard mr-1"></i> 输入直径<br>
-                            <span class="text-xs font-normal opacity-80">Python要转float</span>
-                        </div>
-                        <div class="code-block code-font">cin >> d;</div>
+                </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <div class="diagram-container">
+                    <div class="circle-shape">
+                        <div class="circle-line"></div>
                     </div>
+                    <div style="margin-left:20px; font-size:18px;">周长 = 直径 × 3.14</div>
+                </div>
+                <ol>
+                    <li><strong>变量定义：</strong> 需要一个小数变量存储直径 <span class="highlight-text">d</span>。</li>
+                    <li><strong>公式：</strong> 周长 <span class="highlight-text">len = d * 3.14</span>。</li>
+                    <li><strong>C++注意：</strong> 使用 <span class="highlight-text">double</span> 类型存储小数。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python"># 1. 输入直径，转换为浮点数(小数)
+d = float(input())
 
-                    <!-- 计算与输出 -->
-                    <div class="logic-row theme-output">
-                        <div class="code-block code-font">print(d * 3.14)</div>
-                        <div class="middle-explain">
-                            <i class="fas fa-calculator mr-1"></i> 计算并输出<br>
-                            <span class="text-xs font-normal opacity-80">套用公式</span>
-                        </div>
-                        <div class="code-block code-font">cout << d * 3.14;</div>
-                    </div>
+# 2. 根据公式计算周长
+# 题目提示 PI = 3.14
+c = d * 3.14
 
-                    <!-- 结束 -->
-                    <div class="logic-row theme-base">
-                        <div class="code-block code-font text-xs opacity-50"></div>
-                        <div class="middle-explain">结束</div>
-                        <div class="code-block code-font">return 0;<br>}</div>
-                    </div>
+# 3. 输出结果
+print(c)
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
 
+int main() {
+    // 补全程序：声明变量
+    double d, len;
+    
+    // 输入直径
+    cin >> d;
+    
+    // 计算并输出：周长 = 直径 * 3.14
+    cout << d * 3.14 << endl; 
+    
+    return 0;
+}
+</code></pre>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Slide 2: 花坛之梦 -->
-    <section id="s2" class="slide">
-        <div class="max-w-7xl mx-auto w-full h-full flex flex-col">
-            <header class="mb-6 border-b border-slate-700 pb-4">
-                <span class="bg-purple-600 text-xs font-bold px-2 py-1 rounded text-white mr-2">CSP-J1202</span>
-                <h1 class="text-3xl font-bold inline align-middle section-title">花坛之梦 (求圆面积)</h1>
-            </header>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
-                <div class="lg:col-span-4 glass-card p-6 flex flex-col gap-4">
-                    <h2 class="text-xl font-bold text-purple-400"><i class="fas fa-brain mr-2"></i>思路分析</h2>
-                    <div class="bg-slate-800 p-4 rounded-lg text-sm text-slate-300">
-                        <p>英雄要把花种满花坛，其实就是求<span class="text-yellow-400 font-bold">圆形面积</span>。</p>
-                        <ul class="list-disc list-inside mt-2 space-y-1">
-                            <li>已知：半径 $r$</li>
-                            <li>公式：面积 = $\pi \times r \times r$</li>
-                            <li>注意：结果可能是小数</li>
-                        </ul>
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1202</span>
+                <h1>花坛之梦</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">英雄要计算圆形花坛的面积。已知花坛半径，PI取3.14。输入半径，输出面积。</p>
+                <div class="sample-grid">
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例</span>
+                        2
                     </div>
-                    <div class="flex items-center justify-center p-4 bg-slate-800 rounded-lg flex-grow">
-                        <div class="text-center">
-                            <div class="w-32 h-32 rounded-full bg-pink-500/20 border-2 border-pink-400 mx-auto flex items-center justify-center relative mb-4">
-                                <div class="absolute w-1/2 h-0.5 bg-white right-0 top-1/2"></div>
-                                <span class="absolute top-1/2 right-4 -mt-4 text-xs">半径 r</span>
-                                <i class="fas fa-seedling text-pink-400 text-2xl"></i>
-                            </div>
-                            <code class="bg-slate-900 px-3 py-1 rounded text-pink-400">Area = r * r * 3.14</code>
-                        </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例</span>
+                        12.56
                     </div>
                 </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <div class="diagram-container">
+                    <div class="circle-shape" style="background: rgba(255,118,117,0.2);"></div>
+                    <div style="margin-left:20px;">面积 = r × r × π</div>
+                </div>
+                <ol>
+                    <li><strong>公式回顾：</strong> 圆面积 <span class="highlight-text">S = π * r * r</span>。</li>
+                    <li><strong>输入：</strong> 半径 <span class="highlight-text">r</span> 是小数。</li>
+                    <li><strong>计算：</strong> 可以直接写 <span class="highlight-text">r * r * 3.14</span>。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python"># 定义 PI 的值
+PI = 3.14 
 
-                <div class="lg:col-span-8 glass-card p-6">
-                     <div class="grid grid-cols-3 mb-2 font-bold text-slate-400 text-center">
-                        <div>Python</div>
-                        <div>解释</div>
-                        <div>C++</div>
-                    </div>
+# 输入半径 r
+r = float(input()) 
 
-                    <div class="logic-row theme-var">
-                        <div class="code-block code-font text-xs opacity-50"># 自动创建</div>
-                        <div class="middle-explain">1. 准备盒子<br><span class="text-xs font-normal">存放半径</span></div>
-                        <div class="code-block code-font">double r;</div>
-                    </div>
+# 计算面积：半径 * 半径 * PI
+area = r * r * PI 
 
-                    <div class="logic-row theme-input">
-                        <div class="code-block code-font">r = float(input())</div>
-                        <div class="middle-explain">2. 测量半径<br><span class="text-xs font-normal">输入数值</span></div>
-                        <div class="code-block code-font">cin >> r;</div>
-                    </div>
+# 输出面积
+print(area) 
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;         
+using namespace std;       
 
-                    <div class="logic-row theme-calc">
-                        <div class="code-block code-font text-xs opacity-50"># 直接在print中计算</div>
-                        <div class="middle-explain">3. 计算面积<br><span class="text-xs font-normal">半径×半径×3.14</span></div>
-                        <div class="code-block code-font">double area = r * r * 3.14;</div>
-                    </div>
-
-                    <div class="logic-row theme-output">
-                        <div class="code-block code-font">print(r * r * 3.14)</div>
-                        <div class="middle-explain">4. 告诉农民<br><span class="text-xs font-normal">输出结果</span></div>
-                        <div class="code-block code-font">cout << area;</div>
-                    </div>
+int main()                 
+{
+    double r;
+    // 输入半径
+    cin >> r;
+    
+    // 直接在 cout 中进行运算并输出
+    // 公式：3.14 * r * r
+    cout << 3.14 * r * r ;
+    
+    return 0;
+}
+</code></pre>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Slide 3: 宝石宠物 -->
-    <section id="s3" class="slide">
-        <div class="max-w-7xl mx-auto w-full h-full flex flex-col">
-            <header class="mb-6 border-b border-slate-700 pb-4">
-                <span class="bg-green-600 text-xs font-bold px-2 py-1 rounded text-white mr-2">CSP-J1203</span>
-                <h1 class="text-3xl font-bold inline align-middle section-title">宝石宠物 (A + B)</h1>
-            </header>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
-                <div class="lg:col-span-4 glass-card p-6 flex flex-col gap-4">
-                    <h2 class="text-xl font-bold text-green-400"><i class="fas fa-gem mr-2"></i>思路分析</h2>
-                    <div class="bg-slate-800 p-4 rounded-lg text-sm text-slate-300 space-y-3">
-                        <p>这是一个经典的加法计算器。两只宠物分别带回宝石，求总数。</p>
-                        <div class="flex justify-between items-center text-center">
-                            <div class="bg-slate-900 p-2 rounded">
-                                <i class="fas fa-cat text-blue-400 mb-1"></i><br>
-                                <span class="text-xs">宠物A</span>
-                            </div>
-                            <div class="text-2xl font-bold text-white">+</div>
-                            <div class="bg-slate-900 p-2 rounded">
-                                <i class="fas fa-dog text-yellow-400 mb-1"></i><br>
-                                <span class="text-xs">宠物B</span>
-                            </div>
-                            <div class="text-2xl font-bold text-white">=</div>
-                            <div class="bg-slate-900 p-2 rounded border border-green-500">
-                                <i class="fas fa-gem text-green-400 mb-1"></i><br>
-                                <span class="text-xs">Total</span>
-                            </div>
-                        </div>
-                        <p class="text-yellow-400 text-xs mt-2"><i class="fas fa-exclamation-triangle"></i> 注意：输入是在同一行，中间用空格隔开。</p>
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1203</span>
+                <h1>宝石宠物 (加法)</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">实现一个加法计算器。输入一行两个整数（空格分开），输出它们的和。</p>
+                <div class="sample-grid">
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例</span>
+                        60 80
+                    </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例</span>
+                        140
                     </div>
                 </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <ol>
+                    <li><strong>难点：</strong> 一行输入两个数。</li>
+                    <li><strong>Python技巧：</strong> 使用 <span class="highlight-text">map(int, input().split())</span>。这句代码的意思是“切开输入字符串，并把每一块都变成整数”。</li>
+                    <li><strong>C++：</strong> <span class="highlight-text">cin >> a >> b</span> 会自动跳过空格读取。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python"># 一行输入两个整数的标准写法
+# split() 默认按空格切割字符串
+# map(int, ...) 将切割出来的部分转为整数
+a, b = map(int, input().split()) 
 
-                <div class="lg:col-span-8 glass-card p-6">
-                    <div class="grid grid-cols-3 mb-2 font-bold text-slate-400 text-center">
-                        <div>Python</div>
-                        <div>核心逻辑</div>
-                        <div>C++</div>
-                    </div>
+# 输出两数之和
+print(a + b)
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
 
-                    <div class="logic-row theme-var">
-                        <div class="code-block code-font text-xs opacity-50"># Python map魔法</div>
-                        <div class="middle-explain">定义变量<br><span class="text-xs font-normal">两个整数盒子</span></div>
-                        <div class="code-block code-font">int a, b;</div>
-                    </div>
-
-                    <div class="logic-row theme-input">
-                        <div class="code-block code-font">a, b = map(int, input().split())</div>
-                        <div class="middle-explain">
-                            同时输入<br>
-                            <span class="text-xs font-normal">一行读入两个数</span>
-                        </div>
-                        <div class="code-block code-font">cin >> a >> b;</div>
-                    </div>
-
-                    <div class="logic-row theme-calc">
-                        <div class="code-block code-font text-xs opacity-50"># 隐式计算</div>
-                        <div class="middle-explain">放入背包<br><span class="text-xs font-normal">加法运算</span></div>
-                        <div class="code-block code-font">int sum = a + b;</div>
-                    </div>
-
-                    <div class="logic-row theme-output">
-                        <div class="code-block code-font">print(a + b)</div>
-                        <div class="middle-explain">查看总数<br><span class="text-xs font-normal">输出结果</span></div>
-                        <div class="code-block code-font">cout << sum;</div>
-                    </div>
-
-                    <div class="mt-4 p-3 bg-slate-800/50 rounded text-xs text-slate-400 border border-slate-700">
-                        <strong class="text-blue-400">Python小课堂：</strong><br>
-                        <code>input().split()</code> 把一行字切成两半，<code>map(int, ...)</code> 把这两半都变成整数，最后分别给 a 和 b。
-                    </div>
+int main()
+{
+    // 声明两个整数变量
+    int a, b;
+    
+    // 输入两个整数，cin 会自动处理中间的空格
+    cin >> a >> b;
+    
+    // 输出它们的和
+    cout << a + b << endl;
+    
+    return 0;
+}
+</code></pre>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Slide 4: 勤劳之蜜 -->
-    <section id="s4" class="slide">
-        <div class="max-w-7xl mx-auto w-full h-full flex flex-col">
-            <header class="mb-6 border-b border-slate-700 pb-4">
-                <span class="bg-yellow-600 text-xs font-bold px-2 py-1 rounded text-white mr-2">CSP-J1204</span>
-                <h1 class="text-3xl font-bold inline align-middle section-title">勤劳之蜜 (A × B)</h1>
-            </header>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
-                <div class="lg:col-span-4 glass-card p-6 flex flex-col gap-4">
-                    <h2 class="text-xl font-bold text-yellow-400"><i class="fas fa-bug mr-2"></i>思路分析</h2>
-                    <div class="bg-slate-800 p-4 rounded-lg text-sm text-slate-300">
-                        <p>这道题和上一题非常像，只不过从<span class="text-green-400">收集宝石(加法)</span>变成了<span class="text-yellow-400">计算花蜜总量(乘法)</span>。</p>
-                        <div class="mt-4 grid grid-cols-2 gap-2 text-center">
-                            <div class="bg-slate-900 p-2 rounded">
-                                <span class="block text-2xl font-bold text-white">N</span>
-                                <span class="text-xs text-slate-400">蜜蜂数量</span>
-                            </div>
-                            <div class="bg-slate-900 p-2 rounded">
-                                <span class="block text-2xl font-bold text-white">M</span>
-                                <span class="text-xs text-slate-400">每只的花蜜</span>
-                            </div>
-                        </div>
-                        <div class="mt-2 text-center">
-                            <i class="fas fa-arrow-down text-slate-500"></i>
-                        </div>
-                        <div class="bg-yellow-500/20 border border-yellow-500/50 p-2 rounded text-center text-yellow-300 font-bold">
-                            总量 = N × M
-                        </div>
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1204</span>
+                <h1>勤劳之蜜 (乘法)</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">计算蜜蜂采集的花蜜总量。输入蜜蜂数量和每只携带的花蜜量（空格分开），输出总花蜜量（乘积）。</p>
+                <div class="sample-grid">
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例</span>
+                        3 4
+                    </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例</span>
+                        12
                     </div>
                 </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <ol>
+                    <li>此题逻辑与上一题“宝石宠物”几乎一样，只是运算符号变成了乘法 <span class="highlight-text">*</span>。</li>
+                    <li>输入格式依然是一行两个整数。</li>
+                    <li>注意乘法符号是星号 <span class="highlight-text">*</span>，不是 x。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python"># 读取一行输入的两个整数
+a, b = map(int, input().split())
 
-                <div class="lg:col-span-8 glass-card p-6">
-                    <div class="grid grid-cols-3 mb-2 font-bold text-slate-400 text-center">
-                        <div>Python</div>
-                        <div>解释</div>
-                        <div>C++</div>
-                    </div>
+# 计算乘积并输出
+print(a * b)
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
 
-                    <div class="logic-row theme-var">
-                        <div class="code-block code-font text-xs opacity-50"># 动态类型</div>
-                        <div class="middle-explain">创建变量<br><span class="text-xs font-normal">两个整数</span></div>
-                        <div class="code-block code-font">long long n, m;</div>
-                    </div>
-
-                    <div class="logic-row theme-input">
-                        <div class="code-block code-font">n, m = map(int, input().split())</div>
-                        <div class="middle-explain">
-                            读取数据<br>
-                            <span class="text-xs font-normal">空格分隔</span>
-                        </div>
-                        <div class="code-block code-font">cin >> n >> m;</div>
-                    </div>
-
-                    <div class="logic-row theme-output">
-                        <div class="code-block code-font">print(n * m)</div>
-                        <div class="middle-explain">
-                            计算乘积<br>
-                            <span class="text-xs font-normal">星号代表乘法</span>
-                        </div>
-                        <div class="code-block code-font">cout << n * m;</div>
-                    </div>
-
-                    <div class="mt-4 p-3 bg-red-900/30 border border-red-900/50 rounded text-xs text-red-200">
-                        <i class="fas fa-exclamation-circle"></i> <strong>C++ 小贴士：</strong>
-                        如果数字特别大（比如样例4的 100000 * 100000），结果会超过 <code>int</code> 的范围，最好使用 <code>long long</code> 类型来存储变量，防止“爆掉”哦！
-                    </div>
+int main()
+{
+    int a, b;
+    // 输入变量
+    cin >> a >> b;
+    
+    // 输出乘积 a * b
+    cout << a * b << endl;
+    
+    return 0;
+}
+</code></pre>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Slide 5: 负重前行 -->
-    <section id="s5" class="slide">
-        <div class="max-w-7xl mx-auto w-full h-full flex flex-col">
-            <header class="mb-6 border-b border-slate-700 pb-4">
-                <span class="bg-red-600 text-xs font-bold px-2 py-1 rounded text-white mr-2">CSP-J1205</span>
-                <h1 class="text-3xl font-bold inline align-middle section-title">负重前行 (交换变量)</h1>
-            </header>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
-                <div class="lg:col-span-4 glass-card p-6 flex flex-col gap-4">
-                    <h2 class="text-xl font-bold text-red-400"><i class="fas fa-sync-alt mr-2"></i>思路分析</h2>
-                    
-                    <div class="bg-slate-800 p-4 rounded-lg text-sm text-slate-300">
-                        <p class="mb-2">安雅和安小风要交换行李。手里都拿着东西是没法交换的，必须借助一张“石桌”。</p>
-                        
-                        <div class="space-y-2 mt-4">
-                            <div class="flex items-center gap-2">
-                                <span class="bg-blue-900 px-2 rounded text-xs">安雅(A)</span>
-                                <i class="fas fa-arrow-right text-gray-500"></i>
-                                <span class="bg-gray-700 px-2 rounded text-xs border border-gray-500">石桌(Temp)</span>
-                                <span class="text-xs text-gray-400">1. A先把东西放桌上</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="bg-yellow-900 px-2 rounded text-xs">小风(B)</span>
-                                <i class="fas fa-arrow-right text-gray-500"></i>
-                                <span class="bg-blue-900 px-2 rounded text-xs">安雅(A)</span>
-                                <span class="text-xs text-gray-400">2. B把东西给A</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="bg-gray-700 px-2 rounded text-xs border border-gray-500">石桌(Temp)</span>
-                                <i class="fas fa-arrow-right text-gray-500"></i>
-                                <span class="bg-yellow-900 px-2 rounded text-xs">小风(B)</span>
-                                <span class="text-xs text-gray-400">3. B拿走桌上的东西</span>
-                            </div>
-                        </div>
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1205</span>
+                <h1>负重前行 (交换)</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">安雅和安小风要交换行李。输入两个整数分别代表两人的行李重量，输出交换后的重量。</p>
+                <div class="sample-grid">
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例</span>
+                        2 5
+                    </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例</span>
+                        5 2
                     </div>
                 </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <div class="diagram-container swap-anim">
+                    <div class="var-box" data-name="A">2</div>
+                    <div class="var-box" data-name="B">5</div>
+                </div>
+                <ol>
+                    <li><strong>核心问题：</strong> 如何把两个杯子里的水互换？通常需要第三个空杯子（变量c）。</li>
+                    <li><strong>Python特技：</strong> Python 支持直接交换 <span class="highlight-text">a, b = b, a</span>。</li>
+                    <li><strong>C++方法：</strong> 使用中间变量，或者内置函数 <span class="highlight-text">swap(a,b)</span>。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <select class="version-select" onchange="switchVersion(this)">
+                        <option value="v1">解法一：语法糖/函数</option>
+                        <option value="v2">解法二：中间变量法</option>
+                        <option value="v3">解法三：偷懒法</option>
+                    </select>
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python" data-version="v1">
+<pre><code class="language-python"># Python解法一：元组解包（推荐）
+a, b = map(int, input().split())
 
-                <div class="lg:col-span-8 glass-card p-6">
-                    <div class="grid grid-cols-3 mb-2 font-bold text-slate-400 text-center">
-                        <div>Python</div>
-                        <div>交换动作</div>
-                        <div>C++</div>
-                    </div>
+# 这一行代码直接完成交换，无需中间变量
+a, b = b, a
 
-                    <div class="logic-row theme-input">
-                        <div class="code-block code-font">a, b = map(int, input().split())</div>
-                        <div class="middle-explain">输入行李重量</div>
-                        <div class="code-block code-font">cin >> a >> b;</div>
-                    </div>
+print(a, b)
+</code></pre>
+                </div>
+                <div class="code-pane python" data-version="v2">
+<pre><code class="language-python"># Python解法二：中间变量法
+a, b = map(int, input().split())
 
-                    <!-- 交换逻辑 -->
-                    <div class="logic-row theme-calc">
-                        <div class="code-block code-font"># Python魔法交换<br>a, b = b, a</div>
-                        <div class="middle-explain">
-                            <i class="fas fa-random text-xl mb-1"></i><br>
-                            交换过程
-                        </div>
-                        <div class="code-block code-font">
-                            // 借助石桌 temp<br>
-                            int temp = a;<br>
-                            a = b;<br>
-                            b = temp;
-                        </div>
-                    </div>
+c = a  # 把 a 存到 c
+a = b  # 把 b 放到 a
+b = c  # 把 c (原来的a) 放到 b
 
-                    <div class="logic-row theme-output">
-                        <div class="code-block code-font">print(a, b)</div>
-                        <div class="middle-explain">输出新顺序</div>
-                        <div class="code-block code-font">cout << a << " " << b;</div>
-                    </div>
+print(a, b)
+</code></pre>
+                </div>
+                <div class="code-pane python" data-version="v3">
+<pre><code class="language-python"># Python解法三：直接反向输出
+a, b = map(int, input().split())
+# 并没有真正交换变量里的值，只是反着打印
+print(b, a)
+</code></pre>
+                </div>
 
-                    <div class="mt-4 p-3 bg-blue-900/30 border border-blue-900/50 rounded text-xs text-blue-200">
-                        Python太聪明了，可以直接 <code>a, b = b, a</code>。但在C++里，我们要理解“临时变量(temp)”这个经典的编程思想，它就是故事里的那张“石桌”！
-                    </div>
+                <div class="code-pane cpp" data-version="v1">
+<pre><code class="language-cpp">/* C++解法一：使用 swap 函数 */
+#include &lt;iostream&gt;
+using namespace std;
+
+int main(){
+    int a, b;
+    cin >> a >> b;
+    
+    swap(a, b); // 内置函数，交换 a 和 b 的值
+    
+    cout << a << " " << b;
+    return 0;
+}
+</code></pre>
+                </div>
+                <div class="code-pane cpp" data-version="v2">
+<pre><code class="language-cpp">/* C++解法二：三变量交换法 */
+#include &lt;iostream&gt;
+using namespace std;
+
+int main(){
+    int a, b, c;
+    cin >> a >> b;
+    
+    c = a; // 备份 a
+    a = b; // b 覆盖 a
+    b = c; // 备份的值给 b
+    
+    cout << a << " " << b;
+    return 0;
+}
+</code></pre>
+                </div>
+                <div class="code-pane cpp" data-version="v3">
+<pre><code class="language-cpp">/* C++解法三：直接反向输出 */
+#include &lt;iostream&gt;
+using namespace std;
+int main() {
+    int a, b;
+    cin >> a >> b;
+    // 骗过评测机的做法
+    cout << b << " " << a << endl;
+    return 0;
+}
+</code></pre>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Slide 6: 方圆之争 -->
-    <section id="s6" class="slide">
-        <div class="max-w-7xl mx-auto w-full h-full flex flex-col">
-            <header class="mb-6 border-b border-slate-700 pb-4">
-                <span class="bg-indigo-600 text-xs font-bold px-2 py-1 rounded text-white mr-2">CSP-J1206</span>
-                <h1 class="text-3xl font-bold inline align-middle section-title">方圆之争 (综合计算)</h1>
-            </header>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
-                <div class="lg:col-span-4 glass-card p-6 flex flex-col gap-4">
-                    <h2 class="text-xl font-bold text-indigo-400"><i class="fas fa-shapes mr-2"></i>思路分析</h2>
-                    <div class="bg-slate-800 p-4 rounded-lg text-sm text-slate-300">
-                        <p class="mb-3">这道题是前面知识的大集合！我们需要分别计算正方形和圆形。</p>
-                        
-                        <!-- 正方形卡片 -->
-                        <div class="border-l-4 border-blue-500 pl-3 mb-4">
-                            <h4 class="font-bold text-blue-400">正方形 (边长 a)</h4>
-                            <p>面积 $S1 = a \times a$</p>
-                            <p>周长 $C1 = a \times 4$</p>
-                        </div>
-
-                        <!-- 圆形卡片 -->
-                        <div class="border-l-4 border-pink-500 pl-3">
-                            <h4 class="font-bold text-pink-400">圆形 (半径 r)</h4>
-                            <p>面积 $S2 = r \times r \times 3.14$</p>
-                            <p>周长 $C2 = 2 \times r \times 3.14$</p>
-                        </div>
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1206</span>
+                <h1>画框的对角线</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">已知长方形长a和宽b，利用勾股定理计算对角线长度，结果保留两位小数。</p>
+                <div class="sample-grid">
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例</span>
+                        6 9
+                    </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例</span>
+                        10.82
                     </div>
                 </div>
-
-                <div class="lg:col-span-8 glass-card p-6">
-                    <div class="grid grid-cols-3 mb-2 font-bold text-slate-400 text-center">
-                        <div>Python</div>
-                        <div>逻辑步骤</div>
-                        <div>C++</div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <div class="diagram-container">
+                    <div style="font-size:20px; font-family:serif; font-style:italic;">
+                        &radic;<span style="border-top:2px solid #fff; padding-top:2px;">(a&sup2; + b&sup2;)</span>
                     </div>
+                </div>
+                <ol>
+                    <li><strong>数学库：</strong> 开根号需要用到数学函数 <span class="highlight-text">sqrt</span>。Python需 <span class="highlight-text">import math</span>，C++需 <span class="highlight-text">#include &lt;cmath&gt;</span>。</li>
+                    <li><strong>平方计算：</strong> 可以用 <span class="highlight-text">a*a</span> 或者 <span class="highlight-text">pow(a,2)</span>。</li>
+                    <li><strong>格式化输出：</strong> 题目要求保留2位小数。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python">import math # 引入数学库
 
-                    <!-- 变量 -->
-                    <div class="logic-row theme-var">
-                        <div class="code-block code-font text-xs opacity-50"># 自动处理</div>
-                        <div class="middle-explain">变量准备<br><span class="text-xs font-normal">边长和半径</span></div>
-                        <div class="code-block code-font">double a, r;</div>
-                    </div>
+# 输入长和宽
+a, b = map(int, input().split())
 
-                    <!-- 输入 -->
-                    <div class="logic-row theme-input">
-                        <div class="code-block code-font">a, r = map(int, input().split())</div>
-                        <div class="middle-explain">输入<br><span class="text-xs font-normal">两个参数</span></div>
-                        <div class="code-block code-font">cin >> a >> r;</div>
-                    </div>
+# 计算对角线：sqrt 是开平方根函数
+# a**2 表示 a 的平方
+diagonal = math.sqrt(a**2 + b**2)
 
-                    <!-- 正方形输出 -->
-                    <div class="logic-row theme-output">
-                        <div class="code-block code-font">print(a*a, a*4)</div>
-                        <div class="middle-explain">
-                            <i class="fas fa-square text-blue-400 mb-1"></i><br>
-                            正方形计算
-                        </div>
-                        <div class="code-block code-font">
-                            cout << a*a << " " << a*4 << endl;
-                        </div>
-                    </div>
+# 格式化输出，.2f 表示保留两位小数
+print(f"{diagonal:.2f}")
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+#include &lt;cmath&gt;    // 数学函数库
+#include &lt;iomanip&gt;  // 用于控制输出格式
 
-                    <!-- 圆形输出 -->
-                    <div class="logic-row theme-output">
-                        <div class="code-block code-font">print(r*r*3.14, 2*3.14*r)</div>
-                        <div class="middle-explain">
-                            <i class="fas fa-circle text-pink-400 mb-1"></i><br>
-                            圆形计算
-                        </div>
-                        <div class="code-block code-font">
-                            cout << r*r*3.14 << " " << 2*3.14*r;
-                        </div>
-                    </div>
-                    
-                    <div class="mt-4 text-center text-xs text-slate-500">
-                        提示：C++中 endl 用于换行，第一行输出正方形数据后必须换行。
-                    </div>
+using namespace std;
 
+int main() {
+    int a, b;
+    cin >> a >> b;
+    
+    // sqrt: 开方, pow(a, 2): a的平方
+    double diagonal = sqrt(pow(a, 2) + pow(b, 2));
+    
+    // fixed + setprecision(2) 控制保留2位小数
+    cout << fixed << setprecision(2) << diagonal << endl;
+    
+    return 0;
+}
+</code></pre>
                 </div>
             </div>
         </div>
     </section>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+
+<script>
+    // 初始化代码高亮
+    hljs.highlightAll();
+
+    // 滚动监听与导航点更新
+    const container = document.getElementById('scroller');
+    const dots = document.querySelectorAll('.nav-dot');
+    const slides = document.querySelectorAll('.slide');
+
+    function updateNav() {
+        const scrollPos = container.scrollTop;
+        const height = container.clientHeight;
+        const index = Math.round(scrollPos / height);
+
+        dots.forEach((dot, i) => {
+            if (i === index) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+    }
+
+    container.addEventListener('scroll', updateNav);
+
+    // 导航点击跳转
+    function scrollToSlide(index) {
+        slides[index].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 标签页切换逻辑
+    function switchTab(btn, lang) {
+        const contentRight = btn.closest('.content-right');
+        
+        // 按钮状态切换
+        const buttons = contentRight.querySelectorAll('.tab-btn');
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // 代码面板切换
+        const panes = contentRight.querySelectorAll('.code-pane');
+        panes.forEach(pane => pane.classList.remove('active'));
+
+        // 版本选择器控制
+        const select = contentRight.querySelector('.version-select');
+        
+        // 如果有版本选择器，检查当前语言是否支持多版本
+        // 这里的逻辑稍微通用化：检查是否有该语言的多个版本pane
+        const versionedPanes = contentRight.querySelectorAll(`.code-pane.${lang}[data-version]`);
+        
+        if (versionedPanes.length > 0) {
+            // 显示下拉菜单
+            if(select) select.style.display = 'block';
+            // 默认显示第一个版本或当前选中的版本
+            const currentVal = select ? select.value : 'v1';
+            const target = contentRight.querySelector(`.code-pane.${lang}[data-version="${currentVal}"]`);
+            if (target) target.classList.add('active');
+            else contentRight.querySelector(`.code-pane.${lang}`).classList.add('active');
+        } else {
+            // 隐藏下拉菜单，显示默认pane
+            if(select) select.style.display = 'none';
+            const target = contentRight.querySelector(`.code-pane.${lang}`);
+            if (target) target.classList.add('active');
+        }
+    }
+
+    // 多解法版本切换
+    function switchVersion(select) {
+        const contentRight = select.closest('.content-right');
+        const version = select.value;
+        
+        // 获取当前激活的语言（Python or C++）
+        const activeTab = contentRight.querySelector('.tab-btn.active');
+        const lang = activeTab.innerText.trim() === 'Python' ? 'python' : 'cpp';
+        
+        // 隐藏当前语言的所有版本
+        const langPanes = contentRight.querySelectorAll(`.code-pane.${lang}`);
+        langPanes.forEach(p => p.classList.remove('active'));
+
+        // 显示选中版本
+        const target = contentRight.querySelector(`.code-pane.${lang}[data-version="${version}"]`);
+        if (target) target.classList.add('active');
+    }
+
+    // 复制代码
+    function copyCode(btn) {
+        const contentRight = btn.closest('.content-right');
+        const activePane = contentRight.querySelector('.code-pane.active');
+        if(!activePane) return;
+        
+        const codeText = activePane.querySelector('code').innerText;
+
+        navigator.clipboard.writeText(codeText).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = "✅ 已复制";
+            setTimeout(() => {
+                btn.innerText = originalText;
+            }, 2000);
+        });
+    }
+
+    // 初始检查
+    document.addEventListener('DOMContentLoaded', () => {
+        // 默认显示第一个Tab的下拉菜单状态
+        const buttons = document.querySelectorAll('.tab-btn.active');
+        buttons.forEach(btn => switchTab(btn, 'python'));
+    });
+
+</script>
 
 </body>
 </html>
