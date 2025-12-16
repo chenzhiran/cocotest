@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编程小英雄挑战赛 - C++ While循环与属性篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 (紫色现代风格) --- */
+        :root {
+            --primary-color: #6C5CE7; /* 主色调：紫色 */
+            --secondary-color: #A29BFE;
+            --bg-color: #DFE6E9;     /* 背景灰 */
+            --card-bg: #FFFFFF;
+            --text-color: #2D3436;   /* 深色文字 */
+            --correct-color: #00b894;/* 正确绿 */
+            --wrong-color: #d63031;  /* 错误红 */
+            --accent-yellow: #fdcb6e;/* 强调黄 */
+             
+            /* 代码高亮颜色 */
+            --code-bg: #2d2d2d;
+            --code-text: #ccc;
+            --code-kw: #cc99cd; /* 关键字 (purple/pink) */
+            --code-fn: #6196cc; /* 函数/方法 (blue) */
+            --code-num: #f08d49; /* 数字 (orange) */
+            --code-str: #7ec699; /* 字符串 (green) */
+            --code-cmt: #777777; /* 注释 (grey) */
+            --code-op: #f08d49; /* 运算符 (orange) */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            /* 点阵背景纹理 */
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* --- 游戏容器 --- */
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 700px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目区域 --- */
+        .question-area {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        
+        .question-area h2 {
+            color: var(--text-color);
+            font-size: 1.3rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* --- 代码高亮样式 --- */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', monospace;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            text-align: left;
+            font-size: 0.95rem;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+            overflow-x: auto; /* 防止长代码溢出 */
+        }
+        /* 语法着色 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .op { color: var(--code-op); font-weight: bold; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 0.95rem; 
+            font-family: 'Fira Code', inherit;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            position: relative;
+            top: 0;
+            box-shadow: 0 5px 0 #bdc3c7;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #aab0b3;
+        }
+
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+        }
+        
+        .option-btn[disabled] {
+            cursor: default;
+        }
+
+        /* --- 答题状态 --- */
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析区域 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+
+        .feedback-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+
+        .explanation-text {
+            color: #636e72;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        /* --- 下一题按钮 --- */
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 5px 0 #5649c0;
+            transition: all 0.2s;
+            float: right;
+        }
+        .next-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .next-btn:active { transform: translateY(5px); box-shadow: none; }
+
+        /* --- 结算画面 --- */
+        .end-screen {
+            display: none;
+            padding: 20px 0;
+        }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score-box {
+            background: var(--accent-yellow);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 25px;
+            display: inline-block;
+            margin: 30px 0;
+            box-shadow: 0 8px 0 #e1b12c;
+        }
+        .end-score { font-size: 3.5rem; font-weight: bold; line-height: 1; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+        
+        .perfect-score-text {
+            background: linear-gradient(45deg, #FFD700, #FF8C00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        /* --- 动画定义 --- */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall {
+            to { transform: translateY(80vh) rotate(720deg); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container">
+                </div>
+
+            <div class="options-grid" id="options-container">
+                </div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen">
+            </div>
+    </div>
+
+    <script>
+        // --- 题目数据 (C++ While循环与属性篇) ---
+        const quizData = [
+            {
+                q: "1. 在 C++ 中，while 循环的正确语法结构是？",
+                code: "while (hero.gold < 25) {\n    // 代码...\n}",
+                options: [
+                    "A. while hero.gold < 25:",
+                    "B. while (hero.gold < 25) { }",
+                    "C. loop (hero.gold < 25)",
+                    "D. repeat while hero.gold < 25"
+                ],
+                correct: 1, // B
+                desc: "在 C++ 中，while 循环的条件必须放在圆括号 ( ) 中，循环体必须放在花括号 { } 中。"
+            },
+            {
+                q: "2. 下面代码中，while (hero.gold < 25) 的含义是什么？",
+                code: "while (hero.gold < 25) {\n    hero.moveRight();\n}",
+                options: [
+                    "A. 当金币数小于 25 时，停止移动",
+                    "B. 当金币数大于 25 时，开始移动",
+                    "C. 当金币数小于 25 时，持续向右移动",
+                    "D. 移动 25 次"
+                ],
+                correct: 2, // C
+                desc: "只要条件 (hero.gold < 25) 为真 (true)，循环体内的代码 hero.moveRight() 就会一直执行。"
+            },
+            {
+                q: "3. 如果你想让一个变量 potionCount 每次增加 1，应该怎么写？",
+                code: "int potionCount = 0;\n// 增加代码",
+                options: [
+                    "A. potionCount += 1;",
+                    "B. potionCount =+ 1;",
+                    "C. add 1 to potionCount;",
+                    "D. potionCount++;"
+                ],
+                correct: 3, // D (Although A is also valid in logic, ++ is more idiomatic for simple increment, but let's assume multiple choice best fit logic or fix options)
+                // Let's stick to D as the most C++ idiomatic, or allow A. Let's make options distinct.
+                // Updated options below in code to be clear.
+                desc: "potionCount++; 是 C++ 中让变量自增 1 的常用写法。potionCount += 1; 也是正确的，但 ++ 更简洁。"
+            },
+            {
+                q: "4. 如果忘记在循环内更新变量（例如忘记写 potionCount++），会发生什么？",
+                code: "while (potionCount < 5) {\n    hero.say(\"I need more!\");\n    // 忘记增加计数\n}",
+                options: [
+                    "A. 循环会自动停止",
+                    "B. 形成无限循环（死循环）",
+                    "C. 程序会报错",
+                    "D. 英雄会停止说话"
+                ],
+                correct: 1, // B
+                desc: "如果循环条件依赖的变量（如 potionCount）从未改变，条件将永远为真，导致程序陷入死循环。"
+            },
+            {
+                q: "5. 在 C++ 中，如何写一个永远执行的循环（无限循环）？",
+                code: "while (???) {\n    hero.attack(enemy);\n}",
+                options: [
+                    "A. True",
+                    "B. true",
+                    "C. 1 == 1",
+                    "D. forever"
+                ],
+                correct: 1, // B
+                desc: "C++ 中布尔值为小写的 true。while (true) 是标准的无限循环写法。"
+            },
+            {
+                q: "6. 在 CodeCombat 中，hero.gold 是什么？",
+                code: "if (hero.gold > 50) { ... }",
+                options: [
+                    "A. 一个函数",
+                    "B. 一个属性 (Property)",
+                    "C. 一个循环",
+                    "D. 一个敌人"
+                ],
+                correct: 1, // B
+                desc: "hero.gold 是 hero 对象的一个属性，用于存储当前拥有的金币数量。"
+            },
+            {
+                q: "7. while (hero.health < hero.maxHealth) 表示什么？",
+                code: "while (hero.health < hero.maxHealth) {\n    // 休息\n}",
+                options: [
+                    "A. 当英雄满血时休息",
+                    "B. 当英雄生命值低于最大值（受伤）时休息",
+                    "C. 当英雄死亡时休息",
+                    "D. 英雄永远不会休息"
+                ],
+                correct: 1, // B
+                desc: "hero.maxHealth 代表最大生命值。当当前生命值 (health) 小于最大生命值时，说明英雄受伤了，循环继续执行。"
+            },
+            {
+                q: "8. 下列哪行代码正确地声明了一个整型变量？",
+                code: "// 声明变量",
+                options: [
+                    "A. var count = 0;",
+                    "B. int count = 0;",
+                    "C. count = 0;",
+                    "D. integer count = 0;"
+                ],
+                correct: 1, // B
+                desc: "C++ 是强类型语言，声明整数变量通常使用 int 关键字，例如 int count = 0;"
+            },
+            {
+                q: "9. 符号 <= 的意思是？",
+                code: "while (gems <= 10) { ... }",
+                options: [
+                    "A. 小于",
+                    "B. 等于",
+                    "C. 小于或等于",
+                    "D. 大于或等于"
+                ],
+                correct: 2, // C
+                desc: "<= 是比较运算符，表示左边的值“小于或等于”右边的值。"
+            },
+            {
+                q: "10. 在循环 while (gems < 3) 中，如果 gems 初始为 0，循环体执行多少次？",
+                code: "int gems = 0;\nwhile (gems < 3) {\n    hero.moveRight();\n    gems++;\n}",
+                options: [
+                    "A. 2 次",
+                    "B. 3 次",
+                    "C. 4 次",
+                    "D. 无数次"
+                ],
+                correct: 1, // B
+                desc: "gems 的值变化为 0, 1, 2。当 gems 变为 3 时，3 < 3 为假，循环停止。所以共执行 3 次。"
+            },
+            {
+                q: "11. 每一行 C++ 执行语句结束后，通常需要加什么符号？",
+                code: "hero.moveUp() ???",
+                options: [
+                    "A. : (冒号)",
+                    "B. . (句号)",
+                    "C. ; (分号)",
+                    "D. 不需要"
+                ],
+                correct: 2, // C
+                desc: "C++ 语句必须以分号 ; 结尾，否则会导致编译错误。"
+            },
+            {
+                q: "12. 代码块 { } 的作用是什么？",
+                code: "while (true) {\n    hero.moveRight();\n    hero.moveDown();\n}",
+                options: [
+                    "A. 没有任何作用",
+                    "B. 将多行代码组合在一起",
+                    "C. 这是一个字典",
+                    "D. 用于写注释"
+                ],
+                correct: 1, // B
+                desc: "花括号 { } 用于定义代码块 (Code Block)，将多条语句组合在一起，作为 while 循环的主体。"
+            }
+        ];
+
+        // --- 游戏状态变量 ---
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        // --- DOM 元素 ---
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        // --- 初始化游戏 ---
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                // 1. 转义 HTML 实体，防止代码被浏览器误解析为标签
+                let codeHtml = escapeHtml(data.code);
+
+                // 2. 字符串高亮
+                codeHtml = codeHtml.replace(/(".*?")/g, '<span class="str">$1</span>');
+
+                // 3. 注释高亮 (C++ 使用 //)
+                codeHtml = codeHtml.replace(/(\/\/.*)/g, '<span class="cmt">$1</span>');
+
+                // 4. 关键字高亮 (适配 C++ 关键字)
+                // 新增: int, void, true, false, auto
+                codeHtml = codeHtml.replace(/\b(int|void|true|false|auto|return|while|for|if|else|break|continue|hero|gold|potionCount|maxHealth|health|moveRight|moveUp|moveDown|say|attack|enemy|gems)\b/g, '<span class="kw">$1</span>');
+                
+                // 5. 运算符高亮 (注意顺序和转义)
+                // 将 +=, ==, <=, >=, <, > 替换为带颜色的 span
+                codeHtml = codeHtml.replace(/(\+\+|==|&lt;=|&gt;=|&lt;|&gt;)/g, '<span class="op">$1</span>');
+
+                // 6. 数字高亮
+                codeHtml = codeHtml.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+                
+                // 7. 方法调用 (添加 .xxx 高亮)
+                codeHtml = codeHtml.replace(/(\.\w+)/g, '<span class="fn">$1</span>');
+
+                html += `<div class="code-block">${codeHtml}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // --- 检查答案 ---
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => {
+                   allBtns[data.correct].classList.add('correct');
+                }, 400);
+                const rightAnswerChar = ["A", "B", "C", "D"][data.correct];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${rightAnswerChar}`, data.desc);
+            }
+        }
+
+        // --- 显示解析 ---
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // --- 下一题 ---
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        // --- 结束画面 ---
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none'; 
+
+            const totalScore = quizData.length * 100;
+            const isPerfect = (score === totalScore);
+            
+            let html = '';
+            if (isPerfect) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 C++ 循环大师！ 🎉</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score perfect-score-text">${score}</div></div>`;
+                html += `<div class="end-desc">太棒了！你已经完全掌握了 C++ While 循环、变量与属性的奥秘！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="end-score-box">总得分 <div class="end-score">${score} / ${totalScore}</div></div>`;
+                html += `<div class="end-desc">做得不错！继续加油，让代码逻辑更加严密！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; font-size:1.2rem; padding: 15px 40px;">🔄 再玩一次</button>`;
+            
+            endScreen.innerHTML = html;
+        }
+
+        // --- 撒花特效 ---
+        function createConfetti() {
+            const colors = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#fdcb6e'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-20px';
+                const scale = Math.random() * 0.6 + 0.4;
+                confetti.style.transform = `scale(${scale}) rotate(${Math.random()*360}deg)`;
+                confetti.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                
+                container.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 2500);
+            }
+        }
+
+        // --- HTML转义 ---
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // --- 启动游戏 ---
+        loadQuestion();
+
+    </script>
+</body>
+</html>
