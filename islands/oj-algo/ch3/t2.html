@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💣 变身扫雷小能手！| 趣味算法挑战</title>
+    <style>
+        :root {
+            --primary-primary: #FF6B6B;
+            --primary-secondary: #4ECDC4;
+            --bg-color: #F7FFF7;
+            --card-bg: #FFFFFF;
+            --text-main: #2F2F2F;
+            --accent-yellow: #FFE66D;
+            --code-bg: #282C34;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* 标题样式 */
+        header {
+            text-align: center;
+            padding: 40px 0;
+            background: linear-gradient(135deg, var(--primary-primary), var(--primary-secondary));
+            border-radius: 20px;
+            color: white;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        h1 { margin: 0; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .subtitle { font-size: 1.2em; opacity: 0.9; }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+            border: 2px solid transparent;
+            transition: transform 0.3s;
+        }
+
+        .card:hover { transform: translateY(-5px); }
+        .card-title {
+            display: flex;
+            align-items: center;
+            font-size: 1.5em;
+            color: var(--primary-primary);
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .card-title::before {
+            content: '🌟';
+            margin-right: 10px;
+        }
+
+        /* 步骤盒子 */
+        .step-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .step-item {
+            background: #f0f4f8;
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 5px solid var(--primary-secondary);
+        }
+
+        /* 样例展示 */
+        .example-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            background: #fff9db;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        pre.code-text {
+            background: #333;
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+        }
+
+        /* 标签页切换 */
+        .tab-wrapper {
+            margin-top: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 12px 12px 0 0;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            background: #ddd;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--code-bg);
+            color: #61dafb;
+        }
+
+        .code-container {
+            background: var(--code-bg);
+            border-radius: 0 15px 15px 15px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        /* 语法高亮（适合小朋友的鲜艳色） */
+        .code-content { color: #abb2bf; font-family: 'Consolas', monospace; }
+        .c-keyword { color: #c678dd; } /* 紫色 */
+        .c-func { color: #61afef; }    /* 蓝色 */
+        .c-string { color: #98c379; }  /* 绿色 */
+        .c-comment { color: #5c6370; font-style: italic; } /* 灰色 */
+        .c-num { color: #d19a66; }     /* 橙色 */
+        .c-op { color: #56b6c2; }      /* 青色 */
+
+        /* 解释文字 */
+        .explanation {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            font-size: 0.95em;
+        }
+
+        /* 页脚 */
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 600px) {
+            .example-box { grid-template-columns: 1fr; }
+            h1 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>💣 变身扫雷小能手！</h1>
+        <p class="subtitle">学会用计算机的眼睛观察地雷图</p>
+    </header>
+
+    <div class="card" style="border-color: var(--accent-yellow);">
+        <div class="card-title">我们要完成什么任务？</div>
+        <p>嘿！小伙伴们，你们玩过扫雷吗？我们要写一个小程序，把一个满是 <code>?</code>（神秘区域）和 <code>*</code>（危险地雷）的地图，变成一张标满数字的安全地图！</p>
+        <p><strong>规则很简单：</strong> 每一个 <code>?</code> 都要变成它周围 <strong>8个格子</strong> 里地雷的总数。如果是地雷本身，就保持 <code>*</code> 不变。</p>
+    </div>
+
+    <div class="card">
+        <div class="card-title">侦探破解思路</div>
+        <div class="step-container">
+            <div class="step-item">
+                <strong>第一步：看清地图 (读取)</strong><br>
+                先把整个地图存进电脑的“小方格阵”（二维数组）里。
+            </div>
+            <div class="step-item">
+                <strong>第二步：挨个检查 (遍历)</strong><br>
+                像巡逻兵一样，从左到右、从上到下检查每一个格子。
+            </div>
+            <div class="step-item">
+                <strong>第三步：数数小能手 (统计)</strong><br>
+                如果你站在一个 <code>?</code> 格子上，就看看你周围的 8 个邻居。数一数邻居里有几个 <code>*</code>。
+            </div>
+            <div class="step-item">
+                <strong>第四步：安全防线 (边界)</strong><br>
+                注意哦！如果你在地图边缘，邻居可能会少一些，千万别数到地图外面去啦！
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">实战演练（样例拆解）</div>
+        
+        <h3>🌈 样例 1：3x3 小试牛刀</h3>
+        <div class="example-box">
+            <div><strong>输入图：</strong><pre class="code-text">*??<br>???<br>?*?</pre></div>
+            <div><strong>生成图：</strong><pre class="code-text">*10<br>221<br>1*1</pre></div>
+        </div>
+        <p>💡 <strong>详解：</strong> 中心位置 (1,1) 的周围有左上角 (0,0) 和正下方 (2,1) 两个雷，所以它变成了 <strong>2</strong>！</p>
+
+        <hr style="border: 1px dashed #ddd; margin: 20px 0;">
+
+        <h3>🌈 样例 2：4x4 进阶挑战</h3>
+        <div class="example-box">
+            <div><strong>输入图：</strong><pre class="code-text">?*??<br>*???<br>??*?<br>????</pre></div>
+            <div><strong>生成图：</strong><pre class="code-text">2*10<br>*321<br>12*1<br>0111</pre></div>
+        </div>
+        <p>💡 <strong>详解：</strong> 第一行第一个格子周围只有一个地雷（在它下面），所以显示 <strong>2</strong>（其实是程序检查了周围所有有效格子后的结果）。</p>
+
+        <hr style="border: 1px dashed #ddd; margin: 20px 0;">
+
+        <h3>🌈 样例 3：全员安全</h3>
+        <div class="example-box">
+            <div><strong>输入图：</strong><pre class="code-text">??<br>??</pre></div>
+            <div><strong>生成图：</strong><pre class="code-text">00<br>00</pre></div>
+        </div>
+        <p>💡 <strong>详解：</strong> 地图里一个雷都没有，大家都标上 <strong>0</strong>，真是太安全啦！</p>
+    </div>
+
+    <div class="card">
+        <div class="card-title">魔法咒语（程序代码）</div>
+        <div class="tab-wrapper">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('cpp')">C++ 咒语</button>
+                <button class="tab-btn" onclick="switchTab('py')">Python 咒语</button>
+            </div>
+
+            <div id="cpp-tab" class="code-container">
+                <pre class="code-content">
+<span class="c-keyword">#include</span> <span class="c-string">&lt;iostream&gt;</span>
+<span class="c-keyword">using namespace</span> std;
+
+<span class="c-keyword">char</span> mp[<span class="c-num">105</span>][<span class="c-num">105</span>]; <span class="c-comment">// 地图口袋</span>
+<span class="c-keyword">int</span> dx[] = {<span class="c-num">-1</span>, <span class="c-num">-1</span>, <span class="c-num">-1</span>, <span class="c-num">0</span>, <span class="c-num">0</span>, <span class="c-num">1</span>, <span class="c-num">1</span>, <span class="c-num">1</span>}; <span class="c-comment">// 8个方向的小雷达</span>
+<span class="c-keyword">int</span> dy[] = {<span class="c-num">-1</span>, <span class="c-num">0</span>, <span class="c-num">1</span>, <span class="c-num">-1</span>, <span class="c-num">1</span>, <span class="c-num">-1</span>, <span class="c-num">0</span>, <span class="c-num">1</span>};
+
+<span class="c-keyword">int</span> <span class="c-func">main</span>() {
+    <span class="c-keyword">int</span> n, m;
+    cin >> n >> m; <span class="c-comment">// 告诉电脑地图有多大</span>
+
+    <span class="c-keyword">for</span> (<span class="c-keyword">int</span> i = <span class="c-num">1</span>; i <= n; i++)
+        <span class="c-keyword">for</span> (<span class="c-keyword">int</span> j = <span class="c-num">1</span>; j <= m; j++)
+            cin >> mp[i][j]; <span class="c-comment">// 把地图画进数组里</span>
+
+    <span class="c-keyword">for</span> (<span class="c-keyword">int</span> i = <span class="c-num">1</span>; i <= n; i++) {
+        <span class="c-keyword">for</span> (<span class="c-keyword">int</span> j = <span class="c-num">1</span>; j <= m; j++) {
+            <span class="c-keyword">if</span> (mp[i][j] == <span class="c-string">'*'</span>) cout << <span class="c-string">'*'</span>; <span class="c-comment">// 看到雷直接输出</span>
+            <span class="c-keyword">else</span> {
+                <span class="c-keyword">int</span> cnt = <span class="c-num">0</span>;
+                <span class="c-keyword">for</span> (<span class="c-keyword">int</span> k = <span class="c-num">0</span>; k < <span class="c-num">8</span>; k++) {
+                    <span class="c-keyword">int</span> ni = i + dx[k], nj = j + dy[k];
+                    <span class="c-comment">// 检查这个邻居是不是在地图里，而且是不是地雷</span>
+                    <span class="c-keyword">if</span> (ni >= <span class="c-num">1</span> && ni <= n && nj >= <span class="c-num">1</span> && nj <= m) {
+                        <span class="c-keyword">if</span> (mp[ni][nj] == <span class="c-string">'*'</span>) cnt++;
+                    }
+                }
+                cout << cnt; <span class="c-comment">// 输出数出来的雷数</span>
+            }
+        }
+        cout << endl; <span class="c-comment">// 换一行继续</span>
+    }
+    <span class="c-keyword">return</span> <span class="c-num">0</span>;
+}</pre>
+                <div class="explanation">
+                    <strong>💡 C++ 代码秘籍：</strong>
+                    我们用了 <code>dx</code> 和 <code>dy</code> 这两个“方向数组”，它们就像雷达一样，能帮我们快速定位周围 8 个小伙伴的坐标，既省时又不容易出错！
+                </div>
+            </div>
+
+            <div id="py-tab" class="code-container" style="display:none;">
+                <pre class="code-content">
+<span class="c-comment"># 1. 读取地图大小</span>
+n, m = <span class="c-func">map</span>(<span class="c-func">int</span>, <span class="c-func">input</span>().split())
+
+<span class="c-comment"># 2. 把地图存进列表里</span>
+grid = []
+<span class="c-keyword">for</span> _ <span class="c-keyword">in</span> <span class="c-func">range</span>(n):
+    grid.<span class="c-func">append</span>(<span class="c-func">list</span>(<span class="c-func">input</span>().strip()))
+
+<span class="c-comment"># 3. 准备好8个探测方向</span>
+directions = [
+    (<span class="c-num">-1</span>, <span class="c-num">-1</span>), (<span class="c-num">-1</span>, <span class="c-num">0</span>), (<span class="c-num">-1</span>, <span class="c-num">1</span>),
+    (<span class="c-num">0</span>, <span class="c-num">-1</span>),           (<span class="c-num">0</span>, <span class="c-num">1</span>),
+    (<span class="c-num">1</span>, <span class="c-num">-1</span>),  (<span class="c-num">1</span>, <span class="c-num">0</span>),  (<span class="c-num">1</span>, <span class="c-num">1</span>)
+]
+
+<span class="c-comment"># 4. 开启巡逻模式</span>
+<span class="c-keyword">for</span> i <span class="c-keyword">in</span> <span class="c-func">range</span>(n):
+    <span class="c-keyword">for</span> j <span class="c-keyword">in</span> <span class="c-func">range</span>(m):
+        <span class="c-keyword">if</span> grid[i][j] == <span class="c-string">'*'</span>:
+            <span class="c-func">print</span>(<span class="c-string">'*'</span>, end=<span class="c-string">''</span>)
+        <span class="c-keyword">else</span>:
+            cnt = <span class="c-num">0</span>
+            <span class="c-keyword">for</span> dx, dy <span class="c-keyword">in</span> directions:
+                ni, nj = i + dx, j + dy
+                <span class="c-comment"># 确保探测的地方没出界</span>
+                <span class="c-keyword">if</span> <span class="c-num">0</span> <= ni < n <span class="c-keyword">and</span> <span class="c-num">0</span> <= nj < m:
+                    <span class="c-keyword">if</span> grid[ni][nj] == <span class="c-string">'*'</span>:
+                        cnt += <span class="c-num">1</span>
+            <span class="c-func">print</span>(cnt, end=<span class="c-string">''</span>)
+    <span class="c-func">print</span>() <span class="c-comment"># 每一行画完记得深呼吸（换行）</span></pre>
+                <div class="explanation">
+                    <strong>💡 Python 代码秘籍：</strong>
+                    Python 的 <code>if 0 <= ni < n</code> 这种写法超级酷，就像说英语一样自然。我们用 <code>print(..., end='')</code> 保证数字能排成整齐的一行。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="background: var(--primary-secondary); color: white; text-align: center;">
+        <h2 style="margin: 0;">🎉 太棒了！你已经掌握了扫雷地图的秘密！</h2>
+        <p>编程就像搭积木，只要逻辑通顺，你就能创造出属于自己的奇妙世界！加油，未来的工程师！</p>
+    </div>
+
+    <footer>
+        添加来自扣哒世界教研团队
+    </footer>
+</div>
+
+<script>
+    function switchTab(lang) {
+        const cppTab = document.getElementById('cpp-tab');
+        const pyTab = document.getElementById('py-tab');
+        const btns = document.querySelectorAll('.tab-btn');
+
+        if (lang === 'cpp') {
+            cppTab.style.display = 'block';
+            pyTab.style.display = 'none';
+            btns[0].classList.add('active');
+            btns[1].classList.remove('active');
+        } else {
+            cppTab.style.display = 'none';
+            pyTab.style.display = 'block';
+            btns[0].classList.remove('active');
+            btns[1].classList.add('active');
+        }
+    }
+</script>
+
+</body>
+</html>
