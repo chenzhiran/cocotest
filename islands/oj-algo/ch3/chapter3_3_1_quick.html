@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3.1 快速排序 - 算法详解</title>
+    <style>
+        /* ================= 核心风格：极速赛道 ================= */
+        :root {
+            --speed-yellow: #ffeb3b; /* 闪电黄 */
+            --speed-blue: #2979ff;   /* 极速蓝 */
+            --track-dark: #263238;   /* 赛道黑 */
+            --danger-red: #ff1744;   /* 警告红 */
+            --bg-color: #f5f5f5;     /* 浅灰背景 */
+            --text-main: #37474f;    
+            --code-bg: #212121;
+        }
+
+        body {
+            font-family: "Verdana", "Comic Sans MS", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            /* 斜纹赛道背景 */
+            background-image: repeating-linear-gradient(
+                45deg,
+                #eeeeee,
+                #eeeeee 10px,
+                #e0e0e0 10px,
+                #e0e0e0 20px
+            );
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-top: 8px solid var(--speed-blue);
+            border-bottom: 8px solid var(--speed-yellow);
+        }
+
+        /* ================= 标题与排版 ================= */
+        h1 {
+            text-align: center;
+            color: var(--speed-blue);
+            font-size: 3.5em;
+            margin-bottom: 5px;
+            font-style: italic; /* 速度感 */
+            text-shadow: 3px 3px 0px var(--speed-yellow);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            color: #546e7a;
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+
+        h2 {
+            background: linear-gradient(90deg, var(--speed-blue), #00b0ff);
+            color: white;
+            padding: 10px 40px;
+            border-radius: 0 30px 30px 0;
+            display: inline-block;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            box-shadow: 5px 5px 15px rgba(41, 121, 255, 0.3);
+            transform: skew(-15deg); /* 倾斜造型 */
+        }
+        h2 span {
+            display: block;
+            transform: skew(15deg); /* 文字正回来 */
+        }
+
+        p { font-size: 1.1em; margin-bottom: 20px; }
+
+        /* ================= 重点强调 ================= */
+        .highlight {
+            color: var(--speed-blue);
+            font-weight: 900;
+            background: #e3f2fd;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .important-box {
+            background: #fff8e1;
+            border-left: 6px solid var(--speed-yellow);
+            padding: 20px;
+            border-radius: 5px;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .important-box::before {
+            content: "⚡";
+            font-size: 30px;
+            position: absolute;
+            left: -18px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            border-radius: 50%;
+            padding: 5px;
+            border: 2px solid var(--speed-yellow);
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration-panel {
+            background: white;
+            border: 2px dashed #b0bec5;
+            border-radius: 15px;
+            margin: 30px 0;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .pivot-badge {
+            background: var(--danger-red);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            font-weight: bold;
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* ================= 代码块与Tabs ================= */
+        .code-wrapper {
+            background: var(--code-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            margin-top: 20px;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: #102027;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 18px;
+            background: transparent;
+            color: #b0bec5;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .tab-btn:hover { background: #37474f; color: white; }
+        .tab-btn.active { 
+            background: var(--code-bg); 
+            color: var(--speed-yellow); 
+            border-top: 4px solid var(--speed-yellow); 
+        }
+
+        .code-view {
+            display: none;
+            padding: 25px;
+            color: #eceff1;
+            font-family: "Consolas", "Monaco", monospace;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        .code-view.active { display: block; }
+
+        /* 语法高亮 */
+        .k { color: #ffeb3b; font-weight: bold; } /* keyword - 黄 */
+        .t { color: #40c4ff; } /* type - 蓝 */
+        .n { color: #ff8a80; } /* number - 红 */
+        .s { color: #69f0ae; } /* string - 绿 */
+        .c { color: #90a4ae; font-style: italic; } /* comment - 灰 */
+        .f { color: #ba68c8; } /* function - 紫 */
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div style="text-align: center;">
+        <svg width="200" height="100" viewBox="0 0 200 100">
+            <path d="M100 0 L60 50 L90 50 L70 100 L140 40 L110 40 L130 0 Z" fill="#ffeb3b" stroke="#fbc02d" stroke-width="3">
+                <animate attributeName="opacity" values="1;0.5;1" dur="0.5s" repeatCount="indefinite"/>
+                <animateTransform attributeName="transform" type="scale" values="1;1.1;1" dur="0.3s" repeatCount="indefinite"/>
+            </path>
+            <text x="150" y="80" fill="#2979ff" font-weight="bold" font-style="italic" font-size="20">Fast!</text>
+        </svg>
+    </div>
+
+    <h1>3.1 快速排序</h1>
+    <p class="subtitle">Quick Sort：分治法的巅峰之作 ⚡️</p>
+
+    <div class="important-box">
+        <h3>🏃‍♂️ 体育老师的分队魔法</h3>
+        <p>假设全班同学排成一排。体育老师想按个子高矮排队，但他不想一个一个比。他用了一个绝招：</p>
+        <p>老师随便拉出一个同学（比如<strong>小明</strong>）站在中间，大喊一声：</p>
+        <p style="text-align: center; font-size: 1.3em; font-weight: bold; color: var(--speed-blue);">“比小明矮的站左边！比小明高的站右边！”</p>
+        <p>哗啦一下，队伍分成了两波。虽然左边那波内部还没排好，但它们肯定都比右边那波矮！接着，老师对左边和右边的小队<strong>重复同样的命令</strong>……这就是<span class="highlight">分治法</span>！</p>
+    </div>
+
+    <h2><span>🎨 详细图解：哨兵出动</span></h2>
+    <p>我们把被选中的那个数叫做<strong>“基准数” (Pivot)</strong>。通常我们选最左边的数。</p>
+    <p>我们要排序：<span style="font-size:1.4em; font-weight:bold; letter-spacing: 5px;">[ 6, 1, 2, 7, 9, 3, 4, 5, 10, 8 ]</span></p>
+
+    <div class="illustration-panel">
+        <div class="pivot-badge">Step 1: 选基准 6</div>
+        <svg width="700" height="150" viewBox="0 0 700 150">
+            <rect x="20" y="40" width="50" height="50" fill="#ff1744" rx="5"/>
+            <text x="45" y="75" text-anchor="middle" fill="white" font-weight="bold" font-size="20">6</text>
+            <text x="45" y="110" text-anchor="middle" font-size="12" fill="#ff1744">基准</text>
+
+            <g transform="translate(80, 0)">
+                <rect x="0" y="40" width="50" height="50" fill="#e0e0e0" stroke="#999" rx="5"/>
+                <text x="25" y="75" text-anchor="middle">1</text>
+                
+                <rect x="60" y="40" width="50" height="50" fill="#e0e0e0" stroke="#999" rx="5"/>
+                <text x="85" y="75" text-anchor="middle">2</text>
+                
+                <rect x="120" y="40" width="50" height="50" fill="#e0e0e0" stroke="#999" rx="5"/>
+                <text x="145" y="75" text-anchor="middle">7</text>
+                
+                <rect x="180" y="40" width="50" height="50" fill="#e0e0e0" stroke="#999" rx="5"/>
+                <text x="205" y="75" text-anchor="middle">9</text>
+                
+                <rect x="240" y="40" width="50" height="50" fill="#e0e0e0" stroke="#999" rx="5"/>
+                <text x="265" y="75" text-anchor="middle">3</text>
+                
+                <rect x="300" y="40" width="50" height="50" fill="#e0e0e0" stroke="#999" rx="5"/>
+                <text x="325" y="75" text-anchor="middle">4</text>
+                
+                <rect x="360" y="40" width="50" height="50" fill="#e0e0e0" stroke="#999" rx="5"/>
+                <text x="385" y="75" text-anchor="middle">5</text>
+                
+                <rect x="420" y="40" width="50" height="50" fill="#e0e0e0" stroke="#999" rx="5"/>
+                <text x="445" y="75" text-anchor="middle">10</text>
+                
+                <rect x="480" y="40" width="50" height="50" fill="#e0e0e0" stroke="#999" rx="5"/>
+                <text x="505" y="75" text-anchor="middle">8</text>
+            </g>
+
+            <text x="80" y="30" fill="#2979ff" font-weight="bold">🕵️ 左哨兵 i</text>
+            <text x="560" y="30" fill="#2979ff" font-weight="bold">🕵️ 右哨兵 j</text>
+        </svg>
+    </div>
+
+    <div class="illustration-panel">
+        <div class="pivot-badge">Step 2: 哨兵出动</div>
+        <p><strong>规则：</strong>右哨兵 j 先走，找比 6 小的；左哨兵 i 后走，找比 6 大的。找到了就交换！</p>
+        <svg width="700" height="180" viewBox="0 0 700 180">
+            <rect x="20" y="60" width="50" height="50" fill="#ff1744" rx="5"/><text x="45" y="95" text-anchor="middle" fill="white" font-weight="bold">6</text>
+            <rect x="80" y="60" width="50" height="50" fill="#eee" stroke="#999" rx="5"/><text x="105" y="95" text-anchor="middle">1</text>
+            <rect x="140" y="60" width="50" height="50" fill="#eee" stroke="#999" rx="5"/><text x="165" y="95" text-anchor="middle">2</text>
+            
+            <rect x="200" y="60" width="50" height="50" fill="#bbdefb" stroke="#2979ff" stroke-width="3" rx="5"/>
+            <text x="225" y="95" text-anchor="middle" font-weight="bold">7</text>
+            
+            <rect x="260" y="60" width="50" height="50" fill="#eee" stroke="#999" rx="5"/><text x="285" y="95" text-anchor="middle">9</text>
+            <rect x="320" y="60" width="50" height="50" fill="#eee" stroke="#999" rx="5"/><text x="345" y="95" text-anchor="middle">3</text>
+            <rect x="380" y="60" width="50" height="50" fill="#eee" stroke="#999" rx="5"/><text x="405" y="95" text-anchor="middle">4</text>
+            
+            <rect x="440" y="60" width="50" height="50" fill="#bbdefb" stroke="#2979ff" stroke-width="3" rx="5"/>
+            <text x="465" y="95" text-anchor="middle" font-weight="bold">5</text>
+            
+            <rect x="500" y="60" width="50" height="50" fill="#eee" stroke="#999" rx="5"/><text x="525" y="95" text-anchor="middle">10</text>
+            <rect x="560" y="60" width="50" height="50" fill="#eee" stroke="#999" rx="5"/><text x="585" y="95" text-anchor="middle">8</text>
+
+            <path d="M 600 50 L 480 50" stroke="#2979ff" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-blue)"/>
+            <text x="540" y="40" font-size="12" fill="#2979ff">j 找到 5 (比6小)</text>
+
+            <path d="M 100 50 L 220 50" stroke="#2979ff" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-blue)"/>
+            <text x="150" y="40" font-size="12" fill="#2979ff">i 找到 7 (比6大)</text>
+
+            <path d="M 225 120 Q 345 160 465 120" stroke="#d500f9" stroke-width="3" fill="none" marker-end="url(#arrow-purple)"/>
+            <text x="345" y="160" fill="#d500f9" text-anchor="middle" font-weight="bold">交换 7 和 5！</text>
+
+            <defs>
+                <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#2979ff" /></marker>
+                <marker id="arrow-purple" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#d500f9" /></marker>
+            </defs>
+        </svg>
+    </div>
+
+    <div class="illustration-panel">
+        <div class="pivot-badge">Step 3: 基准归位</div>
+        <p>哨兵们继续走、继续换，直到它们<strong>碰头</strong>。碰头的位置，就是基准数 6 应该待的地方！</p>
+        <svg width="700" height="120" viewBox="0 0 700 120">
+             <rect x="50" y="40" width="200" height="60" fill="#e8f5e9" stroke="#4caf50" stroke-width="2" rx="10"/>
+             <text x="150" y="75" text-anchor="middle" fill="#2e7d32" font-weight="bold">3, 1, 2, 5, 4</text>
+             <text x="150" y="120" text-anchor="middle" fill="#2e7d32">比 6 小的</text>
+
+             <rect x="260" y="35" width="60" height="70" fill="#ff1744" stroke="#b71c1c" stroke-width="3" rx="5"/>
+             <text x="290" y="75" text-anchor="middle" fill="white" font-weight="bold" font-size="24">6</text>
+             <text x="290" y="120" text-anchor="middle" fill="#b71c1c" font-weight="bold">中间</text>
+
+             <rect x="330" y="40" width="200" height="60" fill="#e3f2fd" stroke="#2196f3" stroke-width="2" rx="10"/>
+             <text x="430" y="75" text-anchor="middle" fill="#1565c0" font-weight="bold">9, 7, 10, 8</text>
+             <text x="430" y="120" text-anchor="middle" fill="#1565c0">比 6 大的</text>
+        </svg>
+        <p>然后，再分别对“绿色队”和“蓝色队”做同样的事情（递归）。</p>
+    </div>
+
+    <h2><span>💻 编程赛道</span></h2>
+    <p><strong>注意：</strong> 代码中为了方便，我们通常直接选<strong>中间的数</strong>作为基准（<code>mid</code>），这样写代码更不容易出错，而且速度更稳！</p>
+
+    <div class="code-wrapper">
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('cpp')">C++ 代码</button>
+            <button class="tab-btn" onclick="switchTab('py')">Python 代码</button>
+        </div>
+
+        <div id="cpp" class="code-view active">
+<span class="k">#include</span> <span class="s">&lt;iostream&gt;</span>
+<span class="k">using namespace</span> std;
+
+<span class="k">int</span> a[1005];
+
+<span class="c">// 快速排序函数：处理从 l 到 r 的范围</span>
+<span class="k">void</span> <span class="f">quick_sort</span>(<span class="k">int</span> l, <span class="k">int</span> r) {
+    <span class="k">if</span> (l >= r) <span class="k">return</span>; <span class="c">// 只有一个数或没有数，不用排</span>
+
+    <span class="c">// 1. 选基准 (这里选中间的数，防止最坏情况)</span>
+    <span class="k">int</span> pivot = a[(l + r) / 2];
+    <span class="k">int</span> i = l, j = r;
+
+    <span class="c">// 2. 哨兵出发</span>
+    <span class="k">while</span> (i <= j) {
+        <span class="c">// 左边找比基准大的</span>
+        <span class="k">while</span> (a[i] < pivot) i++;
+        <span class="c">// 右边找比基准小的</span>
+        <span class="k">while</span> (a[j] > pivot) j--;
+
+        <span class="c">// 找到了就交换</span>
+        <span class="k">if</span> (i <= j) {
+            <span class="f">swap</span>(a[i], a[j]);
+            i++;
+            j--;
+        }
+    }
+
+    <span class="c">// 3. 递归：现在分成了两队，继续排</span>
+    <span class="f">quick_sort</span>(l, j); <span class="c">// 排左边那队 (l ~ j)</span>
+    <span class="f">quick_sort</span>(i, r); <span class="c">// 排右边那队 (i ~ r)</span>
+}
+
+<span class="k">int</span> <span class="f">main</span>() {
+    <span class="k">int</span> n;
+    cin >> n;
+    <span class="k">for</span> (<span class="k">int</span> i = 0; i < n; i++) cin >> a[i];
+
+    <span class="f">quick_sort</span>(0, n - 1);
+
+    <span class="k">for</span> (<span class="k">int</span> i = 0; i < n; i++) <span class="f">cout</span> << a[i] << <span class="s">" "</span>;
+    <span class="k">return</span> 0;
+}
+        </div>
+
+        <div id="py" class="code-view">
+<span class="k">def</span> <span class="f">quick_sort</span>(arr, l, r):
+    <span class="k">if</span> l >= r: <span class="k">return</span>  <span class="c"># 递归出口</span>
+
+    <span class="c"># 1. 选基准</span>
+    pivot = arr[(l + r) // 2]
+    i, j = l, r
+
+    <span class="c"># 2. 哨兵划分</span>
+    <span class="k">while</span> i <= j:
+        <span class="c"># 左找大</span>
+        <span class="k">while</span> arr[i] < pivot: i += 1
+        <span class="c"># 右找小</span>
+        <span class="k">while</span> arr[j] > pivot: j -= 1
+        
+        <span class="c"># 交换</span>
+        <span class="k">if</span> i <= j:
+            arr[i], arr[j] = arr[j], arr[i]
+            i += 1
+            j -= 1
+
+    <span class="c"># 3. 递归处理左右两边</span>
+    <span class="f">quick_sort</span>(arr, l, j)
+    <span class="f">quick_sort</span>(arr, i, r)
+
+<span class="c"># 测试</span>
+data = [6, 1, 2, 7, 9, 3, 4, 5, 10, 8]
+<span class="f">quick_sort</span>(data, 0, <span class="f">len</span>(data) - 1)
+<span class="f">print</span>(data)
+        </div>
+    </div>
+
+    <h2><span>🏆 为什么它是最快的？</span></h2>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+        <div style="flex:1; background: #e3f2fd; padding: 20px; border-radius: 10px; border: 2px solid #2979ff;">
+            <h3 style="color: #1565c0; margin-top:0;">🚀 平均速度 O(nlogn)</h3>
+            <p>因为它每次都把队伍切成两半，就像折纸一样，折的次数很少。在绝大多数情况下，它都是比赛的冠军！</p>
+        </div>
+        <div style="flex:1; background: #ffebee; padding: 20px; border-radius: 10px; border: 2px solid #ef5350;">
+            <h3 style="color: #c62828; margin-top:0;">⚠️ 倒霉的时候 O(n²)</h3>
+            <p>如果每次选的基准数都是最小的（运气极差），它就退化成冒泡排序了。所以我们通常选<strong>中间</strong>的数当基准来避免这种情况。</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function switchTab(lang) {
+        // 隐藏所有代码块
+        document.getElementById('cpp').classList.remove('active');
+        document.getElementById('py').classList.remove('active');
+        
+        // 移除按钮激活状态
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(btn => btn.classList.remove('active'));
+
+        // 激活选中的
+        document.getElementById(lang).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

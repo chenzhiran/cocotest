@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2.1 计数排序 - 算法详解</title>
+    <style>
+        /* ================= 核心配色 (保持风格一致) ================= */
+        :root {
+            --primary: #4fc3f7;      /* 天蓝 */
+            --primary-dark: #0288d1;
+            --secondary: #ffb74d;    /* 橘黄 */
+            --accent: #ba68c8;       /* 紫色 */
+            --bg-color: #fffdf0;     /* 米黄底色 */
+            --text-main: #37474f;
+            --code-bg: #282c34;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif; /* 圆润字体 */
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#ddd 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            border: 4px solid #b3e5fc;
+        }
+
+        /* ================= 标题样式 ================= */
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 0 #b3e5fc;
+        }
+
+        h2 {
+            background: linear-gradient(90deg, var(--secondary), #ffcc80);
+            color: white;
+            padding: 10px 30px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            font-size: 1.8em;
+        }
+
+        h3 {
+            color: var(--accent);
+            border-bottom: 3px dashed var(--accent);
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+
+        p { font-size: 1.1em; }
+
+        /* ================= 重点强调 ================= */
+        .highlight {
+            color: #d84315;
+            font-weight: bold;
+            background: #ffecb3;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .note-box {
+            background-color: #e1f5fe;
+            border-left: 8px solid var(--primary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration {
+            text-align: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px dashed #ccc;
+        }
+
+        .step-list {
+            list-style: none;
+            padding: 0;
+        }
+        .step-list li {
+            margin-bottom: 20px;
+            padding-left: 60px;
+            position: relative;
+        }
+        .step-list li::before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        body { counter-reset: step-counter; }
+
+        /* ================= 代码块与Tabs (复用样式) ================= */
+        .code-container {
+            border: 3px solid #ffcc80;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: var(--code-bg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-header {
+            display: flex;
+            background: #37474f;
+        }
+
+        .tab-btn {
+            padding: 15px 30px;
+            color: #cfd8dc;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-weight: bold;
+            font-size: 16px;
+            flex: 1;
+            transition: 0.3s;
+        }
+
+        .tab-btn:hover { background: #455a64; }
+
+        .tab-btn.active {
+            background: var(--code-bg);
+            color: var(--secondary);
+            border-top: 4px solid var(--secondary);
+        }
+
+        .code-content {
+            display: none;
+            padding: 20px;
+            color: #abb2bf;
+            font-family: "Consolas", "Courier New", monospace;
+            white-space: pre-wrap;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .code-content.active { display: block; }
+
+        /* 语法高亮 */
+        .cpp-kw { color: #c678dd; font-weight: bold; } 
+        .cpp-type { color: #e5c07b; } 
+        .cpp-num { color: #d19a66; }
+        .cpp-str { color: #98c379; } 
+        .cpp-com { color: #999; font-style: italic; } 
+        
+        .py-kw { color: #c678dd; font-weight: bold; }
+        .py-def { color: #61afef; }
+        .py-com { color: #999; font-style: italic;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="illustration" style="border:none;">
+        <svg width="200" height="120" viewBox="0 0 200 120">
+            <path d="M40 40 L60 110 L140 110 L160 40 Z" fill="#b3e5fc" stroke="#0288d1" stroke-width="3"/>
+            <ellipse cx="100" cy="40" rx="60" ry="10" fill="#e1f5fe" stroke="#0288d1" stroke-width="3"/>
+            <text x="100" y="30" text-anchor="middle" font-size="20" fill="#d84315" font-weight="bold">
+                <animate attributeName="y" values="0;80;80" keyTimes="0;0.6;1" dur="1.5s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0;1;0" keyTimes="0;0.6;1" dur="1.5s" repeatCount="indefinite" />
+                1, 2, 3...
+            </text>
+            <text x="100" y="100" text-anchor="middle" font-size="14" fill="#0277bd">计数中...</text>
+        </svg>
+    </div>
+
+    <h1>2.1 计数排序 (Counting Sort)</h1>
+    
+    <div class="note-box">
+        <p>👋 <strong>小朋友们好！</strong> 想象一下，你手里有一把乱七八糟的扑克牌，或者一堆不同颜色的乐高积木。如果让你把它们从小到大排好，你会怎么做？</p>
+        <p>如果你不想比较“这张牌大”还是“那张牌大”，你可以直接准备几个<strong>带有编号的盒子</strong>，把每张牌直接扔进对应的盒子里！这，就是<span class="highlight">计数排序</span>的魔法！✨</p>
+    </div>
+
+    <h2>🎨 详细图解步骤</h2>
+    <p>假设我们要排序这组数字：<span style="font-size:1.5em; font-family:monospace; background:#eee; padding:5px;">2, 5, 3, 0, 2, 3, 0, 3</span></p>
+
+    <div class="illustration">
+        <svg width="800" height="450" viewBox="0 0 800 450">
+            <defs>
+                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f0f0f0" stroke-width="1"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+
+            <text x="50" y="30" font-weight="bold" fill="#333" font-size="18">Step 1: 找出最大的数是5，所以准备 0~5 号盒子</text>
+            
+            <g transform="translate(100, 80)">
+                <rect x="0" y="0" width="60" height="80" fill="#fff" stroke="#333" stroke-width="2" rx="5"/>
+                <text x="30" y="100" text-anchor="middle">0号</text>
+                <circle cx="30" cy="40" r="15" fill="#ffd54f"/>
+                <text x="30" y="45" text-anchor="middle" font-weight="bold">2个</text>
+
+                <rect x="80" y="0" width="60" height="80" fill="#fff" stroke="#333" stroke-width="2" rx="5"/>
+                <text x="110" y="100" text-anchor="middle">1号</text>
+                <text x="110" y="45" text-anchor="middle" fill="#ccc">空</text>
+
+                <rect x="160" y="0" width="60" height="80" fill="#fff" stroke="#333" stroke-width="2" rx="5"/>
+                <text x="190" y="100" text-anchor="middle">2号</text>
+                <circle cx="190" cy="40" r="15" fill="#ffd54f"/>
+                <text x="190" y="45" text-anchor="middle" font-weight="bold">2个</text>
+
+                <rect x="240" y="0" width="60" height="80" fill="#fff" stroke="#333" stroke-width="2" rx="5"/>
+                <text x="270" y="100" text-anchor="middle">3号</text>
+                <circle cx="270" cy="40" r="15" fill="#ffd54f"/>
+                <text x="270" y="45" text-anchor="middle" font-weight="bold">3个</text>
+
+                <rect x="320" y="0" width="60" height="80" fill="#fff" stroke="#333" stroke-width="2" rx="5"/>
+                <text x="350" y="100" text-anchor="middle">4号</text>
+                <text x="350" y="45" text-anchor="middle" fill="#ccc">空</text>
+
+                <rect x="400" y="0" width="60" height="80" fill="#fff" stroke="#333" stroke-width="2" rx="5"/>
+                <text x="430" y="100" text-anchor="middle">5号</text>
+                <circle cx="430" cy="40" r="15" fill="#ffd54f"/>
+                <text x="430" y="45" text-anchor="middle" font-weight="bold">1个</text>
+            </g>
+
+            <path d="M 330 200 L 330 240 L 320 230 M 330 240 L 340 230" stroke="#ba68c8" stroke-width="3" fill="none"/>
+
+            <text x="50" y="270" font-weight="bold" fill="#333" font-size="18">Step 2: 按照盒子顺序把球倒出来</text>
+            
+            <g transform="translate(50, 300)">
+                <circle cx="30" cy="30" r="20" fill="#4fc3f7"/><text x="30" y="35" text-anchor="middle" fill="white">0</text>
+                <circle cx="80" cy="30" r="20" fill="#4fc3f7"/><text x="80" y="35" text-anchor="middle" fill="white">0</text>
+                <circle cx="130" cy="30" r="20" fill="#81c784"/><text x="130" y="35" text-anchor="middle" fill="white">2</text>
+                <circle cx="180" cy="30" r="20" fill="#81c784"/><text x="180" y="35" text-anchor="middle" fill="white">2</text>
+                <circle cx="230" cy="30" r="20" fill="#ffb74d"/><text x="230" y="35" text-anchor="middle" fill="white">3</text>
+                <circle cx="280" cy="30" r="20" fill="#ffb74d"/><text x="280" y="35" text-anchor="middle" fill="white">3</text>
+                <circle cx="330" cy="30" r="20" fill="#ffb74d"/><text x="330" y="35" text-anchor="middle" fill="white">3</text>
+                <circle cx="380" cy="30" r="20" fill="#ba68c8"/><text x="380" y="35" text-anchor="middle" fill="white">5</text>
+            </g>
+
+            <text x="550" y="335" fill="#d84315" font-weight="bold" font-size="20">排好啦！🎉</text>
+        </svg>
+    </div>
+
+    <ul class="step-list">
+        <li>
+            <strong>第一步：找老大 (Find Max)</strong><br>
+            先看看这堆数字里最大的是几？如果是 5，我们就需要准备 0, 1, 2, 3, 4, 5 号，一共 6 个盒子。
+        </li>
+        <li>
+            <strong>第二步：投票进桶 (Counting)</strong><br>
+            拿起一个数字，它是几，就往几号盒子里投一票（或者放一颗糖）。<br>
+            <span class="highlight">关键点：数字本身 = 盒子的编号 (下标)</span>。
+        </li>
+        <li>
+            <strong>第三步：依次点名 (Output)</strong><br>
+            从 0 号盒子开始检查。0 号盒子里有 2 票，就写两个 0；1 号盒子是空的，跳过；2 号盒子里有 2 票，就写两个 2……一直写到最后。
+        </li>
+    </ul>
+
+    <h2>💻 编程时间！</h2>
+    <p>看看在电脑里怎么实现这个过程吧。注意看注释哦！</p>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'c1')">C++ 代码 (详细版)</button>
+            <button class="tab-btn" onclick="openTab(event, 'p1')">Python 代码 (简洁版)</button>
+        </div>
+
+        <div id="c1" class="code-content active">
+<span class="cpp-kw">#include</span> <span class="cpp-str">&lt;iostream&gt;</span>
+<span class="cpp-kw">#include</span> <span class="cpp-str">&lt;vector&gt;</span>
+<span class="cpp-kw">#include</span> <span class="cpp-str">&lt;algorithm&gt;</span> <span class="cpp-com">// max函数在这里</span>
+<span class="cpp-kw">using namespace</span> std;
+
+<span class="cpp-kw">int</span> <span class="cpp-kw">main</span>() {
+    <span class="cpp-com">// 1. 准备一堆乱序的数字</span>
+    <span class="cpp-kw">int</span> a[] = {2, 5, 3, 0, 2, 3, 0, 3};
+    <span class="cpp-kw">int</span> n = 8; <span class="cpp-com">// 一共有8个数字</span>
+
+    <span class="cpp-com">// 2. 找出最大的数字 (为了知道要准备多少个盒子)</span>
+    <span class="cpp-kw">int</span> max_val = 0;
+    <span class="cpp-kw">for</span>(<span class="cpp-kw">int</span> i = 0; i < n; i++) {
+        <span class="cpp-kw">if</span>(a[i] > max_val) max_val = a[i];
+    }
+    
+    <span class="cpp-com">// 3. 准备盒子 (计数数组)</span>
+    <span class="cpp-com">// 只要最大值是5，我们就需要到下标5，所以大小要是 max_val + 1</span>
+    <span class="cpp-com">// vector自动把所有盒子初始化为0 (都是空的)</span>
+    vector&lt;<span class="cpp-kw">int</span>&gt; count(max_val + 1, 0);
+
+    <span class="cpp-com">// 4. 开始计数 (核心步骤！)</span>
+    <span class="cpp-kw">for</span>(<span class="cpp-kw">int</span> i = 0; i < n; i++) {
+        <span class="cpp-kw">int</span> num = a[i]; <span class="cpp-com">// 拿到这个数字</span>
+        count[num]++;   <span class="cpp-com">// 对应编号的盒子数量 +1</span>
+    }
+
+    <span class="cpp-com">// 5. 倒出来 (输出)</span>
+    <span class="cpp-kw">cout</span> << <span class="cpp-str">"排序结果: "</span>;
+    <span class="cpp-kw">for</span>(<span class="cpp-kw">int</span> i = 0; i <= max_val; i++) {
+        <span class="cpp-com">// 只要盒子不为空，就一直倒出来</span>
+        <span class="cpp-kw">while</span>(count[i] > 0) {
+            <span class="cpp-kw">cout</span> << i << <span class="cpp-str">" "</span>;
+            count[i]--; <span class="cpp-com">// 倒出来一个，少一个</span>
+        }
+    }
+    
+    <span class="cpp-kw">return</span> 0;
+}
+        </div>
+
+        <div id="p1" class="code-content">
+<span class="py-def">def</span> counting_sort(arr):
+    <span class="py-com"># 1. 找出最大值</span>
+    <span class="py-kw">if not</span> arr: <span class="py-kw">return</span> []
+    max_val = <span class="py-def">max</span>(arr)
+    
+    <span class="py-com"># 2. 准备盒子 (列表)，长度要是 最大值+1</span>
+    <span class="py-com"># [0] * 6 就会生成 [0, 0, 0, 0, 0, 0]</span>
+    count = [0] * (max_val + 1)
+    
+    <span class="py-com"># 3. 统计每个数字出现的次数</span>
+    <span class="py-kw">for</span> num <span class="py-kw">in</span> arr:
+        count[num] += 1
+        
+    <span class="py-com"># 4. 把它们按顺序倒回到原数组 (或者生成新数组)</span>
+    output = []
+    <span class="py-kw">for</span> i <span class="py-kw">in</span> <span class="py-def">range</span>(max_val + 1):
+        <span class="py-com"># 如果 i 号盒子里有 count[i] 个球</span>
+        <span class="py-com"># 我们就追加 count[i] 个 i</span>
+        <span class="py-kw">while</span> count[i] > 0:
+            output.append(i)
+            count[i] -= 1
+            
+    <span class="py-kw">return</span> output
+
+<span class="py-com"># 测试一下</span>
+data = [2, 5, 3, 0, 2, 3, 0, 3]
+result = counting_sort(data)
+<span class="py-def">print</span>(<span class="py-str">"排序结果:"</span>, result)
+        </div>
+    </div>
+
+    <h2>🚀 只有聪明人才知道的小秘密</h2>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 300px; background: #e8f5e9; padding: 20px; border-radius: 15px;">
+            <h3 style="color: #2e7d32; border-color: #2e7d32; margin-top:0;">🌟 优点：超级快！</h3>
+            <p>它不需要像冒泡排序那样两个两个比来比去。只要扫一遍数据，放进桶里，再倒出来就好了。时间复杂度是 <span class="highlight">O(n+k)</span>，比快速排序还要快！</p>
+        </div>
+        <div style="flex: 1; min-width: 300px; background: #ffebee; padding: 20px; border-radius: 15px;">
+            <h3 style="color: #c62828; border-color: #c62828; margin-top:0;">⚠️ 缺点：太费地儿！</h3>
+            <p>如果我们要排的数字里有一个是 <strong>1亿</strong>，那我们就得准备 1亿个盒子！这太浪费空间了。而且，它只能排<span class="highlight">整数</span>，不能排小数哦。</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function openTab(evt, tabName) {
+    var i, content, links;
+    content = document.getElementsByClassName("code-content");
+    for (i = 0; i < content.length; i++) {
+        content[i].style.display = "none";
+        content[i].classList.remove("active");
+    }
+    links = document.getElementsByClassName("tab-btn");
+    for (i = 0; i < links.length; i++) {
+        links[i].className = links[i].className.replace(" active", "");
+    }
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+</script>
+
+</body>
+</html>

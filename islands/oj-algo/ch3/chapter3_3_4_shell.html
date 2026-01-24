@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3.4 希尔排序 - 算法详解</title>
+    <style>
+        /* ================= 核心风格：时空跳跃 ================= */
+        :root {
+            --jump-teal: #009688;    /* 跳跃青 */
+            --jump-dark: #004d40;    /* 深青 */
+            --energy-orange: #ff6f00;/* 能量橙 */
+            --bg-color: #e0f2f1;     /* 浅青背景 */
+            --text-main: #263238;    /* 深灰文字 */
+            --code-bg: #263238;
+        }
+
+        body {
+            font-family: "Verdana", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            /* 网格背景 */
+            background-image: 
+                linear-gradient(rgba(0, 150, 136, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 150, 136, 0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 40px rgba(0, 77, 64, 0.2);
+            border-top: 8px solid var(--jump-teal);
+            border-bottom: 8px solid var(--energy-orange);
+        }
+
+        /* ================= 标题与排版 ================= */
+        h1 {
+            text-align: center;
+            color: var(--jump-dark);
+            font-size: 3.5em;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 0 #b2dfdb;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.3em;
+            color: var(--jump-teal);
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+
+        h2 {
+            background: linear-gradient(45deg, var(--jump-teal), #4db6ac);
+            color: white;
+            padding: 12px 35px;
+            border-radius: 5px 20px 5px 20px;
+            display: inline-block;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            box-shadow: 5px 5px 0 rgba(0,0,0,0.1);
+        }
+
+        p { font-size: 1.15em; margin-bottom: 20px; }
+
+        /* ================= 重点强调 ================= */
+        .highlight {
+            color: var(--energy-orange);
+            font-weight: 900;
+            background: #fff3e0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px dashed var(--energy-orange);
+        }
+
+        .analogy-box {
+            background: #e0f7fa;
+            border-left: 8px solid var(--jump-teal);
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .analogy-box::after {
+            content: "🚀";
+            font-size: 40px;
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration-panel {
+            background: white;
+            border: 2px solid #b2dfdb;
+            border-radius: 15px;
+            margin: 30px 0;
+            padding: 30px;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .gap-label {
+            background: var(--energy-orange);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        /* ================= 代码块与Tabs ================= */
+        .code-wrapper {
+            background: var(--code-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            margin-top: 20px;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: #1b2528;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 18px;
+            background: transparent;
+            color: #90a4ae;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        .tab-btn:hover { background: #37474f; color: white; }
+        .tab-btn.active { 
+            background: var(--code-bg); 
+            color: var(--jump-teal); 
+            border-top: 4px solid var(--jump-teal); 
+        }
+
+        .code-view {
+            display: none;
+            padding: 25px;
+            color: #eceff1;
+            font-family: "Consolas", "Monaco", monospace;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        .code-view.active { display: block; }
+
+        /* 语法高亮 */
+        .k { color: #ff6f00; font-weight: bold; } /* keyword */
+        .t { color: #4db6ac; } /* type */
+        .n { color: #ff8a65; } /* number */
+        .s { color: #81c784; } /* string */
+        .c { color: #78909c; font-style: italic; } /* comment */
+        .f { color: #4fc3f7; } /* function */
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div style="text-align: center;">
+        <svg width="300" height="120" viewBox="0 0 300 120">
+            <text x="30" y="80" font-size="30">🐌</text>
+            <text x="30" y="100" font-size="10" fill="#999">插入排序</text>
+            
+            <path d="M 120 80 Q 150 20 180 80" stroke="#009688" stroke-width="3" fill="none" stroke-dasharray="5,5">
+                <animate attributeName="stroke-dashoffset" from="50" to="0" dur="1s" repeatCount="indefinite"/>
+            </path>
+            <path d="M 180 80 Q 210 20 240 80" stroke="#009688" stroke-width="3" fill="none" stroke-dasharray="5,5">
+                <animate attributeName="stroke-dashoffset" from="50" to="0" dur="1s" repeatCount="indefinite" begin="0.5s"/>
+            </path>
+            
+            <text x="120" y="80" font-size="30">🐸</text>
+            <text x="110" y="100" font-size="10" fill="#009688" font-weight="bold">希尔排序(跳着走)</text>
+
+            <line x1="10" y1="85" x2="290" y2="85" stroke="#ccc" stroke-width="2"/>
+        </svg>
+    </div>
+
+    <h1>3.4 希尔排序</h1>
+    <p class="subtitle">Shell Sort：插入排序的“超级加速版” 🚀</p>
+
+    <div class="analogy-box">
+        <h3>🤔 为什么要改进插入排序？</h3>
+        <p>还记得<strong>插入排序</strong>吗？它像理牌一样，一张张挪。但是，如果最小的数字不幸地在最后面（比如 <code>[9, 8, ... , 1]</code>），那数字 1 要被移动 n-1 次才能到最前面！太累了！</p>
+        <p><strong>希尔排序的绝招：</strong> 既然一步一步挪太慢，那我们就<span class="highlight">大步大步地跳</span>！先让数字跳到大致正确的位置，最后再微调。</p>
+    </div>
+
+    <h2>🎨 详细图解：分组跳跃</h2>
+    <p>我们把这种“大步子”叫做<strong>增量 (Gap)</strong>。通常我们先把距离设为总长度的一半，然后慢慢减半，直到距离变成1。</p>
+    <p>假设数组为：<span style="font-weight:bold; font-size:1.2em;">[ 8, 5, 6, 4, 2, 1, 3, 7 ]</span> (长度8)</p>
+
+    <div class="illustration-panel">
+        <div class="gap-label">第一轮：Gap = 4 (分成4组)</div>
+        <p>相隔 4 个位置的数字互相比拼！</p>
+        <svg width="600" height="180" viewBox="0 0 600 180">
+            <path d="M 60 70 Q 180 20 300 70" stroke="#e91e63" stroke-width="2" fill="none"/>
+            <rect x="30" y="70" width="60" height="60" fill="#fce4ec" stroke="#e91e63" rx="5"/>
+            <text x="60" y="110" text-anchor="middle" font-weight="bold">8</text>
+            <rect x="270" y="70" width="60" height="60" fill="#fce4ec" stroke="#e91e63" rx="5"/>
+            <text x="300" y="110" text-anchor="middle" font-weight="bold">2</text>
+            <text x="180" y="40" fill="#e91e63" font-size="12">8 > 2，交换!</text>
+
+            <path d="M 120 70 Q 240 20 360 70" stroke="#2196f3" stroke-width="2" fill="none"/>
+            <rect x="90" y="70" width="60" height="60" fill="#e3f2fd" stroke="#2196f3" rx="5"/>
+            <text x="120" y="110" text-anchor="middle" font-weight="bold">5</text>
+            <rect x="330" y="70" width="60" height="60" fill="#e3f2fd" stroke="#2196f3" rx="5"/>
+            <text x="360" y="110" text-anchor="middle" font-weight="bold">1</text>
+            
+            <path d="M 180 70 Q 300 20 420 70" stroke="#ff9800" stroke-width="2" fill="none"/>
+            <rect x="150" y="70" width="60" height="60" fill="#fff3e0" stroke="#ff9800" rx="5"/>
+            <text x="180" y="110" text-anchor="middle" font-weight="bold">6</text>
+            <rect x="390" y="70" width="60" height="60" fill="#fff3e0" stroke="#ff9800" rx="5"/>
+            <text x="420" y="110" text-anchor="middle" font-weight="bold">3</text>
+
+            <path d="M 240 70 Q 360 20 480 70" stroke="#4caf50" stroke-width="2" fill="none"/>
+            <rect x="210" y="70" width="60" height="60" fill="#e8f5e9" stroke="#4caf50" rx="5"/>
+            <text x="240" y="110" text-anchor="middle" font-weight="bold">4</text>
+            <rect x="450" y="70" width="60" height="60" fill="#e8f5e9" stroke="#4caf50" rx="5"/>
+            <text x="480" y="110" text-anchor="middle" font-weight="bold">7</text>
+            <text x="420" y="160" fill="#4caf50" font-size="12">4 < 7，不动</text>
+
+        </svg>
+        <p><strong>第一轮结果：</strong> [2, 1, 3, 4, 8, 5, 6, 7] <br><span style="color:#777; font-size:0.9em;">(小的数一下子跳到了前面！)</span></p>
+    </div>
+
+    <div class="illustration-panel">
+        <div class="gap-label">第二轮：Gap = 2 (分成2组)</div>
+        <p>步子缩小，相隔 2 个位置的数字为一组。</p>
+        <svg width="600" height="150" viewBox="0 0 600 150">
+            <rect x="30" y="70" width="40" height="40" fill="#fce4ec" stroke="#e91e63" stroke-width="2"/>
+            <text x="50" y="95" text-anchor="middle">2</text>
+            <rect x="130" y="70" width="40" height="40" fill="#fce4ec" stroke="#e91e63" stroke-width="2"/>
+            <text x="150" y="95" text-anchor="middle">3</text>
+            <rect x="230" y="70" width="40" height="40" fill="#fce4ec" stroke="#e91e63" stroke-width="2"/>
+            <text x="250" y="95" text-anchor="middle">8</text>
+            <rect x="330" y="70" width="40" height="40" fill="#fce4ec" stroke="#e91e63" stroke-width="2"/>
+            <text x="350" y="95" text-anchor="middle">6</text>
+            
+            <path d="M 50 70 Q 150 20 250 70" stroke="#e91e63" fill="none" stroke-dasharray="4"/>
+            <path d="M 150 70 Q 250 20 350 70" stroke="#e91e63" fill="none" stroke-dasharray="4"/>
+
+            <rect x="80" y="70" width="40" height="40" fill="#e3f2fd" stroke="#2196f3" stroke-width="2"/>
+            <text x="100" y="95" text-anchor="middle">1</text>
+            <rect x="180" y="70" width="40" height="40" fill="#e3f2fd" stroke="#2196f3" stroke-width="2"/>
+            <text x="200" y="95" text-anchor="middle">4</text>
+            <rect x="280" y="70" width="40" height="40" fill="#e3f2fd" stroke="#2196f3" stroke-width="2"/>
+            <text x="300" y="95" text-anchor="middle">5</text>
+            <rect x="380" y="70" width="40" height="40" fill="#e3f2fd" stroke="#2196f3" stroke-width="2"/>
+            <text x="400" y="95" text-anchor="middle">7</text>
+            
+            <path d="M 100 110 Q 200 160 300 110" stroke="#2196f3" fill="none" stroke-dasharray="4"/>
+        </svg>
+        <p>分别对红组和蓝组做插入排序。<br><strong>第二轮结果：</strong> [2, 1, 3, 4, 6, 5, 8, 7]</p>
+    </div>
+
+    <div class="illustration-panel">
+        <div class="gap-label">第三轮：Gap = 1 (最终微调)</div>
+        <p>最后，步子变成1，这其实就是一次普通的<strong>插入排序</strong>。</p>
+        <p>但因为大部分数字已经在前面的跳跃中排好了，所以这次微调会<span class="highlight">超级快</span>！</p>
+        <div style="background:#e0f2f1; padding:10px; border-radius:5px; display:inline-block;">
+            [1, 2, 3, 4, 5, 6, 7, 8] ✅
+        </div>
+    </div>
+
+    <h2>💻 编程时间</h2>
+    <p>代码看起来有三层循环，不要怕！<br>
+    第一层：控制 Gap (步长) 缩小。<br>
+    第二层 & 第三层：其实就是分组进行的<strong>插入排序</strong>。</p>
+
+    <div class="code-wrapper">
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('cpp')">C++ 代码</button>
+            <button class="tab-btn" onclick="switchTab('py')">Python 代码</button>
+        </div>
+
+        <div id="cpp" class="code-view active">
+<span class="k">#include</span> <span class="s">&lt;iostream&gt;</span>
+<span class="k">using namespace</span> std;
+
+<span class="k">void</span> <span class="f">shell_sort</span>(<span class="k">int</span> arr[], <span class="k">int</span> n) {
+    <span class="c">// 1. 外层循环：gap 每次减半 (8 -> 4 -> 2 -> 1)</span>
+    <span class="k">for</span> (<span class="k">int</span> gap = n / 2; gap > 0; gap /= 2) {
+        
+        <span class="c">// 2. 中间循环：从 gap 开始，逐个处理每个分组</span>
+        <span class="c">// 这其实就是"分组插入排序"</span>
+        <span class="k">for</span> (<span class="k">int</span> i = gap; i < n; i++) {
+            
+            <span class="k">int</span> temp = arr[i]; <span class="c">// 拿起这张牌</span>
+            <span class="k">int</span> j;
+            
+            <span class="c">// 3. 内层循环：在它自己的组里往回看</span>
+            <span class="c">// 比较对象是 j - gap</span>
+            <span class="k">for</span> (j = i; j >= gap && arr[j - gap] > temp; j -= gap) {
+                arr[j] = arr[j - gap]; <span class="c">// 往后挪</span>
+            }
+            
+            arr[j] = temp; <span class="c">// 插进去</span>
+        }
+    }
+}
+
+<span class="k">int</span> <span class="f">main</span>() {
+    <span class="k">int</span> a[] = {8, 9, 1, 7, 2, 3, 5, 4, 6, 0};
+    <span class="k">int</span> n = 10;
+
+    <span class="f">shell_sort</span>(a, n);
+
+    <span class="k">for</span> (<span class="k">int</span> i = 0; i < n; i++) <span class="f">cout</span> << a[i] << <span class="s">" "</span>;
+    <span class="k">return</span> 0;
+}
+        </div>
+
+        <div id="py" class="code-view">
+<span class="k">def</span> <span class="f">shell_sort</span>(arr):
+    n = <span class="f">len</span>(arr)
+    gap = n // 2  <span class="c"># 初始步长</span>
+    
+    <span class="c"># 1. 步长循环</span>
+    <span class="k">while</span> gap > 0:
+        
+        <span class="c"># 2. 从步长位置开始遍历 (分组插入排序)</span>
+        <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(gap, n):
+            
+            temp = arr[i]
+            j = i
+            
+            <span class="c"># 3. 组内比较和移动</span>
+            <span class="c"># 如果前面的比temp大，就交换(后移)</span>
+            <span class="k">while</span> j >= gap <span class="k">and</span> arr[j - gap] > temp:
+                arr[j] = arr[j - gap]
+                j -= gap
+                
+            arr[j] = temp
+            
+        <span class="c"># 步长减半</span>
+        gap //= 2
+
+<span class="c"># 测试</span>
+data = [8, 9, 1, 7, 2, 3, 5, 4, 6, 0]
+<span class="f">shell_sort</span>(data)
+<span class="f">print</span>(<span class="s">"排序结果:"</span>, data)
+        </div>
+    </div>
+
+    <h2>🆚 希尔排序 vs 插入排序</h2>
+    <div style="margin-top: 20px;">
+        <table style="width:100%; border-collapse: collapse; text-align: center;">
+            <tr style="background: var(--jump-teal); color: white;">
+                <th style="padding: 15px;">特点</th>
+                <th>普通插入排序</th>
+                <th>希尔排序</th>
+            </tr>
+            <tr style="background: white; border-bottom: 1px solid #eee;">
+                <td style="padding: 15px; font-weight:bold;">移动方式</td>
+                <td>🐢 一步一步挪 (步长1)</td>
+                <td>🐸 大步跳 (步长 N/2 -> 1)</td>
+            </tr>
+            <tr style="background: #f1f8e9; border-bottom: 1px solid #eee;">
+                <td style="padding: 15px; font-weight:bold;">最坏情况</td>
+                <td>如果是倒序，慢死啦 O(n²)</td>
+                <td>比较快，大幅优化</td>
+            </tr>
+            <tr style="background: white;">
+                <td style="padding: 15px; font-weight:bold;">适用场景</td>
+                <td>数据量很小，或基本有序</td>
+                <td>中等规模的数据</td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+
+<script>
+    function switchTab(lang) {
+        document.getElementById('cpp').classList.remove('active');
+        document.getElementById('py').classList.remove('active');
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(btn => btn.classList.remove('active'));
+        document.getElementById(lang).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

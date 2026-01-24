@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2.3 冒泡排序 - 算法详解</title>
+    <style>
+        /* ================= 核心风格：海底世界 ================= */
+        :root {
+            --ocean-dark: #0277bd;   /* 深海蓝 */
+            --ocean-light: #e1f5fe;  /* 浅水蓝 */
+            --bubble: #4fc3f7;       /* 气泡蓝 */
+            --coral: #ff7043;        /* 珊瑚红 (重点) */
+            --weed: #66bb6a;         /* 海草绿 (成功) */
+            --text-main: #01579b;    /* 文字色 */
+            --bg-color: #e0f7fa;     /* 整体背景 */
+            --code-bg: #263238;      /* 代码深色背景 */
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            /* 模拟波浪背景 */
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.4) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(255,255,255,0.4) 0%, transparent 20%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 30px;
+            padding: 50px;
+            box-shadow: 0 15px 35px rgba(1, 87, 155, 0.15);
+            border: 5px solid #b3e5fc;
+        }
+
+        /* ================= 标题与排版 ================= */
+        h1 {
+            text-align: center;
+            color: var(--ocean-dark);
+            font-size: 3.2em;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 0 #81d4fa;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.3em;
+            color: #0288d1;
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+
+        h2 {
+            background: linear-gradient(to right, #4fc3f7, #29b6f6);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            box-shadow: 3px 5px 10px rgba(0,0,0,0.1);
+            border-bottom: 4px solid #0277bd;
+        }
+
+        p { font-size: 1.15em; margin-bottom: 20px; }
+
+        /* ================= 重点强调 ================= */
+        .highlight {
+            color: #d84315;
+            font-weight: bold;
+            background: #ffccbc;
+            padding: 2px 8px;
+            border-radius: 10px;
+            border-bottom: 2px solid #bf360c;
+        }
+
+        .story-box {
+            background: #fff9c4;
+            border: 3px dashed #fbc02d;
+            border-radius: 20px;
+            padding: 25px;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .story-box::after {
+            content: "🐟";
+            font-size: 40px;
+            position: absolute;
+            top: -20px;
+            right: -10px;
+            animation: swim 3s infinite ease-in-out;
+        }
+
+        @keyframes swim {
+            0%, 100% { transform: rotate(0deg) translateY(0); }
+            50% { transform: rotate(10deg) translateY(-10px); }
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration {
+            background: white;
+            border: 3px solid #b3e5fc;
+            border-radius: 15px;
+            margin: 30px 0;
+            padding: 20px;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .step-badge {
+            background: var(--ocean-dark);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        /* ================= 代码块与Tabs ================= */
+        .code-wrapper {
+            background: var(--code-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            margin-top: 20px;
+            border: 2px solid #546e7a;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: #37474f;
+            border-bottom: 2px solid #263238;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            background: transparent;
+            color: #cfd8dc;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        .tab-btn:hover { background: #455a64; color: white; }
+        .tab-btn.active { 
+            background: var(--code-bg); 
+            color: #80cbc4; 
+            border-top: 4px solid #80cbc4; 
+        }
+
+        .code-view {
+            display: none;
+            padding: 25px;
+            color: #eceff1;
+            font-family: Consolas, monospace;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        .code-view.active { display: block; }
+
+        /* 语法高亮 */
+        .k { color: #ba68c8; font-weight: bold; } /* keyword - 紫色 */
+        .t { color: #ffb74d; } /* type - 橙色 */
+        .n { color: #f06292; } /* number - 粉色 */
+        .s { color: #aed581; } /* string - 浅绿 */
+        .c { color: #90a4ae; font-style: italic; } /* comment - 灰色 */
+        .f { color: #4fc3f7; } /* function - 亮蓝 */
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div style="text-align: center; margin-bottom: 20px;">
+        <svg width="300" height="120" viewBox="0 0 300 120">
+            <circle cx="50" cy="100" r="10" fill="#4fc3f7" opacity="0.6">
+                <animate attributeName="cy" values="120;0" dur="3s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.6;0" dur="3s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="150" cy="80" r="15" fill="#4fc3f7" opacity="0.5">
+                <animate attributeName="cy" values="120;0" dur="4s" repeatCount="indefinite" begin="1s"/>
+            </circle>
+            <circle cx="250" cy="110" r="8" fill="#4fc3f7" opacity="0.7">
+                <animate attributeName="cy" values="120;0" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
+            </circle>
+            
+            <g>
+                <circle cx="100" cy="60" r="25" fill="#0288d1" stroke="white" stroke-width="2"/>
+                <text x="100" y="68" text-anchor="middle" fill="white" font-weight="bold" font-size="20">8</text>
+                <animateTransform attributeName="transform" type="translate" values="0,0; 0,-10; 0,0" dur="2s" repeatCount="indefinite"/>
+            </g>
+            <g>
+                <circle cx="180" cy="60" r="20" fill="#29b6f6" stroke="white" stroke-width="2"/>
+                <text x="180" y="68" text-anchor="middle" fill="white" font-weight="bold" font-size="16">5</text>
+                <animateTransform attributeName="transform" type="translate" values="0,0; 0,-15; 0,0" dur="2.5s" repeatCount="indefinite"/>
+            </g>
+        </svg>
+    </div>
+
+    <h1>2.3 冒泡排序</h1>
+    <p class="subtitle">Bubble Sort：像鱼吐泡泡一样漂起来 🫧</p>
+
+    <div class="story-box">
+        <h3>📖 什么是“冒泡”？</h3>
+        <p>想象一下，你有一排装满水的杯子，里面有大泡泡和小泡泡。<strong>大泡泡比较重（或者说浮力大），它总想往上跑。</strong></p>
+        <p>冒泡排序就是：让这一排数字里，<span class="highlight">相邻的两个数字互相比较</span>。如果左边的大，右边的小，它俩就<strong>交换位置</strong>。这样一轮下来，最大的那个数字（最大的泡泡）就会一路“冒”到队伍的最后面！</p>
+    </div>
+
+    <h2>🎨 详细图解步骤</h2>
+    <p>我们来排序这组数字：<span style="font-size:1.4em; font-weight:bold; color:#0277bd;">[ 5, 2, 9, 1 ]</span></p>
+
+    <div class="illustration">
+        <div class="step-badge">第一轮：第 1 次比较</div>
+        <svg width="600" height="150" viewBox="0 0 600 150">
+            <rect x="50" y="40" width="80" height="80" rx="10" fill="#ff7043" stroke="#d84315" stroke-width="3"/>
+            <text x="90" y="90" text-anchor="middle" fill="white" font-size="30" font-weight="bold">5</text>
+            
+            <rect x="150" y="40" width="80" height="80" rx="10" fill="#4fc3f7" stroke="#0277bd" stroke-width="3"/>
+            <text x="190" y="90" text-anchor="middle" fill="white" font-size="30" font-weight="bold">2</text>
+            
+            <rect x="250" y="50" width="70" height="70" rx="10" fill="#eee" stroke="#ccc"/>
+            <text x="285" y="95" text-anchor="middle" fill="#999" font-size="24">9</text>
+            
+            <rect x="340" y="50" width="70" height="70" rx="10" fill="#eee" stroke="#ccc"/>
+            <text x="375" y="95" text-anchor="middle" fill="#999" font-size="24">1</text>
+
+            <path d="M 90 40 Q 140 -10 190 40" stroke="#d84315" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+            <text x="300" y="30" fill="#d84315" font-weight="bold">5 比 2 大，交换！</text>
+            
+            <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#d84315" />
+                </marker>
+            </defs>
+        </svg>
+        <p>看最左边两个。5 和 2。因为 <strong>5 > 2</strong>，所以 5 要往后走，它俩换位置。</p>
+    </div>
+
+    <div class="illustration">
+        <div class="step-badge">第一轮：第 2 次比较</div>
+        <svg width="600" height="150" viewBox="0 0 600 150">
+            <rect x="50" y="50" width="70" height="70" rx="10" fill="#e1f5fe" stroke="#ccc"/>
+            <text x="85" y="95" text-anchor="middle" fill="#999" font-size="24">2</text>
+            
+            <rect x="140" y="40" width="80" height="80" rx="10" fill="#4fc3f7" stroke="#0277bd" stroke-width="3"/>
+            <text x="180" y="90" text-anchor="middle" fill="white" font-size="30" font-weight="bold">5</text>
+            
+            <rect x="240" y="40" width="80" height="80" rx="10" fill="#ff7043" stroke="#d84315" stroke-width="3"/>
+            <text x="280" y="90" text-anchor="middle" fill="white" font-size="30" font-weight="bold">9</text>
+            
+            <rect x="340" y="50" width="70" height="70" rx="10" fill="#eee" stroke="#ccc"/>
+            <text x="375" y="95" text-anchor="middle" fill="#999" font-size="24">1</text>
+
+            <text x="450" y="80" fill="#0277bd" font-weight="bold">5 比 9 小，不动！</text>
+        </svg>
+        <p>接下来看 5 和 9。因为 <strong>5 < 9</strong>，顺序是对的，不用换。5 休息，9 继续往后比。</p>
+    </div>
+
+    <div class="illustration">
+        <div class="step-badge">第一轮：第 3 次比较</div>
+        <svg width="600" height="150" viewBox="0 0 600 150">
+            <rect x="50" y="50" width="70" height="70" rx="10" fill="#eee" stroke="#ccc"/>
+            <text x="85" y="95" text-anchor="middle" fill="#999" font-size="24">2</text>
+            
+            <rect x="140" y="50" width="70" height="70" rx="10" fill="#eee" stroke="#ccc"/>
+            <text x="175" y="95" text-anchor="middle" fill="#999" font-size="24">5</text>
+            
+            <rect x="230" y="40" width="80" height="80" rx="10" fill="#ff7043" stroke="#d84315" stroke-width="3"/>
+            <text x="270" y="90" text-anchor="middle" fill="white" font-size="30" font-weight="bold">9</text>
+            
+            <rect x="330" y="40" width="80" height="80" rx="10" fill="#4fc3f7" stroke="#0277bd" stroke-width="3"/>
+            <text x="370" y="90" text-anchor="middle" fill="white" font-size="30" font-weight="bold">1</text>
+
+             <path d="M 270 40 Q 320 -10 370 40" stroke="#d84315" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+             <circle cx="500" cy="80" r="30" fill="#66bb6a" />
+             <text x="500" y="85" text-anchor="middle" fill="white" font-weight="bold">9</text>
+             <text x="500" y="130" text-anchor="middle" fill="#66bb6a" font-weight="bold">归位!</text>
+        </svg>
+        <p>最后看 9 和 1。9 比 1 大，<strong>交换！</strong> 此时 9 到了最后面。<br><span class="highlight">恭喜！最大的数字 9 已经冒泡到了顶端，把它固定住！</span></p>
+    </div>
+
+    <h2>💻 编程实验室</h2>
+    <p>代码的核心就是：<strong>两层循环</strong>。外层决定冒几次泡，内层负责两两比较。</p>
+
+    <div class="code-wrapper">
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('cpp')">C++ 代码</button>
+            <button class="tab-btn" onclick="switchTab('py')">Python 代码</button>
+        </div>
+
+        <div id="cpp" class="code-view active">
+<span class="k">#include</span> <span class="s">&lt;iostream&gt;</span>
+<span class="k">#include</span> <span class="s">&lt;algorithm&gt;</span> <span class="c">// swap函数</span>
+<span class="k">using namespace</span> std;
+
+<span class="k">int</span> <span class="f">main</span>() {
+    <span class="k">int</span> a[] = {5, 2, 9, 1, 6}; 
+    <span class="k">int</span> n = 5; <span class="c">// 数组长度</span>
+
+    <span class="c">// 外层循环：i 代表已经排好了几个"大泡泡"</span>
+    <span class="k">for</span>(<span class="k">int</span> i = 0; i < n - 1; i++) {
+        
+        <span class="c">// 内层循环：j 负责从头走到尾，两两比较</span>
+        <span class="c">// 为什么要 n-1-i ？因为最后面 i 个已经排好了，不用再比了</span>
+        <span class="k">for</span>(<span class="k">int</span> j = 0; j < n - 1 - i; j++) {
+            
+            <span class="c">// 如果左边(j) 比 右边(j+1) 大，就交换</span>
+            <span class="k">if</span>(a[j] > a[j+1]) {
+                <span class="f">swap</span>(a[j], a[j+1]);
+            }
+        }
+    }
+
+    <span class="c">// 输出结果</span>
+    <span class="k">for</span>(<span class="k">int</span> i = 0; i < n; i++) <span class="f">cout</span> << a[i] << <span class="s">" "</span>;
+    <span class="k">return</span> 0;
+}
+        </div>
+
+        <div id="py" class="code-view">
+<span class="k">def</span> <span class="f">bubble_sort</span>(arr):
+    n = <span class="f">len</span>(arr)
+    
+    <span class="c"># 外层循环：决定要进行几轮冒泡</span>
+    <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(n - 1):
+        
+        <span class="c"># 内层循环：两两比较</span>
+        <span class="c"># range(n - 1 - i) 是为了不碰最后那些已经排好的泡泡</span>
+        <span class="k">for</span> j <span class="k">in</span> <span class="f">range</span>(n - 1 - i):
+            
+            <span class="c"># 如果左边比右边大</span>
+            <span class="k">if</span> arr[j] > arr[j+1]:
+                <span class="c"># 交换位置 (Python 交换超级简单！)</span>
+                arr[j], arr[j+1] = arr[j+1], arr[j]
+
+<span class="c"># 测试一下</span>
+data = [5, 2, 9, 1, 6]
+<span class="f">bubble_sort</span>(data)
+<span class="f">print</span>(<span class="s">"排序结果:"</span>, data)
+        </div>
+    </div>
+
+    <h2>🤫 只有高手知道的优化</h2>
+    <div style="background: white; border-radius: 15px; padding: 20px; border-left: 5px solid #ff7043; margin-top: 30px;">
+        <h3 style="color: #bf360c; margin-top: 0;">如果数组已经排好了怎么办？</h3>
+        <p>假设数组是 <code>[1, 2, 3, 4, 5]</code>，冒泡排序傻乎乎的，还会一直比较。</p>
+        <p><strong>优化绝招：</strong> 我们可以设立一个“旗子” (flag)。<br>
+        在这一轮比较开始前，旗子立起来。如果在这一轮里，<span class="highlight">一次交换都没有发生</span>，说明大家都站好位置了！这时候就可以直接停止，提前下课啦！</p>
+    </div>
+
+</div>
+
+<script>
+    function switchTab(lang) {
+        // 隐藏所有代码块
+        document.getElementById('cpp').classList.remove('active');
+        document.getElementById('py').classList.remove('active');
+        
+        // 移除按钮激活状态
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(btn => btn.classList.remove('active'));
+
+        // 激活选中的
+        document.getElementById(lang).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

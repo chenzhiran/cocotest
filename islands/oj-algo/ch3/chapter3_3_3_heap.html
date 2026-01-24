@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3.3 堆排序 - 算法详解</title>
+    <style>
+        /* ================= 核心风格：金字塔工程 ================= */
+        :root {
+            --heap-gold: #ffb300;    /* 金字塔金 */
+            --heap-dark: #5d4037;    /* 泥土褐 */
+            --brick-red: #d84315;    /* 砖块红 */
+            --sky-blue: #e1f5fe;     /* 天空蓝背景 */
+            --text-main: #3e2723;    /* 深褐文字 */
+            --bg-color: #fff8e1;     /* 羊皮纸色 */
+            --code-bg: #212121;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            /* 三角形纹理，模拟金字塔 */
+            background-image: linear-gradient(135deg, #ffe082 25%, transparent 25%), linear-gradient(225deg, #ffe082 25%, transparent 25%), linear-gradient(45deg, #ffe082 25%, transparent 25%), linear-gradient(315deg, #ffe082 25%, transparent 25%);
+            background-position: 20px 0, 20px 0, 0 0, 0 0;
+            background-size: 40px 40px;
+            background-repeat: repeat;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 15px 35px rgba(93, 64, 55, 0.3);
+            border: 6px solid var(--heap-dark);
+            border-top: 10px solid var(--heap-gold);
+        }
+
+        /* ================= 标题与排版 ================= */
+        h1 {
+            text-align: center;
+            color: var(--brick-red);
+            font-size: 3.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0 #ffecb3;
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.3em;
+            color: var(--heap-dark);
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+
+        h2 {
+            background: var(--heap-dark);
+            color: #ffecb3;
+            padding: 12px 35px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            box-shadow: 4px 4px 0 var(--brick-red);
+        }
+
+        p { font-size: 1.15em; margin-bottom: 20px; }
+
+        /* ================= 重点强调 ================= */
+        .highlight {
+            color: var(--brick-red);
+            font-weight: 900;
+            background: #ffe0b2;
+            padding: 2px 8px;
+            border-radius: 6px;
+            border-bottom: 3px solid var(--brick-red);
+        }
+
+        .pyramid-box {
+            background: #fff3e0;
+            border: 3px dashed var(--heap-gold);
+            border-radius: 20px;
+            padding: 25px;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .pyramid-box::before {
+            content: "⛰️";
+            font-size: 50px;
+            position: absolute;
+            top: -30px;
+            right: 20px;
+            background: white;
+            border-radius: 50%;
+            padding: 5px;
+            border: 2px solid var(--heap-gold);
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration-panel {
+            background: white;
+            border: 2px solid #8d6e63;
+            border-radius: 15px;
+            margin: 30px 0;
+            padding: 20px;
+            text-align: center;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px #fff3e0;
+        }
+
+        .node-circle {
+            stroke-width: 3;
+            stroke: var(--heap-dark);
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .array-cell {
+            stroke: var(--heap-dark);
+            stroke-width: 2;
+        }
+
+        /* ================= 代码块与Tabs ================= */
+        .code-wrapper {
+            background: var(--code-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            margin-top: 20px;
+            border: 1px solid #4e342e;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: #3e2723;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 18px;
+            background: transparent;
+            color: #d7ccc8;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        .tab-btn:hover { background: #5d4037; color: white; }
+        .tab-btn.active { 
+            background: var(--code-bg); 
+            color: var(--heap-gold); 
+            border-top: 4px solid var(--heap-gold); 
+        }
+
+        .code-view {
+            display: none;
+            padding: 25px;
+            color: #d7ccc8;
+            font-family: "Consolas", "Monaco", monospace;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        .code-view.active { display: block; }
+
+        /* 语法高亮 */
+        .k { color: #ffb300; font-weight: bold; } /* keyword */
+        .t { color: #4db6ac; } /* type */
+        .n { color: #ff8a65; } /* number */
+        .s { color: #aed581; } /* string */
+        .c { color: #9e9e9e; font-style: italic; } /* comment */
+        .f { color: #64b5f6; } /* function */
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div style="text-align: center;">
+        <svg width="200" height="120" viewBox="0 0 200 120">
+            <polygon points="100,20 130,50 70,50" fill="#ffb300" stroke="#5d4037" stroke-width="2">
+                <animate attributeName="fill" values="#ffb300;#ffca28;#ffb300" dur="2s" repeatCount="indefinite"/>
+            </polygon>
+            <polygon points="70,50 130,50 160,80 40,80" fill="#ffa000" stroke="#5d4037" stroke-width="2"/>
+            <polygon points="40,80 160,80 190,110 10,110" fill="#ff8f00" stroke="#5d4037" stroke-width="2"/>
+            
+            <text x="100" y="45" text-anchor="middle" font-weight="bold" fill="#3e2723">Max</text>
+        </svg>
+    </div>
+
+    <h1>3.3 堆排序</h1>
+    <p class="subtitle">Heap Sort：金字塔顶端的王者 ⛰️</p>
+
+    <div class="pyramid-box">
+        <h3>👷 什么是“堆” (Heap)？</h3>
+        <p>虽然我们在电脑里存的是一个数组（一排数字），但我们可以凭借想象力，把它看成一个<strong>二叉树（金字塔）</strong>。</p>
+        <p><strong>大顶堆规则：</strong> 金字塔里，<span class="highlight">爸爸的力气必须比儿子大</span>！</p>
+        <ul>
+            <li>堆顶（塔尖）必须是所有数字里<strong>最大</strong>的。</li>
+            <li>如果有哪个儿子比爸爸大，儿子就要和爸爸<strong>交换位置</strong>，这叫“维护堆”。</li>
+        </ul>
+    </div>
+
+    <h2><span>🎨 详细图解：数组变身金字塔</span></h2>
+    <p>看！这组数字：<span style="font-weight:bold; font-size:1.2em;">[ 9, 5, 8, 2, 4 ]</span></p>
+
+    <div class="illustration-panel">
+        <h4 style="margin-top:0;">1. 数组与树的对应关系</h4>
+        <svg width="600" height="220" viewBox="0 0 600 220">
+            <circle cx="300" cy="40" r="20" fill="#ffb300" class="node-circle"/>
+            <text x="300" y="46" text-anchor="middle">9</text>
+            <text x="330" y="40" font-size="12" fill="#8d6e63">i=0</text>
+
+            <line x1="300" y1="60" x2="200" y2="100" stroke="#8d6e63" stroke-width="2"/>
+            <line x1="300" y1="60" x2="400" y2="100" stroke="#8d6e63" stroke-width="2"/>
+            
+            <circle cx="200" cy="100" r="20" fill="#ffcc80" class="node-circle"/>
+            <text x="200" y="106" text-anchor="middle">5</text>
+            <text x="160" y="100" font-size="12" fill="#8d6e63">i=1</text>
+
+            <circle cx="400" cy="100" r="20" fill="#ffcc80" class="node-circle"/>
+            <text x="400" y="106" text-anchor="middle">8</text>
+            <text x="430" y="100" font-size="12" fill="#8d6e63">i=2</text>
+
+            <line x1="200" y1="120" x2="150" y2="160" stroke="#8d6e63" stroke-width="2"/>
+            <line x1="200" y1="120" x2="250" y2="160" stroke="#8d6e63" stroke-width="2"/>
+
+            <circle cx="150" cy="160" r="20" fill="#ffe0b2" class="node-circle"/>
+            <text x="150" y="166" text-anchor="middle">2</text>
+            <text x="110" y="160" font-size="12" fill="#8d6e63">i=3</text>
+
+            <circle cx="250" cy="160" r="20" fill="#ffe0b2" class="node-circle"/>
+            <text x="250" y="166" text-anchor="middle">4</text>
+            <text x="280" y="160" font-size="12" fill="#8d6e63">i=4</text>
+
+            <g transform="translate(150, 190)">
+                <rect x="0" y="0" width="60" height="30" fill="#ffb300" class="array-cell"/>
+                <text x="30" y="20" text-anchor="middle">9</text>
+                
+                <rect x="60" y="0" width="60" height="30" fill="#ffcc80" class="array-cell"/>
+                <text x="90" y="20" text-anchor="middle">5</text>
+                
+                <rect x="120" y="0" width="60" height="30" fill="#ffcc80" class="array-cell"/>
+                <text x="150" y="20" text-anchor="middle">8</text>
+                
+                <rect x="180" y="0" width="60" height="30" fill="#ffe0b2" class="array-cell"/>
+                <text x="210" y="20" text-anchor="middle">2</text>
+
+                <rect x="240" y="0" width="60" height="30" fill="#ffe0b2" class="array-cell"/>
+                <text x="270" y="20" text-anchor="middle">4</text>
+            </g>
+        </svg>
+        <p style="font-size: 0.9em; color: #5d4037;">左儿子下标 = 爸爸下标 × 2 + 1 <br> 右儿子下标 = 爸爸下标 × 2 + 2</p>
+    </div>
+
+    <div class="illustration-panel">
+        <h4 style="margin-top:0;">2. 排序的核心动作：交换与下沉</h4>
+        <p>假设现在塔顶是最大值 9。</p>
+        <svg width="600" height="180" viewBox="0 0 600 180">
+            <g transform="translate(50, 0)">
+                <text x="80" y="20" text-anchor="middle" font-weight="bold">Step 1: 摘掉国王</text>
+                
+                <circle cx="80" cy="50" r="15" fill="#d84315" stroke="#3e2723" stroke-width="2"/>
+                <text x="80" y="55" text-anchor="middle" fill="white">9</text>
+                
+                <line x1="80" y1="65" x2="50" y2="95" stroke="#ccc"/>
+                <line x1="80" y1="65" x2="110" y2="95" stroke="#ccc"/>
+                <circle cx="50" cy="95" r="15" fill="#eee" stroke="#ccc"/><text x="50" y="100" text-anchor="middle">5</text>
+                <circle cx="110" cy="95" r="15" fill="#eee" stroke="#ccc"/><text x="110" y="100" text-anchor="middle">4</text>
+
+                <path d="M 95 50 Q 130 75 110 95" stroke="#d84315" stroke-width="2" marker-end="url(#arrow-red)"/>
+                <text x="80" y="140" font-size="12" fill="#d84315" text-anchor="middle">把堆顶9和末尾4交换</text>
+            </g>
+
+            <path d="M 200 80 L 240 80" stroke="#5d4037" stroke-width="3" marker-end="url(#arrow-brown)"/>
+
+            <g transform="translate(250, 0)">
+                <text x="80" y="20" text-anchor="middle" font-weight="bold">Step 2: 弱者下沉</text>
+                
+                <circle cx="80" cy="50" r="15" fill="#bcaaa4" stroke="#3e2723" stroke-width="2"/>
+                <text x="80" y="55" text-anchor="middle">4</text>
+                
+                <line x1="80" y1="65" x2="50" y2="95" stroke="#5d4037"/>
+                <line x1="80" y1="65" x2="110" y2="95" stroke="#5d4037"/>
+                
+                <circle cx="50" cy="95" r="15" fill="#ffca28" stroke="#5d4037" stroke-width="3"/>
+                <text x="50" y="100" text-anchor="middle" font-weight="bold">8</text>
+                
+                <circle cx="110" cy="95" r="15" fill="#eee" stroke="#ccc"/>
+                <text x="110" y="100" text-anchor="middle" fill="#999">5</text>
+
+                <path d="M 80 65 L 50 95" stroke="#d84315" stroke-width="2" stroke-dasharray="4,2"/>
+                <text x="80" y="140" font-size="12" fill="#5d4037" text-anchor="middle">4比儿子8小，4下沉！</text>
+            </g>
+
+            <rect x="500" y="60" width="40" height="40" fill="#d84315" rx="5"/>
+            <text x="520" y="85" text-anchor="middle" fill="white" font-weight="bold">9</text>
+            <text x="520" y="120" text-anchor="middle" font-size="12">排好了</text>
+
+            <defs>
+                <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#d84315" /></marker>
+                <marker id="arrow-brown" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#5d4037" /></marker>
+            </defs>
+        </svg>
+    </div>
+
+    <h2>💻 编程工程队</h2>
+    <p>代码主要分为两个部分：<br>1. <code>heapify</code> (下沉维护)：如果爸爸比儿子小，就交换。<br>2. <code>heapSort</code> (主逻辑)：先建堆，然后不停地把堆顶拿走。</p>
+
+    <div class="code-wrapper">
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('cpp')">C++ 代码</button>
+            <button class="tab-btn" onclick="switchTab('py')">Python 代码</button>
+        </div>
+
+        <div id="cpp" class="code-view active">
+<span class="k">#include</span> <span class="s">&lt;iostream&gt;</span>
+<span class="k">#include</span> <span class="s">&lt;algorithm&gt;</span>
+<span class="k">using namespace</span> std;
+
+<span class="c">// 维护堆的函数 (Heapify)</span>
+<span class="c">// n 是堆的大小，i 是当前可能有问题的爸爸的下标</span>
+<span class="k">void</span> <span class="f">heapify</span>(<span class="k">int</span> arr[], <span class="k">int</span> n, <span class="k">int</span> i) {
+    <span class="k">int</span> largest = i;       <span class="c">// 假设爸爸是最大的</span>
+    <span class="k">int</span> left = 2 * i + 1;  <span class="c">// 左儿子</span>
+    <span class="k">int</span> right = 2 * i + 2; <span class="c">// 右儿子</span>
+
+    <span class="c">// 如果左儿子存在，且比目前最大的还大</span>
+    <span class="k">if</span> (left < n && arr[left] > arr[largest])
+        largest = left;
+
+    <span class="c">// 如果右儿子存在，且比目前最大的还大</span>
+    <span class="k">if</span> (right < n && arr[right] > arr[largest])
+        largest = right;
+
+    <span class="c">// 如果最大的不是爸爸 (说明儿子造反了)</span>
+    <span class="k">if</span> (largest != i) {
+        <span class="f">swap</span>(arr[i], arr[largest]); <span class="c">// 交换位置</span>
+
+        <span class="c">// 交换后，原来的爸爸下沉到了 largest 的位置</span>
+        <span class="c">// 可能会破坏下面的规矩，所以继续检查下面</span>
+        <span class="f">heapify</span>(arr, n, largest);
+    }
+}
+
+<span class="k">void</span> <span class="f">heapSort</span>(<span class="k">int</span> arr[], <span class="k">int</span> n) {
+    <span class="c">// 1. 建堆：从最后一个非叶子节点开始，倒着修补堆</span>
+    <span class="k">for</span> (<span class="k">int</span> i = n / 2 - 1; i >= 0; i--)
+        <span class="f">heapify</span>(arr, n, i);
+
+    <span class="c">// 2. 排序：每次把堆顶(最大值)交换到最后</span>
+    <span class="k">for</span> (<span class="k">int</span> i = n - 1; i > 0; i--) {
+        <span class="f">swap</span>(arr[0], arr[i]); <span class="c">// 把最大的扔到最后去</span>
+        
+        <span class="c">// 剩下的元素(0 到 i-1)重新维护一下</span>
+        <span class="f">heapify</span>(arr, i, 0);
+    }
+}
+
+<span class="k">int</span> <span class="f">main</span>() {
+    <span class="k">int</span> arr[] = {9, 5, 8, 2, 4};
+    <span class="k">int</span> n = 5;
+    
+    <span class="f">heapSort</span>(arr, n);
+
+    <span class="k">for</span> (<span class="k">int</span> i = 0; i < n; i++) <span class="f">cout</span> << arr[i] << <span class="s">" "</span>;
+    <span class="k">return</span> 0;
+}
+        </div>
+
+        <div id="py" class="code-view">
+<span class="k">def</span> <span class="f">heapify</span>(arr, n, i):
+    largest = i      <span class="c"># 假设爸爸最大</span>
+    left = 2 * i + 1 <span class="c"># 左儿子</span>
+    right = 2 * i + 2<span class="c"># 右儿子</span>
+  
+    <span class="c"># 检查左儿子</span>
+    <span class="k">if</span> left < n <span class="k">and</span> arr[left] > arr[largest]:
+        largest = left
+  
+    <span class="c"># 检查右儿子</span>
+    <span class="k">if</span> right < n <span class="k">and</span> arr[right] > arr[largest]:
+        largest = right
+  
+    <span class="c"># 如果爸爸不是最大的，要交换</span>
+    <span class="k">if</span> largest != i:
+        arr[i], arr[largest] = arr[largest], arr[i]
+        <span class="c"># 递归维护下面</span>
+        <span class="f">heapify</span>(arr, n, largest)
+  
+<span class="k">def</span> <span class="f">heapSort</span>(arr):
+    n = <span class="f">len</span>(arr)
+  
+    <span class="c"># 1. 建堆</span>
+    <span class="c"># range的参数是: (开始, 结束, 步长)</span>
+    <span class="c"># 从最后一个非叶子节点(n//2 - 1)开始，倒着走到 0</span>
+    <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(n // 2 - 1, -1, -1):
+        <span class="f">heapify</span>(arr, n, i)
+  
+    <span class="c"># 2. 一个个取出元素</span>
+    <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(n - 1, 0, -1):
+        arr[i], arr[0] = arr[0], arr[i] <span class="c"># 交换</span>
+        <span class="f">heapify</span>(arr, i, 0) <span class="c"># 修复剩余的堆</span>
+  
+<span class="c"># 测试</span>
+arr = [9, 5, 8, 2, 4]
+<span class="f">heapSort</span>(arr)
+<span class="f">print</span>(<span class="s">"排序结果:"</span>, arr)
+        </div>
+    </div>
+
+    <h2>⚖️ 优缺点大比拼</h2>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+        <div style="flex:1; background: #fff8e1; padding: 20px; border-radius: 10px; border: 2px solid #ffb300;">
+            <h3 style="color: #bf360c; margin-top:0;">👍 优点：省空间</h3>
+            <p>它不需要像归并排序那样开一个新的数组来存数据，它是<strong>原地排序</strong> (In-place)。如果你的内存很小，用它准没错！</p>
+        </div>
+        <div style="flex:1; background: #efebe9; padding: 20px; border-radius: 10px; border: 2px solid #8d6e63;">
+            <h3 style="color: #4e342e; margin-top:0;">👎 缺点：不稳定</h3>
+            <p>因为交换是跳着换的，相同数字的顺序可能会被打乱。而且代码写起来比快速排序稍微复杂一点点。</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function switchTab(lang) {
+        document.getElementById('cpp').classList.remove('active');
+        document.getElementById('py').classList.remove('active');
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(btn => btn.classList.remove('active'));
+        document.getElementById(lang).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
+
+</body>
+</html>
