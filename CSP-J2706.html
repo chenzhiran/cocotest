@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2706 杨辉三角 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #efebe9; /* 羊皮纸浅褐 */
+            --card-bg: #fff; /* 纯白 */
+            --text-color: #3e2723; /* 墨水深褐 */
+            --cpp-color: #5d4037; /* 古铜褐 */
+            --py-color: #f57f17; /* 魔法金 */
+            --accent-magic: #8d6e63; /* 卷轴边框 */
+            --border-radius: 10px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d7ccc8' fill-opacity='0.4' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(62, 39, 35, 0.2);
+            border: 3px double var(--accent-magic);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #795548;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--py-color);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--py-color);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--cpp-color);
+            border-bottom-color: var(--cpp-color);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: white; box-shadow: 0 4px 0 #3e2723; transform: translateY(-2px); }
+        
+        .btn-py { color: var(--py-color); border-color: var(--py-color); }
+        .btn-py.active { background-color: var(--py-color); color: white; box-shadow: 0 4px 0 #ef6c00; transform: translateY(-2px); }
+
+        /* --- 标题样式 --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: none;
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-magic);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #8d6e63;
+            font-size: 1.2em;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        .badge {
+            background: var(--accent-magic);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--py-color);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #fff8e1;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid #ffecb3;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-direction: column;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #d7ccc8;
+        }
+
+        .triangle-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .num-brick {
+            width: 40px;
+            height: 40px;
+            background: #ffe0b2;
+            border: 2px solid #ffb74d;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #e65100;
+            position: relative;
+        }
+
+        .num-brick.sum {
+            background: #fff9c4;
+            border-color: #fbc02d;
+            color: #f57f17;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 193, 7, 0.4); }
+            50% { transform: scale(1.1); box-shadow: 0 0 10px rgba(255, 193, 7, 0.7); }
+            100% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 193, 7, 0.4); }
+        }
+
+        .arrow-lines {
+            font-size: 0.8em;
+            color: #aaa;
+            margin: -5px 0;
+        }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 60%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #212121; /* 黑板色 */
+            color: #fff; /* 粉笔白 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-magic);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #e65100;
+            background-color: #fff3e0;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #f48fb1; font-weight: bold; } /* 关键字 */
+        .c-type { color: #80deea; } /* 类型 */
+        .c-num { color: #ffca28; } /* 数字 */
+        .c-com { color: #9e9e9e; font-style: italic; } /* 注释 */
+        .c-str { color: #a5d6a7; } /* 字符串 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 辉光三角</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 辉光三角</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2706</span>杨辉三角</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/101" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/101</a>
+            </div>
+            <div class="subtitle">📜 森林魔法史 · 数字金字塔</div>
+        </div>
+
+        <div class="card">
+            <h2>✨ 修复古老的数字魔法阵 (题目描述)</h2>
+            <p>
+                魔法史老师展示了一座“辉光三角”的图纸。
+                <br>这是一个数字金字塔，每一层都比上一层多一个数。
+            </p>
+            <p>
+                <strong>魔法规则：</strong>
+                <br>1. <strong>守护柱：</strong> 每一行的最左边和最右边永远是 <strong>1</strong>。
+                <br>2. <strong>能量融合：</strong> 中间的每一个数，等于它 <strong>头顶左上角</strong> 和 <strong>头顶右上角</strong> 的两个数之和。
+            </p>
+            
+            
+            <img src="CSP-J2706.png" alt="杨辉三角生成原理" class="img-placeholder">
+
+            <div class="visual-box">
+                <div style="font-weight:bold; color:#795548;">第 3 行是如何生成的？</div>
+                <div class="triangle-row">
+                    <div class="num-brick">1</div>
+                    <div class="num-brick">2</div>
+                    <div class="num-brick">1</div>
+                </div>
+                <div class="arrow-lines">↙&nbsp;&nbsp;↘&nbsp;&nbsp;↙&nbsp;&nbsp;↘</div>
+                <div class="triangle-row">
+                    <div class="num-brick">1</div>
+                    <div class="num-brick sum">3</div>
+                    <div class="num-brick sum">3</div>
+                    <div class="num-brick">1</div>
+                </div>
+                <div style="font-size:0.8em; color:#555;">中间的 3 = 上面的 1 + 2</div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Logic)</h2>
+            <p>我们需要用 <strong>二维数组</strong> 来模拟这个三角形。</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid var(--py-color); margin:10px 0; border-radius: 8px;">
+                <strong>📐 生成公式：</strong><br>
+                对于第 <span class="inline-code">i</span> 行，第 <span class="inline-code">j</span> 个数 (从0开始数)：<br>
+                <span class="inline-code">a[i][j] = a[i-1][j-1] + a[i-1][j]</span>
+                <br><br>
+                <strong>🏗️ 建造步骤：</strong><br>
+                1. <strong>地基：</strong> 输入 n，准备一个 n 行的二维数组。<br>
+                2. <strong>边界：</strong> 每行的第一个 <span class="inline-code">a[i][0]</span> 和最后一个 <span class="inline-code">a[i][i]</span> 设为 1。<br>
+                3. <strong>填充：</strong> 中间的数用公式计算。<br>
+                4. <strong>排版：</strong> 打印时，为了让它像金字塔，每行前面要打印一些空格（行数越小，空格越多）。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 实现细节</h3>
+                <p>
+                    <strong>二维数组：</strong> <span class="inline-code">int a[100][100];</span>
+                    <br><strong>循环边界：</strong> 内层循环 <span class="inline-code">j</span> 从 1 开始，到 <span class="inline-code">i-1</span> 结束（只算中间的）。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 实现细节</h3>
+                <p>
+                    <strong>列表生成：</strong> 每一行可以先放满 1，然后修改中间的值；或者每次 append。
+                    <br><strong>输出格式：</strong> 用 <span class="inline-code">print(" ", end="")</span> 打印空格，用 <span class="inline-code">print(val, end=" ")</span> 打印数字。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>经典的两层循环：先计算，再输出。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-com">// 定义二维数组，大小够用就行</span>
+<span class="c-kw">int</span> a[<span class="c-num">100</span>][<span class="c-num">100</span>];
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">int</span> n;
+    <span class="c-kw">cin</span> >> n;
+
+    <span class="c-com">// 1. 计算杨辉三角</span>
+    <span class="c-kw">for</span>(<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < n; i++) {
+        <span class="c-com">// 每一行的开头是 1</span>
+        a[i][<span class="c-num">0</span>] = <span class="c-num">1</span>;
+        
+        <span class="c-com">// 计算中间的数 (从第 2 个数开始，到倒数第 2 个数)</span>
+        <span class="c-kw">for</span>(<span class="c-kw">int</span> j = <span class="c-num">1</span>; j < i; j++) {
+            <span class="c-com">// 公式：左上 + 正上</span>
+            a[i][j] = a[i-<span class="c-num">1</span>][j-<span class="c-num">1</span>] + a[i-<span class="c-num">1</span>][j];
+        }
+        
+        <span class="c-com">// 每一行的结尾是 1</span>
+        a[i][i] = <span class="c-num">1</span>;
+    }
+
+    <span class="c-com">// 2. 输出 (排版)</span>
+    <span class="c-kw">for</span>(<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < n; i++) {
+        
+        <span class="c-com">// 打印前导空格：让三角形居中</span>
+        <span class="c-com">// 第 0 行空格最多 (n-1个)，越往下越少</span>
+        <span class="c-kw">for</span>(<span class="c-kw">int</span> k = <span class="c-num">0</span>; k < n - <span class="c-num">1</span> - i; k++) {
+            <span class="c-kw">cout</span> << <span class="c-str">' '</span>;
+        }
+        
+        <span class="c-com">// 打印数字</span>
+        <span class="c-kw">for</span>(<span class="c-kw">int</span> j = <span class="c-num">0</span>; j <= i; j++) {
+            <span class="c-kw">cout</span> << a[i][j] << <span class="c-str">' '</span>;
+        }
+        
+        <span class="c-kw">cout</span> << <span class="c-kw">endl</span>; <span class="c-com">// 换行</span>
+    }
+
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>无函数脚本，列表操作清晰直观。</p>
+<pre>
+<span class="c-com"># 1. 读入层数 n</span>
+n = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+
+<span class="c-com"># 准备一个二维列表来存数据</span>
+a = []
+
+<span class="c-com"># 2. 生成杨辉三角</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(n):
+    <span class="c-com"># 每一行先初始化 i+1 个 1</span>
+    <span class="c-com"># 比如第 0 行是 [1]，第 2 行是 [1, 1, 1]</span>
+    row = [<span class="c-num">1</span>] * (i + <span class="c-num">1</span>)
+    
+    <span class="c-com"># 计算中间的值 (如果有中间的话)</span>
+    <span class="c-com"># 从下标 1 开始，到倒数第 2 个 (i-1)</span>
+    <span class="c-kw">for</span> j <span class="c-kw">in</span> <span class="c-kw">range</span>(<span class="c-num">1</span>, i):
+        <span class="c-com"># 上一行是 a[i-1]</span>
+        <span class="c-com"># 当前值 = 上一行左边 + 上一行同位置</span>
+        row[j] = a[i-<span class="c-num">1</span>][j-<span class="c-num">1</span>] + a[i-<span class="c-num">1</span>][j]
+    
+    <span class="c-com"># 把算好的一行加入总表</span>
+    a.append(row)
+
+<span class="c-com"># 3. 输出 (排版)</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(n):
+    <span class="c-com"># 打印前导空格</span>
+    <span class="c-com"># n=4时，第0行打3个空，第3行打0个空</span>
+    <span class="c-kw">for</span> k <span class="c-kw">in</span> <span class="c-kw">range</span>(n - <span class="c-num">1</span> - i):
+        <span class="c-kw">print</span>(<span class="c-str">" "</span>, <span class="c-kw">end</span>=<span class="c-str">""</span>)
+        
+    <span class="c-com"># 打印这一行的数字</span>
+    <span class="c-kw">for</span> val <span class="c-kw">in</span> a[i]:
+        <span class="c-kw">print</span>(val, <span class="c-kw">end</span>=<span class="c-str">" "</span>)
+        
+    <span class="c-com"># 换行</span>
+    <span class="c-kw">print</span>()
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-magic);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>📐 <strong>三角结构：</strong> 第 <span class="inline-code">i</span> 行有 <span class="inline-code">i+1</span> 个元素。</li>
+                <li>🤝 <strong>递推公式：</strong> 记住核心咒语 <span class="inline-code">a[i][j] = a[i-1][j-1] + a[i-1][j]</span>。</li>
+                <li>🎨 <strong>排版空格：</strong> 为了让它看起来像金字塔，第 <span class="inline-code">i</span> 行前面需要打印 <span class="inline-code">n-1-i</span> 个空格。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #795548; font-size: 0.9em; border-top: 1px dashed #8d6e63; padding-top: 20px;">
+            🎉 光芒汇聚！辉光三角修复完成！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

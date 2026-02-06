@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2710 宝石幻方 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #e3f2fd; /* 冰原蓝 */
+            --card-bg: #ffffff;
+            --text-color: #0d47a1; /* 深海蓝 */
+            --cpp-color: #1565c0; /* 宝石蓝 */
+            --py-color: #ff6f00; /* 琥珀金 */
+            --accent-ice: #00bcd4; /* 冰晶青 */
+            --border-radius: 12px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+            background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2390caf9' fill-opacity='0.2' fill-rule='evenodd'%3E%3Cpath d='M0 38.59l2.83-2.83 1.41 1.41L1.41 40H0v-1.41zM0 1.4l2.83 2.83 1.41-1.41L1.41 0H0v1.41zM38.59 40l-2.83-2.83 1.41-1.41L40 38.59V40h-1.41zM40 1.41l-2.83 2.83-1.41-1.41L38.59 0H40v1.41zM20 18.6l2.83-2.83 1.41 1.41L21.41 20l2.83 2.83-1.41 1.41L20 21.41l-2.83 2.83-1.41-1.41L18.59 20l-2.83-2.83 1.41-1.41L20 18.59z'/%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(3, 169, 244, 0.2);
+            border: 3px solid var(--accent-ice);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #546e7a;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--cpp-color);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--cpp-color);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--py-color);
+            border-bottom-color: var(--py-color);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: white; box-shadow: 0 4px 10px rgba(21, 101, 192, 0.3); }
+        
+        .btn-py { color: var(--py-color); border-color: var(--py-color); }
+        .btn-py.active { background-color: var(--py-color); color: white; box-shadow: 0 4px 10px rgba(255, 111, 0, 0.3); }
+
+        /* --- 标题样式 --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: none;
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-ice);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #0288d1;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-ice);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-ice);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #f1f8e9;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid #c5e1a5;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #81d4fa;
+        }
+
+        .grid-mini {
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            grid-template-rows: repeat(3, 40px);
+            gap: 2px;
+            background: #eee;
+            padding: 5px;
+            border: 1px solid #ccc;
+        }
+        .cell {
+            background: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8em;
+            border: 1px solid #ddd;
+        }
+        .cell.curr { background: #b3e5fc; font-weight: bold; }
+        .cell.target { background: #fff9c4; border: 2px dashed #fbc02d; }
+        .cell.filled { background: #e0e0e0; color: #999; }
+        
+        .arrow { color: var(--py-color); font-size: 1.5em; font-weight: bold; }
+        
+        .logic-label {
+            font-size: 0.9em;
+            text-align: center;
+            color: #555;
+            margin-top: 5px;
+        }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 60%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+            border: 2px solid #b3e5fc;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238; /* 冰洞黑 */
+            color: #80deea; /* 冰晶亮 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-ice);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #0277bd;
+            background-color: #e1f5fe;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #80cbc4; } /* 类型 */
+        .c-num { color: #ffcc80; } /* 数字 */
+        .c-com { color: #90a4ae; font-style: italic; } /* 注释 */
+        .c-str { color: #a5d6a7; } /* 字符串 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 魔法阵</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 魔法阵</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2710</span>宝石幻方</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/105" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/105</a>
+            </div>
+            <div class="subtitle">💎 雪山王国篇 · 奇数阶幻方</div>
+        </div>
+
+        <div class="card">
+            <h2>🧩 打造巨大的宝石迷宫 (题目描述)</h2>
+            <p>
+                国王要求建造一个 <span class="inline-code">(2n-1) × (2n-1)</span> 的迷宫。
+                <br>你需要把数字 <strong>1</strong> 到 <strong>总格子数</strong> 填进去，规则很神秘：
+            </p>
+            <ul>
+                <li>🏁 <strong>起点：</strong> 数字 1 放在 <strong>第一行正中间</strong>。</li>
+                <li>↗️ <strong>常规移动：</strong> 下一个数字放在当前数字的 <strong>右上角</strong>（行-1，列+1）。</li>
+                <li>🚧 <strong>特殊情况：</strong>
+                    <br>1. 如果跑到最上面了 -> 回到最下面。
+                    <br>2. 如果跑到最右边了 -> 回到最左边。
+                    <br>3. 如果右上角 <strong>已经有数字</strong> 或者 <strong>是右上角死角</strong> -> 往下退一格（行+1）。
+                </li>
+            </ul>
+
+            
+            <img src="CSP-J2710.png" alt="幻方填数规则示意图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div style="text-align:center;">
+                    <div class="logic-label">正常：↗️ 右上</div>
+                    <div class="grid-mini">
+                        <div class="cell"></div><div class="cell target">2</div><div class="cell"></div>
+                        <div class="cell curr">1</div><div class="cell"></div><div class="cell"></div>
+                        <div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                    </div>
+                </div>
+                
+                <div style="text-align:center;">
+                    <div class="logic-label">出界：🔄 穿墙</div>
+                    <div class="grid-mini">
+                        <div class="cell"></div><div class="cell curr">1</div><div class="cell"></div>
+                        <div class="cell">...</div><div class="cell">...</div><div class="cell">...</div>
+                        <div class="cell"></div><div class="cell target">2</div><div class="cell"></div>
+                    </div>
+                </div>
+
+                <div style="text-align:center;">
+                    <div class="logic-label">撞车：⬇️ 下移</div>
+                    <div class="grid-mini">
+                        <div class="cell"></div><div class="cell filled">X</div><div class="cell"></div>
+                        <div class="cell curr">6</div><div class="cell"></div><div class="cell"></div>
+                        <div class="cell target">7</div><div class="cell"></div><div class="cell"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Siamese Method)</h2>
+            <p>这道题用的是经典的 <strong>罗伯法 (Siamese Method)</strong> 来构造奇数阶幻方。</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid var(--accent-ice); margin:10px 0; border-radius: 8px;">
+                <strong>📐 逻辑判断优先级：</strong><br>
+                我们先假设要去右上角 <span class="inline-code">(nx, ny)</span>。<br>
+                1. <strong>检查特殊点：</strong> 如果我是 <strong>右上角</strong> 的那个数（行最小，列最大），那下一步肯定出界且冲突，必须 <strong>往下走</strong>。<br>
+                2. <strong>检查边界：</strong> 
+                   <br>&nbsp;&nbsp; - 如果行 < 1，就变成最后一行。
+                   <br>&nbsp;&nbsp; - 如果列 > N，就变成第一列。<br>
+                3. <strong>检查冲突：</strong> 如果目标格子 <span class="inline-code">a[nx][ny]</span> 已经有数字了，说明路被堵了，必须 <strong>往下走</strong>（回到原位正下方）。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 实现细节</h3>
+                <p>
+                    <strong>下标习惯：</strong> 题目中常说“第1行”，所以数组下标从 1 开始 (<span class="inline-code">a[55][55]</span>) 会比较好对应。
+                    <br><strong>输出格式：</strong> 题目要求占 3 位宽度，使用 <span class="inline-code">setw(3)</span>。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 实现细节</h3>
+                <p>
+                    <strong>下标习惯：</strong> Python 列表下标从 0 开始。
+                    <br>所以“第一行”是 <span class="inline-code">row == 0</span>，“最后一列”是 <span class="inline-code">col == n-1</span>。
+                    <br><strong>转换逻辑：</strong>
+                    <br> - 撞天花板：<span class="inline-code">if r == 0: r = n - 1</span>
+                    <br> - 撞右墙壁：<span class="inline-code">if c == n - 1: c = 0</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>使用 1-based 下标，逻辑结构清晰。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">#include</span> &lt;iomanip&gt; <span class="c-com">// 用于 setw</span>
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-type">int</span> a[<span class="c-num">55</span>][<span class="c-num">55</span>]; <span class="c-com">// 迷宫数组，开稍微大一点</span>
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-type">int</span> n;
+    <span class="c-kw">cin</span> >> n;
+    
+    n = <span class="c-num">2</span> * n - <span class="c-num">1</span>; <span class="c-com">// 计算真正的边长 L</span>
+    
+    <span class="c-type">int</span> num = <span class="c-num">1</span>;
+    <span class="c-com">// 起点：第一行(1) 中间列((n+1)/2)</span>
+    <span class="c-type">int</span> i = <span class="c-num">1</span>, j = (n + <span class="c-num">1</span>) / <span class="c-num">2</span>;
+    
+    a[i][j] = num; <span class="c-com">// 填入第1个宝石</span>
+    
+    <span class="c-kw">while</span> (num < n * n) {
+        // 1. 预判：假设往右上角走
+        <span class="c-type">int</span> nx = i - <span class="c-num">1</span>;
+        <span class="c-type">int</span> ny = j + <span class="c-num">1</span>;
+        
+        // 2. 处理穿墙 (环绕)
+        <span class="c-kw">if</span> (i == <span class="c-num">1</span>) nx = n;      // 撞上墙 -> 去最后一行
+        <span class="c-kw">if</span> (j == n) ny = <span class="c-num">1</span>;      // 撞右墙 -> 去第一列
+        
+        // 3. 处理冲突
+        // 情况A: 既是第一行又是最后一列 (右上角死角)
+        // 情况B: 目标位置已经填过了 (!=0)
+        // 这两种情况都要改为：向下走 (行+1，列不变)
+        <span class="c-kw">if</span> ((i == <span class="c-num">1</span> && j == n) || (a[nx][ny] != <span class="c-num">0</span>)) {
+            nx = i + <span class="c-num">1</span>;
+            ny = j;
+        }
+        
+        // 4. 确认填入
+        a[nx][ny] = ++num;
+        
+        // 5. 更新当前位置
+        i = nx;
+        j = ny;
+    }
+    
+    <span class="c-com">// 输出结果</span>
+    <span class="c-kw">for</span> (<span class="c-type">int</span> i = <span class="c-num">1</span>; i <= n; i++) {
+        <span class="c-kw">for</span> (<span class="c-type">int</span> j = <span class="c-num">1</span>; j <= n; j++) {
+            <span class="c-kw">cout</span> << <span class="c-kw">setw</span>(<span class="c-num">3</span>) << a[i][j];
+        }
+        <span class="c-kw">cout</span> << <span class="c-kw">endl</span>;
+    }
+    
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>无函数脚本，使用 0-based 下标，逻辑自然转换。</p>
+<pre>
+<span class="c-com"># 1. 读入 n</span>
+n = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+n = <span class="c-num">2</span> * n - <span class="c-num">1</span>  <span class="c-com"># 真正的边长</span>
+
+<span class="c-com"># 2. 初始化空方阵 (0表示未填充)</span>
+a = [[<span class="c-num">0</span>] * n <span class="c-kw">for</span> _ <span class="c-kw">in</span> <span class="c-kw">range</span>(n)]
+
+<span class="c-com"># 3. 设置起点</span>
+# Python下标从0开始，所以第1行是0，中间列是 n//2
+row = <span class="c-num">0</span>
+col = n // <span class="c-num">2</span>
+a[row][col] = <span class="c-num">1</span>
+
+<span class="c-com"># 4. 开始填数 (从2到n*n)</span>
+<span class="c-kw">for</span> num <span class="c-kw">in</span> <span class="c-kw">range</span>(<span class="c-num">2</span>, n * n + <span class="c-num">1</span>):
+    # 预判：右上角 (行-1, 列+1)
+    next_r = row - <span class="c-num">1</span>
+    next_c = col + <span class="c-num">1</span>
+    
+    # 规则处理 (0-based)
+    # 特殊情况：如果是右上角 (行是0，列是n-1) -> 下移
+    # 或者 目标位置已经有数 -> 下移
+    # 注意：为了简化逻辑，我们可以先处理最特殊的“死角/冲突”
+    
+    # 我们先算正常的环绕坐标
+    if next_r < <span class="c-num">0</span>: next_r = n - <span class="c-num">1</span>
+    if next_c == n: next_c = <span class="c-num">0</span>
+    
+    # 然后检查是否冲突 (grid有数)
+    if a[next_r][next_c] != <span class="c-num">0</span>:
+        # 冲突了！改为向下走
+        # 从 (row, col) 直接向下 -> (row+1, col)
+        row = row + <span class="c-num">1</span>
+        # col 不变
+    else:
+        # 没冲突，确认走刚才算好的位置
+        row = next_r
+        col = next_c
+        
+    # 填入数字
+    a[row][col] = num
+
+<span class="c-com"># 5. 格式化输出</span>
+<span class="c-kw">for</span> r <span class="c-kw">in</span> <span class="c-kw">range</span>(n):
+    <span class="c-kw">for</span> c <span class="c-kw">in</span> <span class="c-kw">range</span>(n):
+        <span class="c-com"># %3d 表示宽度3</span>
+        <span class="c-kw">print</span>(<span class="c-str">"%3d"</span> % a[r][c], <span class="c-kw">end</span>=<span class="c-str">""</span>)
+    <span class="c-kw">print</span>()
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-ice);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>↗️ <strong>主旋律：</strong> 永远优先往右上角飞（<span class="inline-code">i-1, j+1</span>）。</li>
+                <li>🌍 <strong>地球是圆的：</strong> 往上飞出去了就回到最下面，往右飞出去了就回到最左边。</li>
+                <li>🛑 <strong>撞车规则：</strong> 无论是撞到已有的数字，还是站在右上死角没法飞，统一的处理方案都是：<strong>委屈一下，往下挪一格</strong>。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #546e7a; font-size: 0.9em; border-top: 1px dashed #cfd8dc; padding-top: 20px;">
+            🎉 幻方阵列激活！迷宫的大门打开了！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

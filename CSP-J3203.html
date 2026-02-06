@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J3203 赦令棋盘 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #eceff1; /* 冰原白 */
+            --card-bg: #ffffff; /* 纯白 */
+            --text-color: #37474f; /* 岩石黑 */
+            --cpp-color: #0288d1; /* 冰晶蓝 */
+            --py-color: #009688; /* 极光绿 */
+            --accent-judge: #d32f2f; /* 审判红 */
+            --border-radius: 12px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+            background-image: repeating-linear-gradient(45deg, #cfd8dc 25%, transparent 25%, transparent 75%, #cfd8dc 75%, #cfd8dc), repeating-linear-gradient(45deg, #cfd8dc 25%, #eceff1 25%, #eceff1 75%, #cfd8dc 75%, #cfd8dc);
+            background-position: 0 0, 20px 20px;
+            background-size: 40px 40px;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 3px solid var(--text-color);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #78909c;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--cpp-color);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--cpp-color);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--accent-judge);
+            border-bottom-color: var(--accent-judge);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid var(--text-color);
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: #b0bec5;
+            transition: all 0.2s;
+            color: #fff;
+        }
+
+        .btn-cpp.active { background-color: var(--cpp-color); border-color: var(--cpp-color); box-shadow: 0 5px 15px rgba(2, 136, 209, 0.4); }
+        .btn-py.active { background-color: var(--py-color); border-color: var(--py-color); box-shadow: 0 5px 15px rgba(0, 150, 136, 0.4); }
+
+        /* --- 标题样式 --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: 2px 2px 0 #b0bec5;
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-judge);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #546e7a;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-judge);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--text-color);
+            border-left: 6px solid var(--accent-judge);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #f5f5f5;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid #e0e0e0;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #90a4ae;
+        }
+
+        .chess-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 30px);
+            grid-template-rows: repeat(4, 30px);
+            gap: 2px;
+        }
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 0.8em;
+            border-radius: 3px;
+        }
+
+        .cell.one { background: #cfd8dc; color: #607d8b; } /* 未赦免 */
+        .cell.zero { background: #ffebee; color: #d32f2f; border: 1px solid #ef5350; } /* 已赦免 */
+
+        .arrow { font-size: 2em; color: var(--text-color); }
+        
+        .step-info { text-align: center; font-size: 0.8em; color: #78909c; }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 60%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+            border: 2px solid #ccc;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238; /* 终端黑 */
+            color: #80cbc4; /* 极光青 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-judge);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #c62828;
+            background-color: #ffebee;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #f48fb1; font-weight: bold; } /* 关键字 */
+        .c-type { color: #80deea; } /* 类型 */
+        .c-num { color: #ffeb3b; } /* 数字 */
+        .c-com { color: #90a4ae; font-style: italic; } /* 注释 */
+        .c-str { color: #a5d6a7; } /* 字符串 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 分治递归</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 分治递归</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J3203</span>赦令棋盘</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/117" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/117</a>
+            </div>
+            <div class="subtitle">🧊 雪山审判大厅 · 递归分形</div>
+        </div>
+
+        <div class="card">
+            <h2>⚡ 审判官的分裂赦令 (题目描述)</h2>
+            <p>
+                棋盘大小为 $2^n \times 2^n$，一开始所有人都是“罪人” (标记为 1)。
+                <br>审判官的赦免规则是 <strong>递归</strong> 的：
+            </p>
+            <ol>
+                <li>🔪 <strong>切分：</strong> 把当前正方形切成 4 个小正方形。</li>
+                <li>🛡️ <strong>赦免：</strong> 左上角的那一块，全部变成 0 (无罪)。</li>
+                <li>🔄 <strong>继续：</strong> 剩下的 3 块 (右上、左下、右下)，继续重复第 1 步，直到分无可分。</li>
+            </ol>
+            <p>
+                你需要输出最终的 01 矩阵。
+            </p>
+
+            
+            <img src="CSP-J3203.png" alt="赦令递归过程图解" class="img-placeholder">
+
+            <div class="visual-box">
+                <div class="step-info">
+                    <strong>初始状态 (n=1)</strong><br>
+                    全都是 1
+                </div>
+                <div class="chess-grid" style="grid-template-columns: repeat(2, 30px); grid-template-rows: repeat(2, 30px);">
+                    <div class="cell one">1</div><div class="cell one">1</div>
+                    <div class="cell one">1</div><div class="cell one">1</div>
+                </div>
+                
+                <div class="arrow">➡</div>
+
+                <div class="step-info">
+                    <strong>第一次赦免</strong><br>
+                    左上角变 0
+                </div>
+                <div class="chess-grid" style="grid-template-columns: repeat(2, 30px); grid-template-rows: repeat(2, 30px);">
+                    <div class="cell zero">0</div><div class="cell one">1</div>
+                    <div class="cell one">1</div><div class="cell one">1</div>
+                </div>
+
+                <div class="arrow">➡</div>
+
+                <div class="step-info">
+                    <strong>继续分裂 (n=2)</strong><br>
+                    剩下3块继续...
+                </div>
+                <div class="chess-grid">
+                    <div class="cell zero">0</div><div class="cell zero">0</div><div class="cell zero">0</div><div class="cell one">1</div>
+                    <div class="cell zero">0</div><div class="cell zero">0</div><div class="cell one">1</div><div class="cell one">1</div>
+                    <div class="cell zero">0</div><div class="cell one">1</div><div class="cell zero">0</div><div class="cell one">1</div>
+                    <div class="cell one">1</div><div class="cell one">1</div><div class="cell one">1</div><div class="cell one">1</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Divide & Conquer)</h2>
+            <p>这道题的核心是 <strong>分治 (Divide and Conquer)</strong>。</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid var(--accent-judge); margin:10px 0; border-radius: 8px;">
+                <strong>🔧 递归函数设计：</strong><br>
+                定义函数 <span class="inline-code">cal(x, y, n)</span>：<br>
+                表示处理以 <span class="inline-code">(x, y)</span> 为起点，边长为 $2^n$ 的正方形区域。<br>
+                <br>
+                <strong>📜 执行步骤：</strong><br>
+                1. <strong>终止条件：</strong> 如果 $n=0$ (边长为1)，不用分了，直接结束。<br>
+                2. <strong>计算半长：</strong> $h = 2^{n-1}$。<br>
+                3. <strong>赦免左上：</strong> 把左上角区域（范围 $h \times h$）全部填为 0。<br>
+                4. <strong>递归剩余：</strong> 对右上、左下、右下三个区域，分别调用 <span class="inline-code">cal(..., n-1)</span>。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 实现细节</h3>
+                <p>
+                    <strong>初始化：</strong> 先把整个大数组 <span class="inline-code">a[1050][1050]</span> 全部填成 1 (memset 或 fill)。
+                    <br>这样递归时只需要负责把该变 0 的地方变 0 即可，剩下的自然就是 1。
+                    <br><strong>位运算：</strong> <span class="inline-code">1 << (n-1)</span> 等同于 $2^{n-1}$，速度更快。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 实现细节</h3>
+                <p>
+                    <strong>切片赋值：</strong> Python 处理二维数组最强大的地方！
+                    <br><span class="inline-code">matrix[i][y : y+half] = [0] * half</span>
+                    <br>这一行代码就能把一整行的某个区间全部变成 0，不需要写内层循环。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>先全填 1，然后递归“挖空”左上角。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">#include</span> &lt;cmath&gt;
+<span class="c-kw">#include</span> &lt;cstring&gt; <span class="c-com">// memset 需要</span>
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-type">int</span> a[<span class="c-num">1050</span>][<span class="c-num">1050</span>]; <span class="c-com">// 2^10 = 1024，开大一点</span>
+
+<span class="c-com">// 递归函数</span>
+<span class="c-com">// x, y: 当前正方形左上角坐标</span>
+<span class="c-com">// n: 当前层级 (边长为 2^n)</span>
+<span class="c-kw">void</span> cal(<span class="c-type">int</span> x, <span class="c-type">int</span> y, <span class="c-type">int</span> n) {
+    <span class="c-com">// 递归出口：如果是 1x1 的格子，没法再分了</span>
+    <span class="c-kw">if</span> (n == <span class="c-num">0</span>) <span class="c-kw">return</span>;
+    
+    <span class="c-com">// 计算半个边长 (2的n-1次方)</span>
+    <span class="c-type">int</span> h = <span class="c-num">1</span> << (n - <span class="c-num">1</span>); 
+    
+    <span class="c-com">// 1. 赦免左上角：把 x~x+h, y~y+h 的范围全部置 0</span>
+    <span class="c-kw">for</span>(<span class="c-type">int</span> i = x; i < x + h; i++) {
+        <span class="c-kw">for</span>(<span class="c-type">int</span> j = y; j < y + h; j++) {
+            a[i][j] = <span class="c-num">0</span>;
+        }
+    }
+    
+    <span class="c-com">// 2. 递归处理另外三个角</span>
+    cal(x, y + h, n - <span class="c-num">1</span>);      <span class="c-com">// 右上</span>
+    cal(x + h, y, n - <span class="c-num">1</span>);      <span class="c-com">// 左下</span>
+    cal(x + h, y + h, n - <span class="c-num">1</span>);  <span class="c-com">// 右下</span>
+}
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-type">int</span> n;
+    <span class="c-kw">cin</span> >> n;
+    
+    <span class="c-com">// 计算整个棋盘边长 2^n</span>
+    <span class="c-type">int</span> len = <span class="c-num">1</span> << n; 
+    
+    <span class="c-com">// 初始化：先把所有人都当成罪人 (设为 1)</span>
+    <span class="c-com">// 然后递归去“赦免” (设为 0)</span>
+    <span class="c-kw">for</span>(<span class="c-type">int</span> i = <span class="c-num">0</span>; i < len; i++)
+        <span class="c-kw">for</span>(<span class="c-type">int</span> j = <span class="c-num">0</span>; j < len; j++)
+            a[i][j] = <span class="c-num">1</span>;
+            
+    <span class="c-com">// 开始递归</span>
+    cal(<span class="c-num">0</span>, <span class="c-num">0</span>, n);
+    
+    <span class="c-com">// 输出结果</span>
+    <span class="c-kw">for</span>(<span class="c-type">int</span> i = <span class="c-num">0</span>; i < len; i++) {
+        <span class="c-kw">for</span>(<span class="c-type">int</span> j = <span class="c-num">0</span>; j < len; j++) {
+            <span class="c-kw">cout</span> << a[i][j] << <span class="c-str">" "</span>;
+        }
+        <span class="c-kw">cout</span> << <span class="c-kw">endl</span>;
+    }
+    
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>无函数脚本，利用切片操作快速填 0。</p>
+<pre>
+<span class="c-com"># 定义递归函数</span>
+<span class="c-com"># matrix: 二维列表, x,y: 起点, size: 当前边长</span>
+<span class="c-kw">def</span> cal(matrix, x, y, size):
+    <span class="c-com"># 递归出口</span>
+    <span class="c-kw">if</span> size == <span class="c-num">1</span>:
+        <span class="c-kw">return</span>
+    
+    <span class="c-com"># 计算半长</span>
+    half = size // <span class="c-num">2</span>
+    
+    <span class="c-com"># 1. 赦免左上角 (全部变0)</span>
+    <span class="c-com"># 使用切片赋值，效率极高！</span>
+    <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(x, x + half):
+        matrix[i][y : y + half] = [<span class="c-num">0</span>] * half
+    
+    <span class="c-com"># 2. 递归处理另外三个角</span>
+    cal(matrix, x, y + half, half)      <span class="c-com"># 右上</span>
+    cal(matrix, x + half, y, half)      <span class="c-com"># 左下</span>
+    cal(matrix, x + half, y + half, half) <span class="c-com"># 右下</span>
+
+<span class="c-com"># --- 主程序 ---</span>
+n = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+size = <span class="c-num">2</span> ** n
+
+<span class="c-com"># 初始化全 1 矩阵</span>
+matrix = [[<span class="c-num">1</span>] * size <span class="c-kw">for</span> _ <span class="c-kw">in</span> <span class="c-kw">range</span>(size)]
+
+<span class="c-com"># 开始递归</span>
+cal(matrix, <span class="c-num">0</span>, <span class="c-num">0</span>, size)
+
+<span class="c-com"># 输出</span>
+<span class="c-kw">for</span> row <span class="c-kw">in</span> matrix:
+    <span class="c-com"># map(str, row) 把数字转字符串，join 用空格连接</span>
+    <span class="c-kw">print</span>(<span class="c-str">" "</span>.join(<span class="c-kw">map</span>(<span class="c-kw">str</span>, row)))
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-judge);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🧬 <strong>分形结构：</strong> 这其实是数学上的“谢尔宾斯基三角”或者是类似的结构。看起来复杂，其实规则就一条：切分 -> 涂色 -> 递归。</li>
+                <li>💡 <strong>逆向思维：</strong> 既然只有左上角变 0，那我们就先把所有格子填成 1。这样递归函数里只用管“怎么变 0”，代码量少一半！</li>
+                <li>⚡ <strong>位运算优化：</strong> 在 C++ 中，计算 $2^n$ 用 <span class="inline-code">1 << n</span>，计算除以 2 用 <span class="inline-code">n >> 1</span>，这是高手的习惯。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #78909c; font-size: 0.9em; border-top: 1px dashed #d32f2f; padding-top: 20px;">
+            🎉 审判结束！棋盘上的命运已定！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

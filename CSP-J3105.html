@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J3105 歌声王冠 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #2e003e; /* 舞台深紫 */
+            --card-bg: #fff; /* 亮白 */
+            --text-color: #4a148c; /* 深紫文字 */
+            --cpp-color: #6a1b9a; /* 代码紫 */
+            --py-color: #ffb300; /* 金牌黄 */
+            --accent-stage: #ff007f; /* 霓虹粉 */
+            --border-radius: 15px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+            background-image: radial-gradient(circle, #4a148c 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 0 30px rgba(255, 0, 127, 0.3);
+            border: 4px solid var(--accent-stage);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #880e4f;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--cpp-color);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--cpp-color);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--accent-stage);
+            border-bottom-color: var(--accent-stage);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid var(--text-color);
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: #f3e5f5;
+            transition: all 0.2s;
+            color: var(--text-color);
+        }
+
+        .btn-cpp.active { background-color: var(--cpp-color); color: #fff; transform: scale(1.05); box-shadow: 0 5px 15px rgba(106, 27, 154, 0.4); }
+        .btn-py.active { background-color: var(--py-color); color: #fff; transform: scale(1.05); box-shadow: 0 5px 15px rgba(255, 179, 0, 0.4); }
+
+        /* --- 标题样式 --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: 2px 2px 0 #ffeb3b;
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-stage);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #ad1457;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-stage);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--py-color);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #f3e5f5;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid #e1bee7;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #ab47bc;
+        }
+
+        .score-card {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #8e24aa;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #4a148c;
+            background: #fff;
+            position: relative;
+        }
+
+        .score-card.removed {
+            background: #bdbdbd;
+            border-color: #9e9e9e;
+            color: #fff;
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .score-card.removed::after {
+            content: "✖";
+            position: absolute;
+            color: red;
+            font-size: 1.5em;
+            opacity: 0.8;
+        }
+
+        .calc-arrow {
+            font-size: 2em;
+            color: var(--accent-stage);
+            margin: 0 10px;
+        }
+
+        .result-star {
+            background: #ffeb3b;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            color: #e65100;
+            box-shadow: 0 0 10px #ffeb3b;
+        }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 60%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+            border: 2px solid #ce93d8;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #1a1a1a; /* 舞台黑 */
+            color: #f8f8f2; /* 荧光字 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-stage);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #c2185b;
+            background-color: #fce4ec;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ff4081; font-weight: bold; } /* 关键字 */
+        .c-type { color: #00e5ff; } /* 类型 */
+        .c-num { color: #ffea00; } /* 数字 */
+        .c-com { color: #9e9e9e; font-style: italic; } /* 注释 */
+        .c-str { color: #a5d6a7; } /* 字符串 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 评分系统</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 评分系统</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J3105</span>歌声王冠</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/113" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/113</a>
+            </div>
+            <div class="subtitle">🎤 森林音乐竞技场 · 公平打分</div>
+        </div>
+
+        <div class="card">
+            <h2>🎵 寻找最强歌唱英雄 (题目描述)</h2>
+            <p>
+                有 $n$ 位英雄参加唱歌比赛，每人有 $m$ 个评委打分。
+                <br>为了防止黑幕，规则是：
+                <br>1. <strong>去掉一个最高分</strong>。
+                <br>2. <strong>去掉一个最低分</strong>。
+                <br>3. 剩下的 $m-2$ 个分数取 <strong>平均值</strong>。
+            </p>
+            <p>
+                👉 <strong>任务：</strong> 算出所有选手中，<strong>最高</strong> 的那个平均分是多少？
+                <br>（结果保留 2 位小数）
+            </p>
+
+            
+            <img src="CSP-J3105.png" alt="去头去尾平均分示意图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div style="width:100%; text-align:center; font-weight:bold; margin-bottom:10px;">
+                    示例评分: 10, 8, 9, 5, 10
+                </div>
+                
+                <div class="score-card">8</div>
+                <div class="score-card">9</div>
+                <div class="score-card">5</div>
+                <div class="score-card removed">10<div style="position:absolute; bottom:-20px; font-size:0.5em; color:#666;">最高</div></div>
+                <div class="score-card removed">5<div style="position:absolute; bottom:-20px; font-size:0.5em; color:#666;">最低</div></div>
+                
+                <div class="calc-arrow">➡</div>
+                
+                <div class="result-star">
+                    平均: (8+9+5) ÷ 3 = 7.33
+                </div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Logic)</h2>
+            <p>这是一个经典的“奥林匹克打分法”。</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid var(--accent-stage); margin:10px 0; border-radius: 8px;">
+                <strong>📐 计算公式：</strong><br>
+                我们不需要真的去“删除”数组里的元素（那样太慢了）。<br>
+                聪明的做法是：<br>
+                1. 算出所有分数的 <strong>总和 (sum)</strong>。<br>
+                2. 找出 <strong>最大值 (max)</strong> 和 <strong>最小值 (min)</strong>。<br>
+                3. 有效总分 = <span class="inline-code">sum - max - min</span>。<br>
+                4. 平均分 = <span class="inline-code">有效总分 / (m - 2)</span>。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 实现细节</h3>
+                <p>
+                    <strong>边读边算：</strong> 我们不需要开一个数组把所有分数存下来。
+                    <br>读一个数，就加到 sum 里，顺便看看是不是新的 max 或 min。这样最省空间！
+                    <br><strong>小数精度：</strong> 记得用 <span class="inline-code">fixed << setprecision(2)</span>。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 实现细节</h3>
+                <p>
+                    <strong>列表神器：</strong> Python 处理这个太简单了。
+                    <br>读入列表后，直接用 <span class="inline-code">sum(scores)</span>, <span class="inline-code">max(scores)</span>, <span class="inline-code">min(scores)</span> 三个函数搞定。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>使用“擂台法”边读边找最大最小，高效省空间。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">#include</span> &lt;iomanip&gt; <span class="c-com">// 用于保留小数</span>
+<span class="c-kw">#include</span> &lt;climits&gt; <span class="c-com">// 用于 INT_MAX 等</span>
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">int</span> n, m;
+    <span class="c-kw">cin</span> >> n >> m;
+    
+    <span class="c-type">double</span> max_avg = <span class="c-num">0.0</span>; <span class="c-com">// 记录全场最高的平均分</span>
+    
+    <span class="c-com">// 遍历每一位选手</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < n; i++) {
+        <span class="c-kw">int</span> sum = <span class="c-num">0</span>;
+        <span class="c-kw">int</span> max_val = -<span class="c-num">1</span>;      <span class="c-com">// 初始化为极小值</span>
+        <span class="c-kw">int</span> min_val = <span class="c-num">10000</span>;   <span class="c-com">// 初始化为极大值</span>
+        
+        <span class="c-com">// 读入该选手的 m 个评分</span>
+        <span class="c-kw">for</span> (<span class="c-kw">int</span> j = <span class="c-num">0</span>; j < m; j++) {
+            <span class="c-kw">int</span> score;
+            <span class="c-kw">cin</span> >> score;
+            
+            sum += score; <span class="c-com">// 累加总分</span>
+            
+            <span class="c-com">// 更新最大值和最小值</span>
+            <span class="c-kw">if</span> (score > max_val) max_val = score;
+            <span class="c-kw">if</span> (score < min_val) min_val = score;
+        }
+        
+        <span class="c-com">// 计算平均分：(总分 - 最高 - 最低) / (人数 - 2)</span>
+        <span class="c-com">// 注意要 * 1.0 转为小数除法</span>
+        <span class="c-type">double</span> avg = (sum - max_val - min_val) * <span class="c-num">1.0</span> / (m - <span class="c-num">2</span>);
+        
+        <span class="c-com">// PK：看看是不是当前最高的</span>
+        <span class="c-kw">if</span> (avg > max_avg) {
+            max_avg = avg;
+        }
+    }
+    
+    <span class="c-com">// 输出结果，保留2位小数</span>
+    <span class="c-kw">cout</span> << <span class="c-kw">fixed</span> << <span class="c-kw">setprecision</span>(<span class="c-num">2</span>) << max_avg << <span class="c-kw">endl</span>;
+    
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>无函数脚本，利用内置函数快速计算。</p>
+<pre>
+<span class="c-com"># 1. 读入 n 和 m</span>
+line1 = <span class="c-kw">input</span>().split()
+n = <span class="c-kw">int</span>(line1[<span class="c-num">0</span>])
+m = <span class="c-kw">int</span>(line1[<span class="c-num">1</span>])
+
+max_avg = <span class="c-num">0.0</span> <span class="c-com"># 记录全场最高分</span>
+
+<span class="c-com"># 2. 遍历每一位选手</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(n):
+    <span class="c-com"># 读入一行分数，转为整数列表</span>
+    scores = <span class="c-kw">list</span>(<span class="c-kw">map</span>(<span class="c-kw">int</span>, <span class="c-kw">input</span>().split()))
+    
+    <span class="c-com"># 利用内置函数计算</span>
+    total = <span class="c-kw">sum</span>(scores)
+    high = <span class="c-kw">max</span>(scores)
+    low = <span class="c-kw">min</span>(scores)
+    
+    <span class="c-com"># 计算有效平均分</span>
+    <span class="c-com"># 公式：(总和 - 最大 - 最小) / (数量 - 2)</span>
+    avg = (total - high - low) / (m - <span class="c-num">2</span>)
+    
+    <span class="c-com"># 更新最大值</span>
+    <span class="c-kw">if</span> avg > max_avg:
+        max_avg = avg
+
+<span class="c-com"># 3. 输出结果，保留2位小数</span>
+<span class="c-kw">print</span>(f<span class="c-str">"{max_avg:.2f}"</span>)
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-stage);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>⚖️ <strong>公平算法：</strong> 这种去掉极值的算法在数据处理中非常常用，能防止一个捣乱的评委毁掉比赛。</li>
+                <li>🔄 <strong>边读边算：</strong> 在 C++ 中，尽量避免 <span class="inline-code">cin</span> 读入整个大数组后再处理。读一个处理一个，既快又省内存。</li>
+                <li>🎯 <strong>类型转换：</strong> 在做除法求平均值时，千万别忘了把被除数转成小数（比如乘以 1.0），否则整数除法会丢掉小数部分！</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #880e4f; font-size: 0.9em; border-top: 1px dashed #ff007f; padding-top: 20px;">
+            🎉 冠军诞生！王冠属于得分最高的英雄！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

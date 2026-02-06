@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 魔法课堂：数字宝宝找排名</title>
+    <style>
+        /* --- 全局可爱风格 --- */
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: #e0f7fa; /* 清新的淡蓝色背景 */
+            color: #555;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        /* --- A4 打印优化容器 --- */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 5px solid #00bcd4; /* 蓝绿色边框 */
+        }
+
+        /* --- 标题与字号 --- */
+        h1 {
+            color: #ff9800; /* 充满活力的橙色 */
+            text-align: center;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 0px #ffe0b2;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #9c27b0; /* 神秘的紫色 */
+            border-bottom: 3px dashed #e1bee7;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            clear: both;
+        }
+
+        h3 {
+            color: #009688;
+            margin-top: 25px;
+            font-size: 1.3em;
+        }
+
+        /* --- 各种说明卡片 --- */
+        .card {
+            background-color: #fff;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 8px solid #ccc;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .card.problem { border-color: #ff9800; background-color: #fff8e1; } /* 题目 - 黄色系 */
+        .card.logic { border-color: #2196f3; background-color: #e3f2fd; }   /* 思路 - 蓝色系 */
+        .card.code-box { border-color: #4caf50; background-color: #e8f5e9; } /* 代码 - 绿色系 */
+
+        /* --- 可爱的图示元素 (CSS画图) --- */
+        .step-visual {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border: 2px dashed #b2ebf2;
+        }
+
+        /* 模拟数组的小格子 */
+        .num-box {
+            width: 60px;
+            height: 80px;
+            background: #ffcc80;
+            border-radius: 8px;
+            text-align: center;
+            position: relative;
+            border: 2px solid #ef6c00;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin: 5px;
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+        }
+        
+        .num-box span { display: block; line-height: 1.2; }
+        .val { font-size: 1.2em; font-weight: bold; color: #d84315; }
+        .idx { font-size: 0.7em; color: #555; }
+        .rank-tag { 
+            position: absolute; 
+            top: -10px; right: -10px; 
+            background: #f44336; 
+            color: white; 
+            border-radius: 50%; 
+            width: 25px; height: 25px; 
+            font-size: 0.8em; 
+            line-height: 25px;
+            font-weight: bold;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* 箭头 */
+        .arrow-down {
+            text-align: center;
+            font-size: 30px;
+            color: #00bcd4;
+            margin: 10px 0;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238;
+            color: #eceff1;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: Consolas, monospace;
+            overflow-x: auto;
+            font-size: 0.95em;
+        }
+        .comment { color: #80cbc4; font-style: italic; } /* 清新的薄荷绿注释 */
+        .keyword { color: #ffab91; font-weight: bold; }
+        .type { color: #81d4fa; }
+
+        /* 重点强调 */
+        .highlight {
+            background-color: #fff176;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #e65100;
+        }
+
+        /* 打印设置 */
+        @media print {
+            body { background-color: white; margin: 0; padding: 0; }
+            .container { box-shadow: none; border: none; width: 100%; padding: 10px; }
+            .card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🔢 数字宝宝找排名 🔢</h1>
+    
+    <div style="text-align: center; font-size: 1.1em; color: #666;">
+        👋 嗨，小小算法家！<br>
+        今天我们要玩一个“排排坐，分果果，再回座位”的游戏。<br>
+        这就叫：<b>离散化 (Discretization)</b> 的第一步！
+    </div>
+
+    <div class="card problem">
+        <h2>📜 任务清单 (题目描述)</h2>
+        <p><strong>任务目标：</strong> 老师给了一组数字，我们要告诉每一个数字：它在所有数字里排第几名（从小到大）。</p>
+        <p><strong>特别要求：</strong> 输出的时候，必须按数字<strong>一开始进来的顺序</strong>输出，不能打乱顺序哦！</p>
+        
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 15px;">
+            <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #ffcc80;">
+                <strong>📥 比如输入：</strong><br>
+                5 (共5个数)<br>
+                <span style="font-size: 1.2em; letter-spacing: 5px;">8 2 6 9 4</span>
+            </div>
+            <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #4caf50;">
+                <strong>📤 你要输出：</strong><br>
+                <span style="font-size: 1.2em; letter-spacing: 5px;">4 1 3 5 2</span><br>
+                <span style="font-size: 0.8em; color: #888;">(8排第4, 2排第1, 6排第3...)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card logic">
+        <h2>🧠 聪明的小脑瓜 (解题思路)</h2>
+        
+        <p>这道题最难的地方是：<strong>排完名次后，数字的位置乱了，怎么把名次“贴”回原来的位置？</strong></p>
+        <p>我们用 struct 结构体制作一种<strong>“特殊的号码牌”</strong>：</p>
+
+        <h3>第 1 步：带着“座位号”入场</h3>
+        <p>每个数字进来时，我们不仅要记下它的<strong>数值(data)</strong>，还要记下它原本坐在第几个位置，叫<strong>下标(index)</strong>。</p>
+        <div class="step-visual">
+            <div class="num-box"><span class="val">8</span><span class="idx">座位:1</span></div>
+            <div class="num-box"><span class="val">2</span><span class="idx">座位:2</span></div>
+            <div class="num-box"><span class="val">6</span><span class="idx">座位:3</span></div>
+            <div class="num-box"><span class="val">9</span><span class="idx">座位:4</span></div>
+            <div class="num-box"><span class="val">4</span><span class="idx">座位:5</span></div>
+        </div>
+
+        <div class="arrow-down">⬇️ 第一次排序 (按数值从小到大) ⬇️</div>
+
+        <h3>第 2 步：排队领“排名贴纸”</h3>
+        <p>现在按照<strong>数值(data)</strong>从小到大排队。排好后，给它们发<strong>排名(rank)</strong>。</p>
+        <div class="step-visual">
+            <div class="num-box"><span class="rank-tag">1</span><span class="val">2</span><span class="idx">座位:2</span></div>
+            <div class="num-box"><span class="rank-tag">2</span><span class="val">4</span><span class="idx">座位:5</span></div>
+            <div class="num-box"><span class="rank-tag">3</span><span class="val">6</span><span class="idx">座位:3</span></div>
+            <div class="num-box"><span class="rank-tag">4</span><span class="val">8</span><span class="idx">座位:1</span></div>
+            <div class="num-box"><span class="rank-tag">5</span><span class="val">9</span><span class="idx">座位:4</span></div>
+        </div>
+        <p>👀 <strong>看！</strong> 虽然知道谁第几名了，但是队伍乱了（座位号 2,5,3,1,4）。</p>
+
+        <div class="arrow-down">⬇️ 第二次排序 (按座位号从小到大) ⬇️</div>
+
+        <h3>第 3 步：带着贴纸回原位</h3>
+        <p>现在按照<strong>座位号(index)</strong>从小到大再排一次。大家回到原来的位置，但是身上已经贴好了<strong>排名(rank)</strong>！</p>
+        <div class="step-visual">
+            <div class="num-box"><span class="rank-tag">4</span><span class="val">8</span><span class="idx">座位:1</span></div>
+            <div class="num-box"><span class="rank-tag">1</span><span class="val">2</span><span class="idx">座位:2</span></div>
+            <div class="num-box"><span class="rank-tag">3</span><span class="val">6</span><span class="idx">座位:3</span></div>
+            <div class="num-box"><span class="rank-tag">5</span><span class="val">9</span><span class="idx">座位:4</span></div>
+            <div class="num-box"><span class="rank-tag">2</span><span class="val">4</span><span class="idx">座位:5</span></div>
+        </div>
+        <p>🎉 <strong>成功！</strong> 现在按顺序读出它们身上的红色小贴纸（排名）就好啦！</p>
+    </div>
+
+    <div class="card code-box">
+        <h2>💻 魔法咒语 (代码详解)</h2>
+        <p>这就是实现上面三个步骤的完整代码：</p>
+
+<pre>
+<span class="keyword">#include</span> &lt;bits/stdc++.h&gt;
+<span class="keyword">using namespace std;</span>
+
+<span class="comment">// 📦 定义一个包含3个信息的结构体</span>
+<span class="keyword">struct</span> <span class="type">node</span>
+{
+    <span class="type">int</span> data;   <span class="comment">// 🔢 数值：数字本身的大小</span>
+    <span class="type">int</span> rank;   <span class="comment">// 🏆 排名：它排第几名</span>
+    <span class="type">int</span> index;  <span class="comment">// 📍 下标：它原来坐在哪个位置</span>
+}; 
+<span class="type">node</span> a[10001];  <span class="comment">// 准备好10001个这样的结构体</span>
+<span class="type">int</span> n;
+
+<span class="comment">// ⚖️ 比较规则1：按“数值”比大小</span>
+<span class="type">bool</span> comp1(<span class="type">node</span> x, <span class="type">node</span> y)
+{
+    <span class="keyword">return</span> x.data < y.data; <span class="comment">// 数值小的排前面</span>
+}
+
+<span class="comment">// ⚖️ 比较规则2：按“原来的座位”比大小</span>
+<span class="type">bool</span> comp2(<span class="type">node</span> x, <span class="type">node</span> y)
+{
+    <span class="keyword">return</span> x.index < y.index; <span class="comment">// 座位号小的排前面（恢复原样）</span>
+}
+
+<span class="keyword">int</span> main()
+{
+    cin >> n;
+    <span class="keyword">for</span>(<span class="type">int</span> i=1; i<=n; i++)
+    {
+        cin >> a[i].data;  <span class="comment">// 读入数字</span>
+        a[i].index = i;    <span class="comment">// 📍 关键！立刻记下它的座位号(i)</span>
+    }
+
+    <span class="comment">// 🔥 第一次排序：为了知道名次</span>
+    sort(a+1, a+1+n, comp1); 
+
+    <span class="comment">// 🏷️ 发排名贴纸</span>
+    <span class="keyword">for</span>(<span class="type">int</span> i=1; i<=n; i++)
+    {
+        a[i].rank = i;     <span class="comment">// 排在第几个，排名就是几</span>
+    }
+
+    <span class="comment">// 🔥 第二次排序：为了回原来的座位</span>
+    sort(a+1, a+1+n, comp2); 
+
+    <span class="comment">// 📤 输出结果</span>
+    <span class="keyword">for</span>(<span class="type">int</span> i=1; i<=n; i++)
+    {
+        cout << a[i].rank << " "; <span class="comment">// 只输出排名</span>
+    }
+
+    <span class="keyword">return</span> 0;
+}
+</pre>
+    </div>
+
+    <div class="card logic" style="border-color: #9c27b0; background-color: #f3e5f5;">
+        <h2>🌟 重点小结</h2>
+        <ul>
+            <li>✏️ <strong>为什么要存 index？</strong> 因为 sort 会打乱顺序，如果不记下原来的位置，数字宝宝就找不到家啦！</li>
+            <li>🔄 <strong>两次 sort 的作用：</strong>
+                <ul>
+                    <li>第1次用 <code>comp1</code>：是为了算出谁大谁小（定排名）。</li>
+                    <li>第2次用 <code>comp2</code>：是为了把大家变回原来的输入顺序。</li>
+                </ul>
+            </li>
+            <li>🚩 <strong>Struct 的好处：</strong> 它把 <code>data</code> (数值) 和 <code>index</code> (座位号) 绑在了一起，移动的时候是一起移动的，不会弄丢！</li>
+        </ul>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; color: #aaa; font-size: 0.9em;">
+        🎈 恭喜你，又学会了一个高级技巧！继续加油！ 🎈
+    </div>
+</div>
+
+</body>
+</html>
