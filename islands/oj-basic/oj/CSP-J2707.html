@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2707 神庙方阵 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #37474f; /* 神庙深石色 */
+            --card-bg: #cfd8dc; /* 石板灰 */
+            --text-color: #263238; /* 铭文黑 */
+            --cpp-color: #006064; /* 宝石青 */
+            --py-color: #f57f17; /* 琥珀黄 */
+            --accent-stone: #78909c; /* 浮雕灰 */
+            --border-radius: 10px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23455a64' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.3);
+            border: 4px solid #546e7a;
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #546e7a;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--cpp-color);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--cpp-color);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--py-color);
+            border-bottom-color: var(--py-color);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 3px solid #546e7a;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: #b0bec5;
+            transition: all 0.2s;
+            color: #37474f;
+        }
+
+        .btn-cpp.active { background-color: var(--cpp-color); color: white; border-color: var(--cpp-color); box-shadow: 0 4px 0 #00363a; transform: translateY(-2px); }
+        .btn-py.active { background-color: var(--py-color); color: white; border-color: var(--py-color); box-shadow: 0 4px 0 #bc5100; transform: translateY(-2px); }
+
+        /* --- 标题样式 --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: #263238;
+            text-shadow: 1px 1px 0 #fff;
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px double #546e7a;
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #455a64;
+            font-size: 1.2em;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .badge {
+            background: #546e7a;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 5px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 8px solid #546e7a;
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+            background: rgba(255,255,255,0.3);
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #eceff1;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid #b0bec5;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #607d8b;
+            padding: 20px;
+            border-radius: 10px;
+            border: 4px solid #455a64;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            gap: 10px;
+        }
+
+        .stone-block {
+            width: 60px;
+            height: 60px;
+            background: #cfd8dc;
+            border: 2px solid #90a4ae;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #37474f;
+            box-shadow: 3px 3px 0 #546e7a;
+            position: relative;
+        }
+
+        .arrow-indicator {
+            position: absolute;
+            font-size: 2em;
+            color: #fdd835;
+            text-shadow: 1px 1px 0 #000;
+            z-index: 10;
+            animation: movePen 3s infinite steps(9);
+        }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 60%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+            border: 3px solid #546e7a;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238; /* 石碑黑 */
+            color: #80cbc4; /* 刻痕青 */
+            padding: 20px;
+            border-radius: 10px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid #cfd8dc;
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #e65100;
+            background-color: #ffe0b2;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #f48fb1; font-weight: bold; } /* 关键字 */
+        .c-type { color: #80deea; } /* 类型 */
+        .c-num { color: #ffca28; } /* 数字 */
+        .c-com { color: #b0bec5; font-style: italic; } /* 注释 */
+        .c-str { color: #a5d6a7; } /* 字符串 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 石碑刻印</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 石碑刻印</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2707</span>神庙方阵</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/102" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/102</a>
+            </div>
+            <div class="subtitle">🗿 森林深处篇 · 格式化输出</div>
+        </div>
+
+        <div class="card">
+            <h2>📜 修复古老的数字石门 (题目描述)</h2>
+            <p>
+                英雄来到神庙，面前是一扇巨大的石门。
+                <br>石门上需要刻满数字，规则如下：
+            </p>
+            <p>
+                1. <strong>顺序填充：</strong> 从 1 开始，一直刻到 $n \times n$。
+                <br>2. <strong>排列方式：</strong> 按行排列，刻满一行 $n$ 个数，再换下一行。
+                <br>3. <strong>严苛排版：</strong>
+                <br>&nbsp;&nbsp;&nbsp;&nbsp;⚠️ 每个数字占 <strong>5</strong> 个字符宽度。
+                <br>&nbsp;&nbsp;&nbsp;&nbsp;➡️ 数字要 <strong>右对齐</strong>。
+                <br>&nbsp;&nbsp;&nbsp;&nbsp;🔲 相邻两个数字之间，还要额外加一个 <strong>空格</strong>。
+            </p>
+
+            
+            <img src="CSP-J2707.png" alt="方阵生成示意图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div style="color:#fff; width:100%; text-align:center; margin-bottom:10px;">当 n=3 时的刻印顺序</div>
+                <div class="grid-container">
+                    <div class="stone-block">1</div>
+                    <div class="stone-block">2</div>
+                    <div class="stone-block">3</div>
+                    <div class="stone-block">4</div>
+                    <div class="stone-block">5</div>
+                    <div class="stone-block">6</div>
+                    <div class="stone-block">7</div>
+                    <div class="stone-block">8</div>
+                    <div class="stone-block">9</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Formatting)</h2>
+            <p>这一关的难点不在于生成数字，而在于 <strong>怎么输出得整整齐齐</strong>。</p>
+            
+            <div style="background:#455a64; color:#fff; padding:15px; border-left:4px solid var(--py-color); margin:10px 0; border-radius: 8px;">
+                <strong>📐 格式化魔法：</strong><br>
+                题目要求：“占 5 个宽度，右对齐”。
+                <br>这意味着，如果数字是 <span class="inline-code">1</span>，它前面要补 4 个空格：<span class="inline-code">"    1"</span>。
+                <br>如果数字是 <span class="inline-code">100</span>，前面补 2 个空格：<span class="inline-code">"  100"</span>。
+                <br><br>
+                <strong>➕ 额外空格：</strong>
+                <br>题目还说“相邻数字间再加一个空格”。所以最终输出应该是：
+                <br><span class="inline-code">宽度5的数字 + 空格</span>
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 工具：iomanip</h3>
+                <p>
+                    需要引入头文件 <span class="inline-code">#include &lt;iomanip&gt;</span>。
+                    <br>使用 <span class="inline-code">setw(5)</span> 来设定下一个输出项的宽度。
+                    <br>默认就是右对齐，非常方便！
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 工具：格式化字符串</h3>
+                <p>
+                    可以使用 <span class="inline-code">"%5d" % num</span> 或者 f-string <span class="inline-code">f"{num:5}"</span>。
+                    <br><span class="inline-code">5d</span> 的意思就是：宽度为 5 的整数 (decimal)。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>利用 <span class="inline-code">setw</span> 控制宽度，双重循环填充。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">#include</span> &lt;iomanip&gt; <span class="c-com">// 必须包含，为了使用 setw</span>
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">const int</span> MAXN = <span class="c-num">105</span>;
+<span class="c-type">int</span> a[MAXN][MAXN]; <span class="c-com">// 定义二维数组</span>
+<span class="c-type">int</span> n;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">cin</span> >> n;
+    
+    <span class="c-type">int</span> tot = <span class="c-num">0</span>; <span class="c-com">// 计数器，记录当前要刻的数字</span>
+    
+    <span class="c-com">// 外层循环：行</span>
+    <span class="c-kw">for</span>(<span class="c-type">int</span> i = <span class="c-num">0</span>; i < n; i++) {
+        
+        <span class="c-com">// 内层循环：列</span>
+        <span class="c-kw">for</span>(<span class="c-type">int</span> j = <span class="c-num">0</span>; j < n; j++) {
+            
+            <span class="c-com">// 1. 填入数字</span>
+            a[i][j] = ++tot; 
+            
+            <span class="c-com">// 2. 格式化输出</span>
+            <span class="c-com">// setw(5) 保证数字占5格</span>
+            <span class="c-com">// 后面再加 " " 是题目要求的额外间隔</span>
+            <span class="c-kw">cout</span> << <span class="c-kw">setw</span>(<span class="c-num">5</span>) << a[i][j] << <span class="c-str">" "</span>;
+        }
+        
+        <span class="c-com">// 每一行刻完要换行</span>
+        <span class="c-kw">cout</span> << <span class="c-kw">endl</span>;
+    }
+    
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>无函数脚本，使用 <span class="inline-code">%5d</span> 占位符。</p>
+<pre>
+<span class="c-com"># 1. 读入 n</span>
+n = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+
+<span class="c-com"># 计数器，从 0 开始，后面先 +1 再用</span>
+cnt = <span class="c-num">0</span>
+
+<span class="c-com"># 2. 双重循环打印</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(n):
+    <span class="c-kw">for</span> j <span class="c-kw">in</span> <span class="c-kw">range</span>(n):
+        
+        <span class="c-com"># 数字递增</span>
+        cnt += <span class="c-num">1</span>
+        
+        <span class="c-com"># 格式化输出</span>
+        <span class="c-com"># %5d 表示占 5 位宽度的整数</span>
+        <span class="c-com"># end=" " 表示数字后面加个空格，且不换行</span>
+        <span class="c-kw">print</span>(<span class="c-str">"%5d"</span> % cnt, <span class="c-kw">end</span>=<span class="c-str">" "</span>)
+        
+    <span class="c-com"># 每一行结束，打印一个换行符</span>
+    <span class="c-kw">print</span>()
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-stone);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🔢 <strong>计数器：</strong> 在双重循环外面定义 <span class="inline-code">tot = 0</span>，然后在循环内部每次 <span class="inline-code">++tot</span>，就能产生连续的数字。</li>
+                <li>📏 <strong>setw(n)：</strong> 这是 C++ 控制输出宽度的神器。注意它只对 <strong>紧跟在后面</strong> 的那一个输出有效。</li>
+                <li>🚧 <strong>空格陷阱：</strong> 题目说“相邻数字间有一个空格”，如果只用 <span class="inline-code">setw(5)</span>，当数字很大（如10000）时，它们会连在一起，所以必须额外输出一个空格。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #546e7a; font-size: 0.9em; border-top: 1px dashed #cfd8dc; padding-top: 20px;">
+            🎉 石门刻印完成！神庙大门缓缓打开... <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>
