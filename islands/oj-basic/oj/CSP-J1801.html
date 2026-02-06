@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J1801 和与积-双卷封印 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #5d4037; /* 深褐色背景 */
+            --card-bg: #fff8e1; /* 羊皮纸色 */
+            --text-color: #3e2723; /* 深咖啡色 */
+            --cpp-color: #1976d2; /* 封印蓝 */
+            --py-color: #fbc02d; /* 卷轴金 */
+            --accent-scroll: #8d6e63; /* 卷轴杆色 */
+            --border-radius: 10px;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+            background-image: repeating-linear-gradient(45deg, #4e342e 0, #4e342e 1px, transparent 0, transparent 50%);
+            background-size: 30px 30px;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.3);
+            border: 4px solid var(--text-color);
+            position: relative;
+        }
+
+        /* 卷轴装饰效果 */
+        .container::before, .container::after {
+            content: "";
+            position: absolute;
+            top: 20px;
+            bottom: 20px;
+            width: 30px;
+            background: var(--accent-scroll);
+            border: 2px solid var(--text-color);
+            border-radius: 15px;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.3);
+        }
+        .container::before { left: -15px; }
+        .container::after { right: -15px; }
+
+        /* 链接小字 */
+        .link-text {
+            text-align: center;
+            font-size: 0.85em;
+            color: #5d4037;
+            margin-top: 10px;
+            margin-bottom: 25px;
+            font-style: italic;
+        }
+        .link-text a {
+            color: var(--cpp-color);
+            text-decoration: none;
+            border-bottom: 1px dashed var(--cpp-color);
+        }
+        .link-text a:hover { color: #000; background-color: rgba(25, 118, 210, 0.1); }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 25px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.3);
+            border: 2px solid var(--text-color);
+        }
+
+        .btn-cpp { background-color: #bbdefb; color: #0d47a1; }
+        .btn-py { background-color: #fff9c4; color: #f57f17; }
+        
+        .toggle-btn:hover { transform: translateY(-2px); box-shadow: 5px 5px 0px rgba(0,0,0,0.3); }
+        .toggle-btn.active { transform: scale(0.95); box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2); }
+
+        /* --- 标题样式 --- */
+        h1 {
+            text-align: center;
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            color: var(--text-color);
+            text-shadow: 2px 2px 0px #d7ccc8;
+            display: inline-block;
+            border-bottom: 3px double var(--text-color);
+            padding-bottom: 5px;
+            width: 100%;
+        }
+        .header-container { text-align: center; }
+        .badge {
+            background: var(--cpp-color);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-size: 0.5em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-bottom: 2px dashed var(--text-color);
+            padding-bottom: 5px;
+            margin-top: 30px;
+            font-size: 1.5em;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #d7ccc8;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #efebe9;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px dashed #8d6e63;
+        }
+
+        .scroll {
+            width: 45%;
+            padding: 15px;
+            border: 2px solid #5d4037;
+            background: #fff;
+            text-align: center;
+            position: relative;
+            box-shadow: 5px 5px 0 #a1887f;
+        }
+        .scroll-title { font-weight: bold; margin-bottom: 10px; display: block; border-bottom: 1px solid #ccc;}
+        .scroll-content { font-family: monospace; font-size: 1.2em; }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 350px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+            border: none;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #3e2723;
+            color: #ffcc80;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            position: relative;
+            font-size: 1.05em;
+            border-left: 5px solid var(--py-color);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #d84315;
+            background-color: #ffccbc;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 0.95em;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #4fc3f7; } /* 类型 */
+        .c-num { color: #ffeb3b; } /* 数字 */
+        .c-com { color: #bcaaa4; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ For循环</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python For循环</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J1801</span>和与积-双卷封印</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/52" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/52</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📜 双卷石室的挑战 (题目描述)</h2>
+            <p>
+                英雄进入了神秘的“双卷石室”。为了解开封印，你需要同时计算两个卷轴上的数值：
+            </p>
+            <ul>
+                <li>➕ <strong>和之卷 (sum)：</strong> 计算 <span class="inline-code">1 + 2 + ... + n</span> 的总和。</li>
+                <li>✖️ <strong>积之卷 (product)：</strong> 计算 <span class="inline-code">1 × 2 × ... × n</span> 的乘积（也就是 n 的阶乘）。</li>
+            </ul>
+            <p>
+                👉 <strong>任务：</strong> 输入一个整数 n，在同一个循环中计算出这两个值，并分两行输出。
+            </p>
+
+            
+            <img src="CSP-J1801.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div class="scroll">
+                    <span class="scroll-title">📜 和之卷 (Sum)</span>
+                    <div class="scroll-content">
+                        初始值: 0<br>
+                        <span style="color:#d84315;">s += i</span>
+                    </div>
+                </div>
+                <div class="scroll">
+                    <span class="scroll-title">📜 积之卷 (Product)</span>
+                    <div class="scroll-content">
+                        初始值: 1<br>
+                        <span style="color:#1976d2;">p *= i</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🧠 魔法原理 (For 循环双修)</h2>
+            
+            <p>我们不需要写两个循环，因为它们都是从 1 到 n 遍历。我们可以在一次遍历中同时完成两项工作。</p>
+            
+            <div class="cpp-content">
+                <h3>1. 初始化的奥秘</h3>
+                <ul>
+                    <li><strong>加法初始值 (s)：</strong> 必须是 <strong>0</strong>。因为 0 加任何数都不变。</li>
+                    <li><strong>乘法初始值 (p)：</strong> 必须是 <strong>1</strong>。因为 1 乘任何数都不变（如果设为 0，结果永远是 0）。</li>
+                </ul>
+
+                <h3>2. 数据类型的陷阱</h3>
+                <p>
+                    <span class="inline-code">1 × 2 × ... × 20</span> 是一个非常巨大的数字！
+                    <br>普通的 <span class="inline-code">int</span> 存不下这么大的数，会发生“溢出”。
+                    <br>🚀 <strong>解决办法：</strong> 积变量 <span class="inline-code">p</span> 必须使用 <span class="inline-code">long long</span> 类型。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>1. 初始化的奥秘</h3>
+                <ul>
+                    <li><strong>加法初始值 (s)：</strong> 必须是 <strong>0</strong>。</li>
+                    <li><strong>乘法初始值 (p)：</strong> 必须是 <strong>1</strong>。（如果设为 0，乘积永远是 0）。</li>
+                </ul>
+
+                <h3>2. Range 的范围</h3>
+                <p>
+                    题目要求算到 n，所以 <span class="inline-code">range</span> 必须写成 <span class="inline-code">range(1, n + 1)</span>。
+                    <br>记住：Python 的 range 是“包头不包尾”的。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>注意 <span class="inline-code">long long</span> 的使用，防止乘积爆炸。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">int</span> n;
+    <span class="c-kw">cin</span> >> n;
+
+    <span class="c-kw">long long</span> s = <span class="c-num">0</span>; <span class="c-com">// 和，初始为 0</span>
+    <span class="c-kw">long long</span> p = <span class="c-num">1</span>; <span class="c-com">// 积，初始为 1 (重要！)</span>
+
+    <span class="c-com">// 一个循环，两份工</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">1</span>; i <= n; i++) {
+        s += i;      <span class="c-com">// 累加</span>
+        p *= i;      <span class="c-com">// 累乘</span>
+    }
+
+    <span class="c-kw">cout</span> << s << <span class="c-kw">endl</span>; <span class="c-com">// 第一行输出和</span>
+    <span class="c-kw">cout</span> << p << <span class="c-kw">endl</span>; <span class="c-com">// 第二行输出积</span>
+
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>简单直接，注意 range 的边界。</p>
+<pre>
+<span class="c-com"># 读入 n</span>
+n = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+
+s = <span class="c-num">0</span>  <span class="c-com"># 和，初始为 0</span>
+p = <span class="c-num">1</span>  <span class="c-com"># 积，初始为 1</span>
+
+<span class="c-com"># 循环 1 到 n (包含 n)</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(<span class="c-num">1</span>, n + <span class="c-num">1</span>):
+    s += i   <span class="c-com"># 累加</span>
+    p *= i   <span class="c-com"># 累乘</span>
+
+<span class="c-kw">print</span>(s)
+<span class="c-kw">print</span>(p)
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 5px solid var(--text-color);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🏁 <strong>初始值：</strong> 累加找 0，累乘找 1。这是数学公理。</li>
+                <li>🔄 <strong>效率：</strong> 能在一个循环里做完的事，尽量不要拆成两个循环。</li>
+                <li>🐘 <strong>大数安全：</strong> 涉及到连乘（阶乘），结果增长极快，C++ 必须用 <span class="inline-code">long long</span>。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #8d6e63; font-size: 0.9em; border-top: 1px dashed #d7ccc8; padding-top: 20px;">
+            🎉 封印解除！双卷石室的大门缓缓打开... <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

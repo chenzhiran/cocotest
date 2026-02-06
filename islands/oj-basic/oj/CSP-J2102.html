@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2102 倒流回声 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #e8eaf6; /* 淡淡的迷雾蓝 */
+            --card-bg: #ffffff;
+            --text-color: #1a237e; /* 深邃蓝 */
+            --cpp-color: #304ffe; /* 魔法蓝 */
+            --py-color: #ff6f00; /* 火把橙 */
+            --accent-echo: #7c4dff; /* 回声紫 */
+            --border-radius: 15px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影，适合小朋友 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 8px 25px rgba(26, 35, 126, 0.15);
+            border: 4px solid var(--accent-echo);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #5c6bc0;
+            margin-top: 5px;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--accent-echo);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--accent-echo);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--cpp-color);
+            border-bottom-color: var(--cpp-color);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: white; }
+        
+        .btn-py { color: var(--py-color); border-color: var(--py-color); }
+        .btn-py.active { background-color: var(--py-color); color: white; }
+
+        /* --- 标题样式 (无重影) --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: none; /* 确保无重影 */
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-echo);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #3949ab;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-echo);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-echo);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #f5f5f5;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #e8eaf6;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #9fa8da;
+        }
+
+        .soldier {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            background: #e8eaf6;
+            border: 2px solid #3949ab;
+            color: #3949ab;
+            position: relative;
+        }
+
+        .soldier.reverse {
+            background: #d1c4e9;
+            border-color: #7c4dff;
+            color: #7c4dff;
+        }
+
+        .arrow { font-size: 2em; color: #7c4dff; }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 (背景色修改为深灰蓝) --- */
+        pre {
+            background-color: #263238; /* 深灰蓝背景 */
+            color: #eceff1; /* 浅色文字 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--cpp-color);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #d50000;
+            background-color: #ffebee;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #81d4fa; } /* 类型 */
+        .c-num { color: #ffcc80; } /* 数字 */
+        .c-com { color: #b0bec5; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 数组</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 列表</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2102</span>倒流回声</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/60" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/60</a>
+            </div>
+            <div class="subtitle">🏰 回声长廊篇 · 逆序输出</div>
+        </div>
+
+        <div class="card">
+            <h2>📢 回声石板的考验 (题目描述)</h2>
+            <p>
+                英雄进入了地牢的“回声长廊”。这里有一块神奇的石板，它能把声音倒着放出来。
+                <br>石板前站着 <strong>N</strong> 个数字士兵。
+                <br>👉 <strong>任务：</strong> 你需要把这 N 个士兵的数字，按照 <strong>从后往前</strong> 的顺序输出，才能打开机关门！
+            </p>
+            <p>
+                例如输入：<span class="inline-code">1 2 3</span>
+                <br>回声输出：<span class="inline-code">3 2 1</span>
+            </p>
+
+            
+            <img src="CSP-J2102.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div>
+                    <div style="font-size:0.8em; text-align:center;">输入</div>
+                    <div style="display:flex; gap:5px;">
+                        <div class="soldier">1</div>
+                        <div class="soldier">2</div>
+                        <div class="soldier">3</div>
+                    </div>
+                </div>
+                <div class="arrow">🔄</div>
+                <div>
+                    <div style="font-size:0.8em; text-align:center;">输出</div>
+                    <div style="display:flex; gap:5px;">
+                        <div class="soldier reverse">3</div>
+                        <div class="soldier reverse">2</div>
+                        <div class="soldier reverse">1</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Logic)</h2>
+            
+            <p>我们要先把所有数字存起来，然后倒着读一遍。</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid #7c4dff; margin:10px 0; border-radius: 8px;">
+                <strong>🔍 核心思路：</strong><br>
+                1. <strong>存储：</strong> 必须先把 n 个数字全部读入数组/列表。<br>
+                2. <strong>下标 (Index)：</strong> 
+                   第 1 个数下标是 0，第 n 个数下标是 <span class="inline-code">n-1</span>。<br>
+                3. <strong>倒车请注意：</strong> 我们从 <span class="inline-code">n-1</span> 开始，一直减到 <span class="inline-code">0</span>。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 逆序循环</h3>
+                <p>
+                    <span class="inline-code">for (int i = n - 1; i >= 0; i--)</span>
+                    <br>🏁 <strong>起点：</strong> <span class="inline-code">n - 1</span> (最后一个元素)
+                    <br>🚦 <strong>终点：</strong> <span class="inline-code">0</span> (包含 0，所以用 >=)
+                    <br>🔙 <strong>步长：</strong> <span class="inline-code">i--</span> (每次减 1，倒着走)
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 切片魔法</h3>
+                <p>
+                    Python 有一个超级咒语：<span class="inline-code">[::-1]</span>
+                    <br>它可以直接把列表翻转过来。
+                    <br>再配合 <span class="inline-code">*</span> 号（星号解包），就能直接打印出用空格隔开的数字了！
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>经典的数组逆序遍历。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">int</span> n;
+    <span class="c-kw">cin</span> >> n;
+
+    <span class="c-kw">int</span> a[<span class="c-num">105</span>]; <span class="c-com">// 定义数组，大小要够</span>
+
+    <span class="c-com">// 1. 正序读入</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < n; i++) {
+        <span class="c-kw">cin</span> >> a[i];
+    }
+
+    <span class="c-com">// 2. 逆序输出 (从 n-1 倒数到 0)</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = n - <span class="c-num">1</span>; i >= <span class="c-num">0</span>; i--) {
+        <span class="c-kw">cout</span> << a[i];
+        
+        <span class="c-com">// 如果不是最后一个输出的数(下标0)，就打印空格</span>
+        <span class="c-kw">if</span> (i > <span class="c-num">0</span>) {
+            <span class="c-kw">cout</span> << <span class="c-str">" "</span>;
+        }
+    }
+
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>一行代码搞定翻转输出，这就是 Python 的魅力。</p>
+<pre>
+<span class="c-com"># 1. 读入 n</span>
+n = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+
+<span class="c-com"># 2. 读入列表</span>
+a = <span class="c-kw">list</span>(<span class="c-kw">map</span>(<span class="c-kw">int</span>, <span class="c-kw">input</span>().split()))
+
+<span class="c-com"># 3. 逆序输出</span>
+<span class="c-com"># a[::-1] 生成一个翻转的新列表</span>
+<span class="c-com"># * 号把列表里的元素拆开，print 默认用空格连接</span>
+<span class="c-kw">print</span>(*a[::<span class="c-num">-1</span>])
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-echo);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>📍 <strong>下标陷阱：</strong> 数组长度是 N，但最后一个元素的下标是 <span class="inline-code">N-1</span>，不是 N！</li>
+                <li>🔙 <strong>逆序循环：</strong> 牢记 <span class="inline-code">i--</span> 和 <span class="inline-code">i >= 0</span> 的组合。</li>
+                <li>🔪 <strong>切片咒语：</strong> Python 中 <span class="inline-code">[::-1]</span> 表示从头到尾，步长为 -1（倒着走）。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #5c6bc0; font-size: 0.9em; border-top: 1px dashed #c5cae9; padding-top: 20px;">
+            🎉 机关门打开了！你听到了完美的回声！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

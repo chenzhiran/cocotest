@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J1701 三三礼令 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #e8f5e9; /* 雪地淡绿 */
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --cpp-color: #c62828; /* 圣诞红 */
+            --py-color: #fdd835; /* 星星黄 */
+            --accent-green: #2e7d32; /* 松树绿 */
+            --accent-red: #d32f2f; /* 礼物红 */
+            --border-radius: 15px;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+            background-image: radial-gradient(#ffffff 15%, transparent 16%), radial-gradient(#ffffff 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(46, 125, 50, 0.2);
+            border: 5px solid var(--accent-red);
+            position: relative;
+        }
+
+        /* 装饰：圣诞结 */
+        .container::before {
+            content: "🎀";
+            position: absolute;
+            top: -25px;
+            right: -15px;
+            font-size: 3em;
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 25px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .btn-cpp { background-color: #ffcdd2; color: #b71c1c; border: 3px solid #c62828; }
+        .btn-py { background-color: #fff9c4; color: #f57f17; border: 3px solid #fbc02d; }
+        
+        .toggle-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+        .toggle-btn.active { transform: scale(1.1); box-shadow: inset 0 3px 5px rgba(0,0,0,0.2); }
+
+        /* --- 标题样式 --- */
+        h1 {
+            text-align: center;
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            color: var(--accent-red);
+            text-shadow: 2px 2px 0px #ffeb3b;
+            border-bottom: 3px dashed var(--accent-green);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+        .header-container { text-align: center; }
+        .subtitle {
+            text-align: center;
+            color: #558b2f;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+        .badge {
+            background: var(--accent-green);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--accent-green);
+            border-left: 6px solid var(--accent-red);
+            padding-left: 10px;
+            margin-top: 30px;
+            font-size: 1.5em;
+        }
+
+        h3 { color: #f57f17; margin-top: 25px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;}
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #ffffff;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid #ffccbc;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px dashed #81c784;
+        }
+
+        .digit-box {
+            width: 50px;
+            height: 50px;
+            background: #fff;
+            color: #333;
+            border: 2px solid #aaa;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .digit-box.target {
+            background: #ffcdd2;
+            border-color: #d32f2f;
+            color: #d32f2f;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .arrow { font-size: 1.5em; color: #2e7d32; }
+
+        /* 图片样式：无边框 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 350px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+            border: none; /* 去除边框 */
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238;
+            color: #eceff1;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            position: relative;
+            font-size: 1.05em;
+            border-left: 5px solid var(--accent-red);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #c62828;
+            background-color: #ffcdd2;
+            padding: 2px 5px;
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #c792ea; font-weight: bold; } /* 关键字 */
+        .c-type { color: #ffcb6b; } /* 类型 */
+        .c-str { color: #c3e88d; } /* 字符串 */
+        .c-num { color: #f78c6c; } /* 数字 */
+        .c-com { color: #80cbc4; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ Do-While</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python While</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J1701</span>三三礼令</h1>
+            <div class="subtitle">🎄 圣诞特别篇 · 数位拆分</div>
+        </div>
+
+        <div class="card">
+            <h2>🎅 圣诞老人的神秘规则 (题目描述)</h2>
+            <p>
+                平安夜的雪花飘落，圣诞老人正在派发礼物。
+                今年的规则很特别：只有当英雄的门牌号里，<strong>刚好有 3 个数字 '3'</strong> 时，才能获得限定大礼包！🎁
+            </p>
+            <p>
+                👉 <strong>任务：</strong> 输入一个正整数 <span class="inline-code">m</span>（门牌号），判断其中是否恰好包含 3 个 '3'。
+                <br>✅ <strong>YES：</strong> 比如 43833 (有三个3)。
+                <br>❌ <strong>NO：</strong> 比如 3931 (只有两个)，或者 13333 (有四个，太多了！)。
+            </p>
+
+            
+            <img src="CSP-J1701.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div class="digit-box">4</div>
+                <div class="digit-box target">3</div>
+                <div class="digit-box">8</div>
+                <div class="digit-box target">3</div>
+                <div class="digit-box target">3</div>
+                <div class="arrow">➡️</div>
+                <div style="font-weight:bold; color:var(--accent-red);">计数: 3 (YES)</div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (数值拆位 & Do-While)</h2>
+            <p>我们不用字符串，而是用纯数学的方法，把数字一个个拆下来检查。</p>
+            
+
+            <div class="cpp-content">
+                <h3>1. Do-While 循环</h3>
+                <p>
+                    <span class="inline-code">do { ... } while (条件);</span>
+                    <br>它和 <span class="inline-code">while</span> 的区别是：<strong>先斩后奏</strong>。不管条件符不符合，<strong>至少执行一次</strong>。
+                    <br>这在处理数字拆位时特别好用，因为即使输入是 <span class="inline-code">0</span>，我们也能进去处理一次。
+                </p>
+
+                <h3>2. 数值拆位大法</h3>
+                <ul>
+                    <li>🔪 <strong>切个位：</strong> <span class="inline-code">m % 10</span> (拿到最后一位数字)。</li>
+                    <li>🗑️ <strong>丢个位：</strong> <span class="inline-code">m /= 10</span> (把最后一位扔掉，准备切下一个)。</li>
+                </ul>
+            </div>
+
+            <div class="py-content">
+                <h3>1. Python 模拟 Do-While</h3>
+                <p>
+                    Python 没有原生的 <span class="inline-code">do-while</span> 语句。
+                    <br>我们通常使用标准的 <span class="inline-code">while m > 0:</span> 来实现同样的效果。
+                    <br>虽然字符串方法 <span class="inline-code">count('3')</span> 更快，但在 CSP 考试中，掌握数学拆位法（取余、整除）是必备的基本功哦！
+                </p>
+
+                <h3>2. 数值拆位大法</h3>
+                <ul>
+                    <li>🔪 <strong>切个位：</strong> <span class="inline-code">m % 10</span> (拿到最后一位)。</li>
+                    <li>🗑️ <strong>丢个位：</strong> <span class="inline-code">m //= 10</span> (注意要用双斜杠进行整除！)。</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码 (Do-While版)</h2>
+            <p>使用 <span class="inline-code">do-while</span> 循环，一位一位地检查数字。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">long long</span> m;   <span class="c-com">// 门牌号可能很大，用 long long 保险</span>
+    <span class="c-kw">cin</span> >> m;
+
+    <span class="c-kw">int</span> cnt = <span class="c-num">0</span>;   <span class="c-com">// 计数器，记录 '3' 的个数</span>
+
+    <span class="c-com">// do-while 循环：至少执行一次</span>
+    <span class="c-kw">do</span> {
+        <span class="c-kw">int</span> digit = m % <span class="c-num">10</span>;  <span class="c-com">// 1. 取出最后一位数字</span>
+        
+        <span class="c-kw">if</span> (digit == <span class="c-num">3</span>) {    <span class="c-com">// 2. 如果是 3，计数器加 1</span>
+            cnt++;
+        }
+        
+        m /= <span class="c-num">10</span>;             <span class="c-com">// 3. 删掉最后一位</span>
+        
+    } <span class="c-kw">while</span> (m > <span class="c-num">0</span>);         <span class="c-com">// 4. 如果还有数字剩下，继续循环</span>
+
+    <span class="c-com">// 最后的审判：必须刚好等于 3</span>
+    <span class="c-kw">if</span> (cnt == <span class="c-num">3</span>) {
+        <span class="c-kw">cout</span> << <span class="c-str">"YES"</span> << <span class="c-kw">endl</span>;
+    } <span class="c-kw">else</span> {
+        <span class="c-kw">cout</span> << <span class="c-str">"NO"</span> << <span class="c-kw">endl</span>;
+    }
+
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码 (数值法)</h2>
+            <p>虽然 Python 可以直接用字符串 count，但为了练习循环逻辑，我们这里使用数学方法。</p>
+<pre>
+<span class="c-com"># 读入整数</span>
+m = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+
+cnt = <span class="c-num">0</span>  <span class="c-com"># 计数器</span>
+
+<span class="c-com"># 使用 while 循环进行拆位</span>
+<span class="c-kw">while</span> m > <span class="c-num">0</span>:
+    digit = m % <span class="c-num">10</span>  <span class="c-com"># 1. 取出最后一位</span>
+    
+    <span class="c-kw">if</span> digit == <span class="c-num">3</span>:  <span class="c-com"># 2. 判断是否为 3</span>
+        cnt += <span class="c-num">1</span>
+    
+    m //= <span class="c-num">10</span>        <span class="c-com"># 3. 整除 10，去掉最后一位</span>
+
+<span class="c-com"># 判断结果</span>
+<span class="c-kw">if</span> cnt == <span class="c-num">3</span>:
+    <span class="c-kw">print</span>(<span class="c-str">"YES"</span>)
+<span class="c-kw">else</span>:
+    <span class="c-kw">print</span>(<span class="c-str">"NO"</span>)
+
+<span class="c-com"># --- 小贴士：字符串偷懒写法 ---</span>
+<span class="c-com"># m_str = input()</span>
+<span class="c-com"># if m_str.count('3') == 3: print("YES")</span>
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 5px solid var(--accent-red);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🔪 <strong>拆位公式：</strong> 牢记 <span class="inline-code">% 10</span> 取个位，<span class="inline-code">/ 10</span> 删个位。这是处理数字题的万能钥匙。</li>
+                <li>🔄 <strong>Do-While：</strong> 适合那种“无论如何都要先做一次检查”的场景。</li>
+                <li>🎯 <strong>刚好等于：</strong> 题目说“恰好 3 个”，所以判断条件是 <span class="inline-code">== 3</span>，大于或小于都不行。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #558b2f; font-size: 0.9em; border-top: 1px dashed #a5d6a7; padding-top: 20px;">
+            🎉 礼物派送中！祝你的代码像圣诞树一样闪亮！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

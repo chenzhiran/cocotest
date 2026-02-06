@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2509 凯撒密码 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #2c3e50; /* 暗夜蓝 */
+            --card-bg: #ecf0f1; /* 纸张白 */
+            --text-color: #2c3e50; /* 墨水黑 */
+            --cpp-color: #c0392b; /* 封蜡红 */
+            --py-color: #f39c12; /* 密信黄 */
+            --accent-gold: #f1c40f; /* 皇家金 */
+            --border-radius: 10px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 4px double var(--text-color);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--cpp-color);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--cpp-color);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--py-color);
+            border-bottom-color: var(--py-color);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: white; }
+        
+        .btn-py { color: var(--py-color); border-color: var(--py-color); }
+        .btn-py.active { background-color: var(--py-color); color: white; }
+
+        /* --- 标题样式 (无重影) --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: none;
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-gold);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--text-color);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 5px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-gold);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid #bdc3c7;
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #2c3e50;
+            padding: 20px;
+            border-radius: 10px;
+            color: #fff;
+        }
+
+        .chart-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 5px;
+        }
+        .bar {
+            width: 20px;
+            background: #95a5a6;
+            border-radius: 3px 3px 0 0;
+        }
+        .bar.max {
+            background: #f1c40f;
+            box-shadow: 0 0 10px #f1c40f;
+        }
+        .label { margin-top: 5px; font-family: monospace; }
+
+        .shift-arrow {
+            font-size: 2em;
+            color: #e74c3c;
+        }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #34495e; /* 深色代码背景 */
+            color: #ecf0f1; /* 代码亮白 */
+            padding: 20px;
+            border-radius: 10px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-gold);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #c0392b;
+            background-color: #fce4ec;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #f1c40f; font-weight: bold; } /* 关键字 */
+        .c-type { color: #3498db; } /* 类型 */
+        .c-num { color: #e74c3c; } /* 数字 */
+        .c-com { color: #95a5a6; font-style: italic; } /* 注释 */
+        .c-str { color: #2ecc71; } /* 字符串 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 破解代码</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 破解代码</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2509</span>凯撒密码</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/94" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/94</a>
+            </div>
+            <div class="subtitle">🏰 遥远王国篇 · 频率分析破解</div>
+        </div>
+
+        <div class="card">
+            <h2>🕵️‍♂️ 破解敌军情报 (题目描述)</h2>
+            <p>
+                凯撒大帝用了一种古老的密码来传递情报。
+                <br><strong>加密规则：</strong> 把所有字母往后移动 <span class="inline-code">t</span> 位（比如 A 变成 C，t=2）。
+                <br>但是，每封信的 <span class="inline-code">t</span> 都不一样！
+            </p>
+            <p>
+                👉 <strong>任务：</strong> 
+                <br>给定多段加密文字（START...END），你需要：
+                <br>1. 找出这一段文字的偏移量 <span class="inline-code">t</span>。
+                <br>2. 把密文还原成明文，并全部大写输出。
+            </p>
+            <p>
+                <strong>破译线索：</strong> 英文中出现频率最高的字母是 <strong>'E'</strong>。
+                <br>如果在密文中，出现次数最多的字母是 'H'，那么很有可能 'E' 被移动变成了 'H'。
+                <br>偏移量 <span class="inline-code">t = 'H' - 'E'</span>。
+            </p>
+
+            
+            <img src="CSP-J2509.png" alt="凯撒密码与频率分析" class="img-placeholder">
+
+            <div class="visual-box">
+                <div style="margin-right:20px; font-weight:bold;">频率统计:</div>
+                <div class="chart-bar"><div class="bar" style="height:20px;"></div><div class="label">A</div></div>
+                <div class="chart-bar"><div class="bar" style="height:10px;"></div><div class="label">B</div></div>
+                <div class="chart-bar"><div class="bar" style="height:30px;"></div><div class="label">C</div></div>
+                <div class="chart-bar"><div class="bar" style="height:100px;"></div><div class="label">D</div></div>
+                <div class="chart-bar"><div class="bar" style="height:80px;"></div><div class="label">E</div></div>
+                <div style="margin-left:20px;">
+                    发现 <strong>D</strong> 最多！<br>
+                    假设 D 就是 E。<br>
+                    <span class="shift-arrow">⬅️</span> 移位还原
+                </div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Logic)</h2>
+            <p>这道题是典型的 <strong>频率分析 (Frequency Analysis)</strong> 应用。</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid var(--accent-gold); margin:10px 0; border-radius: 8px;">
+                <strong>🗝️ 解密步骤：</strong><br>
+                1. <strong>统计：</strong> 数一数密文里每个字母出现了多少次。<br>
+                2. <strong>定位：</strong> 找到出现次数最多的那个字母（记为 <span class="inline-code">top_char</span>）。<br>
+                3. <strong>计算：</strong> 算出 <span class="inline-code">shift = top_char - 'E'</span>。<br>
+                4. <strong>还原：</strong> 把密文里的每个字母都 <strong>减去</strong> <span class="inline-code">shift</span>。
+                <br>（注意：如果减过头了，比如 'A' 往前移变成非字母了，要绕回 'Z'）。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 实现细节</h3>
+                <p>
+                    <strong>数据结构：</strong> 使用 <span class="inline-code">unordered_map</span> 统计频率非常方便。
+                    <br><strong>读取：</strong> 每一组数据有 START、密文、END 三部分。要用 <span class="inline-code">getline</span> 读取带空格的密文。
+                    <br><strong>循环移位：</strong> 代码中使用了比较直观的手动循环减法来处理 <span class="inline-code">A -> Z</span> 的边界问题。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 实现细节</h3>
+                <p>
+                    <strong>读取：</strong> 使用 <span class="inline-code">sys.stdin</span> 循环读取，直到遇到 "ENDOFINPUT"。
+                    <br><strong>字典统计：</strong> 利用字典 <span class="inline-code">{}</span> 来当做计数器。
+                    <br><strong>移位公式：</strong> <span class="inline-code">(ord(c) - shift - 65) % 26 + 65</span> 是处理循环移位的数学万能公式。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>使用 Map 统计频率，手动处理字符边界。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">#include</span> &lt;unordered_map&gt;
+<span class="c-kw">#include</span> &lt;cstring&gt;
+<span class="c-kw">#include</span> &lt;algorithm&gt;
+<span class="c-kw">#include</span> &lt;cstdio&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-com">// 频率统计表</span>
+<span class="c-kw">unordered_map</span>&lt;<span class="c-kw">char</span>, <span class="c-kw">int</span>&gt; freq;
+<span class="c-kw">string</span> start_str, end_str, cipher;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">while</span>(<span class="c-kw">true</span>) {
+        <span class="c-com">// 1. 读取开始标记</span>
+        <span class="c-kw">cin</span> >> start_str;
+        <span class="c-kw">if</span>(start_str == <span class="c-str">"ENDOFINPUT"</span>) <span class="c-kw">break</span>;
+        
+        <span class="c-com">// 消耗掉换行符，为getline做准备</span>
+        <span class="c-kw">scanf</span>(<span class="c-str">"\n"</span>);
+        
+        <span class="c-com">// 2. 读取密文 (包含空格)</span>
+        <span class="c-kw">getline</span>(<span class="c-kw">cin</span>, cipher);
+        
+        <span class="c-com">// 转大写</span>
+        <span class="c-kw">transform</span>(cipher.begin(), cipher.end(), cipher.begin(), ::toupper);
+        
+        <span class="c-com">// 清空上一轮的统计数据 (虽然代码逻辑覆盖了，但清空是好习惯)</span>
+        freq.clear();
+
+        <span class="c-kw">int</span> max_cnt = <span class="c-num">0</span>, shift;
+        <span class="c-kw">char</span> top_char;
+        
+        <span class="c-com">// 3. 统计频率</span>
+        <span class="c-kw">for</span>(<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < cipher.length(); i++) {
+            <span class="c-kw">if</span>(<span class="c-kw">isalpha</span>(cipher[i])) {
+                freq[cipher[i]]++;
+                <span class="c-com">// 实时更新出现最多的字母</span>
+                <span class="c-kw">if</span>(freq[cipher[i]] >= max_cnt) {
+                    max_cnt = freq[cipher[i]];
+                    top_char = cipher[i];
+                }
+            }
+        }
+        
+        <span class="c-com">// 4. 计算偏移并解密</span>
+        <span class="c-kw">if</span>(top_char == <span class="c-str">'E'</span>) {
+            <span class="c-kw">cout</span> << cipher << <span class="c-kw">endl</span>;
+        } <span class="c-kw">else</span> {
+            <span class="c-com">// 计算偏移量 (可能为负)</span>
+            shift = top_char - <span class="c-str">'E'</span>; 
+            
+            <span class="c-kw">for</span>(<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < cipher.length(); i++) {
+                <span class="c-kw">if</span>(<span class="c-kw">isalpha</span>(cipher[i])) {
+                    <span class="c-com">// 核心逻辑：还原字符</span>
+                    <span class="c-com">// 如果 shift 是正数，我们要减去它</span>
+                    <span class="c-com">// 手动处理边界 A-Z</span>
+                    <span class="c-kw">int</span> temp = cipher[i] - shift;
+                    
+                    <span class="c-com">// 如果小于 'A'，说明退过头了，要绕回 'Z'</span>
+                    <span class="c-kw">while</span>(temp < <span class="c-str">'A'</span>) temp += <span class="c-num">26</span>;
+                    <span class="c-com">// 如果大于 'Z' (比如shift是负数)，要绕回 'A'</span>
+                    <span class="c-kw">while</span>(temp > <span class="c-str">'Z'</span>) temp -= <span class="c-num">26</span>;
+                    
+                    cipher[i] = (<span class="c-kw">char</span>)temp;
+                }
+            }
+            <span class="c-kw">cout</span> << cipher << <span class="c-kw">endl</span>;
+        }
+        
+        <span class="c-com">// 读取结束标记 END</span>
+        <span class="c-kw">cin</span> >> end_str;
+    }
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>无需 main 函数，使用数学公式处理移位。</p>
+<pre>
+<span class="c-kw">import</span> sys
+
+<span class="c-com"># 循环读取数据，直到遇到 ENDOFINPUT</span>
+<span class="c-kw">while True</span>:
+    <span class="c-com"># 读取开始标记 (去除首尾空格)</span>
+    <span class="c-kw">try</span>:
+        start_line = sys.stdin.readline().strip()
+    <span class="c-kw">except</span>:
+        <span class="c-kw">break</span> <span class="c-com"># 防止意外结束</span>
+
+    <span class="c-kw">if</span> start_line == <span class="c-str">"ENDOFINPUT"</span> <span class="c-kw">or not</span> start_line:
+        <span class="c-kw">break</span>
+
+    <span class="c-com"># 读取密文</span>
+    text = sys.stdin.readline().strip()
+    
+    <span class="c-com"># 读取结束标记 END</span>
+    sys.stdin.readline()
+
+    <span class="c-com"># 1. 全部转大写</span>
+    text = text.upper()
+
+    <span class="c-com"># 2. 统计频率</span>
+    counts = {}
+    <span class="c-kw">for</span> char <span class="c-kw">in</span> text:
+        <span class="c-kw">if</span> <span class="c-str">'A'</span> <= char <= <span class="c-str">'Z'</span>: <span class="c-com"># 只统计字母</span>
+            <span class="c-kw">if</span> char <span class="c-kw">in</span> counts:
+                counts[char] += <span class="c-num">1</span>
+            <span class="c-kw">else</span>:
+                counts[char] = <span class="c-num">1</span>
+
+    <span class="c-com"># 3. 找出现最多的字母</span>
+    <span class="c-com"># 默认 A 最多，然后遍历更新</span>
+    max_char = <span class="c-str">'A'</span>
+    max_val = <span class="c-num">0</span>
+    
+    <span class="c-com"># 遍历 A-Z 确保顺序稳定</span>
+    <span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(<span class="c-num">26</span>):
+        c = <span class="c-kw">chr</span>(<span class="c-kw">ord</span>(<span class="c-str">'A'</span>) + i)
+        <span class="c-kw">if</span> c <span class="c-kw">in</span> counts:
+            <span class="c-com"># 如果频率更高，或者频率相同但字母靠后(根据题目逻辑)</span>
+            <span class="c-kw">if</span> counts[c] >= max_val:
+                max_val = counts[c]
+                max_char = c
+
+    <span class="c-com"># 4. 计算偏移量 (假设 max_char 就是 'E')</span>
+    shift = <span class="c-kw">ord</span>(max_char) - <span class="c-kw">ord</span>(<span class="c-str">'E'</span>)
+
+    <span class="c-com"># 5. 解密输出</span>
+    ans = <span class="c-str">""</span>
+    <span class="c-kw">for</span> char <span class="c-kw">in</span> text:
+        <span class="c-kw">if</span> <span class="c-str">'A'</span> <= char <= <span class="c-str">'Z'</span>:
+            <span class="c-com"># 核心公式：(当前字符 - 偏移量 - 'A') % 26 + 'A'</span>
+            <span class="c-com"># % 26 自动处理了循环移位的问题</span>
+            new_ord = (<span class="c-kw">ord</span>(char) - shift - <span class="c-kw">ord</span>(<span class="c-str">'A'</span>)) % <span class="c-num">26</span> + <span class="c-kw">ord</span>(<span class="c-str">'A'</span>)
+            ans += <span class="c-kw">chr</span>(new_ord)
+        <span class="c-kw">else</span>:
+            ans += char <span class="c-com"># 标点空格直接保留</span>
+
+    <span class="c-kw">print</span>(ans)
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-gold);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>📊 <strong>E 的秘密：</strong> 英文中 'E' 出现的概率最高（约 12%）。只要找到密文中出现最多的字母，把它当成 'E'，就能算出钥匙（偏移量）。</li>
+                <li>🔄 <strong>循环移位公式：</strong> 
+                    <br>在编程中，处理 Z 到 A 的循环，最好用的公式是：
+                    <br><span class="inline-code">(char - base + shift) % 26 + base</span>
+                </li>
+                <li>📥 <strong>读取多行：</strong> 注意处理 "START" 和 "END" 标记，不要把它们当成密文解密了。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #7f8c8d; font-size: 0.9em; border-top: 1px dashed #d35400; padding-top: 20px;">
+            🎉 情报破译成功！王国的危机解除了！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

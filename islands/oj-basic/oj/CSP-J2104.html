@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2104 巨石试炼 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #cfd8dc; /* 石壁浅灰 */
+            --card-bg: #ffffff;
+            --text-color: #37474f; /* 深岩灰 */
+            --cpp-color: #673ab7; /* 魔法紫 */
+            --py-color: #f57f17; /* 琥珀金 */
+            --accent-stone: #546e7a; /* 巨石色 */
+            --accent-power: #d32f2f; /* 力量红 */
+            --border-radius: 12px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(55, 71, 79, 0.2);
+            border: 4px solid var(--accent-stone);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #78909c;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--cpp-color);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--cpp-color);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--py-color);
+            border-bottom-color: var(--py-color);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: white; }
+        
+        .btn-py { color: var(--py-color); border-color: var(--py-color); }
+        .btn-py.active { background-color: var(--py-color); color: white; }
+
+        /* --- 标题样式 (无重影) --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: none; /* 确保无重影 */
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-stone);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #546e7a;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-stone);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-stone);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #eceff1;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #cfd8dc;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #90a4ae;
+        }
+
+        .stone {
+            width: 60px;
+            height: 60px;
+            background: #b0bec5;
+            color: #fff;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            position: relative;
+            box-shadow: 0 4px 0 #78909c;
+        }
+
+        .stone.max {
+            background: #d32f2f; /* 红色表示最大 */
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 4px 0 #b71c1c;
+        }
+
+        .stone.sorted {
+            background: #673ab7; /* 紫色表示已排好 */
+            box-shadow: 0 4px 0 #512da8;
+        }
+
+        .arrow { font-size: 2em; color: #546e7a; }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238; /* 深灰背景 */
+            color: #eceff1; /* 浅白文字 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-power);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #80deea; } /* 类型 */
+        .c-num { color: #ffcc80; } /* 数字 */
+        .c-com { color: #b0bec5; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 数组</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 列表</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2104</span>巨石试炼</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/62" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/62</a>
+            </div>
+            <div class="subtitle">🗿 森林地牢篇 · 选择排序</div>
+        </div>
+
+        <div class="card">
+            <h2>🛡️ 巨石阵的排序魔法 (题目描述)</h2>
+            <p>
+                地牢门口散落着 <strong>n</strong> 块魔法巨石，每块石头都有一个力量值。
+                <br>守卫说：“只有把巨石按力量 <strong>从大到小</strong> 排好，大门才会打开！”
+            </p>
+            <p>
+                英雄决定使用“选择排序”魔法：
+                <br>每次从剩下的石头里挑出 <strong>最大</strong> 的一块，把它放到当前队伍的最前面。
+                <br>👉 <strong>任务：</strong> 输入 n 个整数，将它们从大到小排序后输出。
+            </p>
+
+            
+            <img src="CSP-J2104.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div style="text-align:center; margin-right:20px;">
+                    <div>第1轮选择</div>
+                    <div style="color:#888; font-size:0.8em;">(找最大)</div>
+                </div>
+                <div class="stone">1</div>
+                <div class="stone max">7</div>
+                <div class="stone">3</div>
+                <div class="stone">6</div>
+                <div class="arrow">↔️</div>
+                <div class="stone sorted">7</div>
+                <div class="stone">1</div>
+                <div class="stone">3</div>
+                <div class="stone">6</div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Selection Sort)</h2>
+            <p>选择排序就像是在挑兵点将，分为两步循环：</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid #d32f2f; margin:10px 0; border-radius: 8px;">
+                <strong>🔍 算法步骤：</strong><br>
+                1. <strong>外层循环 (i)：</strong> 决定当前要把最大的石头放到哪个位置 (从 0 到 n-2)。<br>
+                2. <strong>内层循环 (j)：</strong> 从 i 后面 (i+1 到 n-1) 寻找谁才是真正的“最大值”。<br>
+                3. <strong>交换 (Swap)：</strong> 找到最大值的位置 <span class="inline-code">k</span> 后，把它和 <span class="inline-code">i</span> 位置的石头互换。
+            </div>
+
+            <div class="cpp-content">
+                <h3>双层循环结构</h3>
+                <p>
+                    <span class="inline-code">k = i;</span> (先假设当前 i 是最大的)
+                    <br><span class="inline-code">if (a[j] > a[k]) k = j;</span> (如果发现 j 更大，更新 k)
+                    <br>最后 <span class="inline-code">swap(a[i], a[k]);</span>
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 实现细节</h3>
+                <p>
+                    思路一样：
+                    <br>外层 <span class="inline-code">range(n-1)</span>
+                    <br>内层 <span class="inline-code">range(i+1, n)</span>
+                    <br>如果 <span class="inline-code">a[j] > a[k]</span>，记录新位置 <span class="inline-code">k = j</span>。
+                    <br>最后交换：<span class="inline-code">a[i], a[k] = a[k], a[i]</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>标准的选择排序实现。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">#include</span> &lt;algorithm&gt; <span class="c-com">// swap 需要</span>
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">int</span> n;
+    <span class="c-kw">cin</span> >> n;
+
+    <span class="c-kw">int</span> a[<span class="c-num">105</span>];
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < n; i++) {
+        <span class="c-kw">cin</span> >> a[i];
+    }
+
+    <span class="c-com">// --- 选择排序核心 ---</span>
+    <span class="c-com">// i 代表当前要确定的位置 (从第0个开始)</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < n - <span class="c-num">1</span>; i++) {
+        <span class="c-kw">int</span> k = i; <span class="c-com">// k 用来记录最大值的下标，先假设是 i</span>
+        
+        <span class="c-com">// j 去后面寻找有没有比 k 更大的</span>
+        <span class="c-kw">for</span> (<span class="c-kw">int</span> j = i + <span class="c-num">1</span>; j < n; j++) {
+            <span class="c-kw">if</span> (a[j] > a[k]) { <span class="c-com">// 如果发现更大的</span>
+                k = j;         <span class="c-com">// 更新最大值的坐标</span>
+            }
+        }
+        
+        <span class="c-com">// 找到之后，把最大值(k)换到当前位置(i)</span>
+        <span class="c-kw">swap</span>(a[i], a[k]);
+    }
+
+    <span class="c-com">// 输出结果</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < n; i++) {
+        <span class="c-kw">if</span> (i != <span class="c-num">0</span>) <span class="c-kw">cout</span> << <span class="c-str">" "</span>;
+        <span class="c-kw">cout</span> << a[i];
+    }
+
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>双层循环实现从大到小排序。</p>
+<pre>
+<span class="c-com"># 1. 读入数据</span>
+n = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+a = <span class="c-kw">list</span>(<span class="c-kw">map</span>(<span class="c-kw">int</span>, <span class="c-kw">input</span>().split()))
+
+<span class="c-com"># 2. 选择排序 (Selection Sort)</span>
+<span class="c-com"># i 代表当前要确定的位置</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(n - <span class="c-num">1</span>):
+    k = i  <span class="c-com"># 假设当前位置就是最大的</span>
+    
+    <span class="c-com"># j 去后面巡逻，找真正的最大值</span>
+    <span class="c-kw">for</span> j <span class="c-kw">in</span> <span class="c-kw">range</span>(i + <span class="c-num">1</span>, n):
+        <span class="c-kw">if</span> a[j] > a[k]:  <span class="c-com"># 如果发现更大的</span>
+            k = j        <span class="c-com"># 记住它的位置</span>
+            
+    <span class="c-com"># 找到后，把最大值换过来</span>
+    a[i], a[k] = a[k], a[i]
+
+<span class="c-com"># 3. 输出</span>
+<span class="c-kw">print</span>(*a)
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-power);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>👑 <strong>打擂台思想：</strong> 选择排序的内层循环其实就是“打擂台”找最大值的过程。</li>
+                <li>🔄 <strong>交换时机：</strong> 只有在内层循环完全结束后，找到了这一轮的冠军 <span class="inline-code">k</span>，才进行交换。</li>
+                <li>📉 <strong>顺序：</strong> 题目要求“从大到小”，所以判断条件是 <span class="inline-code">if a[j] > a[k]</span>。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #90a4ae; font-size: 0.9em; border-top: 1px dashed #cfd8dc; padding-top: 20px;">
+            🎉 地牢大门缓缓打开！宝藏就在前方！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J1604 镜庭双影 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #e3f2fd; /* 镜面浅蓝 */
+            --card-bg: #ffffff;
+            --text-color: #455a64; /* 石板灰 */
+            --cpp-color: #0288d1; /* 水晶蓝 */
+            --py-color: #fbc02d; /* 倒影金 */
+            --accent-pink: #ec407a; /* 花朵粉 */
+            --accent-mirror: #90caf9; /* 镜面色 */
+            --border-radius: 16px;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(144, 202, 249, 0.5); /* 柔和光晕 */
+            border: 4px solid var(--accent-mirror);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 25px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-cpp { background-color: #e1f5fe; color: #0277bd; border: 3px solid #0288d1; }
+        .btn-py { background-color: #fffde7; color: #f57f17; border: 3px solid #fbc02d; }
+        
+        .toggle-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(2, 136, 209, 0.2); }
+        .toggle-btn.active { transform: scale(1.1); box-shadow: inset 0 3px 5px rgba(0,0,0,0.1); }
+
+        /* --- 标题样式 --- */
+        h1 {
+            text-align: center;
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            color: #01579b;
+            text-shadow: 2px 2px 0px #b3e5fc;
+            display: inline-block;
+            padding-bottom: 5px;
+            border-bottom: 3px double var(--accent-pink);
+        }
+        .header-container { text-align: center; }
+        .subtitle {
+            text-align: center;
+            color: #78909c;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+        .badge {
+            background: var(--accent-pink);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: #0288d1;
+            border-left: 6px solid var(--accent-pink);
+            padding-left: 10px;
+            margin-top: 30px;
+            font-size: 1.5em;
+        }
+
+        h3 { color: #880e4f; margin-top: 25px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;}
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #ffffff;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid #b3e5fc;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #e1f5fe;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px dashed #4fc3f7;
+        }
+
+        .flower {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border: 2px solid #aaa;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #aaa;
+        }
+
+        .flower.even {
+            background: #fce4ec;
+            border-color: #ec407a;
+            color: #ec407a;
+            box-shadow: 0 0 10px #f8bbd0;
+            transform: scale(1.1);
+        }
+
+        .basket {
+            padding: 10px 20px;
+            background: #fff;
+            border: 3px solid #0288d1;
+            border-radius: 10px;
+            font-weight: bold;
+            color: #0288d1;
+        }
+
+        .arrow { font-size: 1.5em; color: #4fc3f7; }
+
+        /* 图片样式：无边框 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 350px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+            border: none; /* 去除边框 */
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238;
+            color: #eceff1;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            position: relative;
+            font-size: 1.05em;
+            border-left: 5px solid var(--accent-pink);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #c2185b;
+            background-color: #fce4ec;
+            padding: 2px 5px;
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #c792ea; font-weight: bold; } /* 关键字 */
+        .c-type { color: #ffcb6b; } /* 类型 */
+        .c-str { color: #c3e88d; } /* 字符串 */
+        .c-num { color: #f78c6c; } /* 数字 */
+        .c-com { color: #80cbc4; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 魔法</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 魔法</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J1604</span>镜庭双影</h1>
+            <div class="subtitle">🪞 镜面花园篇 · 偶数求和</div>
+        </div>
+
+        <div class="card">
+            <h2>🌸 花园的对称能量 (题目描述)</h2>
+            <p>
+                花匠在镜面花园里布置景观，因为追求“左右对称”，所有元素（花朵、石灯）都必须成双成对出现。
+                也就是说，我们只关心 <strong>偶数</strong>！
+            </p>
+            <p>
+                花匠给了一个数字 <span class="inline-code">n</span>。英雄需要计算从 <strong>1 到 n</strong> 之间，所有 <strong>偶数</strong> 的和。
+                <br>例如 n=6，我们要计算：2 + 4 + 6 = 12。
+            </p>
+
+            
+            <img src="CSP-J1604.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div class="flower">1</div>
+                <div class="flower even">2</div>
+                <div class="flower">3</div>
+                <div class="flower even">4</div>
+                <div class="flower">5</div>
+                <div class="arrow">➡️</div>
+                <div class="basket">总和: 6</div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (While + If)</h2>
+            <p>我们要从 1 走到 n，把路上的偶数捡起来放到篮子里。</p>
+            
+            <div class="cpp-content">
+                <h3>1. 累加器 (Accumulator)</h3>
+                <p>
+                    我们需要一个变量来存总和，通常命名为 <span class="inline-code">result</span> 或 <span class="inline-code">sum</span>。
+                    <br>⚠️ <strong>注意：</strong> 一定要初始化为 0！<br><span class="inline-code">int result = 0;</span>
+                </p>
+
+                <h3>2. 偶数判断</h3>
+                <p>
+                    怎么知道一个数 <span class="inline-code">i</span> 是不是偶数？看它除以 2 也就是余数是不是 0。
+                    <br>✅ 写法：<span class="inline-code">if (i % 2 == 0)</span>
+                </p>
+
+                <h3>3. 组合技：While 循环遍历</h3>
+                <p>
+                    让 <span class="inline-code">i</span> 从 1 开始，每次增加 1，直到 <span class="inline-code">n</span>。在循环内部用 <span class="inline-code">if</span> 挑选偶数。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>1. 累加器 (Accumulator)</h3>
+                <p>
+                    定义一个变量来装总和。
+                    <br>✅ 写法：<span class="inline-code">result = 0</span>
+                </p>
+
+                <h3>2. 偶数判断</h3>
+                <p>
+                    使用取模运算符 <span class="inline-code">%</span>。如果 <span class="inline-code">a % 2</span> 等于 0，说明能被 2 整除，是偶数。
+                    <br>✅ 写法：<span class="inline-code">if a % 2 == 0:</span>
+                </p>
+
+                <h3>3. 组合技：While 循环遍历</h3>
+                <p>
+                    让 <span class="inline-code">a</span> 从 1 变到 <span class="inline-code">n</span>。每一步都检查是不是偶数，是就加到 <span class="inline-code">result</span> 里。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>使用 while 循环遍历所有数字，用 if 筛选偶数。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">int</span> n;
+    <span class="c-kw">cin</span> >> n;  <span class="c-com">// 输入范围 n</span>
+
+    <span class="c-kw">int</span> i = <span class="c-num">1</span>;       <span class="c-com">// 循环变量，从 1 开始</span>
+    <span class="c-kw">int</span> result = <span class="c-num">0</span>;  <span class="c-com">// 累加器，初始化为 0</span>
+
+    <span class="c-com">// 只要 i 不超过 n，就继续找</span>
+    <span class="c-kw">while</span> (i <= n) {
+        <span class="c-com">// 判断：如果是偶数</span>
+        <span class="c-kw">if</span> (i % <span class="c-num">2</span> == <span class="c-num">0</span>) {
+            result += i;  <span class="c-com">// 把偶数加到结果里</span>
+        }
+        i++;  <span class="c-com">// 继续看下一个数</span>
+    }
+
+    <span class="c-kw">cout</span> << result;
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>标准的 while + if 组合写法。</p>
+<pre>
+n = <span class="c-kw">int</span>(<span class="c-kw">input</span>())  <span class="c-com"># 输入范围 n</span>
+
+a = <span class="c-num">1</span>           <span class="c-com"># 循环变量，从 1 开始</span>
+result = <span class="c-num">0</span>      <span class="c-com"># 累加器</span>
+
+<span class="c-com"># 只要 a 不超过 n</span>
+<span class="c-kw">while</span> a <= n:
+    <span class="c-com"># 判断：如果是偶数</span>
+    <span class="c-kw">if</span> a % <span class="c-num">2</span> == <span class="c-num">0</span>:
+        result += a  <span class="c-com"># 加到结果里</span>
+    
+    a += <span class="c-num">1</span>  <span class="c-com"># 别忘了让数字变大，否则死循环！</span>
+
+<span class="c-kw">print</span>(result)
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 5px solid var(--accent-pink);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>➕ <strong>累加思想：</strong> 就像存钱罐，每次遇到符合条件的数（偶数），就扔进去 (<span class="inline-code">+=</span>)。</li>
+                <li>➗ <strong>取模运算：</strong> <span class="inline-code">% 2 == 0</span> 是判断偶数的标准咒语。</li>
+                <li>🚧 <strong>循环变量：</strong> <span class="inline-code">i++</span> (C++) 或 <span class="inline-code">a += 1</span> (Python) 必须放在 <span class="inline-code">if</span> 外面，确保不管是不是偶数，都要走向下一个数字。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #78909c; font-size: 0.9em; border-top: 1px dashed #b3e5fc; padding-top: 20px;">
+            🎉 对称能量收集完毕！花园焕发出了光芒！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

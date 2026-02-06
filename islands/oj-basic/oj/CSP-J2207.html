@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2207 遗迹数列 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #eceff1; /* 遗迹迷雾灰 */
+            --card-bg: #ffffff;
+            --text-color: #37474f; /* 岩石深灰 */
+            --cpp-color: #5c6bc0; /* 神秘蓝 */
+            --py-color: #ffa000; /* 宝藏金 */
+            --accent-relic: #78909c; /* 石板色 */
+            --border-radius: 15px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影，适合小朋友 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(60, 70, 80, 0.15);
+            border: 4px solid var(--accent-relic);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #78909c;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--cpp-color);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--cpp-color);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--py-color);
+            border-bottom-color: var(--py-color);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: white; }
+        
+        .btn-py { color: var(--py-color); border-color: var(--py-color); }
+        .btn-py.active { background-color: var(--py-color); color: white; }
+
+        /* --- 标题样式 (无重影) --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: none; /* 确保无重影 */
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-relic);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #607d8b;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-relic);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-relic);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #f5f5f5;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #cfd8dc;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #b0bec5;
+        }
+
+        .stone-block {
+            width: 50px;
+            height: 60px;
+            background: #b0bec5;
+            color: #fff;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 4px 0 #78909c;
+            position: relative;
+        }
+
+        .stone-block.new {
+            background: #ffa000;
+            box-shadow: 0 4px 0 #e65100;
+            animation: pop 0.5s ease-out;
+        }
+
+        .index-tag {
+            font-size: 0.6em;
+            position: absolute;
+            top: -15px;
+            color: #78909c;
+        }
+
+        .math-symbol {
+            font-size: 1.5em;
+            color: #5c6bc0;
+            font-weight: bold;
+        }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 (背景色修改) --- */
+        pre {
+            background-color: #263238; /* 深灰背景 */
+            color: #eceff1; /* 浅白文字 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--cpp-color);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #e65100;
+            background-color: #fff3e0;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #80deea; } /* 类型 */
+        .c-num { color: #ffcc80; } /* 数字 */
+        .c-com { color: #b0bec5; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 数组递推</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 列表追加</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2207</span>遗迹数列</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/72" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/72</a>
+            </div>
+            <div class="subtitle">🏛️ 古代遗迹篇 · 斐波那契</div>
+        </div>
+
+        <div class="card">
+            <h2>📜 解开石板的密码 (题目描述)</h2>
+            <p>
+                在古代遗迹深处，英雄发现了一块刻满数字的石板。
+                石板上写着一串被遗忘的“斐波那契密码”。
+                <br>规则如下：
+            </p>
+            <ul>
+                <li>1️⃣ 第 1 个数是 <strong>1</strong>。</li>
+                <li>2️⃣ 第 2 个数也是 <strong>1</strong>。</li>
+                <li>3️⃣ 从第 3 个数开始，每个数都等于 <strong>前两个数之和</strong>。</li>
+            </ul>
+            <p>
+                例如：<br>
+                第 3 个数 = 第 1 个数 (1) + 第 2 个数 (1) = <strong>2</strong><br>
+                第 4 个数 = 第 2 个数 (1) + 第 3 个数 (2) = <strong>3</strong>
+            </p>
+            <p>
+                👉 <strong>任务：</strong> 使用数组计算并输出前 10 个密码数字。
+            </p>
+
+            
+            <img src="CSP-J2207.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div class="stone-block">
+                    <span class="index-tag">0</span>1
+                </div>
+                <div class="math-symbol">+</div>
+                <div class="stone-block">
+                    <span class="index-tag">1</span>1
+                </div>
+                <div class="math-symbol">=</div>
+                <div class="stone-block new">
+                    <span class="index-tag">2</span>2
+                </div>
+                
+                <div style="width: 100%; height: 10px;"></div> <div class="stone-block">
+                    <span class="index-tag">1</span>1
+                </div>
+                <div class="math-symbol">+</div>
+                <div class="stone-block">
+                    <span class="index-tag">2</span>2
+                </div>
+                <div class="math-symbol">=</div>
+                <div class="stone-block new">
+                    <span class="index-tag">3</span>3
+                </div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Recurrence)</h2>
+            <p>这道题是数学中著名的 <strong>斐波那契数列</strong>，用代码实现就是“递推”。</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid #5c6bc0; margin:10px 0; border-radius: 8px;">
+                <strong>📐 通用公式：</strong><br>
+                <span class="inline-code">a[i] = a[i-1] + a[i-2]</span><br>
+                意思就是：<strong>当前项 = 前一项 + 前两项</strong>
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 数组实现</h3>
+                <p>
+                    1. 声明一个大小足够（比如 15）的数组：<span class="inline-code">int a[15];</span>
+                    <br>2. <strong>手动设置</strong> 前两个：<span class="inline-code">a[0]=1; a[1]=1;</span>
+                    <br>3. <strong>循环计算</strong> 后面的：从 <span class="inline-code">i=2</span> 开始（因为 0 和 1 已经有了）。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 列表实现</h3>
+                <p>
+                    1. 初始化列表：<span class="inline-code">fib = [1, 1]</span>
+                    <br>2. <strong>循环追加</strong>：循环 8 次（因为要凑齐 10 个）。
+                    <br>3. 每次计算 <span class="inline-code">fib[-1] + fib[-2]</span> 并 <span class="inline-code">append</span> 进去。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>先定好前两个兵，剩下的用魔法公式自动生成。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-com">// 1. 定义数组，大小稍微大一点点</span>
+    <span class="c-kw">int</span> a[<span class="c-num">15</span>]; 
+
+    <span class="c-com">// 2. 初始化前两个数 (已知条件)</span>
+    <span class="c-com">// 题目说前两个是 1</span>
+    a[<span class="c-num">0</span>] = <span class="c-num">1</span>;
+    a[<span class="c-num">1</span>] = <span class="c-num">1</span>;
+
+    <span class="c-com">// 3. 循环计算第 3 个到第 10 个</span>
+    <span class="c-com">// 数组下标从 0 开始，所以第 3 个是 a[2]，第 10 个是 a[9]</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">2</span>; i < <span class="c-num">10</span>; i++) {
+        <span class="c-com">// 当前数 = 前一个 + 前两个</span>
+        a[i] = a[i - <span class="c-num">1</span>] + a[i - <span class="c-num">2</span>];
+    }
+
+    <span class="c-com">// 4. 输出结果</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < <span class="c-num">10</span>; i++) {
+        <span class="c-kw">cout</span> << a[i] << <span class="c-str">" "</span>;
+    }
+    <span class="c-kw">cout</span> << <span class="c-kw">endl</span>;
+
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>使用列表追加 (append) 方法，直观易懂。</p>
+<pre>
+<span class="c-com"># 1. 初始化列表，放入前两个数</span>
+fib = [<span class="c-num">1</span>, <span class="c-num">1</span>]
+
+<span class="c-com"># 2. 循环计算剩下的 8 个数 (一共要 10 个)</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(<span class="c-num">8</span>):
+    <span class="c-com"># 新数字 = 列表最后一个 + 列表倒数第二个</span>
+    new_num = fib[<span class="c-num">-1</span>] + fib[<span class="c-num">-2</span>]
+    
+    <span class="c-com"># 把新数字加入列表末尾</span>
+    fib.append(new_num)
+
+<span class="c-com"># 3. 输出结果 (*号解包，自动加空格)</span>
+<span class="c-kw">print</span>(*fib)
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-relic);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🚀 <strong>递推起点：</strong> 必须先有前两个数 (<span class="inline-code">1, 1</span>)，才能算出第 3 个。</li>
+                <li>🔢 <strong>下标对应：</strong> 
+                    <br>第 1 个数 ➔ 下标 0
+                    <br>第 10 个数 ➔ 下标 9
+                    <br>循环条件通常写 <span class="inline-code">i < 10</span>。
+                </li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #78909c; font-size: 0.9em; border-top: 1px dashed #cfd8dc; padding-top: 20px;">
+            🎉 密码破译成功！通往宝藏的大门打开了！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

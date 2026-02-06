@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J1702 霜印倒转 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #e0f7fa; /* 极寒冰蓝 */
+            --card-bg: #ffffff;
+            --text-color: #37474f; /* 岩石深灰 */
+            --cpp-color: #0288d1; /* 深冰蓝 */
+            --py-color: #ffa000; /* 暖阳黄 */
+            --accent-frost: #00bcd4; /* 寒气青 */
+            --accent-ice: #81d4fa; /* 浅冰色 */
+            --border-radius: 15px;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 188, 212, 0.3); /* 冰霜光晕 */
+            border: 4px solid var(--accent-frost);
+            position: relative;
+        }
+
+        /* 装饰：雪花 */
+        .container::after {
+            content: "❄️";
+            position: absolute;
+            top: -20px;
+            right: -10px;
+            font-size: 3em;
+            opacity: 0.8;
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 25px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-cpp { background-color: #e1f5fe; color: #0277bd; border: 3px solid #0288d1; }
+        .btn-py { background-color: #fff8e1; color: #ff6f00; border: 3px solid #ffca28; }
+        
+        .toggle-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0, 188, 212, 0.2); }
+        .toggle-btn.active { transform: scale(1.1); box-shadow: inset 0 3px 5px rgba(0,0,0,0.1); }
+
+        /* --- 标题样式 --- */
+        h1 {
+            text-align: center;
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            color: #0097a7;
+            text-shadow: 2px 2px 0px #b2ebf2;
+            display: inline-block;
+            padding-bottom: 5px;
+            border-bottom: 3px dotted var(--accent-frost);
+        }
+        .header-container { text-align: center; }
+        .subtitle {
+            text-align: center;
+            color: #607d8b;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+        .badge {
+            background: var(--accent-frost);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: #00838f;
+            border-left: 6px solid var(--accent-frost);
+            padding-left: 10px;
+            margin-top: 30px;
+            font-size: 1.5em;
+        }
+
+        h3 { color: #f57f17; margin-top: 25px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;}
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #ffffff;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid #b2ebf2;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #e0f7fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px dashed #4dd0e1;
+        }
+
+        .scroll-item {
+            padding: 10px 20px;
+            background: #fff;
+            border: 2px solid #00bcd4;
+            color: #00bcd4;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        .action-arrow { font-size: 1.5em; color: #0097a7; }
+
+        /* 图片样式：无边框 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 350px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+            border: none; /* 去除边框 */
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238;
+            color: #eceff1;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            position: relative;
+            font-size: 1.05em;
+            border-left: 5px solid var(--accent-frost);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #006064;
+            background-color: #b2ebf2;
+            padding: 2px 5px;
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #c792ea; font-weight: bold; } /* 关键字 */
+        .c-type { color: #ffcb6b; } /* 类型 */
+        .c-str { color: #c3e88d; } /* 字符串 */
+        .c-num { color: #f78c6c; } /* 数字 */
+        .c-com { color: #80cbc4; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ Do-While</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python While</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J1702</span>霜印倒转</h1>
+            <div class="subtitle">❄️ 冰原魔法赛 · 整数翻转</div>
+        </div>
+
+        <div class="card">
+            <h2>📜 破解翻转诅咒 (题目描述)</h2>
+            <p>
+                平原森林的宠物们正在参加“体重魔法赛”。
+                卷轴上记录着体重的变化：
+                <br>🍰 <strong>正数：</strong> 增重 (如 25)
+                <br>❄️ <strong>负数：</strong> 减重 (如 -38)
+            </p>
+            <p>
+                可是，食人魔施放了“翻转诅咒”，把数字顺序倒过来了！
+                <br>你需要编写“翻转魔法”：<strong>保留符号，只翻转数字部分。</strong>
+            </p>
+            <ul>
+                <li>🔹 <span class="inline-code">-38</span> 翻转成 <span class="inline-code">-83</span></li>
+                <li>🔹 <span class="inline-code">100</span> 翻转成 <span class="inline-code">1</span> (因为 001 就是 1)</li>
+            </ul>
+
+            
+            <img src="CSP-J1702.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div class="scroll-item" style="border-color:#aaa; color:#555;">输入: -1200</div>
+                <div class="action-arrow">1. 存符号</div>
+                <div class="scroll-item" style="border-color:#f44336; color:#f44336;">-</div>
+                <div class="scroll-item">1200</div>
+                <div class="action-arrow">2. 翻转</div>
+                <div class="scroll-item">0021</div>
+                <div class="action-arrow">3. 合体</div>
+                <div class="scroll-item" style="background:#b2ebf2; color:#006064;">-21</div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (数值翻转 & Do-While)</h2>
+            <p>这道题的核心是：如何用纯数学的方法把一个整数倒过来？</p>
+            
+            <div class="cpp-content">
+                <h3>1. 数学翻转公式</h3>
+                <p>假设我们要翻转 <span class="inline-code">n = 123</span>，结果存在 <span class="inline-code">ans</span> (初始为0)。</p>
+                <ul>
+                    <li>取个位：3。 <span class="inline-code">ans = 0*10 + 3 = 3</span>。 n 变成 12。</li>
+                    <li>取个位：2。 <span class="inline-code">ans = 3*10 + 2 = 32</span>。 n 变成 1。</li>
+                    <li>取个位：1。 <span class="inline-code">ans = 32*10 + 1 = 321</span>。 n 变成 0。</li>
+                </ul>
+                <p>公式：<span class="inline-code">ans = ans * 10 + n % 10;</span></p>
+
+                <h3>2. 为什么用 Do-While？</h3>
+                <p>
+                    <span class="inline-code">do-while</span> 的特点是 <strong>“先做再判断”</strong>。
+                    <br>如果输入是 <span class="inline-code">0</span>，普通 while 可能直接跳过，而 do-while 会进去执行一次，输出 <span class="inline-code">0</span>，这正是我们想要的！
+                </p>
+
+                <h3>3. 负数处理</h3>
+                <p>
+                    负数取余在不同编译器下表现不同，容易出错。
+                    <br>💡 <strong>最佳策略：</strong> 先判断正负，记下符号，把 <span class="inline-code">n</span> 变成正数去翻转，最后再把符号乘回来。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>1. 数学翻转逻辑</h3>
+                <p>
+                    和 C++ 一样，利用 <span class="inline-code">% 10</span> 取最后一位，<span class="inline-code">// 10</span> 删最后一位。
+                    <br>累加公式：<span class="inline-code">ans = ans * 10 + digit</span>。
+                    <br>这种方法会自动处理前导零（例如 100 -> digit:0,0,1 -> ans: 0 -> 0 -> 1）。
+                </p>
+
+                <h3>2. 字符串捷径 (Magic Shortcut)</h3>
+                <p>
+                    Python 处理翻转最快的方法其实是字符串切片 <span class="inline-code">[::-1]</span>。
+                    <br>但在练习循环逻辑时，我们推荐掌握数学方法，因为它在所有编程语言中都通用！
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码 (Do-While版)</h2>
+            <p>使用数学方法翻转，完美解决前导零和负数问题。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-com">// 使用 long long 防止翻转后溢出</span>
+    <span class="c-kw">long long</span> n;
+    <span class="c-kw">cin</span> >> n;
+
+    <span class="c-com">// 1. 处理符号：先存起来，把 n 变成正数</span>
+    <span class="c-kw">int</span> sign = <span class="c-num">1</span>; 
+    <span class="c-kw">if</span> (n < <span class="c-num">0</span>) {
+        sign = <span class="c-num">-1</span>;
+        n = -n;   <span class="c-com">// 变成正数方便计算</span>
+    }
+
+    <span class="c-kw">long long</span> ans = <span class="c-num">0</span>;
+
+    <span class="c-com">// 2. 使用 do-while 循环进行翻转</span>
+    <span class="c-kw">do</span> {
+        <span class="c-com">// 公式：旧答案左移一位 + 新取出的个位</span>
+        ans = ans * <span class="c-num">10</span> + n % <span class="c-num">10</span>;
+        
+        <span class="c-com">// 砍掉最后一位</span>
+        n /= <span class="c-num">10</span>;
+        
+    } <span class="c-kw">while</span> (n > <span class="c-num">0</span>); <span class="c-com">// 只要还有数字就继续</span>
+
+    <span class="c-com">// 3. 还原符号输出</span>
+    <span class="c-kw">cout</span> << ans * sign << <span class="c-kw">endl</span>;
+
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码 (数学循环法)</h2>
+            <p>使用 while 循环模拟翻转过程。</p>
+<pre>
+n = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+
+<span class="c-com"># 1. 处理符号</span>
+sign = <span class="c-num">1</span>
+<span class="c-kw">if</span> n < <span class="c-num">0</span>:
+    sign = <span class="c-num">-1</span>
+    n = -n  <span class="c-com"># 转为正数</span>
+
+ans = <span class="c-num">0</span>
+
+<span class="c-com"># 2. 循环翻转 (Python 没有 do-while，用 while 即可)</span>
+<span class="c-kw">while</span> n > <span class="c-num">0</span>:
+    digit = n % <span class="c-num">10</span>       <span class="c-com"># 取出最后一位</span>
+    ans = ans * <span class="c-num">10</span> + digit <span class="c-com"># 拼接到新数字的末尾</span>
+    n = n // <span class="c-num">10</span>          <span class="c-com"># 去掉最后一位 (注意用整除 //)</span>
+
+<span class="c-com"># 3. 还原符号输出</span>
+<span class="c-kw">print</span>(ans * sign)
+
+<span class="c-com"># --- 拓展：字符串切片法 (仅供参考) ---</span>
+<span class="c-com"># s = input()</span>
+<span class="c-com"># if s[0] == '-':</span>
+<span class="c-com">#     print("-" + str(int(s[1:][::-1])))</span>
+<span class="c-com"># else:</span>
+<span class="c-com">#     print(int(s[::-1]))</span>
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 5px solid var(--accent-frost);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🔄 <strong>翻转公式：</strong> <span class="inline-code">ans = ans * 10 + n % 10</span>。背下这个公式，它是处理整数翻转的万能钥匙。</li>
+                <li>0️⃣ <strong>前导零消失术：</strong> 使用数学方法翻转时，<span class="inline-code">ans</span> 如果是 0，乘以 10 还是 0，所以 <span class="inline-code">100</span> 变成 <span class="inline-code">001</span> 时，数学上自动就变成了 <span class="inline-code">1</span>。</li>
+                <li>➖ <strong>负数策略：</strong> 无论什么语言，处理负数取余最稳妥的方法是：转正 -> 计算 -> 还原符号。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #607d8b; font-size: 0.9em; border-top: 1px dashed #b2ebf2; padding-top: 20px;">
+            🎉 诅咒解除！卷轴显示出了正确的体重变化！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

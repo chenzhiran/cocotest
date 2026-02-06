@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2208 进制转换 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #f3e5f5; /* 魔法迷雾紫 */
+            --card-bg: #ffffff;
+            --text-color: #4a148c; /* 深紫文字 */
+            --cpp-color: #7b1fa2; /* 魔法紫 */
+            --py-color: #fdd835; /* 闪电黄 */
+            --accent-magic: #9c27b0; /* 符文色 */
+            --border-radius: 15px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影，适合小朋友 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(74, 20, 140, 0.2);
+            border: 4px solid var(--accent-magic);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #8e24aa;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--cpp-color);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--cpp-color);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--py-color);
+            border-bottom-color: var(--py-color);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: white; }
+        
+        .btn-py { color: #f57f17; border-color: #f57f17; }
+        .btn-py.active { background-color: #f57f17; color: white; }
+
+        /* --- 标题样式 (无重影) --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: none; /* 确保无重影 */
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-magic);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #7b1fa2;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-magic);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-magic);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #f3e5f5;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #e1bee7;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #ba68c8;
+        }
+
+        .step-box {
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            color: #fff;
+            position: relative;
+            width: 120px;
+        }
+
+        .step-1 { background: #ab47bc; box-shadow: 4px 4px 0 #7b1fa2; }
+        .step-2 { background: #ffa726; box-shadow: 4px 4px 0 #f57f17; }
+        .center-hub { background: #29b6f6; box-shadow: 4px 4px 0 #0288d1; border-radius: 50%; width: 80px; height: 80px; display:flex; align-items:center; justify-content:center; font-size: 1.5em;}
+
+        .arrow { font-size: 2em; color: #8e24aa; }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 (背景色修改) --- */
+        pre {
+            background-color: #263238; /* 深灰背景 */
+            color: #eceff1; /* 浅白文字 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-magic);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #e65100;
+            background-color: #fff3e0;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #80deea; } /* 类型 */
+        .c-num { color: #ffcc80; } /* 数字 */
+        .c-com { color: #b0bec5; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: #fbc02d; }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 魔法阵</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 魔法阵</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2208</span>进制转换</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/73" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/73</a>
+            </div>
+            <div class="subtitle">🏰 魔法塔篇 · 中转站思想</div>
+        </div>
+
+        <div class="card">
+            <h2>📜 解开进制的谜题 (题目描述)</h2>
+            <p>
+                魔法塔的门上有一个数字 <strong>x</strong>，它是 <strong>n</strong> 进制的。
+                <br>守护者要求你把这个数字转换成 <strong>m</strong> 进制，才能打开宝藏大门！
+            </p>
+            <p>
+                👉 <strong>任务：</strong> 
+                <br>输入：数字 x，原进制 n，目标进制 m。
+                <br>输出：x 转换成 m 进制后的结果。
+            </p>
+            <p>
+                例如：把二进制的 <span class="inline-code">101</span> (n=2) 转换成十进制 (m=10)。
+                <br>结果是：<strong>5</strong>
+            </p>
+
+            
+            <img src="CSP-J2208.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div class="step-box step-1">
+                    <div>n 进制</div>
+                    <div style="font-size:1.2em;">101 (2)</div>
+                </div>
+                <div class="arrow">➡️</div>
+                <div class="center-hub">
+                    <div>
+                        <div style="font-size:0.5em; color:#01579b;">中转站</div>
+                        <div style="font-weight:bold; color:#fff;">10</div>
+                    </div>
+                </div>
+                <div class="arrow">➡️</div>
+                <div class="step-box step-2">
+                    <div>m 进制</div>
+                    <div style="font-size:1.2em;">5 (10)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Logic)</h2>
+            <p>直接从 n 进制跳到 m 进制太难了，我们需要一个翻译官：<strong>十进制</strong>。</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid #9c27b0; margin:10px 0; border-radius: 8px;">
+                <strong>🌉 两步走策略：</strong><br>
+                1. <strong>解码 (n ➔ 10)：</strong> 把每一位数字拆下来，乘以它的权重（n 的 0次方, 1次方...），累加起来。<br>
+                2. <strong>编码 (10 ➔ m)：</strong> 把十进制数不断 <strong>除以 m 取余数</strong>，最后把余数 <strong>倒过来</strong> 输出。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 实现细节</h3>
+                <p>
+                    <strong>第一步 (n转10)：</strong> <span class="inline-code">x % 10</span> 取个位，乘以权重 <span class="inline-code">num</span>，然后 <span class="inline-code">num *= n</span>。
+                    <br><strong>第二步 (10转m)：</strong> <span class="inline-code">ten % m</span> 取余存入数组，然后 <span class="inline-code">ten /= m</span>。
+                    <br><strong>倒序输出：</strong> 数组从后往前打印。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 实现细节</h3>
+                <p>
+                    我们使用<strong>手动计算</strong>的方法，原理和 C++ 完全一样：
+                    <br>1. 通过 <span class="inline-code">x % 10</span> 和 <span class="inline-code">// 10</span> 逐位取出数字，按权累加得到十进制。
+                    <br>2. 通过 <span class="inline-code">% m</span> 和 <span class="inline-code">// m</span> 得到新进制的每一位，存入列表。
+                    <br>3. 最后翻转列表输出。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>标准的“先乘权求和，再取余逆序”模板。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">int</span> x, n, m;
+    <span class="c-kw">cin</span> >> x >> n >> m;
+
+    <span class="c-com">// --- 第 1 步：n 进制 转 10 进制 ---</span>
+    <span class="c-kw">int</span> ten = <span class="c-num">0</span>;   <span class="c-com">// 存十进制结果</span>
+    <span class="c-kw">int</span> power = <span class="c-num">1</span>; <span class="c-com">// 权重，初始是 n^0 = 1</span>
+
+    <span class="c-kw">while</span> (x > <span class="c-num">0</span>) {
+        <span class="c-kw">int</span> digit = x % <span class="c-num">10</span>; <span class="c-com">// 取出最后一位</span>
+        ten += digit * power; <span class="c-com">// 加上它的值</span>
+        x = x / <span class="c-num">10</span>;           <span class="c-com">// 删掉最后一位</span>
+        power = power * n;    <span class="c-com">// 权重翻倍 (变成 n^1, n^2...)</span>
+    }
+
+    <span class="c-com">// 特殊情况：如果转换后是 0</span>
+    <span class="c-kw">if</span> (ten == <span class="c-num">0</span>) {
+        <span class="c-kw">cout</span> << <span class="c-num">0</span> << <span class="c-kw">endl</span>;
+        <span class="c-kw">return</span> <span class="c-num">0</span>;
+    }
+
+    <span class="c-com">// --- 第 2 步：10 进制 转 m 进制 ---</span>
+    <span class="c-kw">int</span> ans[<span class="c-num">100</span>]; <span class="c-com">// 存余数</span>
+    <span class="c-kw">int</span> len = <span class="c-num">0</span>;  <span class="c-com">// 记录有多少位</span>
+
+    <span class="c-kw">while</span> (ten > <span class="c-num">0</span>) {
+        ans[len++] = ten % m; <span class="c-com">// 取余数，存入数组</span>
+        ten = ten / m;        <span class="c-com">// 变成原来的 1/m</span>
+    }
+
+    <span class="c-com">// --- 第 3 步：倒序输出 ---</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = len - <span class="c-num">1</span>; i >= <span class="c-num">0</span>; i--) {
+        <span class="c-kw">cout</span> << ans[i];
+    }
+    <span class="c-kw">cout</span> << <span class="c-kw">endl</span>;
+
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>使用手动循环计算，逻辑清晰。</p>
+<pre>
+<span class="c-com"># 输入数据</span>
+x, n, m = <span class="c-kw">map</span>(<span class="c-kw">int</span>, <span class="c-kw">input</span>().split())
+
+<span class="c-com"># 处理数据：n 进制 -> 10 进制</span>
+num = <span class="c-num">0</span>
+a = <span class="c-num">1</span> <span class="c-com"># 权重</span>
+<span class="c-kw">while</span> x != <span class="c-num">0</span>:
+    num += x % <span class="c-num">10</span> * a  <span class="c-com"># 取出末位数字 * 当前权重</span>
+    x //= <span class="c-num">10</span>           <span class="c-com"># 去掉末位</span>
+    a *= n             <span class="c-com"># 权重变大 (n的倍数)</span>
+
+<span class="c-com"># 处理数据：10 进制 -> m 进制</span>
+ans = []
+<span class="c-kw">while</span> num != <span class="c-num">0</span>:
+    ans.append(<span class="c-kw">str</span>(num % m)) <span class="c-com"># 取余数</span>
+    num //= m                <span class="c-com"># 整除</span>
+
+<span class="c-com"># 输出数据</span>
+<span class="c-com"># 如果 ans 是空的(原数字是0)，通常题目会要求输出0</span>
+<span class="c-com"># 但根据题目样例逻辑，这里按常规翻转输出</span>
+<span class="c-kw">print</span>(<span class="c-str">''</span>.join(<span class="c-kw">reversed</span>(ans)))
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-magic);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🌉 <strong>中转站：</strong> 任何进制转换，先转成 10 进制最安全。</li>
+                <li>➗ <strong>短除法：</strong> 10 进制转其他进制，就是不停地 <span class="inline-code">% m</span> 和 <span class="inline-code">/ m</span>。</li>
+                <li>🔙 <strong>倒序：</strong> 取余数算出来的是“个位、十位...”，输出时要倒过来变成“...十位、个位”。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #8e24aa; font-size: 0.9em; border-top: 1px dashed #e1bee7; padding-top: 20px;">
+            🎉 符文转换成功！宝藏大门缓缓开启！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

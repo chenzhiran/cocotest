@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2504 回文四叶草 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #e8f5e9; /* 幸运草浅绿 */
+            --card-bg: #ffffff;
+            --text-color: #1b5e20; /* 森林深绿 */
+            --cpp-color: #2e7d32; /* 叶脉绿 */
+            --py-color: #fbc02d; /* 幸运金 */
+            --accent-clover: #4caf50; /* 四叶草亮绿 */
+            --border-radius: 15px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影，适合小朋友 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(27, 94, 32, 0.15);
+            border: 4px solid var(--accent-clover);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #66bb6a;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--cpp-color);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--cpp-color);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--py-color);
+            border-bottom-color: var(--py-color);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: white; }
+        
+        .btn-py { color: var(--py-color); border-color: var(--py-color); }
+        .btn-py.active { background-color: var(--py-color); color: white; }
+
+        /* --- 标题样式 (无重影) --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: none; /* 确保无重影 */
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-clover);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #388e3c;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-clover);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-clover);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #f1f8e9;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #c8e6c9;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #81c784;
+            position: relative;
+            height: 120px;
+        }
+
+        .char-box {
+            width: 40px;
+            height: 40px;
+            background: #a5d6a7;
+            border: 2px solid #2e7d32;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #1b5e20;
+            position: relative;
+        }
+
+        .pointer-arrow {
+            position: absolute;
+            font-size: 1.5em;
+            color: #fbc02d;
+            font-weight: bold;
+            transition: all 0.5s;
+        }
+        
+        .ptr-label {
+            font-size: 0.5em;
+            color: #f57f17;
+            text-align: center;
+            margin-top: -5px;
+        }
+
+        .status-text {
+            width: 100%;
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238; /* 深灰背景 */
+            color: #eceff1; /* 浅白文字 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-clover);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #2e7d32;
+            background-color: #e8f5e9;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #80deea; } /* 类型 */
+        .c-num { color: #ffcc80; } /* 数字 */
+        .c-com { color: #b0bec5; font-style: italic; } /* 注释 */
+        .c-str { color: #a5d6a7; } /* 字符串 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 双指针法</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 切片反转</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2504</span>回文四叶草</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/89" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/89</a>
+            </div>
+            <div class="subtitle">🍀 神秘森林篇 · 回文字符串</div>
+        </div>
+
+        <div class="card">
+            <h2>✨ 激活幸运的四叶草 (题目描述)</h2>
+            <p>
+                英雄在森林深处找到了一株神奇的四叶草，叶片上刻着一串字符。
+                <br>长者说：“只有当这串字符是 <strong>回文</strong> 时，幸运之力才会觉醒！”
+            </p>
+            <p>
+                <strong>什么是回文？</strong>
+                <br>“回文”就是正着读和反着读完全一样的字符串。
+                <br>例如：<span class="inline-code">121</span>, <span class="inline-code">ABBA</span>, <span class="inline-code">LEVEL</span>。
+            </p>
+            <p>
+                👉 <strong>任务：</strong> 输入一个字符串，判断它是不是回文。如果是，输出 <span class="inline-code">YES</span>；否则输出 <span class="inline-code">NO</span>。
+            </p>
+
+            
+            <img src="CSP-J2504.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div style="position: absolute; top: 10px; left: 20px;" class="pointer-arrow">👇 <div class="ptr-label">i=0</div></div>
+                <div style="position: absolute; top: 10px; right: 20px;" class="pointer-arrow">👇 <div class="ptr-label">j=4</div></div>
+
+                <div class="char-box">A</div>
+                <div class="char-box">B</div>
+                <div class="char-box">C</div>
+                <div class="char-box">B</div>
+                <div class="char-box">A</div>
+
+                <div class="status-text">
+                    左边(A) == 右边(A) ? ✅ 相等，继续往中间走...
+                </div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Logic)</h2>
+            <p>判断回文有两种常见的魔法：</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid #4caf50; margin:10px 0; border-radius: 8px;">
+                <strong>👉 方法一：双指针夹击 (Two Pointers)</strong><br>
+                就像两个守卫，一个在头 (<span class="inline-code">i</span>)，一个在尾 (<span class="inline-code">j</span>)。
+                <br>1. 比较 <span class="inline-code">s[i]</span> 和 <span class="inline-code">s[j]</span>。
+                <br>2. 如果不一样，那就肯定不是回文，直接停下喊 "NO"。
+                <br>3. 如果一样，守卫 <span class="inline-code">i</span> 往右走，守卫 <span class="inline-code">j</span> 往左走，直到相遇。
+            </div>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid #fbc02d; margin:10px 0; border-radius: 8px;">
+                <strong>📸 方法二：克隆反转 (Reverse)</strong><br>
+                把字符串“倒影”克隆一份。
+                <br>如果 原身 == 倒影，那就是回文。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 实现选择</h3>
+                <p>
+                    虽然可以用 <span class="inline-code">reverse()</span> 函数，但 <strong>双指针法</strong> 是更基础、更高效的算法思维，也是这道题的最佳练习方式。
+                    <br>关键代码：<span class="inline-code">while (i < j)</span>
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 切片魔法</h3>
+                <p>
+                    Python 有一个超级好用的切片功能：<span class="inline-code">s[::-1]</span>。
+                    <br>这行代码的意思就是：把字符串 s 从头到尾倒着切一遍（反转）。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>使用经典的双指针法，效率高，逻辑清晰。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">#include</span> &lt;string&gt; <span class="c-com">// 使用 string 需要这个头文件</span>
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">int</span> n;
+    <span class="c-kw">cin</span> >> n; <span class="c-com">// 读入长度</span>
+    
+    <span class="c-kw">string</span> s;
+    <span class="c-kw">cin</span> >> s; <span class="c-com">// 读入字符串</span>
+    
+    <span class="c-kw">bool</span> flag = <span class="c-kw">true</span>; <span class="c-com">// 假设它是回文 (flag立起来)</span>
+    
+    <span class="c-com">// 定义双指针：i指向头，j指向尾</span>
+    <span class="c-kw">int</span> i = <span class="c-num">0</span>, j = s.size() - <span class="c-num">1</span>;
+    
+    <span class="c-com">// 当左指针还在右指针左边时，继续检查</span>
+    <span class="c-kw">while</span> (i < j) {
+        <span class="c-com">// 如果发现有不一样的字符</span>
+        <span class="c-kw">if</span> (s[i] != s[j]) {
+            flag = <span class="c-kw">false</span>; <span class="c-com">// 倒下 flag：不是回文</span>
+            <span class="c-kw">break</span>;        <span class="c-com">// 只要发现一处不同，就不用继续比了</span>
+        }
+        
+        <span class="c-com">// 继续向中间靠拢</span>
+        i++; 
+        j--;
+    }
+    
+    <span class="c-com">// 根据 flag 输出结果</span>
+    <span class="c-kw">if</span> (flag) 
+        <span class="c-kw">cout</span> << <span class="c-str">"YES"</span>;
+    <span class="c-kw">else</span> 
+        <span class="c-kw">cout</span> << <span class="c-str">"NO"</span>;
+        
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>一行代码反转，简单又强大。</p>
+<pre>
+<span class="c-com"># 1. 读入 n (虽然 python 比较不需要长度，但要读掉这一行)</span>
+n = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+
+<span class="c-com"># 2. 读入字符串</span>
+s = <span class="c-kw">input</span>()
+
+<span class="c-com"># 3. 判断回文</span>
+<span class="c-com"># s[::-1] 会生成一个反转后的字符串</span>
+<span class="c-kw">if</span> s == s[::<span class="c-num">-1</span>]:
+    <span class="c-kw">print</span>(<span class="c-str">"YES"</span>)
+<span class="c-kw">else</span>:
+    <span class="c-kw">print</span>(<span class="c-str">"NO"</span>)
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-clover);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>✌️ <strong>双指针 (C++)：</strong> 这是解决“对称”、“反转”类问题的通用钥匙。记住初始化 <span class="inline-code">i=0, j=n-1</span>，循环条件 <span class="inline-code">i < j</span>。</li>
+                <li>🔪 <strong>切片反转 (Python)：</strong> <span class="inline-code">[::-1]</span> 是 Python 特有的咒语，不仅能反转字符串，还能反转列表。</li>
+                <li>🚩 <strong>Flag 标记：</strong> 先假设结果是好的（<span class="inline-code">true</span>），一旦发现坏蛋（不相等），立马改成坏的（<span class="inline-code">false</span>）并退出。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #66bb6a; font-size: 0.9em; border-top: 1px dashed #c8e6c9; padding-top: 20px;">
+            🎉 四叶草光芒大作！幸运女神眷顾了你！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

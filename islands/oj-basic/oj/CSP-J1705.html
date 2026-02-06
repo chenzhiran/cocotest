@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J1705 药店模拟器 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #f3e5f5; /* 魔法迷雾紫 */
+            --card-bg: #ffffff;
+            --text-color: #4a148c; /* 深紫 */
+            --cpp-color: #7b1fa2; /* 法师紫 */
+            --py-color: #fbc02d; /* 金币黄 */
+            --accent-potion: #00e676; /* 药水绿 */
+            --accent-stop: #d50000; /* 停止红 */
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 0 25px rgba(123, 31, 162, 0.2);
+            border: 3px solid var(--cpp-color);
+            position: relative;
+        }
+
+        /* 链接小字 */
+        .link-text {
+            text-align: center;
+            font-size: 0.85em;
+            color: #7e57c2;
+            margin-top: 10px;
+            margin-bottom: 25px;
+            font-style: italic;
+        }
+        .link-text a {
+            color: var(--cpp-color);
+            text-decoration: none;
+            border-bottom: 1px dashed var(--cpp-color);
+        }
+        .link-text a:hover { color: #000; }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 25px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .btn-cpp { background-color: #e1bee7; color: #6a1b9a; border: 2px solid #6a1b9a; }
+        .btn-py { background-color: #fff9c4; color: #f57f17; border: 2px solid #fbc02d; }
+        
+        .toggle-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+        .toggle-btn.active { transform: scale(1.1); box-shadow: inset 0 3px 5px rgba(0,0,0,0.2); background-color: #4a148c; color: white;}
+
+        /* --- 标题样式 --- */
+        h1 {
+            text-align: center;
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            color: var(--cpp-color);
+            text-shadow: 2px 2px 0px #e1bee7;
+            display: inline-block;
+            border-bottom: 3px double var(--cpp-color);
+            padding-bottom: 5px;
+            width: 100%;
+        }
+        .header-container { text-align: center; }
+        .badge {
+            background: var(--accent-potion);
+            color: #004d40;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.5em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: #f57f17;
+            border-left: 5px solid var(--accent-potion);
+            padding-left: 10px;
+            margin-top: 30px;
+            font-size: 1.5em;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #f3e5f5;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid #e1bee7;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #4a148c;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px dashed #ab47bc;
+            color: white;
+        }
+
+        .bottle {
+            font-size: 2em;
+            position: relative;
+        }
+        .bottle::after {
+            content: attr(data-num);
+            font-size: 0.4em;
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            color: #000;
+            padding: 1px 4px;
+            border-radius: 4px;
+        }
+
+        .action-box {
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .act-sell { background: #00e676; color: #003300; }
+        .act-skip { background: #ffea00; color: #3e2723; }
+        .act-close { background: #d50000; color: white; }
+
+        /* 图片样式：无边框 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 350px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+            border: none; /* 去除边框 */
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238;
+            color: #ce93d8; /* 浅紫代码色 */
+            padding: 15px;
+            border-radius: 10px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            position: relative;
+            font-size: 1.05em;
+            border-left: 5px solid var(--accent-potion);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #d50000;
+            background-color: #ffebee;
+            padding: 2px 5px;
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ba68c8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #42a5f5; } /* 类型 */
+        .c-num { color: #ff9100; } /* 数字 */
+        .c-com { color: #90a4ae; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ Do-While</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python Logic</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J1705</span>药店模拟器</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/50" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/50</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🧙‍♀️ 安雅的关店规则 (题目描述)</h2>
+            <p>
+                安雅的魔药店每天只有 <strong>m</strong> 瓶药，而且不补货。
+                今天有 <strong>n</strong> 位英雄来买药，每个人想买 <strong>num</strong> 瓶。
+                <br>安雅严格执行三条规则：
+            </p>
+            <ol>
+                <li>🛑 <strong>没货了：</strong> 如果仓库空了 (m <= 0)，直接 <strong>关店 (Break)</strong>，后面的人都不接待了。</li>
+                <li>⏭️ <strong>要太多：</strong> 如果仓库有货，但这人要的太多 (num > m)，<strong>拒单 (Continue)</strong>，不卖给他，接待下一位。</li>
+                <li>✅ <strong>正常卖：</strong> 如果库存足够，就卖给他 (m -= num)，并且记录 <strong>成功人数 + 1</strong>。</li>
+            </ol>
+
+            
+            <img src="CSP-J1705.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div>库存: 10</div>
+                <div class="bottle" data-num="6">🧪</div>
+                <div class="action-box act-sell">✅ 卖出 (剩4)</div>
+                <div class="bottle" data-num="7">🧪</div>
+                <div class="action-box act-skip">⏭️ 不够 (跳过)</div>
+                <div class="bottle" data-num="2">🧪</div>
+                <div class="action-box act-sell">✅ 卖出 (剩2)</div>
+                <div class="bottle" data-num="5">🧪</div>
+                <div class="action-box act-skip">⏭️ 不够 (跳过)</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🧠 魔法原理 (Break vs Continue)</h2>
+            <p>这道题完美展示了两个控制语句的区别：</p>
+            <ul>
+                <li>🔴 <strong>Break (关店)：</strong> 彻底结束循环，后面的所有人都不看了。
+                    <br><em>触发条件：</em> 店里没药了 (m <= 0)。
+                </li>
+                <li>🟡 <strong>Continue (下一位)：</strong> 只结束当前这轮循环，马上开始下一轮（接待下一个人）。
+                    <br><em>触发条件：</em> 店里有药，但这人要的太多 (num > m)。
+                </li>
+            </ul>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码 (Do-While版)</h2>
+            <p>使用 <span class="inline-code">do-while</span> 循环处理每位顾客。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">int</span> m;      <span class="c-com">// m: 初始药瓶总数</span>
+    <span class="c-kw">int</span> n;      <span class="c-com">// n: 顾客人数</span>
+    <span class="c-kw">int</span> num;    <span class="c-com">// num: 当前顾客想要多少瓶</span>
+    <span class="c-kw">int</span> cnt = <span class="c-num">0</span>;<span class="c-com">// cnt: 成功买到药的人数</span>
+
+    <span class="c-kw">cin</span> >> m >> n;
+
+    <span class="c-kw">do</span> {
+        n--;          <span class="c-com">// 人数减1，准备接待</span>
+        <span class="c-kw">cin</span> >> num;   <span class="c-com">// 读入需求量</span>
+
+        <span class="c-com">// 规则1：没药了，直接关店</span>
+        <span class="c-kw">if</span> (m <= <span class="c-num">0</span>) {
+            <span class="c-kw">break</span>;    <span class="c-com">// 彻底停止！</span>
+        }
+        
+        <span class="c-com">// 规则2：要太多，拒单</span>
+        <span class="c-kw">else if</span> (num > m) {
+            <span class="c-kw">continue</span>; <span class="c-com">// 跳过这个人，不卖给他</span>
+        }
+        
+        <span class="c-com">// 规则3：正常卖</span>
+        <span class="c-kw">else</span> {
+            m -= num; <span class="c-com">// 库存减少</span>
+            cnt++;    <span class="c-com">// 成功人数+1</span>
+        }
+
+    } <span class="c-kw">while</span> (n >= <span class="c-num">1</span>); <span class="c-com">// 只要还有人没接待，就继续</span>
+
+    <span class="c-kw">cout</span> << cnt;
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>使用 <span class="inline-code">for</span> 循环遍历每个人，逻辑更简洁。</p>
+<pre>
+m = <span class="c-kw">int</span>(<span class="c-kw">input</span>())  <span class="c-com"># 药总量</span>
+n = <span class="c-kw">int</span>(<span class="c-kw">input</span>())  <span class="c-com"># 人数</span>
+<span class="c-com"># 一次性读入所有人的需求</span>
+needs = <span class="c-kw">list</span>(<span class="c-kw">map</span>(<span class="c-kw">int</span>, <span class="c-kw">input</span>().split()))
+
+cnt = <span class="c-num">0</span>  <span class="c-com"># 成功人数</span>
+
+<span class="c-kw">for</span> num <span class="c-kw">in</span> needs:
+    <span class="c-com"># 规则1：没药了，关店</span>
+    <span class="c-kw">if</span> m <= <span class="c-num">0</span>:
+        <span class="c-kw">break</span>     <span class="c-com"># 彻底停止</span>
+    
+    <span class="c-com"># 规则2：要太多，拒单</span>
+    <span class="c-kw">if</span> num > m:
+        <span class="c-kw">continue</span>  <span class="c-com"># 跳过他，看下一个人</span>
+        
+    <span class="c-com"># 规则3：正常卖</span>
+    m -= num      <span class="c-com"># 扣库存</span>
+    cnt += <span class="c-num">1</span>      <span class="c-com"># 记人数</span>
+
+<span class="c-kw">print</span>(cnt)
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 5px solid var(--accent-potion);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🛑 <strong>Break：</strong> 对应“关店走人”，整个循环直接作废。</li>
+                <li>⏭️ <strong>Continue：</strong> 对应“这单不接”，只是跳过当前这一个人，还要继续服务后面的人。</li>
+                <li>📦 <strong>逻辑顺序：</strong> 一定要先检查库存够不够 (m<=0)，再检查单笔需求 (num>m)，顺序不能反哦！</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #7e57c2; font-size: 0.9em; border-top: 1px dashed #e1bee7; padding-top: 20px;">
+            🎉 销售结束！安雅数了数今天的金币，很满意！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

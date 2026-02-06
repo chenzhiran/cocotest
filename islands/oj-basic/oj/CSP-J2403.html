@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2403 冒泡排序 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #e8f5e9; /* 森林浅绿 */
+            --card-bg: #ffffff;
+            --text-color: #1b5e20; /* 深林绿 */
+            --cpp-color: #33691e; /* 军绿色 */
+            --py-color: #ff6f00; /* 信号橙 */
+            --accent-camo: #8bc34a; /* 迷彩色 */
+            --border-radius: 15px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影，适合小朋友 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(27, 94, 32, 0.2);
+            border: 4px solid var(--accent-camo);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #558b2f;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--cpp-color);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--cpp-color);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--py-color);
+            border-bottom-color: var(--py-color);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: white; }
+        
+        .btn-py { color: var(--py-color); border-color: var(--py-color); }
+        .btn-py.active { background-color: var(--py-color); color: white; }
+
+        /* --- 标题样式 (无重影) --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: none; /* 确保无重影 */
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-camo);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #689f38;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-camo);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-camo);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #f1f8e9;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #c5e1a5;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #8bc34a;
+            height: 180px;
+        }
+
+        .soldier {
+            width: 40px;
+            background: #aed581;
+            border: 2px solid #558b2f;
+            border-radius: 5px 5px 0 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #1b5e20;
+            font-weight: bold;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .soldier.swap-left {
+            background: #ffcc80;
+            border-color: #ff6f00;
+            transform: translateX(55px); /* 模拟交换动画 */
+            z-index: 10;
+        }
+        
+        .soldier.swap-right {
+            background: #90caf9;
+            border-color: #1565c0;
+            transform: translateX(-55px); /* 模拟交换动画 */
+        }
+
+        .arrow-swap {
+            font-size: 2em;
+            color: #ff6f00;
+            position: absolute;
+            top: 40px;
+        }
+
+        .label-text {
+            width: 100%;
+            text-align: center;
+            font-size: 0.9em;
+            color: #558b2f;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238; /* 深灰背景 */
+            color: #eceff1; /* 浅白文字 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-camo);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #e65100;
+            background-color: #fff3e0;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #80deea; } /* 类型 */
+        .c-num { color: #ffcc80; } /* 数字 */
+        .c-com { color: #b0bec5; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 冒泡排序</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 冒泡排序</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2403</span>冒泡排序-升序</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/83" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/83</a>
+            </div>
+            <div class="subtitle">🌲 森林训练场篇 · 士兵列队</div>
+        </div>
+
+        <div class="card">
+            <h2>💂‍♂️ 士兵的身高排序 (题目描述)</h2>
+            <p>
+                在森林的训练场，英雄正在训练 <strong>n</strong> 名精锐士兵。
+                <br>为了整顿纪律，英雄要求士兵们按照 <strong>身高从矮到高</strong> (升序) 排成一队。
+            </p>
+            <p>
+                <strong>冒泡排序规则：</strong>
+                <br>1. 从队伍最左边开始，比较 <strong>相邻</strong> 的两名士兵。
+                <br>2. 如果 <strong>左边比右边高</strong>，他们就 <strong>交换</strong> 位置（高的往后站）。
+                <br>3. 一轮下来，最高的士兵就会像泡泡一样“浮”到最右边。
+                <br>4. 重复这个过程，直到所有人都排好队。
+            </p>
+            <p>
+                👉 <strong>任务：</strong> 输入 n 和士兵的身高，输出排序后的结果。
+            </p>
+
+            
+            <img src="CSP-J2403.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div class="soldier" style="height: 60px;">4</div>
+                
+                <div class="soldier swap-left" style="height: 100px;">6</div>
+                <div class="soldier swap-right" style="height: 50px;">3</div>
+                
+                <div class="soldier" style="height: 30px;">1</div>
+                <div class="soldier" style="height: 80px;">5</div>
+
+                <div class="arrow-swap">⇄</div>
+                
+                <div class="label-text">6 比 3 高，交换！(6 往后冒泡)</div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Bubble Sort)</h2>
+            <p>冒泡排序就像水里的泡泡，大的泡泡会慢慢往上浮（往后排）。</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid #8bc34a; margin:10px 0; border-radius: 8px;">
+                <strong>🔄 双重循环结构：</strong><br>
+                1. <strong>外层循环 (i)：</strong> 控制“轮数”。一共需要排 n-1 轮。<br>
+                2. <strong>内层循环 (j)：</strong> 控制“比较”。<br>
+                   每一轮，已归位的大泡泡（在最后面）就不用再比了。<br>
+                   所以比较范围是：<span class="inline-code">0</span> 到 <span class="inline-code">n - 1 - i</span>。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 实现细节</h3>
+                <p>
+                    <strong>比较：</strong> <span class="inline-code">if (a[j] > a[j+1])</span>
+                    <br><strong>交换：</strong> <span class="inline-code">swap(a[j], a[j+1])</span>
+                    <br><strong>范围：</strong> 随着 <span class="inline-code">i</span> 增加，<span class="inline-code">n-1-i</span> 变小，因为后面的位置已经排好序了。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 实现细节</h3>
+                <p>
+                    <strong>交换魔法：</strong> Python 可以用一行代码交换两个数：
+                    <br><span class="inline-code">a[j], a[j+1] = a[j+1], a[j]</span>
+                    <br><strong>循环范围：</strong> <span class="inline-code">range(n - 1 - i)</span> 自动处理边界。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>经典的冒泡排序模板，双层循环。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> a[<span class="c-num">1005</span>], n; <span class="c-com">// 数组开稍微大一点</span>
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">cin</span> >> n;
+    
+    <span class="c-com">// 1. 读入身高</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < n; i++)
+        <span class="c-kw">cin</span> >> a[i];
+
+    <span class="c-com">// 2. 冒泡排序核心代码</span>
+    <span class="c-com">// 外层循环：控制轮数 (一共 n-1 轮)</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < n - <span class="c-num">1</span>; i++) {
+        
+        <span class="c-com">// 内层循环：两两比较</span>
+        <span class="c-com">// 范围：每次减去 i，因为最后的 i 个已经排好了</span>
+        <span class="c-kw">for</span> (<span class="c-kw">int</span> j = <span class="c-num">0</span>; j < n - <span class="c-num">1</span> - i; j++) {
+            
+            <span class="c-com">// 如果左边比右边高 (不符合升序)</span>
+            <span class="c-kw">if</span> (a[j] > a[j + <span class="c-num">1</span>]) {
+                <span class="c-kw">swap</span>(a[j], a[j + <span class="c-num">1</span>]); <span class="c-com">// 交换位置</span>
+            }
+        }
+    }
+
+    <span class="c-com">// 3. 输出结果</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < n; i++)
+        <span class="c-kw">cout</span> << a[i] << <span class="c-str">" "</span>;
+        
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>Python 的列表交换非常简洁。</p>
+<pre>
+<span class="c-com"># 1. 读入 n</span>
+n = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+
+<span class="c-com"># 2. 读入身高列表</span>
+a = <span class="c-kw">list</span>(<span class="c-kw">map</span>(<span class="c-kw">int</span>, <span class="c-kw">input</span>().split()))
+
+<span class="c-com"># 3. 冒泡排序核心代码</span>
+<span class="c-com"># 外层循环：控制轮数</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(n - <span class="c-num">1</span>):
+    
+    <span class="c-com"># 内层循环：两两比较</span>
+    <span class="c-com"># 范围：从 0 到 n-1-i</span>
+    <span class="c-kw">for</span> j <span class="c-kw">in</span> <span class="c-kw">range</span>(n - <span class="c-num">1</span> - i):
+        
+        <span class="c-com"># 如果左边比右边大</span>
+        <span class="c-kw">if</span> a[j] > a[j + <span class="c-num">1</span>]:
+            <span class="c-com"># 交换位置</span>
+            a[j], a[j + <span class="c-num">1</span>] = a[j + <span class="c-num">1</span>], a[j]
+
+<span class="c-com"># 4. 输出结果</span>
+<span class="c-com"># *a 表示解包列表，自动用空格隔开</span>
+<span class="c-kw">print</span>(*a)
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-camo);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🧼 <strong>冒泡原理：</strong> 相邻两个数比较，不听话（顺序不对）就交换。</li>
+                <li>📉 <strong>循环边界：</strong> 内层循环的边界是 <span class="inline-code">n - 1 - i</span>。
+                    <br>为什么要 <span class="inline-code">- i</span>？因为每一轮最大的数都已经“沉底”到最后面了，下一轮不用再检查它啦！</li>
+                <li>🕰️ <strong>效率：</strong> 冒泡排序比较慢（O(n²)），适合数据量小（比如士兵少于1000人）的情况。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #558b2f; font-size: 0.9em; border-top: 1px dashed #c5e1a5; padding-top: 20px;">
+            🎉 士兵队列整齐划一！训练圆满结束！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

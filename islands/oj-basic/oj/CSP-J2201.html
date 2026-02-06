@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2201 查找数字 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #263238; /* 地牢深灰 */
+            --card-bg: #37474f; /* 石砖灰 */
+            --text-color: #eceff1; /* 亮白文字 */
+            --cpp-color: #4fc3f7; /* 幽灵蓝 */
+            --py-color: #ffca28; /* 火把黄 */
+            --accent-echo: #00e5ff; /* 回声青 */
+            --border-radius: 15px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影，适合小朋友 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.1);
+            border: 3px solid var(--accent-echo);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #b0bec5;
+            margin-top: 5px;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--accent-echo);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--accent-echo);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: #fff;
+            border-bottom-color: #fff;
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: #000; }
+        
+        .btn-py { color: var(--py-color); border-color: var(--py-color); }
+        .btn-py.active { background-color: var(--py-color); color: #000; }
+
+        /* --- 标题样式 (无重影) --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--accent-echo);
+            text-shadow: none; /* 确保无重影 */
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-echo);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #90a4ae;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-echo);
+            color: #006064;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-echo);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #455a64;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #546e7a;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #263238;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #78909c;
+        }
+
+        .stone {
+            width: 50px;
+            height: 50px;
+            background: #546e7a;
+            color: #eceff1;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            border: 2px solid #78909c;
+            position: relative;
+        }
+
+        .stone.match {
+            background: #00e676; /* 绿色匹配 */
+            border-color: #00c853;
+            color: #003300;
+            box-shadow: 0 0 15px #00e676;
+        }
+
+        .target-box {
+            padding: 10px 20px;
+            background: #ffca28;
+            color: #3e2723;
+            border-radius: 10px;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .arrow { font-size: 2em; color: #ffca28; }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #212121; /* 极深灰背景 */
+            color: #a5d6a7; /* 浅绿代码色 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-echo);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #ffca28;
+            background-color: #263238;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #4fc3f7; } /* 类型 */
+        .c-num { color: #ffab91; } /* 数字 */
+        .c-com { color: #b0bec5; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 查找</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 查找</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2201</span>查找数字</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/66" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/66</a>
+            </div>
+            <div class="subtitle">🗿 回声厅篇 · 线性查找</div>
+        </div>
+
+        <div class="card">
+            <h2>🔮 回声石的密令 (题目描述)</h2>
+            <p>
+                英雄走进了地牢的回声厅，墙上镶嵌着 <strong>10</strong> 块回声石，每块石头上都刻着一个数字。
+                <br>守门石像说：“我给你一个密令数字 <strong>x</strong>。”
+            </p>
+            <p>
+                <strong>规则：</strong>
+                <br>你需要在 10 块回声石中寻找，看有没有数字 <strong>x</strong>。
+                <br>✅ 如果找到了：回答 <strong>Yes</strong>。
+                <br>❌ 如果找遍了都没找到：回答 <strong>No</strong>。
+            </p>
+
+            
+            <img src="CSP-J2201.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div class="target-box">
+                    <div style="font-size:0.8em;">密令</div>
+                    <div style="font-size:1.5em;">7</div>
+                </div>
+                <div class="arrow">🔍</div>
+                <div style="display:flex; gap:5px;">
+                    <div class="stone">5</div>
+                    <div class="stone">12</div>
+                    <div class="stone match">7</div>
+                    <div class="stone">3</div>
+                    <div class="stone">9</div>
+                </div>
+                <div style="width:100%; text-align:center; margin-top:10px; color:#00e676; font-weight:bold;">
+                    找到啦！输出 Yes
+                </div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Linear Search)</h2>
+            <p>这道题是经典的“大海捞针”问题，学名叫 <strong>线性查找</strong>。</p>
+            
+            <div style="background:#37474f; padding:15px; border-left:4px solid #00e5ff; margin:10px 0; border-radius: 8px;">
+                <strong>🕵️ 查找步骤：</strong><br>
+                1. <strong>读取：</strong> 先把 10 个石头上的数字存进数组/列表。<br>
+                2. <strong>密令：</strong> 读取要查找的目标数字 <span class="inline-code">x</span>。<br>
+                3. <strong>遍历：</strong> 从第 1 个石头开始，一个个跟 <span class="inline-code">x</span> 比对。<br>
+                4. <strong>判断：</strong> 一旦发现相等，就标记“找到了”，并停止查找。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 标记法</h3>
+                <p>
+                    我们需要一个“旗帜”变量 (Flag)。
+                    <br><span class="inline-code">bool found = false;</span> (一开始假设没找到)
+                    <br>如果在循环里发现了 x，就设为 <span class="inline-code">found = true;</span> 并 <span class="inline-code">break;</span> (找到了就不用往后看了)。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 成员运算</h3>
+                <p>
+                    Python 有一个超级好用的单词：<span class="inline-code">in</span>。
+                    <br><span class="inline-code">if x in a:</span> 
+                    <br>这就话的意思就是：“如果 x 在列表 a 里面”，Python 会自动帮我们去查找。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>使用数组存储，配合 flag 标记变量。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-com">// 1. 定义数组，存放10个回声石</span>
+    <span class="c-kw">int</span> a[<span class="c-num">15</span>]; 
+
+    <span class="c-com">// 2. 读入这10个数字</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < <span class="c-num">10</span>; i++) {
+        <span class="c-kw">cin</span> >> a[i];
+    }
+
+    <span class="c-com">// 3. 读入密令 x</span>
+    <span class="c-kw">int</span> x;
+    <span class="c-kw">cin</span> >> x;
+
+    <span class="c-com">// 4. 开始查找</span>
+    <span class="c-kw">bool</span> found = <span class="c-kw">false</span>; <span class="c-com">// 定义一个旗帜，默认没找到(false)</span>
+
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < <span class="c-num">10</span>; i++) {
+        <span class="c-kw">if</span> (a[i] == x) { <span class="c-com">// 发现相等的了！</span>
+            found = <span class="c-kw">true</span>; <span class="c-com">// 举起旗帜：找到了！</span>
+            <span class="c-kw">break</span>;        <span class="c-com">// 任务完成，跳出循环</span>
+        }
+    }
+
+    <span class="c-com">// 5. 根据旗帜输出结果</span>
+    <span class="c-kw">if</span> (found) {
+        <span class="c-kw">cout</span> << <span class="c-str">"Yes"</span> << <span class="c-kw">endl</span>;
+    } <span class="c-kw">else</span> {
+        <span class="c-kw">cout</span> << <span class="c-str">"No"</span> << <span class="c-kw">endl</span>;
+    }
+
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>使用 <span class="inline-code">in</span> 关键字，像读英语一样简单。</p>
+<pre>
+<span class="c-com"># 1. 读入第一行，变成整数列表</span>
+<span class="c-com"># input().split() 会把输入按空格切开</span>
+<span class="c-com"># map(int, ...) 把它们都变成整数</span>
+a = <span class="c-kw">list</span>(<span class="c-kw">map</span>(<span class="c-kw">int</span>, <span class="c-kw">input</span>().split()))
+
+<span class="c-com"># 2. 读入密令 x</span>
+x = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+
+<span class="c-com"># 3. 判断 x 是否在列表 a 中</span>
+<span class="c-kw">if</span> x <span class="c-kw">in</span> a:
+    <span class="c-kw">print</span>(<span class="c-str">"Yes"</span>)
+<span class="c-kw">else</span>:
+    <span class="c-kw">print</span>(<span class="c-str">"No"</span>)
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-echo);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🚩 <strong>Flag 变量：</strong> 在 C++ 中，常用一个布尔变量（如 <span class="inline-code">found</span>）来记录“是否发生过某事”。</li>
+                <li>🚪 <strong>Break：</strong> 只要找到了一个匹配的，后面的就不用看了，用 break 提前结束循环能省时间。</li>
+                <li>🐍 <strong>Python 技巧：</strong> <span class="inline-code">in</span> 是 Python 列表查找的神器，要记住它！</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #b0bec5; font-size: 0.9em; border-top: 1px dashed #546e7a; padding-top: 20px;">
+            🎉 密令验证通过！回声石门轰然开启！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

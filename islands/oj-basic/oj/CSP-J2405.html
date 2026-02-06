@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2405 桶排序 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #263238; /* 地牢深灰 */
+            --card-bg: #37474f; /* 岩石层 */
+            --text-color: #eceff1; /* 亮灰文字 */
+            --cpp-color: #4db6ac; /* 魔法青 */
+            --py-color: #ffca28; /* 黄金 */
+            --accent-gold: #ff6f00; /* 宝箱光芒 */
+            --border-radius: 15px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影，适合小朋友 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 4px solid var(--accent-gold);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #b0bec5;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--accent-gold);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--accent-gold);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: #fff;
+            border-bottom-color: #fff;
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: #000; }
+        
+        .btn-py { color: var(--py-color); border-color: var(--py-color); }
+        .btn-py.active { background-color: var(--py-color); color: #000; }
+
+        /* --- 标题样式 (无重影) --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--accent-gold);
+            text-shadow: none; /* 确保无重影 */
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-gold);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #cfd8dc;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-gold);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-gold);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #455a64;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #546e7a;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #263238;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #78909c;
+        }
+
+        .bucket-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bucket {
+            width: 50px;
+            height: 60px;
+            border: 3px solid #b0bec5;
+            border-top: none;
+            background: #37474f;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 5px;
+            position: relative;
+        }
+        
+        .bucket.filled {
+            background: #ffecb3; /* 有东西时的颜色 */
+            border-color: #ffca28;
+        }
+
+        .gem {
+            font-size: 1.5em;
+            color: #ff6f00;
+            animation: drop 0.5s ease-out;
+        }
+
+        .bucket-label {
+            margin-top: 5px;
+            font-weight: bold;
+            color: #eceff1;
+            font-size: 0.8em;
+        }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #212121; /* 极深灰背景 */
+            color: #a5d6a7; /* 浅绿代码色 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-gold);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #ffca28;
+            background-color: #263238;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #4fc3f7; } /* 类型 */
+        .c-num { color: #ffab91; } /* 数字 */
+        .c-com { color: #b0bec5; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 桶排序</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 桶排序</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2405</span>桶排序-入桶法</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/85" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/85</a>
+            </div>
+            <div class="subtitle">🗝️ 地牢宝藏篇 · 去重与排序</div>
+        </div>
+
+        <div class="card">
+            <h2>💎 整理散乱的数字宝石 (题目描述)</h2>
+            <p>
+                英雄在地牢深处发现了宝藏室，但守护者给出了一堆散乱的数字宝石。
+                <br><strong>规则：</strong>
+                <br>1. 宝石上的数字代表学号。
+                <br>2. 有些宝石的数字是 <strong>重复</strong> 的。
+                <br>3. 你需要把它们 <strong>从小到大</strong> 排列，并且 <strong>去除重复</strong> 的数字。
+            </p>
+            <p>
+                👉 <strong>任务：</strong> 输入一堆数字，请输出去重后并排好序的结果。
+            </p>
+            <p>
+                例如：<span class="inline-code">10, 2, 2, 1, 3</span>
+                <br>去重排序后：<span class="inline-code">1, 2, 3, 10</span>
+            </p>
+
+            
+            <img src="CSP-J2405.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div class="bucket-wrapper">
+                    <div class="bucket filled"><div class="gem">1</div></div>
+                    <div class="bucket-label">桶[1]</div>
+                </div>
+                <div class="bucket-wrapper">
+                    <div class="bucket filled"><div class="gem">2</div></div>
+                    <div class="bucket-label">桶[2]</div>
+                </div>
+                <div class="bucket-wrapper">
+                    <div class="bucket filled"><div class="gem">3</div></div>
+                    <div class="bucket-label">桶[3]</div>
+                </div>
+                <div class="bucket-wrapper">
+                    <div class="bucket"><span style="color:#555;">空</span></div>
+                    <div class="bucket-label">...</div>
+                </div>
+                <div class="bucket-wrapper">
+                    <div class="bucket filled"><div class="gem">10</div></div>
+                    <div class="bucket-label">桶[10]</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Bucket Sort Logic)</h2>
+            <p><strong>桶排序</strong>的思想是：“用空间换时间”。我们准备很多带编号的桶。</p>
+            
+            <div style="background:#263238; padding:15px; border-left:4px solid #ff6f00; margin:10px 0; border-radius: 8px;">
+                <strong>🧙‍♂️ 核心三步：</strong><br>
+                1. <strong>准备桶：</strong> 创建一个大数组（比如 <span class="inline-code">b[1010]</span>），下标代表数字本身。<br>
+                2. <strong>入桶 (去重)：</strong> 拿到数字 <span class="inline-code">x</span>，就把 <span class="inline-code">x</span> 放入第 <span class="inline-code">x</span> 号桶。<br>
+                   公式：<span class="inline-code">b[x] = x</span><br>
+                   （如果有两个 2，第二次放入会覆盖第一次，正好实现了<strong>去重</strong>！）<br>
+                3. <strong>倒出 (排序)：</strong> 从第 0 号桶遍历到最后，如果桶里有东西（不为0），就拿出来。因为桶的编号本身就是有序的，所以拿出来的数字自然也是有序的。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 实现注意</h3>
+                <p>
+                    <strong>入桶循环：</strong> 必须遍历 <span class="inline-code">0</span> 到 <span class="inline-code">n-1</span> (输入数据的个数)。
+                    <br><strong>输出循环：</strong> 必须遍历 <span class="inline-code">0</span> 到 <span class="inline-code">1010</span> (桶的大小)，因为可能有一个数字是 1000，如果你只遍历到 n (比如5)，那个 1000 就漏掉了！
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 实现注意</h3>
+                <p>
+                    <strong>入桶循环：</strong> <span class="inline-code">range(m)</span>，遍历输入的每一个数字。
+                    <br><strong>输出循环：</strong> 必须遍历 <span class="inline-code">range(1010)</span>，即遍历所有的桶。千万不要写成 range(m)，否则如果输入 <span class="inline-code">100</span>，循环 1 次根本打印不出来。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>利用数组下标自动排序，赋值操作自动去重。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;bits/stdc++.h&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> a[<span class="c-num">1010</span>]; <span class="c-com">// 存输入的原始数据</span>
+<span class="c-kw">int</span> b[<span class="c-num">1010</span>]; <span class="c-com">// 桶数组，下标对应数字</span>
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>(){
+    <span class="c-kw">int</span> n;
+    <span class="c-kw">cin</span> >> n;
+
+    <span class="c-com">// 1. 读入原始宝石</span>
+    <span class="c-kw">for</span>(<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < n; i++)
+        <span class="c-kw">cin</span> >> a[i];
+
+    <span class="c-com">// 2. 入桶 (关键步骤)</span>
+    <span class="c-com">// 遍历输入的 n 个数，放到对应的桶里</span>
+    <span class="c-kw">for</span>(<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < n; i++) {
+        <span class="c-com">// b[数值] = 数值</span>
+        <span class="c-com">// 比如 a[i] 是 10，就 b[10] = 10</span>
+        b[a[i]] = a[i]; 
+    }
+
+    <span class="c-com">// 3. 按顺序倒出 (输出)</span>
+    <span class="c-com">// 注意：要遍历所有的桶 (0 到 1010)</span>
+    <span class="c-kw">for</span>(<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < <span class="c-num">1010</span>; i++) {
+        <span class="c-com">// 如果桶里有东西 (不为0)</span>
+        <span class="c-kw">if</span>(b[i] != <span class="c-num">0</span>)
+            <span class="c-kw">cout</span> << b[i] << <span class="c-str">" "</span>;
+    }
+
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>列表索引即数值，遍历整个列表即可完成排序。</p>
+<pre>
+<span class="c-com"># 1. 读入数量 m</span>
+m = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+
+<span class="c-com"># 2. 读入宝石列表</span>
+a = <span class="c-kw">list</span>(<span class="c-kw">map</span>(<span class="c-kw">int</span>, <span class="c-kw">input</span>().split()))
+
+<span class="c-com"># 3. 准备桶：创建一个全为 0 的列表</span>
+b = [<span class="c-num">0</span>] * <span class="c-num">1010</span>
+
+<span class="c-com"># 4. 入桶操作</span>
+<span class="c-com"># 遍历输入的 m 个数字</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(m):
+    <span class="c-com"># a[i] 是宝石的数值，放入对应的下标位置</span>
+    b[a[i]] = a[i]
+
+<span class="c-com"># 5. 按顺序输出</span>
+<span class="c-com"># 关键：要遍历桶的所有可能范围 (0 到 1010)</span>
+<span class="c-com"># 而不是 range(m)</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(<span class="c-num">1010</span>):
+    <span class="c-com"># 如果桶里有数字 (不为0)</span>
+    <span class="c-kw">if</span> b[i] != <span class="c-num">0</span>:
+        <span class="c-kw">print</span>(b[i], <span class="c-kw">end</span>=<span class="c-str">' '</span>)
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-gold);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🪣 <strong>桶下标：</strong> 桶排序最神奇的地方是 <span class="inline-code">下标 = 数值</span>。第 5 号桶就专门装数字 5。</li>
+                <li>🔄 <strong>自动排序：</strong> 因为我们是从第 0 号桶一直检查到最后，出来的顺序天然就是从小到大的，不需要额外的 <span class="inline-code">sort</span> 操作。</li>
+                <li>🧹 <strong>自动去重：</strong> 对同一个桶赋值多次 (<span class="inline-code">b[2]=2; b[2]=2;</span>)，结果还是只有一个 2，完美解决去重问题。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #b0bec5; font-size: 0.9em; border-top: 1px dashed #546e7a; padding-top: 20px;">
+            🎉 宝石整理完毕！宝藏大门“轰”的一声打开了！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

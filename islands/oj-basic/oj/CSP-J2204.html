@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2204 均衡能量 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #263238; /* 地牢深灰背景 */
+            --card-bg: #37474f; /* 石壁灰 */
+            --text-color: #eceff1; /* 亮白文字 */
+            --cpp-color: #4db6ac; /* 符文青 */
+            --py-color: #ffca28; /* 能量黄 */
+            --accent-energy: #00e676; /* 激活绿 */
+            --border-radius: 15px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影，适合小朋友 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 0 30px rgba(0, 230, 118, 0.15);
+            border: 3px solid var(--accent-energy);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #b0bec5;
+            margin-top: 5px;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--accent-energy);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--accent-energy);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: #fff;
+            border-bottom-color: #fff;
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: #004d40; }
+        
+        .btn-py { color: var(--py-color); border-color: var(--py-color); }
+        .btn-py.active { background-color: var(--py-color); color: #3e2723; }
+
+        /* --- 标题样式 (无重影) --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--accent-energy);
+            text-shadow: none; /* 确保无重影 */
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-energy);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #b0bec5;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-energy);
+            color: #003300;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-energy);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #455a64;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #546e7a;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #263238;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #78909c;
+        }
+
+        .stone {
+            width: 50px;
+            height: 60px;
+            background: #546e7a;
+            color: #ffca28;
+            border-radius: 8px; /* 石头形状 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            border: 2px solid #78909c;
+            box-shadow: 0 4px 0 #37474f;
+            position: relative;
+        }
+
+        .stone::after {
+            content: '⚡';
+            position: absolute;
+            top: -15px;
+            font-size: 0.8em;
+            color: #00e676;
+        }
+
+        .plus { font-size: 1.5em; color: #b0bec5; }
+        .equal { font-size: 1.5em; color: #00e676; }
+
+        .result-box {
+            padding: 10px 20px;
+            background: #00e676;
+            color: #003300;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #212121; /* 极深灰背景 */
+            color: #a5d6a7; /* 浅绿代码色 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-energy);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #ffca28;
+            background-color: #263238;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #4fc3f7; } /* 类型 */
+        .c-num { color: #ffab91; } /* 数字 */
+        .c-com { color: #b0bec5; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 数组求和</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 列表求和</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2204</span>均衡能量</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/69" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/69</a>
+            </div>
+            <div class="subtitle">🏰 地牢入口篇 · 平均值计算</div>
+        </div>
+
+        <div class="card">
+            <h2>⚡ 激活古老的石门 (题目描述)</h2>
+            <p>
+                英雄站在地牢的入口，面前有 <strong>5</strong> 块能量石，每块石头上都刻着一个能量值。
+                <br>石门上刻着开启规则：
+                <br><strong>“汇聚五石之力，求其均衡之数。”</strong>
+            </p>
+            <p>
+                <strong>意思就是：</strong>
+                <br>1. 把 5 块石头的能量加起来 (求和)。
+                <br>2. 把总能量除以 5 (求平均)。
+                <br>3. 结果只保留 <strong>整数</strong> 部分 (去掉小数)。
+            </p>
+            <p>
+                👉 <strong>任务：</strong> 读入 5 个整数，计算并输出它们的整数平均值。
+            </p>
+
+            
+            <img src="CSP-J2204.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div class="stone">1</div>
+                <div class="plus">+</div>
+                <div class="stone">2</div>
+                <div class="plus">+</div>
+                <div class="stone">3</div>
+                <div class="plus">+</div>
+                <div class="stone">4</div>
+                <div class="plus">+</div>
+                <div class="stone">5</div>
+                <div class="equal">=</div>
+                <div style="color:#fff; font-weight:bold;">15</div>
+                <div class="arrow" style="width:100%; text-align:center; margin-top:10px;">⬇️ ÷ 5</div>
+                <div class="result-box">3</div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Average Logic)</h2>
+            <p>这道题是统计学最基础的魔法：<strong>平均值 (Mean)</strong>。</p>
+            
+            
+
+            <div style="background:#37474f; padding:15px; border-left:4px solid #00e676; margin:10px 0; border-radius: 8px;">
+                <strong>📐 计算公式：</strong><br>
+                1. <strong>累加 (Sum)：</strong> <span class="inline-code">total = a[0] + a[1] + ... + a[4]</span><br>
+                2. <strong>整除 (Integer Division)：</strong> <span class="inline-code">avg = total / 5</span><br>
+                ⚠️ 注意：题目要求“整数结果”，所以不要保留小数。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 整数除法</h3>
+                <p>
+                    在 C++ 中，如果两个整数相除（例如 <span class="inline-code">int / int</span>），结果会自动丢弃小数部分。
+                    <br>比如：<span class="inline-code">14 / 5</span> 的结果是 <span class="inline-code">2</span> (而不是 2.8)。
+                    <br>这正好符合题目要求！
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 地板除</h3>
+                <p>
+                    Python 的普通除法 <span class="inline-code">/</span> 会得到小数（float）。
+                    <br>要得到整数，必须用 <strong>双斜杠</strong> <span class="inline-code">//</span>。
+                    <br>比如：<span class="inline-code">14 // 5</span> 的结果是 <span class="inline-code">2</span>。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>循环累加，最后整除。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-com">// 1. 定义数组，存放5个能量石</span>
+    <span class="c-kw">int</span> a[<span class="c-num">5</span>]; 
+    <span class="c-kw">int</span> sum = <span class="c-num">0</span>; <span class="c-com">// 累加器，用来存总和</span>
+
+    <span class="c-com">// 2. 循环读入并累加</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">0</span>; i < <span class="c-num">5</span>; i++) {
+        <span class="c-kw">cin</span> >> a[i];
+        sum += a[i]; <span class="c-com">// 读一个加一个</span>
+    }
+
+    <span class="c-com">// 3. 计算并输出平均值</span>
+    <span class="c-com">// 整数除以整数，结果自动是整数</span>
+    <span class="c-kw">cout</span> << sum / <span class="c-num">5</span> << <span class="c-kw">endl</span>;
+
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>使用 sum() 函数和地板除，代码超简洁。</p>
+<pre>
+<span class="c-com"># 1. 读入一行，变成整数列表</span>
+<span class="c-com"># input().split() 按空格切分</span>
+<span class="c-com"># map(int, ...) 转成整数</span>
+a = <span class="c-kw">list</span>(<span class="c-kw">map</span>(<span class="c-kw">int</span>, <span class="c-kw">input</span>().split()))
+
+<span class="c-com"># 2. 求总和</span>
+total = <span class="c-kw">sum</span>(a)
+
+<span class="c-com"># 3. 求整数平均值 (注意用 // )</span>
+avg = total // <span class="c-num">5</span>
+
+<span class="c-com"># 4. 输出</span>
+<span class="c-kw">print</span>(avg)
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-energy);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>➕ <strong>累加器：</strong> 求和之前，一定要定义一个变量（如 <span class="inline-code">sum=0</span>）来存结果。</li>
+                <li>➗ <strong>整数除法：</strong> 
+                    <br>C++ 用 <span class="inline-code">/</span>
+                    <br>Python 用 <span class="inline-code">//</span>
+                </li>
+                <li>📦 <strong>固定次数：</strong> 题目说一定是 5 个数，所以循环写 <span class="inline-code">i < 5</span> 或者除以 5 即可。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #b0bec5; font-size: 0.9em; border-top: 1px dashed #546e7a; padding-top: 20px;">
+            🎉 能量均衡！石门缓缓升起！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J2305 猴子大王 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #f1f8e9; /* 森林浅绿 */
+            --card-bg: #ffffff;
+            --text-color: #33691e; /* 深叶绿 */
+            --cpp-color: #558b2f; /* 草地绿 */
+            --py-color: #fdd835; /* 香蕉黄 */
+            --accent-wood: #795548; /* 树干褐 */
+            --accent-monkey: #ffb74d; /* 猴子橙 */
+            --border-radius: 15px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(51, 105, 30, 0.2);
+            border: 4px solid var(--accent-wood);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #8d6e63;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--accent-wood);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--accent-wood);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--cpp-color);
+            border-bottom-color: var(--cpp-color);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: white; }
+        
+        .btn-py { color: #f9a825; border-color: #f9a825; }
+        .btn-py.active { background-color: #f9a825; color: white; }
+
+        /* --- 标题样式 (无重影) --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: none; /* 确保无重影 */
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-wood);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #689f38;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-monkey);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-monkey);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #fffde7;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #fff9c4;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #a1887f;
+        }
+
+        .monkey-circle {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            border: 4px dashed #ddd;
+            border-radius: 50%;
+            margin: 20px;
+        }
+
+        .monkey {
+            width: 30px;
+            height: 30px;
+            background: #ffcc80;
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 0.8em;
+            color: #e65100;
+            border: 2px solid #e65100;
+        }
+
+        .monkey.out {
+            background: #bdbdbd;
+            border-color: #757575;
+            color: #757575;
+            text-decoration: line-through;
+        }
+
+        .monkey.king {
+            background: #ffd700;
+            border-color: #ff6f00;
+            transform: scale(1.3);
+            z-index: 10;
+            box-shadow: 0 0 10px #ffd700;
+        }
+        .monkey.king::after { content: '👑'; position: absolute; top: -20px; font-size: 1.5em; }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238; /* 深灰背景 */
+            color: #eceff1; /* 浅白文字 */
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-monkey);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #d84315;
+            background-color: #ffccbc;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #80deea; } /* 类型 */
+        .c-num { color: #ffcc80; } /* 数字 */
+        .c-com { color: #b0bec5; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 数组模拟</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 列表模拟</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J2305</span>猴子大王</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/78" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/78</a>
+            </div>
+            <div class="subtitle">🐒 约瑟夫环篇 · 循环淘汰</div>
+        </div>
+
+        <div class="card">
+            <h2>👑 森林里的选王大会 (题目描述)</h2>
+            <p>
+                一群猴子（<strong>n</strong> 只）在森林里围成一圈，准备选出新的大王。
+                <br>规则是这样的：
+            </p>
+            <ol>
+                <li>🔢 从第 1 只猴子开始报数：1, 2, 3...</li>
+                <li>❌ 每数到 <strong>m</strong> 的猴子，就要被淘汰（出圈）。</li>
+                <li>🔄 接着从下一只猴子开始重新报数（1, 2...）。</li>
+                <li>🏆 如此循环，直到 <strong>只剩下一只</strong> 猴子，它就是大王！</li>
+            </ol>
+            <p>
+                👉 <strong>任务：</strong> 输入猴子总数 n 和报数数字 m，算出谁是最后的大王。
+            </p>
+
+            
+            <img src="CSP-J2305.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div style="text-align:center;">
+                    <div style="font-weight:bold; margin-bottom:10px;">样例：5只猴子，数到2淘汰</div>
+                    <div class="monkey-circle">
+                        <div class="monkey out" style="top:0; left:85px;">1</div>
+                        <div class="monkey out" style="top:50px; right:10px;">2</div>
+                        <div class="monkey king" style="bottom:20px; right:40px;">3</div>
+                        <div class="monkey out" style="bottom:20px; left:40px;">4</div>
+                        <div class="monkey out" style="top:50px; left:10px;">5</div>
+                    </div>
+                    <div style="color:#d84315; font-size:0.9em;">
+                        淘汰顺序: 2 -> 4 -> 1 -> 5 <br>
+                        <strong>大王: 3</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Simulation)</h2>
+            <p>这是一个经典的“约瑟夫环”问题。既然是练习数组，我们用<strong>模拟法</strong>来做。</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid #795548; margin:10px 0; border-radius: 8px;">
+                <strong>🔧 模拟核心：</strong><br>
+                1. <strong>标记数组：</strong> 用一个数组 <span class="inline-code">a[]</span>，<span class="inline-code">a[i]=0</span> 表示在圈内，<span class="inline-code">a[i]=1</span> 表示出圈。<br>
+                2. <strong>报数计数器 (k/j)：</strong> 记录当前喊到了几。<br>
+                3. <strong>位置指针 (l/k)：</strong> 指向当前是哪只猴子。<br>
+                4. <strong>回绕逻辑：</strong> 当指针超过 n 时，要回到 1 (围成圈)。<br>
+                5. <strong>跳过逻辑：</strong> 如果遇到 <span class="inline-code">a[i]==1</span> (已淘汰)，计数器不增加，直接看下一只。
+            </div>
+
+            <div class="cpp-content">
+                <h3>C++ 逻辑细节</h3>
+                <p>
+                    我们使用双重循环：
+                    <br><strong>外层循环：</strong> 执行 n-1 次（因为要淘汰 n-1 只猴子）。
+                    <br><strong>内层循环：</strong> 负责数 m 个数。只要没数够 m 个<strong>有效</strong>的猴子，就一直往下找。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>Python 逻辑细节</h3>
+                <p>
+                    逻辑同 C++。
+                    <br>使用 <span class="inline-code">while j < m</span> 来控制报数。
+                    <br>如果 <span class="inline-code">k > n</span>，重置 <span class="inline-code">k = 1</span> 实现转圈。
+                    <br>只有当 <span class="inline-code">a[k] == 0</span> 时，<span class="inline-code">j</span> 才加 1。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>使用数组标记状态，<span class="inline-code">a[i]=0</span> 代表幸存。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;bits/stdc++.h&gt;
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">const int</span> MAXN = <span class="c-num">100010</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">int</span> n, m, i, l, k;
+    <span class="c-kw">int</span> a[MAXN];
+    
+    <span class="c-kw">cin</span> >> n >> m;
+    
+    <span class="c-com">// 初始化数组，0表示在圈内</span>
+    <span class="c-kw">memset</span>(a, <span class="c-num">0</span>, <span class="c-kw">sizeof</span>(a));
+    
+    k = <span class="c-num">0</span>; <span class="c-com">// k: 当前报到的数字 (1~m)</span>
+    l = <span class="c-num">0</span>; <span class="c-com">// l: 当前指向的猴子编号</span>
+    
+    <span class="c-com">// 只要淘汰 n-1 只猴子，剩下的就是大王</span>
+    <span class="c-kw">for</span> (i = <span class="c-num">1</span>; i <= n - <span class="c-num">1</span>; i++) {
+        
+        <span class="c-com">// 数 m 个在圈内的猴子</span>
+        <span class="c-kw">while</span> (k < m) {
+            l++; <span class="c-com">// 移向下一只猴子</span>
+            
+            <span class="c-com">// 如果超过 n，回到第 1 只 (围成圈)</span>
+            <span class="c-kw">if</span> (l > n) l = <span class="c-num">1</span>;
+            
+            <span class="c-com">// 只有当猴子还在圈内 (!a[l]) 时，报数有效，k加1</span>
+            <span class="c-kw">if</span> (!a[l]) k++;
+        }
+        
+        <span class="c-com">// 数到 m 了，这只猴子(l)被淘汰，标记为1</span>
+        a[l] = !a[l]; 
+        k = <span class="c-num">0</span>; <span class="c-com">// 报数归零，下一轮重新开始</span>
+    }
+    
+    <span class="c-com">// 遍历找到最后那个标记为 0 的猴子</span>
+    <span class="c-kw">for</span> (i = <span class="c-num">1</span>; i <= n; i++)
+        <span class="c-kw">if</span> (!a[i]) <span class="c-kw">cout</span> << i << <span class="c-kw">endl</span>;
+        
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>使用列表标记，手动控制下标回绕。</p>
+<pre>
+<span class="c-com"># 1. 读入 n 和 m</span>
+n, m = <span class="c-kw">map</span>(<span class="c-kw">int</span>, <span class="c-kw">input</span>().split())
+
+k = <span class="c-num">0</span>  <span class="c-com"># 当前指向的猴子编号 (pointer)</span>
+j = <span class="c-num">0</span>  <span class="c-com"># 当前报的数 (counter)</span>
+
+<span class="c-com"># 列表初始化为0，多开一个空间方便对应 1~n</span>
+a = [<span class="c-num">0</span>] * (n + <span class="c-num">1</span>) 
+
+<span class="c-com"># 2. 循环淘汰 n-1 只猴子</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(<span class="c-num">1</span>, n):
+    <span class="c-com"># 数 m 个有效的人</span>
+    <span class="c-kw">while</span> j < m:
+        k += <span class="c-num">1</span> <span class="c-com"># 移动指针</span>
+        
+        <span class="c-com"># 模拟圈：超过 n 回到 1</span>
+        <span class="c-kw">if</span> k > n:
+            k = <span class="c-num">1</span>
+            
+        <span class="c-com"># 如果猴子在圈内(a[k]==0)，报数有效，j加1</span>
+        <span class="c-kw">if</span> a[k] == <span class="c-num">0</span>:
+            j += <span class="c-num">1</span>
+            
+    <span class="c-com"># 数到了，淘汰当前猴子 k</span>
+    a[k] = <span class="c-num">1</span>
+    j = <span class="c-num">0</span> <span class="c-com"># 报数归零</span>
+
+<span class="c-com"># 3. 寻找最后的幸存者</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(<span class="c-num">1</span>, n + <span class="c-num">1</span>):
+    <span class="c-kw">if</span> a[i] == <span class="c-num">0</span>:
+        <span class="c-kw">print</span>(i)
+        <span class="c-kw">break</span>
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-wood);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🔄 <strong>回绕处理：</strong> 在数组模拟圆圈时，下标一旦超过 <span class="inline-code">n</span>，必须强制变回 <span class="inline-code">1</span>。</li>
+                <li>🚫 <strong>跳过淘汰者：</strong> 报数时，必须先检查 <span class="inline-code">if (a[i] == 0)</span>。已经出局的人（标记为1）是不能报数的！</li>
+                <li>🔢 <strong>双指针：</strong> 一个指针（变量）用来指“现在是谁”，另一个指针用来记“报到了几”。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #8d6e63; font-size: 0.9em; border-top: 1px dashed #d7ccc8; padding-top: 20px;">
+            🎉 猴子大王诞生了！森林恢复了宁静！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

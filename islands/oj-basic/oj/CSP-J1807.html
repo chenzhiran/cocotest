@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J1807 弹跳气球 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局风格设置 --- */
+        :root {
+            --bg-color: #e3f2fd; /* 雪山晴空蓝 */
+            --card-bg: #ffffff;
+            --text-color: #37474f; /* 岩石深灰 */
+            --cpp-color: #1565c0; /* 深邃蓝 */
+            --py-color: #fdd835; /* 阳光黄 */
+            --accent-balloon: #e53935; /* 气球红 */
+            --border-radius: 15px;
+        }
+
+        body {
+            /* 圆润清晰的字体，无重影，适合小朋友 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 20px rgba(21, 101, 192, 0.15);
+            border: 3px solid var(--accent-balloon);
+        }
+
+        /* 链接小字样式 */
+        .link-text {
+            text-align: center;
+            font-size: 0.9em;
+            color: #78909c;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .link-text a {
+            color: var(--accent-balloon);
+            text-decoration: none;
+            border-bottom: 2px dashed var(--accent-balloon);
+            transition: color 0.2s;
+        }
+        .link-text a:hover {
+            color: var(--cpp-color);
+            border-bottom-color: var(--cpp-color);
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            font-size: 1.1em;
+            border: 2px solid;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-cpp { color: var(--cpp-color); border-color: var(--cpp-color); }
+        .btn-cpp.active { background-color: var(--cpp-color); color: white; }
+        
+        .btn-py { color: #f9a825; border-color: #f9a825; }
+        .btn-py.active { background-color: #f9a825; color: white; }
+
+        /* --- 标题样式 (无重影) --- */
+        h1 {
+            text-align: center;
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            text-shadow: none; /* 确保无重影 */
+            font-weight: 800;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--accent-balloon);
+            display: inline-block;
+            padding-bottom: 10px;
+        }
+        .header-container { text-align: center; margin-bottom: 30px; }
+        .subtitle {
+            color: #546e7a;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .badge {
+            background: var(--accent-balloon);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: var(--cpp-color);
+            border-left: 6px solid var(--accent-balloon);
+            padding-left: 15px;
+            margin-top: 30px;
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #fff;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #eeeeee;
+        }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 10px;
+            margin: 20px 0;
+            padding: 20px;
+            background: #e3f2fd;
+            border-radius: 15px;
+            height: 150px;
+            border-bottom: 4px solid #78909c; /* 地面 */
+        }
+
+        .bounce-path {
+            width: 20px;
+            border-top: 2px dashed #e53935;
+            border-left: 2px dashed #e53935;
+            border-right: 2px dashed #e53935;
+            border-radius: 20px 20px 0 0;
+            position: relative;
+        }
+        
+        .start-drop {
+            width: 2px;
+            height: 100px;
+            background: #e53935;
+            margin-right: 5px;
+        }
+
+        .ball {
+            width: 20px;
+            height: 20px;
+            background: #e53935;
+            border-radius: 50%;
+            position: absolute;
+            top: -10px;
+            left: 0;
+        }
+
+        .label {
+            font-size: 0.8em;
+            color: #1565c0;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        /* 图片样式 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #263238;
+            color: #eceff1;
+            padding: 20px;
+            border-radius: 15px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            font-size: 1.2em;
+            border-left: 6px solid var(--accent-balloon);
+        }
+        
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #d84315;
+            background-color: #ffccbc;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* 代码高亮 */
+        .c-kw { color: #ce93d8; font-weight: bold; } /* 关键字 */
+        .c-type { color: #4fc3f7; } /* 类型 */
+        .c-num { color: #ffab91; } /* 数字 */
+        .c-com { color: #b0bec5; font-style: italic; } /* 注释 */
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: #f9a825; }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 C++ 魔法</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 Python 魔法</button>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <h1><span class="badge">CSP-J1807</span>弹跳气球</h1>
+            <div class="link-text">
+                练习题目链接：<a href="https://oj.koudashijie.com/collection/26/type/course/problem/58" target="_blank">https://oj.koudashijie.com/collection/26/type/course/problem/58</a>
+            </div>
+            <div class="subtitle">🎈 雪山训练篇 · 浮点数循环</div>
+        </div>
+
+        <div class="card">
+            <h2>🏔️ 气球的每一次跳跃 (题目描述)</h2>
+            <p>
+                在雪山训练场，英雄从高度 <strong>h</strong> 米处扔下一个弹跳气球。
+                <br>每次落地后，它会反弹回上次高度的 <strong>一半 (1/2)</strong>。
+            </p>
+            
+            <img src="CSP-J1807.png" alt="题目配图" class="img-placeholder">
+            <p>
+                记录员想知道两件事：
+            </p>
+            <ol>
+                <li>📏 <strong>总路程：</strong> 气球第 10 次 <strong>落地</strong> 时，一共经过了多少米？</li>
+                <li>⬆️ <strong>反弹高度：</strong> 第 10 次落地后，反弹了多高？</li>
+            </ol>
+            <p>
+                ⚠️ <strong>注意：</strong> 结果要保留 <strong>4位小数</strong>。
+            </p>
+
+            <div class="visual-box">
+                <div>
+                    <div class="start-drop"></div>
+                    <div class="label">第1次落</div>
+                </div>
+                <div>
+                    <div class="bounce-path" style="height:50px;"></div>
+                    <div class="label">第2次落</div>
+                </div>
+                <div>
+                    <div class="bounce-path" style="height:25px;"></div>
+                    <div class="label">第3次落</div>
+                </div>
+                <div style="font-size:2em; color:#bbb;">...</div>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (Logic)</h2>
+            <p>这道题的关键在于区分“第1次”和“后面9次”。</p>
+            
+            <div style="background:#fff; padding:15px; border-left:4px solid #e53935; margin:10px 0; border-radius: 8px;">
+                <strong>🔍 路程计算公式：</strong><br>
+                1. <strong>第 1 次：</strong> 只有落下，路程 = <span class="inline-code">h</span>。<br>
+                2. <strong>第 2~10 次：</strong> 每次都是“弹上去 + 落下来”，所以路程 = <span class="inline-code">反弹高度 * 2</span>。<br>
+                3. <strong>反弹高度：</strong> 每次除以 2。
+            </div>
+
+            <div class="cpp-content">
+                <h3>保留小数 (iomanip)</h3>
+                <p>
+                    要输出 4 位小数，记得两步：
+                    <br>1. 引入头文件：<span class="inline-code">#include &lt;iomanip&gt;</span>
+                    <br>2. 输出格式：<span class="inline-code">cout << fixed << setprecision(4) << ...</span>
+                </p>
+                <p>
+                    <strong>For 循环：</strong> 我们只需要循环 9 次（处理第 2 次到第 10 次的落地过程）。
+                </p>
+            </div>
+
+            <div class="py-content">
+                <h3>格式化输出</h3>
+                <p>
+                    Python 保留小数非常简单：
+                    <br><span class="inline-code">print("{:.4f}".format(数值))</span>
+                    <br>或者使用 f-string: <span class="inline-code">print(f"{数值:.4f}")</span>
+                </p>
+                <p>
+                    <strong>For 循环：</strong> 使用 <span class="inline-code">range(9)</span> 来处理后续的 9 次弹跳。
+                </p>
+            </div>
+        </div>
+
+        <div class="cpp-content card">
+            <h2>⚔️ C++ 解题代码</h2>
+            <p>注意使用 <span class="inline-code">double</span> 类型来存储小数。</p>
+<pre>
+<span class="c-kw">#include</span> &lt;iostream&gt;
+<span class="c-kw">#include</span> &lt;iomanip&gt; <span class="c-com">// 必须加这个头文件才能保留小数</span>
+<span class="c-kw">using namespace</span> <span class="c-kw">std</span>;
+
+<span class="c-kw">int</span> <span class="c-kw">main</span>() {
+    <span class="c-kw">double</span> h;
+    <span class="c-kw">cin</span> >> h;
+
+    <span class="c-kw">double</span> s = h; <span class="c-com">// s: 总路程，先加上第1次落下的高度</span>
+
+    <span class="c-com">// 循环处理从第2次落地到第10次落地的过程 (共9次反弹落下)</span>
+    <span class="c-kw">for</span> (<span class="c-kw">int</span> i = <span class="c-num">1</span>; i <= <span class="c-num">9</span>; i++) {
+        h = h / <span class="c-num">2.0</span>;   <span class="c-com">// 计算反弹高度</span>
+        s = s + h * <span class="c-num">2</span>; <span class="c-com">// 路程加上“一上一下”两段距离</span>
+    }
+
+    <span class="c-com">// 此时的 h 是第9次反弹的高度，还需要再除一次2才是第10次反弹高度</span>
+    h = h / <span class="c-num">2.0</span>;
+
+    <span class="c-com">// 保留4位小数输出</span>
+    <span class="c-kw">cout</span> << <span class="c-kw">fixed</span> << <span class="c-kw">setprecision</span>(<span class="c-num">4</span>) << s << <span class="c-kw">endl</span>;
+    <span class="c-kw">cout</span> << <span class="c-kw">fixed</span> << <span class="c-kw">setprecision</span>(<span class="c-num">4</span>) << h << <span class="c-kw">endl</span>;
+
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+        </div>
+
+        <div class="py-content card">
+            <h2>🐍 Python 解题代码</h2>
+            <p>逻辑清晰：先记录第一次落下，再循环累加后面的往返路程。</p>
+<pre>
+<span class="c-com"># 读入初始高度</span>
+h = <span class="c-kw">int</span>(<span class="c-kw">input</span>())
+
+s = h  <span class="c-com"># s: 总路程，先加上第1次落下的距离</span>
+
+<span class="c-com"># 循环 9 次 (处理第 2 次到第 10 次落地)</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-kw">range</span>(<span class="c-num">9</span>):
+    h = h / <span class="c-num">2</span>      <span class="c-com"># 算出反弹高度</span>
+    s += h * <span class="c-num">2</span>     <span class="c-com"># 加上“上去”和“下来”的距离</span>
+
+<span class="c-com"># 循环结束后，再除一次2，得到第10次反弹的高度</span>
+h = h / <span class="c-num">2</span>
+
+<span class="c-com"># 格式化输出，保留4位小数</span>
+<span class="c-kw">print</span>(<span class="c-str">"{:.4f}"</span>.<span class="c-kw">format</span>(s))
+<span class="c-kw">print</span>(<span class="c-str">"{:.4f}"</span>.<span class="c-kw">format</span>(h))
+</pre>
+        </div>
+
+        <div class="card" style="border-left: 6px solid var(--accent-balloon);">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🎈 <strong>路程陷阱：</strong> 只有第一次落下是单程！后面每次反弹都是双程（上去+下来），所以要 <span class="inline-code">* 2</span>。</li>
+                <li>➗ <strong>第10次反弹：</strong> 题目问的是第 10 次反弹高度，所以循环计算完路程后，记得还要再除以一次 2。</li>
+                <li>📏 <strong>小数精度：</strong> 只要题目说“保留X位小数”，C++ 就用 <span class="inline-code">fixed setprecision</span>，Python 用 <span class="inline-code">"{:.Xf}"</span>。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #90a4ae; font-size: 0.9em; border-top: 1px dashed #cfd8dc; padding-top: 20px;">
+            🎉 测量完成！数据已记录在冒险日志中！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>
