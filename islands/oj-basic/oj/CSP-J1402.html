@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J1402 食人魔看电影 - 编程魔法课堂</title>
+    <style>
+        /* --- 全局可爱风格设置 --- */
+        :root {
+            --bg-color: #f0f8ff; /* 爱丽丝蓝 (雪山背景) */
+            --card-bg: #ffffff;
+            --text-color: #555;
+            --cpp-color: #4a90e2; /* C++ 蓝 */
+            --py-color: #f1c40f; /* Python 黄 */
+            --accent-cyan: #00cec9; /* 冰晶青 */
+            --accent-blue: #74b9ff; /* 天空蓝 */
+            --accent-pink: #ff9ff3;
+            --border-radius: 20px;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            transition: background-color 0.3s;
+        }
+
+        /* A4 纸张容器 */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 5px solid #ffcc00; /* 默认边框 */
+        }
+
+        /* --- 顶部切换按钮 --- */
+        .toggle-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 25px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-family: inherit;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-cpp { background-color: #e0f0ff; color: #2980b9; border: 3px solid #2980b9; }
+        .btn-py { background-color: #fff9c4; color: #d35400; border: 3px solid #f39c12; }
+        
+        .toggle-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .toggle-btn.active { transform: scale(1.1); box-shadow: inset 0 3px 5px rgba(0,0,0,0.2); }
+
+        /* --- 标题样式 --- */
+        h1 {
+            text-align: center;
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            color: #ff6b6b;
+            text-shadow: 2px 2px 0px #ffeaa7;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+        .badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.6em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        h2 {
+            color: #00cec9;
+            border-bottom: 3px dashed #00cec9;
+            padding-bottom: 5px;
+            margin-top: 30px;
+            font-size: 1.5em;
+        }
+
+        h3 { color: #74b9ff; margin-top: 20px; }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: #f9f9f9;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 8px solid #ccc;
+        }
+        
+        .card.story { border-color: #ff6b6b; background-color: #fff0f0; }
+        .card.magic { border-color: #a29bfe; background-color: #f0f0ff; }
+        .card.code { border-color: #2ecc71; background-color: #e8f8f0; }
+        
+        /* --- 图解区域 --- */
+        .visual-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .box {
+            border: 2px solid #555;
+            border-radius: 10px;
+            padding: 10px;
+            background: white;
+            text-align: center;
+            min-width: 80px;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .box-title {
+            color: white;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+
+        /* 图片样式：无边框，居中，大图 */
+        .img-placeholder {
+            width: 100%;
+            height: auto;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 15px;
+            margin: 15px auto;
+            display: block;
+            border: none;
+        }
+
+        /* --- 正文中的代码高亮样式 --- */
+        .inline-code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #d63384; /* 粉红色，显眼 */
+            background-color: #fff0f6; /* 浅粉背景 */
+            padding: 2px 5px;
+            border-radius: 5px;
+            font-size: 0.95em;
+            border: 1px solid #fcc2d7;
+            margin: 0 2px;
+        }
+
+        /* --- 代码块 --- */
+        pre {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: Consolas, "Courier New", monospace;
+            overflow-x: auto;
+            position: relative;
+            font-size: 1.1em;
+        }
+        
+        /* 代码高亮颜色 */
+        .c-purple { color: #c678dd; font-weight: bold; }
+        .c-green { color: #98c379; }
+        .c-blue { color: #61afef; }
+        .c-grey { color: #7f8c8d; font-style: italic; }
+        .c-orange { color: #d19a66; }
+        .c-yellow { color: #f1c40f; }
+
+        /* --- 打印控制 --- */
+        @media print {
+            body { background-color: white; padding: 0; }
+            .container { box-shadow: none; border: none; width: 100%; padding: 0; max-width: 100%; }
+            .toggle-bar { display: none; }
+            h1 { color: #000; text-shadow: none; }
+            .card { border: 1px solid #ccc; background-color: white !important; }
+            pre { border: 1px solid #ccc; color: #000; background-color: #f5f5f5; }
+            .inline-code { color: #000; background-color: #eee; border: 1px solid #ccc; }
+        }
+
+        /* --- 语言切换控制 --- */
+        .cpp-content { display: none; }
+        .py-content { display: none; }
+        body.mode-cpp .cpp-content { display: block; }
+        body.mode-py .py-content { display: block; }
+        body.mode-cpp .container { border-color: var(--cpp-color); }
+        body.mode-py .container { border-color: var(--py-color); }
+
+    </style>
+</head>
+<body class="mode-cpp"> <div class="toggle-bar">
+        <button class="toggle-btn btn-cpp active" onclick="switchLang('cpp')">📘 我要学 C++</button>
+        <button class="toggle-btn btn-py" onclick="switchLang('py')">📒 我要学 Python</button>
+    </div>
+
+    <div class="container">
+        <h1><span class="badge">CSP-J1402</span>食人魔看电影</h1>
+        <div class="subtitle">🎬 雪山影院 · 排序魔法</div>
+
+        <div class="card story">
+            <h2>🍿 影院的规矩 (题目描述)</h2>
+            <p>
+                在冰冷的雪山影院 🏔️，一群可爱的食人魔想看电影。
+                为了让后排的观众不被挡住，影院有一个严格的规定：
+            </p>
+            <p>
+                <strong>每列的 3 个食人魔，必须按身高从低到高排列！</strong>
+                <br>也就是：(最矮) &lt; (中等) &lt; (最高)
+            </p>
+            <p>
+                👉 <strong>任务：</strong> 你是检票员，读入 3 个身高，判断它们是不是已经排好了顺序。
+                如果是，输出 <span class="inline-code">YES</span>；否则输出 <span class="inline-code">NO</span>。
+            </p>
+
+            <img src="CSP-J1402.png" alt="题目配图" class="img-placeholder">
+
+            <div class="visual-box">
+                <div class="box" style="border-color: #00cec9;">
+                    <div class="box-title" style="background: #00cec9;">🧟 a</div>
+                    <div style="font-weight: bold;">3</div>
+                </div>
+                <div style="font-size: 20px; color: #aaa;">&lt;</div>
+                <div class="box" style="border-color: #74b9ff;">
+                    <div class="box-title" style="background: #74b9ff;">🧟 b</div>
+                    <div style="font-weight: bold;">4</div>
+                </div>
+                <div style="font-size: 20px; color: #aaa;">&lt;</div>
+                <div class="box" style="border-color: #a29bfe;">
+                    <div class="box-title" style="background: #a29bfe;">🧟 c</div>
+                    <div style="font-weight: bold;">5</div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin: 10px 0;">
+                <span style="background: #2ecc71; color: white; padding: 2px 10px; border-radius: 10px;">✅ YES (符合规定)</span>
+            </div>
+        </div>
+
+        <div class="card magic">
+            <h2>🧠 魔法原理 (解题思路)</h2>
+            <p>这道题其实是检查：<strong>a 是否小于 b，并且 b 是否小于 c</strong>。</p>
+
+            <div class="visual-box" style="margin: 20px 0;">
+                <div style="background: #e0f7fa; padding: 20px; border-radius: 10px; border: 2px dashed #00cec9; text-align: center; width: 100%;">
+                    <h3 style="margin-top:0; color:#0097a7;">🔗 逻辑链条</h3>
+                    <p style="font-size: 1.2em;">
+                        ( a &lt; b ) <strong style="color: #ff6b6b;">AND</strong> ( b &lt; c )
+                    </p>
+                    <p style="font-size: 0.9em; color: #666;">
+                        必须 <strong>同时</strong> 满足两个条件，才算排好序。
+                    </p>
+                </div>
+            </div>
+
+            <div class="cpp-content">
+                <h3>📘 C++ 的逻辑陷阱</h3>
+                <ul>
+                    <li>⚠️ <strong>警告：</strong> 在 C++ 里，<span class="inline-code">a &lt; b &lt; c</span> 是错误的写法！计算机读不懂连续的比较。</li>
+                    <li>🔗 <strong>正确写法：</strong> 必须把它们拆开，用 <strong>逻辑与 (&&)</strong> 连接起来。
+                        <br>写法：<span class="inline-code">if (a &lt; b && b &lt; c)</span>
+                    </li>
+                    <li>💡 <strong>含义：</strong> "a 小于 b" <strong>并且</strong> "b 小于 c"。</li>
+                </ul>
+            </div>
+
+            <div class="py-content">
+                <h3>📒 Python 的逻辑魔法</h3>
+                <ul>
+                    <li>✨ <strong>连续比较：</strong> Python 很聪明，它允许直接写 <span class="inline-code">a &lt; b &lt; c</span>。这在数学上叫不等式链。</li>
+                    <li>🔗 <strong>逻辑：</strong> 它自动帮你检查了是否每一个数都比前一个大。</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card code">
+            <h2>💻 咒语吟唱 (代码详解)</h2>
+            <p>检票员，请按下你的判断按钮吧！</p>
+
+            <div class="cpp-content">
+<pre>
+<span class="c-purple">#include</span> &lt;iostream&gt;
+<span class="c-purple">using namespace</span> <span class="c-blue">std</span>;
+
+<span class="c-purple">int</span> <span class="c-blue">main</span>() {
+    <span class="c-grey">// 1️⃣ 声明变量：a, b, c 表示三个身高</span>
+    <span class="c-purple">int</span> a, b, c;
+    
+    <span class="c-grey">// 2️⃣ 输入：读入三个整数</span>
+    <span class="c-blue">cin</span> &gt;&gt; a &gt;&gt; b &gt;&gt; c;
+    
+    <span class="c-grey">// 3️⃣ 判断顺序 (从小到大)</span>
+    <span class="c-grey">// ⚠️ 必须用 && 连接两个条件</span>
+    <span class="c-purple">if</span> (a &lt; b &amp;&amp; b &lt; c) {
+        <span class="c-blue">cout</span> &lt;&lt; <span class="c-green">"YES"</span>; <span class="c-grey">// 符合规定</span>
+    } 
+    <span class="c-purple">else</span> {
+        <span class="c-blue">cout</span> &lt;&lt; <span class="c-green">"NO"</span>;  <span class="c-grey">// 不符合规定</span>
+    }
+    
+    <span class="c-purple">return</span> <span class="c-orange">0</span>;
+}
+</pre>
+            </div>
+
+            <div class="py-content">
+<pre>
+<span class="c-grey"># 1️⃣ 输入：读取三个身高</span>
+a, b, c = <span class="c-blue">map</span>(<span class="c-blue">int</span>, <span class="c-blue">input</span>().<span class="c-blue">split</span>())
+
+<span class="c-grey"># 2️⃣ 判断顺序</span>
+<span class="c-grey"># Python 可以直接连着写比较</span>
+<span class="c-purple">if</span> a &lt; b &lt; c:
+    <span class="c-blue">print</span>(<span class="c-green">"YES"</span>)  <span class="c-grey"># 符合规定</span>
+<span class="c-purple">else</span>:
+    <span class="c-blue">print</span>(<span class="c-green">"NO"</span>)   <span class="c-grey"># 不符合</span>
+</pre>
+            </div>
+
+            <p class="highlight" style="background: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                ⭐ <strong>C++ 小贴士：</strong> 
+                千万别写成 <span class="inline-code">if (a < b < c)</span>！这在 C++ 里是语法错误或逻辑错误。一定要用 <span class="inline-code">&&</span> 分开写！
+            </p>
+        </div>
+
+        <div class="card" style="border-left-color: #ff9f43;">
+            <h2>🌟 魔法笔记 (重点复习)</h2>
+            <ul>
+                <li>🔗 <strong>逻辑与 (&&)：</strong> 只有当两边的条件 <strong>都为真</strong> 时，结果才为真。</li>
+                <li>🚫 <strong>C++ 禁忌：</strong> 禁止连续比较 (如 <span class="inline-code">3 &lt; x &lt; 5</span>)，必须拆分为 <span class="inline-code">x &gt; 3 && x &lt; 5</span>。</li>
+                <li>🍿 <strong>排序：</strong> 从小到大意味着前一个数必须严格小于后一个数。</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #aaa; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 20px;">
+            🎉 检票完毕！食人魔们开心地看起了电影！ <br>
+            —— 扣哒世界教研团队 💖
+        </div>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.body.className = 'mode-' + lang;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>
