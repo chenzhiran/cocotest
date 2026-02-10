@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第三章、选择结构-单双分支 - 题解演示</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai-sublime.min.css">
+    
+    <style>
+        /* ================= 全局样式 ================= */
+        :root {
+            --bg-color: #2c3e50; /* 深蓝灰背景 */
+            --card-bg: rgba(30, 40, 60, 0.9);
+            --accent-pink: #ff7675;
+            --accent-cyan: #55efc4;
+            --accent-yellow: #ffeaa7;
+            --accent-purple: #a29bfe;
+            --accent-green: #2ecc71;
+            --text-main: #dfe6e9;
+            --nav-bg: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-cyan) var(--bg-color);
+        }
+
+        body {
+            font-family: "Comic Sans MS", "Microsoft YaHei", "Rounded Mplus 1c", sans-serif;
+            background-color: var(--bg-color);
+            /* 动态背景纹理 */
+            background-image: 
+                linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.05) 75%, transparent 75%, transparent),
+                linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.05) 75%, transparent 75%, transparent);
+            background-size: 60px 60px;
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        /* 滚动容器 */
+        .slides-container {
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
+        /* 单页幻灯片结构 */
+        .slide {
+            height: 100vh;
+            width: 100vw;
+            scroll-snap-align: start;
+            display: flex;
+            padding: 20px 20px 20px 60px;
+            gap: 20px;
+            position: relative;
+            border-bottom: 2px solid rgba(255,255,255,0.05);
+        }
+
+        /* ================= 左侧导航 ================= */
+        .side-nav {
+            position: fixed;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 100;
+            background: var(--nav-bg);
+            padding: 15px 5px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-dot:hover, .nav-dot.active {
+            background: var(--accent-cyan);
+            transform: scale(1.3);
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .nav-dot::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 25px;
+            top: -4px;
+            background: var(--accent-purple);
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            transition: opacity 0.3s;
+            z-index: 101;
+        }
+
+        .nav-dot:hover::after { opacity: 1; }
+
+        /* ================= 首页任务大厅 ================= */
+        .intro-slide {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #34495e 0%, #2c3e50 100%);
+            text-align: center;
+        }
+
+        .intro-title {
+            font-size: 3em;
+            color: var(--accent-cyan);
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .intro-container {
+            display: flex;
+            gap: 40px;
+            max-width: 1000px;
+            width: 90%;
+            height: 80%;
+        }
+
+        /* 登录卡片 */
+        .login-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(85, 239, 196, 0.1);
+        }
+
+        .login-info-row {
+            margin: 15px 0;
+            text-align: left;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid var(--accent-pink);
+        }
+        .login-label { color: var(--accent-cyan); font-size: 13px; display: block; margin-bottom: 5px; }
+        .login-val { color: #fff; font-size: 18px; font-weight: bold; font-family: monospace; }
+
+        /* 任务列表 */
+        .task-list-card {
+            flex: 1.5;
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px solid var(--accent-yellow);
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            transition: transform 0.2s;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+        .task-item:hover {
+            transform: translateX(10px);
+            background: rgba(255,255,255,0.15);
+            border-left-color: var(--accent-cyan);
+        }
+        .task-id { 
+            background: var(--accent-pink); 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            font-size: 12px; 
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .task-name { font-weight: bold; font-size: 16px; }
+
+        /* ================= 内容布局 ================= */
+        .content-left {
+            flex: 4;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .content-right {
+            flex: 6;
+            display: flex;
+            flex-direction: column;
+            background: #272822;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* 卡片通用样式 */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid var(--accent-cyan);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .title-box h1 {
+            font-size: 24px;
+            color: var(--accent-cyan);
+            margin-top: 5px;
+        }
+        .title-box span {
+            font-size: 14px;
+            color: var(--accent-pink);
+            font-weight: bold;
+            background: rgba(255, 46, 99, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .desc-text {
+            line-height: 1.6;
+            font-size: 15px;
+            color: #ecf0f1;
+        }
+        
+        /* 样例框 */
+        .sample-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .sample-box {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            border: 1px dashed #7f8c8d;
+        }
+        .sample-label { color: var(--accent-yellow); font-size: 12px; display: block; margin-bottom: 5px; }
+
+        /* 思路分析 */
+        .analysis-box ol { padding-left: 20px; }
+        .analysis-box li { margin-bottom: 8px; color: #dfe6e9; }
+        .highlight-text { color: var(--accent-yellow); font-weight: bold; background: rgba(255,234,167,0.1); padding: 0 4px; border-radius: 3px; }
+
+        /* ================= 视觉示意图区域 ================= */
+        .diagram-container {
+            height: 100px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 逻辑分支动画 */
+        .branch-svg { width: 100%; height: 100%; }
+        .branch-node { fill: var(--accent-cyan); stroke: #fff; stroke-width: 2; }
+        .branch-line { stroke: #dfe6e9; stroke-width: 2; stroke-dasharray: 5; animation: dash 20s linear infinite; }
+        .branch-text { font-size: 14px; fill: #fff; font-weight: bold; }
+        .yes-path { stroke: var(--accent-green); }
+        .no-path { stroke: var(--accent-pink); }
+
+        @keyframes dash { to { stroke-dashoffset: -1000; } }
+
+        /* ================= 代码区域 ================= */
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1e1e1e;
+            padding: 0 10px;
+            border-bottom: 1px solid #444;
+            height: 50px;
+        }
+
+        .tabs { display: flex; height: 100%; }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 0 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
+            transition: all 0.3s;
+            border-top: 3px solid transparent;
+            height: 100%;
+        }
+
+        .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .tab-btn.active { color: var(--accent-cyan); border-top: 3px solid var(--accent-cyan); background: #272822; }
+
+        .code-actions { display: flex; gap: 10px; align-items: center; }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid #555;
+            color: #aaa;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .copy-btn:hover { border-color: #fff; color: #fff; }
+
+        .code-content { flex: 1; position: relative; overflow: hidden; }
+        .code-pane { display: none; height: 100%; overflow: auto; }
+        .code-pane.active { display: block; }
+
+        pre { margin: 0; height: 100%; }
+        code {
+            font-family: "Fira Code", Consolas, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            height: 100%;
+            padding: 20px !important;
+        }
+
+        /* ================= 响应式 ================= */
+        @media (max-width: 768px) {
+            .slide {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                padding: 10px 10px 60px 10px;
+            }
+            .side-nav {
+                top: auto;
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                flex-direction: row;
+                width: 90%;
+                justify-content: center;
+            }
+            .nav-dot::after { display: none; }
+            .content-left, .content-right { flex: none; width: 100%; }
+            .content-right { height: 400px; }
+            .intro-container { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="side-nav">
+    <div class="nav-dot active" onclick="scrollToSlide(0)" data-tooltip="🚀 任务大厅"></div>
+    <div class="nav-dot" onclick="scrollToSlide(1)" data-tooltip="1. 智能温度计"></div>
+    <div class="nav-dot" onclick="scrollToSlide(2)" data-tooltip="2. 偶数座位"></div>
+    <div class="nav-dot" onclick="scrollToSlide(3)" data-tooltip="3. 约数座位"></div>
+    <div class="nav-dot" onclick="scrollToSlide(4)" data-tooltip="4. 轻重宝箱"></div>
+    <div class="nav-dot" onclick="scrollToSlide(5)" data-tooltip="5. 萤火之光"></div>
+    <div class="nav-dot" onclick="scrollToSlide(6)" data-tooltip="6. 英勇的士兵"></div>
+</nav>
+
+<main class="slides-container" id="scroller">
+
+    <section class="slide intro-slide">
+        <h1 class="intro-title">🚦 选择结构 - 单双分支</h1>
+        <div class="intro-container">
+            <div class="login-card">
+                <h2 style="color:var(--accent-pink); margin-bottom:20px;">👤 玩家登录信息</h2>
+                <div class="login-info-row">
+                    <span class="login-label">扣哒信奥OJ 网址入口</span>
+                    <a href="http://oj.koudashijie.com" target="_blank" class="login-val" style="color:#55efc4; text-decoration:none;">oj.koudashijie.com</a>
+                </div>
+                <div class="login-info-row">
+                    <span class="login-label">用户名</span>
+                    <span class="login-val">中文姓名</span>
+                </div>
+                <div class="login-info-row">
+                    <span class="login-label">初始密码</span>
+                    <span class="login-val">12345678</span>
+                </div>
+                 <div class="login-info-row">
+                    <span class="login-label">当前课程</span>
+                    <span class="login-val" style="color:var(--accent-yellow)">基础篇第三章 选择结构-单双分支</span>
+                </div>
+                <p style="font-size:12px; color:#aaa; margin-top:auto;">⚠️ 登录出现问题记得联系老师哦</p>
+            </div>
+
+            <div class="task-list-card">
+                <h2 style="color:var(--accent-yellow); margin-bottom:20px;">📜 本章挑战任务</h2>
+                <p style="color:#aaa; margin-bottom:15px; text-align:left;">如果...那么...否则...：</p>
+                
+                <div class="task-item" onclick="scrollToSlide(1)">
+                    <span class="task-id">J1301</span>
+                    <span class="task-name">智能温度计 (正数判断)</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(2)">
+                    <span class="task-id">J1302</span>
+                    <span class="task-name">偶数座位 (偶数判断)</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(3)">
+                    <span class="task-id">J1303</span>
+                    <span class="task-name">约数座位 (整除判断)</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(4)">
+                    <span class="task-id">J1304</span>
+                    <span class="task-name">轻重宝箱 (比较大小)</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(5)">
+                    <span class="task-id">J1305</span>
+                    <span class="task-name">萤火之光 (末尾数)</span>
+                </div>
+                <div class="task-item" onclick="scrollToSlide(6)">
+                    <span class="task-id">J1306</span>
+                    <span class="task-name">英勇的士兵 (倍数)</span>
+                </div>
+
+                <p style="margin-top:20px; font-size:14px; color:#aaa;">👇 向下滑动开始解题</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1301</span>
+                <h1>智能温度计</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">探险需要智能温度计。输入一个整数温度，如果是正数（>0），输出 "Yes" 继续前行；否则（<=0），输出 "No"。</p>
+                <div class="sample-grid">
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例1</span>
+                        2
+                    </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例1</span>
+                        Yes
+                    </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例2</span>
+                        -2
+                    </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例2</span>
+                        No
+                    </div>
+                </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <div class="diagram-container">
+                    <svg viewBox="0 0 200 60" style="width:100%; height:100%;">
+                        <rect x="10" y="20" width="40" height="20" fill="#3498db" rx="5"/>
+                        <text x="30" y="35" text-anchor="middle" fill="#fff" font-size="10">Num</text>
+                        <line x1="50" y1="30" x2="80" y2="30" stroke="#fff" stroke-width="2" marker-end="url(#arrow)"/>
+                        <polygon points="80,10 120,30 80,50" fill="none" stroke="#f1c40f" stroke-width="2"/>
+                        <text x="90" y="33" fill="#f1c40f" font-size="10"> > 0?</text>
+                        <text x="130" y="20" fill="#2ecc71" font-size="12">Yes</text>
+                        <text x="130" y="50" fill="#e74c3c" font-size="12">No</text>
+                    </svg>
+                </div>
+                <ol>
+                    <li><strong>判断条件：</strong> 题目要求判断温度是否为“正数”，即大于 0 (<span class="highlight-text">num > 0</span>)。</li>
+                    <li><strong>分支结构：</strong>
+                        <ul>
+                            <li>条件成立 (True)：输出 "Yes"</li>
+                            <li>条件不成立 (False)：输出 "No"</li>
+                        </ul>
+                    </li>
+                    <li>使用 <span class="highlight-text">if ... else ...</span> 语句。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python"># 1. 输入温度，转为整数
+num = int(input())
+
+# 2. 判断是否大于0
+if num > 0:
+    # 3. 如果成立，输出 Yes
+    print("Yes")
+else:
+    # 4. 否则（小于等于0），输出 No
+    print("No")
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
+
+int main() {
+    int num;
+    // 1. 输入温度
+    cin >> num;
+    
+    // 2. 判断 num 是否大于 0
+    if (num > 0) {
+        // 条件成立
+        cout << "Yes";
+    } else {
+        // 条件不成立
+        cout << "No";
+    }
+    
+    return 0;
+}
+</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1302</span>
+                <h1>偶数座位</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">大巴车座位是偶数。判断农民数量是否为偶数，是则输出“Yes”，否则输出“No”。</p>
+                <div class="sample-grid">
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例</span>
+                        5
+                    </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例</span>
+                        No
+                    </div>
+                </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <div class="diagram-container">
+                    <div style="font-size: 24px; color: var(--accent-cyan); font-weight: bold;">
+                        Num % 2 == 0 ?
+                    </div>
+                </div>
+                <ol>
+                    <li><strong>偶数定义：</strong> 能被 2 整除的数。</li>
+                    <li><strong>取余运算：</strong> 使用 <span class="highlight-text">%</span> 符号。</li>
+                    <li><strong>判断逻辑：</strong> 如果 <span class="highlight-text">a % 2 == 0</span>，说明余数为0，是偶数。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python"># 1. 输入人数
+a = int(input())
+
+# 2. 判断除以2的余数是否为0
+if a % 2 == 0:
+    print("Yes") # 是偶数
+else:
+    print("No")  # 是奇数
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
+
+int main() {
+    int a;
+    cin >> a;
+    
+    // % 是取余运算符
+    if (a % 2 == 0) {
+        cout << "Yes";
+    } else {
+        cout << "No";
+    }
+    return 0;
+}
+</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1303</span>
+                <h1>约数座位</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">输入两个正整数 a 和 b，判断 b 是不是 a 的约数（即 a 能否被 b 整除）。如果是输出“Yes”，否则“No”。</p>
+                <div class="sample-grid">
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例</span>
+                        7 3
+                    </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例</span>
+                        No
+                    </div>
+                </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <ol>
+                    <li><strong>整除判断：</strong> 判断 b 是否是 a 的约数，等同于判断 a 除以 b 的余数是否为 0。</li>
+                    <li><strong>公式：</strong> <span class="highlight-text">a % b == 0</span>。</li>
+                    <li>注意输入是一行两个数。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python"># 一行输入两个整数
+a, b = map(int, input().split())
+
+# 判断 a 除以 b 的余数是否为 0
+if a % b == 0:
+    print("Yes")
+else:
+    print("No")
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
+
+int main() {
+    int a, b;
+    cin >> a >> b;
+    
+    // 这里的逻辑是：a 能被 b 整除吗？
+    if (a % b == 0) {
+        cout << "Yes";
+    } else {
+        cout << "No";
+    }
+    return 0;
+}
+</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1304</span>
+                <h1>轻重宝箱</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">英雄需要拿更重的宝箱。输入两个整数 a 和 b，比较大小，输出较大的那个数。</p>
+                <div class="sample-grid">
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例</span>
+                        10 20
+                    </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例</span>
+                        20
+                    </div>
+                </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <div class="diagram-container">
+                    <div style="font-size:30px;">⚖️</div>
+                    <div style="margin-left:15px; color:#fff;">Max(A, B)</div>
+                </div>
+                <ol>
+                    <li>这是一个典型的<strong>比较大小</strong>问题。</li>
+                    <li>如果 a 大于 b (<span class="highlight-text">a > b</span>)，就输出 a。</li>
+                    <li>否则（b 大于等于 a），就输出 b。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python">a, b = map(int, input().split())
+
+# 比较 a 和 b 的大小
+if a > b:
+    print(a) # 如果 a 大，输出 a
+else:
+    print(b) # 否则输出 b
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
+
+int main() {
+    int a, b;
+    cin >> a >> b;
+    
+    // 如果 a 比 b 大
+    if (a > b) {
+        cout << a << endl;
+    } else {
+        // 否则 b 比 a 大或者相等
+        cout << b << endl;
+    }
+    return 0;
+}
+</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1305</span>
+                <h1>萤火之光</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">数字末尾是 0 的萤火虫才会发光。输入一个整数，如果末尾是 0 输出 "Yes"，否则输出 "No"。</p>
+                <div class="sample-grid">
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例</span>
+                        120
+                    </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例</span>
+                        Yes
+                    </div>
+                </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <div class="diagram-container">
+                    <span style="font-family:monospace; font-size:24px; color:#ffeaa7;">12<span style="color:#ff7675; border-bottom:2px solid #ff7675;">0</span></span>
+                </div>
+                <ol>
+                    <li><strong>获取个位数：</strong> 任何整数除以 10 的余数，就是它的个位数。</li>
+                    <li><strong>公式：</strong> <span class="highlight-text">num % 10</span>。</li>
+                    <li><strong>判断：</strong> 看余数是否等于 0。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python">n = int(input())
+
+# 任何数 % 10 都能得到个位上的数字
+if n % 10 == 0:
+    print("Yes")
+else:
+    print("No")
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
+
+int main() {
+    int a;
+    cin >> a;
+    
+    // 判断个位是否为 0
+    if (a % 10 == 0) {
+        cout << "Yes" << endl;
+    } else {
+        cout << "No" << endl;
+    }
+    return 0;
+}
+</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="slide">
+        <div class="content-left">
+            <div class="card title-box">
+                <span>CSP-J1306</span>
+                <h1>英勇的士兵</h1>
+            </div>
+            <div class="card">
+                <h3>📜 题目描述</h3>
+                <p class="desc-text">编号是 7 的倍数的士兵被选中。输入编号，如果是 7 的倍数输出 "Yes"，否则输出 "No"。</p>
+                <div class="sample-grid">
+                    <div class="sample-box">
+                        <span class="sample-label">输入样例</span>
+                        14
+                    </div>
+                    <div class="sample-box">
+                        <span class="sample-label">输出样例</span>
+                        Yes
+                    </div>
+                </div>
+            </div>
+            <div class="card analysis-box">
+                <h3>💡 思路分析</h3>
+                <ol>
+                    <li><strong>倍数判断：</strong> A 是 B 的倍数，等价于 A 能被 B 整除。</li>
+                    <li><strong>公式：</strong> <span class="highlight-text">a % 7 == 0</span>。</li>
+                    <li>这道题其实和“偶数座位”、“约数座位”原理完全一样。</li>
+                </ol>
+            </div>
+        </div>
+        <div class="content-right">
+            <div class="code-header">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab(this, 'python')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'cpp')">C++</button>
+                </div>
+                <div class="code-actions">
+                    <button class="copy-btn" onclick="copyCode(this)">📋 复制</button>
+                </div>
+            </div>
+            <div class="code-content">
+                <div class="code-pane active python">
+<pre><code class="language-python">num = int(input())
+
+# 判断是否是 7 的倍数
+if num % 7 == 0:
+    print("Yes")
+else:
+    print("No")
+</code></pre>
+                </div>
+                <div class="code-pane cpp">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
+
+int main() {
+    int a;
+    cin >> a;
+    
+    // 如果除以 7 余数为 0
+    if (a % 7 == 0)
+        cout << "Yes" << endl;
+    else
+        cout << "No" << endl;
+        
+    return 0;
+}
+</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+
+<script>
+    // 初始化代码高亮
+    hljs.highlightAll();
+
+    // 滚动监听与导航点更新
+    const container = document.getElementById('scroller');
+    const dots = document.querySelectorAll('.nav-dot');
+    const slides = document.querySelectorAll('.slide');
+
+    function updateNav() {
+        const scrollPos = container.scrollTop;
+        const height = container.clientHeight;
+        const index = Math.round(scrollPos / height);
+
+        dots.forEach((dot, i) => {
+            if (i === index) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+    }
+
+    container.addEventListener('scroll', updateNav);
+
+    // 导航点击跳转
+    function scrollToSlide(index) {
+        slides[index].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 标签页切换逻辑
+    function switchTab(btn, lang) {
+        const contentRight = btn.closest('.content-right');
+        
+        // 按钮状态切换
+        const buttons = contentRight.querySelectorAll('.tab-btn');
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // 代码面板切换
+        const panes = contentRight.querySelectorAll('.code-pane');
+        panes.forEach(pane => pane.classList.remove('active'));
+
+        // 显示对应语言面板
+        const target = contentRight.querySelector(`.code-pane.${lang}`);
+        if (target) target.classList.add('active');
+    }
+
+    // 复制代码
+    function copyCode(btn) {
+        const contentRight = btn.closest('.content-right');
+        const activePane = contentRight.querySelector('.code-pane.active');
+        if(!activePane) return;
+        
+        const codeText = activePane.querySelector('code').innerText;
+
+        navigator.clipboard.writeText(codeText).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = "✅ 已复制";
+            setTimeout(() => {
+                btn.innerText = originalText;
+            }, 2000);
+        });
+    }
+
+    // 初始检查
+    document.addEventListener('DOMContentLoaded', () => {
+        // 默认显示第一个Tab
+        const buttons = document.querySelectorAll('.tab-btn.active');
+        buttons.forEach(btn => switchTab(btn, 'python'));
+    });
+
+</script>
+
+</body>
+</html>

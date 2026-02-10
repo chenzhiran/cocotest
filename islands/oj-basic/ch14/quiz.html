@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 编程小英雄 - 魔法选择篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 --- */
+        :root {
+            /* 主题色：清爽的薄荷绿与天空蓝 */
+            --primary-color: #00cec9;
+            --secondary-color: #81ecec;
+            --bg-color: #dfe6e9;
+            --card-bg: #ffffff;
+            --text-color: #2d3436;
+            --correct-color: #00b894;
+            --wrong-color: #d63031;
+            --accent-yellow: #ffeaa7;
+            
+            /* 代码高亮配色 (VS Code 风格微调) */
+            --code-bg: #2d3436;
+            --code-text: #dfe6e9;
+            --code-kw: #ff7675;   /* 关键字 (粉红) */
+            --code-type: #74b9ff; /* 类型 (蓝) */
+            --code-fn: #ffeaa7;   /* 函数 (黄) */
+            --code-num: #a29bfe;  /* 数字 (紫) */
+            --code-str: #55efc4;  /* 字符串 (绿) */
+            --code-cmt: #636e72;  /* 注释 (灰) */
+            --code-op: #dfe6e9;   /* 运算符 (白) */
+            --code-logic: #fd79a8; /* 逻辑符号 (深粉) */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 800px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #d35400;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.5);
+            box-shadow: 0 4px 0 #fdcb6e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目与代码 --- */
+        .question-area h2 {
+            text-align: left;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* 代码块样式：保证换行和空格 */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', Consolas, monospace;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 核心：保留空格和换行 */
+            word-break: break-all;
+            text-align: left;
+            font-size: 1rem;
+            line-height: 1.6;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+            overflow-x: auto;
+        }
+
+        /* 高亮类定义 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .type { color: var(--code-type); }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .logic { color: var(--code-logic); font-weight: bold; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1rem; 
+            font-family: 'Fira Code', 'Microsoft YaHei', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #bdc3c7;
+            position: relative;
+            top: 0;
+            line-height: 1.4;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #aab0b3;
+        }
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+            transform: translateY(0);
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析与反馈 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        .explanation-text { line-height: 1.6; color: #555; }
+        
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #00b894;
+            transition: transform 0.1s;
+        }
+        .next-btn:active { transform: translateY(3px); box-shadow: none; }
+        
+        /* 结束画面 */
+        .end-screen { display: none; padding: 20px 0; }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score { font-size: 3.5rem; font-weight: bold; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        // C++ 多分支与嵌套选择结构测试数据
+        const quizData = [
+            {
+                q: "1. 在多分支选择结构中，else if语句的作用是：",
+                options: [
+                    "A. 替代if语句",
+                    "B. 在if条件不满足时检查另一个条件",
+                    "C. 同时检查多个条件",
+                    "D. 结束选择结构"
+                ],
+                correct: 1, // B
+                desc: "else if 语句用于构建多分支结构。当前面的 if 条件不满足时，程序会继续检查 else if 中的条件，实现多选一的逻辑。"
+            },
+            {
+                q: "2. 关于嵌套if结构，以下描述正确的是：",
+                options: [
+                    "A. 内层if只能在外层if为真时执行",
+                    "B. 内层if总是先于外层if执行",
+                    "C. 外层if和内层if互不影响",
+                    "D. 一个if语句最多只能嵌套一层"
+                ],
+                correct: 0, // A
+                desc: "嵌套 if 就像俄罗斯套娃。内层 if 只有在外层 if 的条件成立（为真）进入大括号后，才会被执行和检查。"
+            },
+            {
+                q: "3. 以下代码的输出结果是什么？",
+                code: `int n = 8;\nif (n >= 4 && n % 2 == 0) {\n    cout << "Yes";\n} else {\n    cout << "No";\n}`,
+                options: ["A. Yes", "B. No", "C. 编译错误", "D. 运行错误"],
+                correct: 0, // A
+                desc: "n=8。条件1 (n >= 4) 成立，条件2 (n % 2 == 0) 也成立（8是偶数）。两个条件都满足，逻辑与(&&)结果为真，输出 \"Yes\"。"
+            },
+            {
+                q: "4. 对于以下多分支结构，当 score=85 时，输出什么？",
+                code: `if (score < 60) {\n    cout << "不及格";\n} else if (score < 80) {\n    cout << "良好";\n} else if (score < 90) {\n    cout << "优秀";\n} else {\n    cout << "卓越";\n}`,
+                options: ["A. 不及格", "B. 良好", "C. 优秀", "D. 卓越"],
+                correct: 2, // C
+                desc: "score=85。第一个条件 (<60) 不满足；第二个条件 (<80) 不满足；第三个条件 (<90) 满足，执行该块代码输出 \"优秀\"。"
+            },
+            {
+                q: "5. 判断闰年的正确条件是：",
+                options: [
+                    "A. (year%4==0) && (year%100!=0)",
+                    "B. (year%400==0) || ((year%4==0) && (year%100!=0))",
+                    "C. (year%4==0)",
+                    "D. (year%400==0)"
+                ],
+                correct: 1, // B
+                desc: "闰年的规则是：能被400整除（世纪闰年），或者能被4整除但不能被100整除（普通闰年）。B选项正确表达了这个逻辑。"
+            },
+            {
+                q: "6. 以下嵌套if结构的逻辑等价于：",
+                code: `if (a > b) {\n    if (a > c) {\n        cout << a;\n    }\n}`,
+                options: [
+                    "A. 输出a、b、c中的最大值",
+                    "B. 只有当a是最大值时才输出a",
+                    "C. 输出a、b中的较大值",
+                    "D. 总是输出a"
+                ],
+                correct: 1, // B
+                desc: "代码要求同时满足 (a > b) 和 (a > c)，这意味着 a 必须比 b 和 c 都大，即 a 是这三个数中的最大值时才输出。"
+            },
+            {
+                q: "7. 在购买数量折扣问题中，当 n=15 时，折扣率是多少？",
+                code: `if (n < 5) c = x * n;\nelse if (n <= 10) c = x * n * 0.9;\nelse if (n <= 20) c = x * n * 0.8;\nelse if (n <= 30) c = x * n * 0.6;\nelse c = x * n * 0.4;`,
+                options: ["A. 无折扣", "B. 9折", "C. 8折", "D. 6折"],
+                correct: 2, // C
+                desc: "n=15。检查条件：n < 5 (假) -> n <= 10 (假) -> n <= 20 (真)。执行对应的代码：c = x * n * 0.8，即8折。"
+            },
+            {
+                q: "8. 逻辑表达式 (month==1||month==3||...||month==12) 用于判断：",
+                code: `(month==1||month==3||month==5||month==7||\nmonth==8||month==10||month==12)`,
+                options: ["A. 小月", "B. 大月（31天）", "C. 2月", "D. 所有月份"],
+                correct: 1, // B
+                desc: "列出的月份 1, 3, 5, 7, 8, 10, 12 都是有31天的月份，通常称为大月。使用逻辑或(||)表示只要是其中之一即可。"
+            },
+            {
+                q: "9. 以下代码的输出结果是什么？",
+                code: `int a = 5, b = 3, c = 7;\nif (a > b) {\n    if (a > c) {\n        cout << "A最大";\n    } else {\n        cout << "C最大";\n    }\n} else {\n    cout << "B最大";\n}`,
+                options: ["A. A最大", "B. B最大", "C. C最大", "D. 编译错误"],
+                correct: 2, // C
+                desc: "首先判断外层 if (a > b) 即 5 > 3，成立。进入内层：判断 (a > c) 即 5 > 7，不成立。执行内层的 else，输出 \"C最大\"。"
+            },
+            {
+                q: "10. 关于 else if 语句的执行顺序，正确的是：",
+                options: [
+                    "A. 所有条件都会被执行检查",
+                    "B. 一旦某个条件为真，后续条件不再检查",
+                    "C. 只有前一个条件为假时才检查下一个条件",
+                    "D. B和C都正确"
+                ],
+                correct: 3, // D
+                desc: "else if 的核心特性是互斥。程序从上往下检查，只有当前面的条件都不满足时才检查下一个；一旦遇到满足的条件，执行完后直接跳出整个结构。"
+            },
+            {
+                q: "11. 在月份天数判断中，以下哪个条件组合可以正确判断2月的天数？",
+                options: [
+                    "A. 只判断是否是闰年",
+                    "B. 先判断月份是否为2，再判断是否是闰年",
+                    "C. 先判断是否是闰年，再判断月份",
+                    "D. 同时判断月份和闰年"
+                ],
+                correct: 1, // B
+                desc: "逻辑上通常先锁定月份。如果月份是2月，才需要进一步判断年份是否为闰年，从而决定是28天还是29天。"
+            },
+            {
+                q: "12. 以下代码的逻辑错误是：",
+                code: `if (score >= 90) {\n    cout << "A";\n} if (score >= 80) {\n    cout << "B";\n} if (score >= 70) {\n    cout << "C";\n} else {\n    cout << "D";\n}`,
+                options: [
+                    "A. 缺少else if，导致多个条件可能同时满足",
+                    "B. 条件顺序错误",
+                    "C. 缺少大括号",
+                    "D. 条件表达式错误"
+                ],
+                correct: 0, // A
+                desc: "这里使用了多个独立的 if。如果 score=95，它大于90，也大于80，也大于70。程序会依次执行每个 if，导致同时输出 \"A\"、\"B\"、\"C\"，而不是只输出 \"A\"。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                html += `<div class="code-block">${highlightCode(data.code)}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * 强力词法分析器 (Single-Pass Regex Lexer)
+         * 专门针对C++多分支与嵌套逻辑优化，支持逻辑运算符和关键字高亮。
+         */
+        function highlightCode(code) {
+            // 正则表达式优先级：
+            // 1. 字符串 ("..." 或 '...')
+            // 2. 注释与预处理 (//... 或 #include...)
+            // 3. 数字 (123, 3.14)
+            // 4. 关键字 (int, if, else, true, false, return)
+            // 5. 常用函数/对象 (cout, cin, endl, main)
+            // 6. 逻辑与比较运算符 (&&, ||, ==, !=, <=, >=, +=, ++, !)
+            // 7. 普通标点
+            const pattern = /(".*?"|'.*?')|(\/\/.*|#include\s*<.*?>)|(\b\d+(?:\.\d+)?\b)|(\b(?:int|float|double|char|void|bool|string|if|else|while|for|return|using|namespace|true|false)\b)|(\b(?:cout|cin|endl|main)\b)|(&&|\|\||==|!=|<=|>=|\+=|-=|\*=|\/=|%=|\+\+|--|[!%+\-*/=<>])|([\[\]\{\}\(\);,\.])/g;
+
+            let lastIndex = 0;
+            let html = "";
+            let match;
+
+            while ((match = pattern.exec(code)) !== null) {
+                // 1. 添加匹配项之前的普通文本 (需转义)
+                const plainText = code.slice(lastIndex, match.index);
+                html += escapeHtml(plainText);
+
+                // 2. 识别 token 类型
+                let content = match[0];
+                let cls = "";
+
+                if (match[1]) cls = "str";       // 字符串
+                else if (match[2]) cls = "cmt";  // 注释
+                else if (match[3]) cls = "num";  // 数字
+                else if (match[4]) cls = "kw";   // 关键字
+                else if (match[5]) cls = "fn";   // 函数
+                else if (match[6]) cls = "logic"; // 逻辑/运算符
+                // match[7] 是普通标点，不加颜色
+
+                // 特殊处理：预处理指令颜色
+                if (content.startsWith("#")) cls = "cmt";
+
+                // 3. 包裹 span
+                if (cls) {
+                    html += `<span class="${cls}">${escapeHtml(content)}</span>`;
+                } else {
+                    html += escapeHtml(content);
+                }
+
+                lastIndex = pattern.lastIndex;
+            }
+
+            // 4. 添加剩余文本
+            html += escapeHtml(code.slice(lastIndex));
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => allBtns[data.correct].classList.add('correct'), 400);
+                const chars = ["A", "B", "C", "D"];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${chars[data.correct]}`, data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none';
+            
+            let html = '';
+            const totalScore = quizData.length * 100;
+            if (score === totalScore) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 逻辑魔法师！ 🎉</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">完美！你已经掌握了最复杂的选择魔法！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score} / ${totalScore}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">做得很好！多练习嵌套逻辑，你的代码会更聪明！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; padding:15px 40px; margin-top:30px">🔄 再挑战一次</button>`;
+            endScreen.innerHTML = html;
+        }
+
+        function createConfetti() {
+            const colors = ['#00cec9', '#81ecec', '#00b894', '#ffeaa7', '#fab1a0', '#fd79a8'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.transform = `scale(${Math.random() * 0.6 + 0.4}) rotate(${Math.random()*360}deg)`;
+                c.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2500);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扣哒秘籍 C++ 第十四课：简单排序</title>
+    <style>
+        /* --- 全局样式参考 "编程魔法课堂" --- */
+        :root {
+            --bg-color: #E3F2FD;       /* 浅蓝背景 */
+            --card-bg: #ffffff;
+            --text-color: #1565C0;
+            --accent-yellow: #FFCA28;  /* 装饰黄 */
+            --accent-red: #FF7043;     /* 重点红 */
+            --accent-green: #66BB6A;   /* 代码绿 */
+            --accent-blue: #1976D2;    /* 主题蓝 */
+            --accent-indigo: #3949AB;  /* 深靛蓝 */
+            --code-bg: #263238;        /* 代码块深色背景 */
+        }
+
+        body {
+            /* 字体设置：幼圆优先 */
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#BBDEFB 20%, transparent 20%), radial-gradient(#BBDEFB 20%, transparent 20%);
+            background-position: 0 0, 50px 50px;
+            background-size: 100px 100px;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            border: 5px solid var(--accent-blue);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* --- 标题区域 --- */
+        header {
+            background-color: #E3F2FD;
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 3px dashed var(--accent-blue);
+            border-radius: 15px 15px 0 0;
+            margin: -20px -20px 20px -20px;
+        }
+
+        h1 {
+            color: var(--accent-indigo);
+            margin: 0;
+            font-size: 2.2em;
+            text-shadow: 2px 2px 0px #fff;
+        }
+        
+        .sub-title {
+            color: #5C6BC0;
+            font-size: 1.1em;
+            margin-top: 10px;
+            font-weight: normal;
+        }
+
+        h2 {
+            color: #fff;
+            background: var(--accent-blue);
+            padding: 10px 20px;
+            border-radius: 15px;
+            margin-top: 40px;
+            font-size: 1.6em;
+            display: inline-block;
+            box-shadow: 3px 3px 0 #0D47A1;
+            scroll-margin-top: 20px;
+        }
+
+        h3 {
+            color: #F57C00;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 1.3em;
+            border-bottom: 2px dotted #FFE0B2;
+            padding-bottom: 5px;
+        }
+        
+        p, li {
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            color: #37474F;
+        }
+
+        strong {
+            color: #D32F2F;
+            background: rgba(255, 205, 210, 0.3);
+            padding: 0 4px;
+            border-radius: 4px;
+        }
+
+        /* --- 目录样式 --- */
+        .toc {
+            background: #E8EAF6;
+            padding: 20px 30px;
+            margin: 20px 0;
+            border-radius: 15px;
+            border: 3px solid #7986CB;
+        }
+        
+        .toc-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 12px;
+        }
+
+        .toc-item a {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            background: #fff;
+            padding: 12px 15px;
+            border-radius: 50px;
+            border: 2px solid #C5CAE9;
+            color: #3949AB;
+            font-weight: bold;
+            font-size: 1em;
+            transition: all 0.2s;
+            box-shadow: 2px 2px 0px rgba(63, 81, 181, 0.2);
+        }
+
+        .toc-item a:hover {
+            transform: translateY(-3px);
+            background: #C5CAE9;
+            color: #1A237E;
+        }
+
+        .toc-icon { margin-right: 10px; font-size: 1.2em; }
+
+        /* --- 卡片式设计 --- */
+        .highlight-box {
+            background-color: #E1F5FE; 
+            border-left: 8px solid var(--accent-blue);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 25px 0;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(3, 169, 244, 0.1);
+        }
+
+        .highlight-icon-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 2px dashed #81D4FA;
+            padding-bottom: 10px;
+        }
+        
+        .icon-bulb {
+            font-size: 1.8em;
+            margin-right: 10px;
+            background: #fff;
+            border-radius: 50%;
+            padding: 5px;
+            border: 2px solid #81D4FA;
+        }
+        
+        .highlight-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--accent-blue);
+        }
+
+        .teacher-note, .core-focus {
+            background-color: #FFF8E1;
+            border: none;
+            border-left: 8px solid #FFC107;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            font-size: 1em;
+            color: #5D4037;
+            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.2);
+            position: relative;
+        }
+        
+        .core-focus {
+            background-color: #FCE4EC;
+            border-left-color: #F48FB1;
+            color: #880E4F;
+        }
+
+        .teacher-note::before {
+            content: "🧙‍♂️";
+            font-size: 2em;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            opacity: 0.2;
+        }
+
+        /* --- 代码卡片 --- */
+        .code-card {
+            background-color: #ECEFF1;
+            border-left: 8px solid var(--accent-indigo);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 25px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .code-card::before {
+            content: "💻 C++ Code";
+            display: block;
+            font-weight: bold;
+            color: var(--accent-indigo);
+            margin-bottom: 8px;
+            font-size: 1.1em;
+            font-family: "幼圆", sans-serif;
+        }
+
+        .code-editor {
+            background-color: var(--code-bg);
+            color: #dcdfe4;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', 'Andale Mono', '幼圆', monospace; 
+            font-size: 18px;
+            line-height: 1.8;
+            border: 3px solid #5C6BC0;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .code-editor pre { margin: 0; white-space: pre; }
+
+        /* C++ 代码高亮颜色 */
+        .c-keyword { color: #c678dd; font-weight: bold; } 
+        .c-type { color: #e5c07b; font-weight: bold;}    
+        .c-string { color: #98c379; }                     
+        .c-number { color: #d19a66; }                     
+        .c-obj { color: #e06c75; font-weight: bold;}      
+        .c-op { color: #56b6c2; }                         
+        .c-lib { color: #61afef; }                        
+        
+        .c-comment { 
+            color: #90A4AE;
+            font-style: normal;
+            font-family: "幼圆", sans-serif;
+            font-weight: normal;
+        } 
+
+        /* --- 可视化图示 --- */
+        .visual-container {
+            background: #fff;
+            border: 2px dashed #90CAF9;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            overflow: hidden;
+            flex-direction: column;
+        }
+        
+        .custom-svg {
+            max-width: 100%;
+            height: auto;
+            drop-shadow: 5px 5px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- 练习区域 --- */
+        .login-card {
+            background: linear-gradient(135deg, #64B5F6 0%, #1976D2 100%);
+            border: 3px solid #0D47A1;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 20px rgba(25, 118, 210, 0.3);
+            position: relative;
+            color: white;
+        }
+        .login-card::after {
+            content: "🔑";
+            font-size: 3em;
+            position: absolute;
+            right: 20px;
+            bottom: 10px;
+            opacity: 0.3;
+            transform: rotate(-15deg);
+        }
+
+        .challenge-list {
+            padding: 0;
+            list-style: none;
+        }
+        .challenge-item {
+            background: white;
+            border: 2px solid #2196F3; 
+            border-left: 8px solid #2196F3;
+            margin-bottom: 15px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            color: #1565C0;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        .challenge-item:hover {
+            transform: scale(1.02);
+            background: #BBDEFB;
+            cursor: pointer;
+        }
+        .challenge-item a {
+            text-decoration: none;
+            color: inherit;
+            width: 100%;
+            display: inline-block;
+        }
+        .challenge-icon { margin-right: 15px; font-size: 1.5em; }
+
+        /* --- 表格样式 --- */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #90CAF9;
+        }
+        th, td { border: 1px solid #BBDEFB; padding: 15px; text-align: center; }
+        th { background-color: #E3F2FD; color: #1565C0; font-weight: bold; }
+        tr:nth-child(even) { background-color: #F5F5F5; }
+
+        /* --- 页脚 --- */
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #aaa;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📘 扣哒秘籍 C++ <br><span style="font-size:0.6em">第十四课：简单排序</span></h1>
+        <p>让混乱变得有序，这是程序员的魔法！今天我们学习如何让数字乖乖排队。</p>
+    </header>
+
+    <div class="toc">
+        <h3>🌟 本周目录</h3>
+        <ul class="toc-list">
+            <li class="toc-item"><a href="#part1"><span class="toc-icon">🔍</span>1. 复习回顾：查找最大值</a></li>
+            <li class="toc-item"><a href="#part2"><span class="toc-icon">⚖️</span>2. 排序概念：秩序与稳定性</a></li>
+            <li class="toc-item"><a href="#part3"><span class="toc-icon">🫧</span>3. 冒泡排序：像气泡一样浮起来</a></li>
+            <li class="toc-item"><a href="#part4"><span class="toc-icon">👉</span>4. 选择排序：每次挑出最好的</a></li>
+            <li class="toc-item"><a href="#part5"><span class="toc-icon">🗑️</span>5. 桶排序：分类投递</a></li>
+            <li class="toc-item"><a href="#part6"><span class="toc-icon">⚡</span>6. STL Sort：巨人的肩膀</a></li>
+            <li class="toc-item"><a href="#part7"><span class="toc-icon">🎮</span>7. 今日练习：实战演练</a></li>
+        </ul>
+    </div>
+
+    <div style="padding: 0 30px 30px 30px;">
+
+        <section id="part1">
+            <h2>一、复习回顾：查找最大值的方法</h2>
+            <p>在学习排序之前，我们先回忆一下“擂台法”——如何在数组中找到最大的数。</p>
+            <p>排序其实就是<strong>多次查找最大值（或最小值）</strong>的过程！</p>
+            
+            <div class="highlight-box">
+                <p><strong>口诀：</strong> 设擂主，逐个比，强则换，弱则离。</p>
+            </div>
+        </section>
+
+        <section id="part2">
+            <h2>二、排序概念：让混乱变得有序，稳定性</h2>
+            <p><strong>排序 (Sorting)</strong>：将一组杂乱无章的数据，按照从小到大（升序）或从大到小（降序）的顺序重新排列。</p>
+
+            
+
+            <h3>什么是“稳定性”？</h3>
+            <p>想象一下，有一对双胞胎，哥哥叫大明，弟弟叫小明，他们考试都考了 100 分。</p>
+            <p><strong>原始队伍：</strong> ... 大明(100), 小明(100) ...</p>
+            
+            <div class="visual-container">
+                <svg width="500" height="150" viewBox="0 0 500 150">
+                    <g transform="translate(50, 20)">
+                        <text x="0" y="20" font-weight="bold" fill="#3949AB">稳定排序</text>
+                        <rect x="0" y="40" width="60" height="40" fill="#BBDEFB" stroke="#1976D2"/>
+                        <text x="30" y="65" text-anchor="middle" font-size="12">大明</text>
+                        <rect x="70" y="40" width="60" height="40" fill="#BBDEFB" stroke="#1976D2"/>
+                        <text x="100" y="65" text-anchor="middle" font-size="12">小明</text>
+                        <text x="65" y="100" text-anchor="middle" font-size="12" fill="green">✅ 顺序没变</text>
+                    </g>
+
+                    <line x1="250" y1="20" x2="250" y2="130" stroke="#ccc" stroke-width="2" stroke-dasharray="5,5"/>
+
+                    <g transform="translate(300, 20)">
+                        <text x="0" y="20" font-weight="bold" fill="#C62828">不稳定排序</text>
+                        <rect x="0" y="40" width="60" height="40" fill="#FFCDD2" stroke="#C62828"/>
+                        <text x="30" y="65" text-anchor="middle" font-size="12">小明</text>
+                        <rect x="70" y="40" width="60" height="40" fill="#FFCDD2" stroke="#C62828"/>
+                        <text x="100" y="65" text-anchor="middle" font-size="12">大明</text>
+                        <text x="65" y="100" text-anchor="middle" font-size="12" fill="red">❌ 顺序乱了</text>
+                    </g>
+                </svg>
+            </div>
+            <p><strong>定义：</strong> 如果两个相等的元素，在排序前后的相对位置保持不变，就是稳定的。</p>
+        </section>
+
+        <section id="part3">
+            <h2>三、冒泡排序：像气泡一样浮起来</h2>
+            <p><strong>原理：</strong> 两个两个比较，把大的往后挪。就像水底的气泡，最大的泡泡会先浮到水面（数组末尾）。</p>
+
+            
+
+            <div class="visual-container">
+                <svg width="500" height="180" viewBox="0 0 500 180">
+                    <g transform="translate(20, 20)">
+                        <circle cx="30" cy="80" r="20" fill="#E3F2FD" stroke="#2196F3"/>
+                        <text x="30" y="85" text-anchor="middle">5</text>
+                        <circle cx="80" cy="80" r="25" fill="#BBDEFB" stroke="#1976D2"/>
+                        <text x="80" y="85" text-anchor="middle">8</text>
+                        <circle cx="130" cy="80" r="15" fill="#E3F2FD" stroke="#2196F3"/>
+                        <text x="130" y="85" text-anchor="middle">3</text>
+                        
+                        <path d="M80,50 Q105,20 130,50" fill="none" stroke="#F44336" stroke-width="2" marker-end="url(#arrow)"/>
+                        <text x="105" y="30" text-anchor="middle" font-size="10" fill="#F44336">交换</text>
+                    </g>
+                    
+                    <text x="180" y="90" font-size="20">➡️</text>
+
+                    <g transform="translate(220, 20)">
+                        <circle cx="30" cy="80" r="20" fill="#E3F2FD" stroke="#2196F3"/>
+                        <text x="30" y="85" text-anchor="middle">5</text>
+                        <circle cx="80" cy="80" r="15" fill="#E3F2FD" stroke="#2196F3"/>
+                        <text x="80" y="85" text-anchor="middle">3</text>
+                        <circle cx="130" cy="80" r="25" fill="#BBDEFB" stroke="#1976D2"/>
+                        <text x="130" y="85" text-anchor="middle">8</text>
+                        <text x="130" y="120" text-anchor="middle" font-size="10" fill="#1565C0">最大的泡泡浮上来了</text>
+                    </g>
+                    <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#F44336" /></marker></defs>
+                </svg>
+            </div>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-comment">// 冒泡排序 (Bubble Sort)</span>
+<span class="c-keyword">for</span> (<span class="c-type">int</span> i = <span class="c-number">0</span>; i &lt; n-<span class="c-number">1</span>; i++) {       <span class="c-comment">// 外层：控制轮数</span>
+    <span class="c-keyword">for</span> (<span class="c-type">int</span> j = <span class="c-number">0</span>; j &lt; n-<span class="c-number">1</span>-i; j++) { <span class="c-comment">// 内层：两两比较</span>
+        <span class="c-keyword">if</span> (a[j] > a[j+<span class="c-number">1</span>]) {          <span class="c-comment">// 前面的比后面的大</span>
+            <span class="c-type">int</span> temp = a[j];          <span class="c-comment">// 交换</span>
+            a[j] = a[j+<span class="c-number">1</span>];
+            a[j+<span class="c-number">1</span>] = temp;
+        }
+    }
+}
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part4">
+            <h2>四、选择排序：每次挑出最好的</h2>
+            <p><strong>原理：</strong> 每次从剩下的数字里，找到最小的那个，把它放到队伍的最前面。</p>
+            <p>就像体育老师排队：先在全班找最矮的，站第一个；再在剩下的同学里找最矮的，站第二个……</p>
+
+            
+
+            <div class="visual-container">
+                <svg width="500" height="150" viewBox="0 0 500 150">
+                    <g transform="translate(20, 20)">
+                        <rect x="0" y="20" width="30" height="50" fill="#E0E0E0" stroke="#9E9E9E"/>
+                        <text x="15" y="50" text-anchor="middle">5</text>
+                        <rect x="40" y="30" width="30" height="40" fill="#E0E0E0" stroke="#9E9E9E"/>
+                        <text x="55" y="55" text-anchor="middle">4</text>
+                        <rect x="80" y="50" width="30" height="20" fill="#FFAB91" stroke="#FF5722" stroke-width="2"/>
+                        <text x="95" y="65" text-anchor="middle">2</text>
+                        <text x="95" y="90" text-anchor="middle" font-size="10" fill="#D84315">Min</text>
+                        <rect x="120" y="10" width="30" height="60" fill="#E0E0E0" stroke="#9E9E9E"/>
+                        <text x="135" y="40" text-anchor="middle">6</text>
+                    </g>
+
+                    <text x="180" y="60" font-size="20">➡️</text>
+
+                    <g transform="translate(220, 20)">
+                        <rect x="0" y="50" width="30" height="20" fill="#C8E6C9" stroke="#2E7D32"/>
+                        <text x="15" y="65" text-anchor="middle">2</text>
+                        <text x="15" y="90" text-anchor="middle" font-size="10" fill="#2E7D32">Sorted</text>
+                        
+                        <rect x="40" y="30" width="30" height="40" fill="#E0E0E0" stroke="#9E9E9E"/>
+                        <text x="55" y="55" text-anchor="middle">4</text>
+                        <rect x="80" y="20" width="30" height="50" fill="#E0E0E0" stroke="#9E9E9E"/>
+                        <text x="95" y="50" text-anchor="middle">5</text>
+                        <rect x="120" y="10" width="30" height="60" fill="#E0E0E0" stroke="#9E9E9E"/>
+                        <text x="135" y="40" text-anchor="middle">6</text>
+                        
+                        <text x="90" y="110" text-anchor="middle" font-size="10" fill="#555">把2换到最前面</text>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-comment">// 选择排序 (Selection Sort)</span>
+<span class="c-keyword">for</span> (<span class="c-type">int</span> i = <span class="c-number">0</span>; i &lt; n-<span class="c-number">1</span>; i++) {
+    <span class="c-type">int</span> k = i;                        <span class="c-comment">// 假设 i 是最小的</span>
+    <span class="c-keyword">for</span> (<span class="c-type">int</span> j = i+<span class="c-number">1</span>; j &lt; n; j++) {   <span class="c-comment">// 在后面找更小的</span>
+        <span class="c-keyword">if</span> (a[j] &lt; a[k]) {
+            k = j;                    <span class="c-comment">// 记录最小值的下标</span>
+        }
+    }
+    <span class="c-keyword">if</span> (k != i) <span class="c-type">swap</span>(a[i], a[k]);     <span class="c-comment">// 把最小的换到前面</span>
+}
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part5">
+            <h2>五、桶排序</h2>
+            <p><strong>原理：</strong> 就像之前学的“统计数字次数”。如果我们知道数字范围（比如 0-10 分），我们可以准备 11 个桶。</p>
+            <p><strong>操作：</strong> 拿到一个 3 分，就往 3 号桶放。最后按顺序把桶里的东西倒出来：0 号桶、1 号桶……</p>
+
+            
+
+            <div class="visual-container">
+                <svg width="400" height="120" viewBox="0 0 400 120">
+                    <rect x="20" y="40" width="40" height="50" fill="none" stroke="#333" stroke-width="2"/>
+                    <text x="40" y="110" text-anchor="middle">桶1</text>
+                    <circle cx="40" cy="70" r="10" fill="#FFCA28"/>
+                    
+                    <rect x="80" y="40" width="40" height="50" fill="none" stroke="#333" stroke-width="2"/>
+                    <text x="100" y="110" text-anchor="middle">桶2</text>
+                    <text x="100" y="70" text-anchor="middle" fill="#ccc">空</text>
+
+                    <rect x="140" y="40" width="40" height="50" fill="none" stroke="#333" stroke-width="2"/>
+                    <text x="160" y="110" text-anchor="middle">桶3</text>
+                    <circle cx="160" cy="75" r="10" fill="#FFCA28"/>
+                    <circle cx="160" cy="55" r="10" fill="#FFCA28"/>
+                    
+                    <text x="300" y="70" font-size="14">输出：1, 3, 3</text>
+                </svg>
+            </div>
+
+            <div class="teacher-note">
+                <strong>⚠️ 局限性：</strong> 只能排整数，而且数字不能太大（比如不能排 1 亿）。
+            </div>
+        </section>
+
+        <section id="part6">
+            <h2>六、STL Sort：站在巨人的肩膀上 (Intro)</h2>
+            <p>C++ 的发明者早就为我们准备了一个超级跑车——<code>sort</code> 函数。它比我们自己写的冒泡排序快得多！</p>
+
+            <div class="core-focus">
+                <strong>🚀 魔法咒语：</strong><br>
+                1. 引入头文件：<code>#include &lt;algorithm&gt;</code><br>
+                2. 使用：<code>sort(数组名, 数组名 + 长度);</code>
+            </div>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-lib">#include &lt;algorithm&gt;</span> <span class="c-comment">// 必须加这个！</span>
+<span class="c-keyword">using namespace</span> <span class="c-type">std</span>;
+
+<span class="c-type">int</span> a[<span class="c-number">100</span>] = {<span class="c-number">5</span>, <span class="c-number">2</span>, <span class="c-number">8</span>, <span class="c-number">1</span>, <span class="c-number">9</span>};
+<span class="c-comment">// 对前 5 个数排序</span>
+<span class="c-func">sort</span>(a, a + <span class="c-number">5</span>); 
+
+<span class="c-comment">// 结果：1 2 5 8 9 (默认升序)</span>
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part7">
+            <h2>七、今日练习 —— 实战演练 (给数据排队)</h2>
+            
+            <div class="login-card">
+                <h3 style="margin-top:0; justify-content:center; color:#fff;">🚀 开始挑战吧！</h3>
+                <p style="color:#fff;"><strong>登录扣哒信奥OJ网站:</strong> <br> <span style="font-size:1.2em; text-decoration: underline;">oj.koudashijie.com</span></p>
+                <div style="background:rgba(255,255,255,0.2); display:inline-block; padding:15px; border-radius:10px; margin-top:10px; color:#fff;">
+                    <p style="margin:5px;">👤 <strong>用户名:</strong> 中文姓名</p>
+                    <p style="margin:5px;">🔑 <strong>密码:</strong> 12345678</p>
+                </div>
+            </div>
+
+            <ul class="challenge-list">
+                <li class="challenge-item"><span class="challenge-icon">🏆</span> <a href="../oj/CSP-J2401.html">CSP-J2401 选择排序-升序 (手写选择排序)</a></li>
+                <li class="challenge-item"><span class="challenge-icon">🏆</span> <a href="../oj/CSP-J2402.html">CSP-J2402 选择排序-降序 (修改判断符号)</a></li>
+                <li class="challenge-item"><span class="challenge-icon">🏆</span> <a href="../oj/CSP-J2403.html">CSP-J2403 冒泡排序-升序 (手写冒泡排序)</a></li>
+                <li class="challenge-item"><span class="challenge-icon">🏆</span> <a href="../oj/CSP-J2404.html">CSP-J2404 冒泡排序-降序 (感受气泡下沉)</a></li>
+                <li class="challenge-item"><span class="challenge-icon">🏆</span> <a href="../oj/CSP-J2405.html">CSP-J2405 桶排序-入桶法 (利用下标排序)</a></li>
+                <li class="challenge-item"><span class="challenge-icon">🏆</span> <a href="../oj/CSP-J2406.html">CSP-J2406 选择排序-计数法 (综合应用)</a></li>
+            </ul>
+        </section>
+        
+        <footer style="text-align:center; margin-top:50px; color:#aaa; border-top: 1px solid #ddd; padding-top:20px;">
+            <p>🚀 扣哒世界教研团队</p>
+        </footer>
+    </div>
+</div>
+
+</body>
+</html>
