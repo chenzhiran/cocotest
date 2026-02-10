@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 编程小英雄 - 数组宝藏篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 --- */
+        :root {
+            /* 主题色：宝石蓝与薄荷绿 - 象征整齐的数据存储 */
+            --primary-color: #0984e3;
+            --secondary-color: #74b9ff;
+            --bg-color: #e3f2fd;
+            --card-bg: #ffffff;
+            --text-color: #2d3436;
+            --correct-color: #00b894;
+            --wrong-color: #d63031;
+            --accent-yellow: #fdcb6e;
+            
+            /* 代码高亮配色 (VS Code 风格优化) */
+            --code-bg: #1e1e1e;
+            --code-text: #d4d4d4;
+            --code-kw: #569cd6;   /* 关键字 (蓝) */
+            --code-type: #4ec9b0; /* 类型 (青) */
+            --code-fn: #dcdcaa;   /* 函数/IO (黄) */
+            --code-num: #b5cea8;  /* 数字 (浅绿) */
+            --code-str: #ce9178;  /* 字符串 (红褐) */
+            --code-cmt: #6a9955;  /* 注释 (绿) */
+            --code-op: #d4d4d4;   /* 运算符 (白/灰) */
+            --code-bracket: #da70d6; /* 括号/数组下标 (紫) */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 800px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #2d3436;
+            text-shadow: none;
+            box-shadow: 0 4px 0 #f0932b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #bbdefb;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目与代码 --- */
+        .question-area h2 {
+            text-align: left;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* 代码块样式：保证换行和空格 */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', Consolas, monospace;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 核心：保留空格和换行 */
+            word-break: break-all;
+            text-align: left;
+            font-size: 1rem;
+            line-height: 1.6;
+            border-left: 5px solid var(--primary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            overflow-x: auto;
+        }
+
+        /* 高亮类定义 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .type { color: var(--code-type); }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .op { color: var(--code-op); }
+        .bracket { color: var(--code-bracket); }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #e1f5fe;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1rem; 
+            font-family: 'Fira Code', 'Microsoft YaHei', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #b3e5fc;
+            position: relative;
+            top: 0;
+            line-height: 1.4;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #81d4fa;
+        }
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #e1f5fe;
+            transform: translateY(0);
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #009432;
+        }
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析与反馈 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        .explanation-text { line-height: 1.6; color: #555; }
+        
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #0652dd;
+            transition: transform 0.1s;
+        }
+        .next-btn:active { transform: translateY(3px); box-shadow: none; }
+        
+        /* 结束画面 */
+        .end-screen { display: none; padding: 20px 0; }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score { font-size: 3.5rem; font-weight: bold; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        // C++ Arrays & Storage 测试数据
+        const quizData = [
+            {
+                q: "1. 关于数组的声明，以下正确的是：",
+                options: [
+                    "A. int a[];",
+                    "B. int a[5] = {1, 2, 3, 4, 5};",
+                    "C. int a = [1,2,3];",
+                    "D. array a[5];"
+                ],
+                correct: 1, // B
+                desc: "数组声明时必须指定大小（或通过初始化列表推断）。选项 B 正确声明了一个包含 5 个整数的数组。C 选项是错误的语法（类似 Python/JS），D 选项 array 不是关键字。"
+            },
+            {
+                q: "2. 在C++数组中，第一个元素的索引是：",
+                options: ["A. 0", "B. 1", "C. -1", "D. 任意值"],
+                correct: 0, // A
+                desc: "在 C++ 中，数组的索引（下标）是从 0 开始的。第一个元素是 a[0]。"
+            },
+            {
+                q: "3. 以下代码的输出结果是什么？",
+                code: `int a[3] = {10, 20, 30};\ncout << a[1];`,
+                options: ["A. 10", "B. 20", "C. 30", "D. 编译错误"],
+                correct: 1, // B
+                desc: "数组元素分别是：a[0]=10, a[1]=20, a[2]=30。所以 a[1] 的值是 20。"
+            },
+            {
+                q: "4. 关于while循环和for循环的比较，正确的是：",
+                options: [
+                    "A. while循环更适合已知循环次数的情况",
+                    "B. for循环把循环三要素集中在一行，结构更清晰",
+                    "C. while循环不需要更新循环变量",
+                    "D. for循环不能用于数组遍历"
+                ],
+                correct: 1, // B
+                desc: "for 循环将初始化、条件、更新集中在一起，非常适合数组遍历等已知次数的循环，结构清晰。while 通常用于次数未知的循环。"
+            },
+            {
+                q: "5. 以下代码中，循环体会执行多少次？",
+                code: `int i = 0;\nwhile (i < 5) {\n    cout << i << " ";\n    i++;\n}`,
+                options: ["A. 4次", "B. 5次", "C. 6次", "D. 无限循环"],
+                correct: 1, // B
+                desc: "i 从 0 开始，每次增加 1。当 i=0, 1, 2, 3, 4 时条件 i<5 成立，共执行 5 次。当 i=5 时循环结束。"
+            },
+            {
+                q: "6. 以下哪个是数组的正确遍历方式？",
+                options: [
+                    "A. for(int i=1; i<=n; i++) cout << a[i];",
+                    "B. for(int i=0; i<n; i++) cout << a[i];",
+                    "C. for(int i=0; i<=n; i++) cout << a[i];",
+                    "D. for(int i=1; i<n; i++) cout << a[i];"
+                ],
+                correct: 1, // B
+                desc: "数组索引从 0 开始，长度为 n 的数组，最后一个元素的索引是 n-1。所以正确的范围是 0 到 n-1，即 i < n。"
+            },
+            {
+                q: "7. 交换数组元素 a[i] 和 a[j] 的正确代码是：",
+                options: [
+                    "A. a[i] = a[j]; a[j] = a[i];",
+                    "B. temp = a[i]; a[j] = temp; a[i] = a[j];",
+                    "C. temp = a[i]; a[i] = a[j]; a[j] = temp;",
+                    "D. a[j] = a[i]; temp = a[j]; a[i] = temp;"
+                ],
+                correct: 2, // C
+                desc: "标准交换“三步走”：1. 备份 a[i] 到 temp；2. 将 a[j] 赋值给 a[i]；3. 将备份的 temp 赋值给 a[j]。"
+            },
+            {
+                q: "8. 在二维数组 a[3][4] 中，元素 a[1][2] 的位置是：",
+                options: ["A. 第1行第2列", "B. 第2行第3列", "C. 第1行第3列", "D. 第2行第2列"],
+                correct: 1, // B
+                desc: "索引从 0 开始。第一个索引 [1] 表示第 2 行，第二个索引 [2] 表示第 3 列。"
+            },
+            {
+                q: "9. 以下代码用于查找数组中的最大值，空白处应填入：",
+                code: `int maxVal = a[0];\nfor(int i=1; i<n; i++) {\n    if(________) {\n       maxVal = a[i];\n    }\n}`,
+                options: ["A. maxVal > a[i]", "B. maxVal < a[i]", "C. maxVal == a[i]", "D. maxVal != a[i]"],
+                correct: 1, // B
+                desc: "要找最大值，如果发现当前的元素 a[i] 比已经记录的 maxVal 还要大（即 maxVal < a[i]），就更新 maxVal。"
+            },
+            {
+                q: "10. 关于二维数组的遍历，正确的是：",
+                options: [
+                    "A. 只需要单层循环",
+                    "B. 外层循环控制列，内层循环控制行",
+                    "C. 外层循环控制行，内层循环控制列",
+                    "D. 循环顺序不影响结果"
+                ],
+                correct: 2, // C
+                desc: "最常用且符合内存布局的遍历方式是：外层循环控制行 (row)，内层循环控制列 (col)。"
+            },
+            {
+                q: "11. 以下代码的输出结果是什么？",
+                code: `int a[2][2] = {{1,2},{3,4}};\ncout << a[0][1] + a[1][0];`,
+                options: ["A. 3", "B. 5", "C. 6", "D. 7"],
+                correct: 1, // B
+                desc: "a[0][1] 是第一行第二个数，即 2。a[1][0] 是第二行第一个数，即 3。2 + 3 = 5。"
+            },
+            {
+                q: "12. 在杨辉三角中，每个数的计算规则是：",
+                options: [
+                    "A. a[i][j] = a[i-1][j] + a[i][j-1]",
+                    "B. a[i][j] = a[i-1][j-1] + a[i-1][j]",
+                    "C. a[i][j] = a[i][j-1] + a[i-1][j-1]",
+                    "D. a[i][j] = a[i+1][j] + a[i][j+1]"
+                ],
+                correct: 1, // B
+                desc: "杨辉三角的规律是：当前位置的数 = 上一行同列的数 + 上一行前一列的数。即 a[i][j] = a[i-1][j] + a[i-1][j-1]。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                html += `<div class="code-block">${highlightCode(data.code)}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * 强力词法分析器 (Single-Pass Regex Lexer)
+         * 专门针对C++数组语法优化，支持 [] {} 及多维数组识别。
+         */
+        function highlightCode(code) {
+            // 正则表达式优先级：
+            // 1. 字符串 ("..." 或 '...')
+            // 2. 注释与预处理 (//... 或 #include...)
+            // 3. 数字 (123, 3.14)
+            // 4. 关键字 (int, float, for, while, if, else, return, cout, cin)
+            // 5. 常用函数/对象 (main, endl)
+            // 6. 括号与数组符号 ([] {} ()) - 给予特别颜色
+            // 7. 运算符
+            const pattern = /(".*?"|'.*?')|(\/\/.*|#include\s*<.*?>)|(\b\d+(?:\.\d+)?\b)|(\b(?:int|long|float|char|bool|void|for|while|do|if|else|break|continue|return)\b)|(\b(?:cout|cin|endl)\b)|(\[|\]|\{|\}|\(|\)|<<|>>|==|!=|<=|>=|\+=|-=|\+\+|--|[!%+\-*/=;,])|./g;
+
+            let lastIndex = 0;
+            let html = "";
+            let match;
+
+            // 这里稍微调整正则逻辑，确保逐字匹配
+            // 注意：上面的正则最后一个是 . (匹配任意字符)，用于兜底
+            // 这种方式需要小心 lastIndex
+            
+            const regex = /(".*?"|'.*?')|(\/\/.*|#include\s*<.*?>)|(\b\d+(?:\.\d+)?\b)|(\b(?:int|long|float|char|bool|void|for|while|do|if|else|break|continue|return)\b)|(\b(?:cout|cin|endl)\b)|(\[|\]|\{|\}|\(|\)|<<|>>|==|!=|<=|>=|\+=|-=|\+\+|--|[!%+\-*/=;,])/g;
+            
+            // 重写 highlight 逻辑以匹配纯净的文本流
+            let cursor = 0;
+            while ((match = regex.exec(code)) !== null) {
+                // 添加普通文本
+                const plainText = code.slice(cursor, match.index);
+                html += escapeHtml(plainText);
+
+                let content = match[0];
+                let cls = "";
+
+                if (match[1]) cls = "str";       // 字符串
+                else if (match[2]) cls = "cmt";  // 注释
+                else if (match[3]) cls = "num";  // 数字
+                else if (match[4]) cls = "kw";   // 关键字
+                else if (match[5]) cls = "fn";   // 函数/IO
+                else if (match[6]) {             // 符号组
+                    if (content.match(/[\[\]\{\}]/)) cls = "bracket"; // 括号特别颜色
+                    else cls = "op"; // 其他运算符
+                }
+                
+                // 特殊处理：预处理指令颜色
+                if (content.startsWith("#")) cls = "cmt";
+
+                if (cls) {
+                    html += `<span class="${cls}">${escapeHtml(content)}</span>`;
+                } else {
+                    html += escapeHtml(content);
+                }
+                cursor = regex.lastIndex;
+            }
+            // 添加剩余文本
+            html += escapeHtml(code.slice(cursor));
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => allBtns[data.correct].classList.add('correct'), 400);
+                const chars = ["A", "B", "C", "D"];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${chars[data.correct]}`, data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none';
+            
+            let html = '';
+            const totalScore = quizData.length * 100;
+            if (score === totalScore) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 数组宝藏猎人！ 🎉</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">太棒了！你已经完全掌握了数据存储和数组操作的秘诀！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score} / ${totalScore}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">做得不错！多练习二维数组和循环，你会更厉害的！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; padding:15px 40px; margin-top:30px">🔄 再挑战一次</button>`;
+            endScreen.innerHTML = html;
+        }
+
+        function createConfetti() {
+            const colors = ['#0984e3', '#74b9ff', '#55efc4', '#a29bfe', '#fdcb6e'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.transform = `scale(${Math.random() * 0.6 + 0.4}) rotate(${Math.random()*360}deg)`;
+                c.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2500);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>

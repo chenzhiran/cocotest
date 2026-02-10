@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J 循环结构 (Do-While/Break/Continue) - 编程题解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 全局样式 */
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        /* 隐藏滚动条 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* 幻灯片容器 */
+        .slide {
+            min-height: 100vh;
+            width: 100%;
+            padding: 2rem 4rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 2px solid #1e293b;
+            position: relative;
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 代码逻辑行 - 核心布局 */
+        .logic-row {
+            display: grid;
+            grid-template-columns: 1fr 150px 1fr; /* Python - Explain - C++ */
+            gap: 15px;
+            margin-bottom: 8px;
+            align-items: stretch;
+            transition: transform 0.2s;
+        }
+
+        .logic-row:hover {
+            transform: scale(1.01);
+            background: rgba(255,255,255,0.02);
+            border-radius: 6px;
+        }
+
+        .code-box {
+            font-family: 'JetBrains Mono', monospace;
+            padding: 12px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            white-space: pre-wrap;
+            border-radius: 6px;
+            overflow-x: auto;
+            color: #e2e8f0;
+            position: relative;
+        }
+
+        .explain-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #0f172a;
+            border-radius: 6px;
+            padding: 4px;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 颜色主题系统 */
+        /* 初始化/变量 (蓝色) */
+        .theme-init .code-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; }
+        .theme-init .explain-box { background: linear-gradient(135deg, #7dd3fc, #38bdf8); }
+        
+        /* 循环控制 (紫色) */
+        .theme-loop .code-box { background: rgba(167, 139, 250, 0.1); border-left: 3px solid #a78bfa; }
+        .theme-loop .explain-box { background: linear-gradient(135deg, #c4b5fd, #a78bfa); }
+
+        /* 核心计算/判断 (橙色) */
+        .theme-calc .code-box { background: rgba(251, 146, 60, 0.1); border-left: 3px solid #fb923c; }
+        .theme-calc .explain-box { background: linear-gradient(135deg, #fdba74, #fb923c); }
+
+        /* 输出/结果 (绿色) */
+        .theme-out .code-box { background: rgba(74, 222, 128, 0.1); border-left: 3px solid #4ade80; }
+        .theme-out .explain-box { background: linear-gradient(135deg, #86efac, #4ade80); }
+
+        /* Break/Continue (红色) */
+        .theme-break .code-box { background: rgba(244, 63, 94, 0.1); border-left: 3px solid #f43f5e; }
+        .theme-break .explain-box { background: linear-gradient(135deg, #fda4af, #f43f5e); }
+
+        /* 侧边导航 */
+        .nav-dots {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 50;
+        }
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            background: #475569;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .nav-dot:hover {
+            background: #38bdf8;
+            transform: scale(1.4);
+            box-shadow: 0 0 10px #38bdf8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="nav-dots">
+        <a href="#p1701" class="nav-dot" title="圣诞礼物"></a>
+        <a href="#p1702" class="nav-dot" title="翻转魔法"></a>
+        <a href="#p1703" class="nav-dot" title="骷髅来袭"></a>
+        <a href="#p1704" class="nav-dot" title="光石奖励"></a>
+        <a href="#p1705" class="nav-dot" title="药店模拟器"></a>
+        <a href="#p1706" class="nav-dot" title="翻转魔法2"></a>
+    </div>
+
+    <section id="p1701" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-red-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1701</span>
+            <h1 class="text-3xl font-bold text-red-400">圣诞礼物 (数字拆分)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-gift mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们要检查一个数里有没有恰好3个 '3'。</p>
+                    <p class="mt-2 text-white font-bold">剥洋葱法：</p>
+                    <ul class="list-disc ml-4 space-y-1">
+                        <li>取个位：<code class="text-blue-300">n % 10</code></li>
+                        <li>判断：是不是 3？如果是，计数器+1。</li>
+                        <li>切个位：<code class="text-blue-300">n = n / 10</code> (变成整数)</li>
+                        <li>重复：直到 n 变成 0。</li>
+                    </ul>
+                    <div class="mt-4 p-3 bg-red-900/30 border border-red-500/30 rounded text-center text-xs">
+                        <i class="fas fa-sync text-2xl mb-1 text-orange-400"></i><br>
+                        Python没有do-while<br>用while n > 0 即可
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">n = int(input())<br>cnt = 0</div>
+                    <div class="explain-box">1. 输入与计数器</div>
+                    <div class="code-box">long long n; cin >> n;<br>int cnt = 0;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">while n > 0:</div>
+                    <div class="explain-box">2. 循环拆分</div>
+                    <div class="code-box">do {</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;if n % 10 == 3:<br>&nbsp;&nbsp;&nbsp;&nbsp;cnt += 1</div>
+                    <div class="explain-box">3. 检查个位</div>
+                    <div class="code-box">&nbsp;&nbsp;if (n % 10 == 3) cnt++;</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;n //= 10</div>
+                    <div class="explain-box">4. 砍掉个位</div>
+                    <div class="code-box">&nbsp;&nbsp;n /= 10;<br>} while (n > 0);</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">if cnt == 3: print("YES")<br>else: print("NO")</div>
+                    <div class="explain-box">5. 判断结果</div>
+                    <div class="code-box">if (cnt == 3) cout << "YES";<br>else cout << "NO";</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="p1702" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1702</span>
+            <h1 class="text-3xl font-bold text-blue-400">翻转魔法 (数字反转)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-magic mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>把 <code class="bg-slate-700 px-1">123</code> 变成 <code class="bg-slate-700 px-1">321</code>。</p>
+                    <p class="mt-2 text-white font-bold">魔法口袋公式：</p>
+                    <p><code class="text-yellow-400">ans = ans * 10 + (n % 10)</code></p>
+                    <p class="mt-2 text-xs">比如 ans=3，下一个数字是2 -> ans变成 3*10+2 = 32。这样就接在屁股后面了。</p>
+                    <div class="mt-2 text-red-300 text-xs">
+                        *注意：负数怎么处理？C++取模负数会保留符号，逻辑通用。Python最好先存符号，取绝对值翻转后再乘回去。
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">n = int(input())<br>ans = 0</div>
+                    <div class="explain-box">1. 初始化</div>
+                    <div class="code-box">int n; cin >> n;<br>int ans = 0;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">while n != 0:</div>
+                    <div class="explain-box">2. 只要不为0<br><span class="text-[0.6rem] font-normal">C++用do-while处理0的情况</span></div>
+                    <div class="code-box">do {</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;ans = ans * 10 + n % 10</div>
+                    <div class="explain-box">3. 累加反转数<br><span class="text-[0.6rem] font-normal">Python负数取模特殊，建议用abs处理</span></div>
+                    <div class="code-box">&nbsp;&nbsp;ans = ans * 10 + n % 10;</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;n = int(n / 10)</div>
+                    <div class="explain-box">4. 移除个位<br><span class="text-[0.6rem] font-normal">Python int()取整, C++自动取整</span></div>
+                    <div class="code-box">&nbsp;&nbsp;n /= 10;<br>} while (n != 0);</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">print(ans)</div>
+                    <div class="explain-box">5. 输出结果</div>
+                    <div class="code-box">cout << ans;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="p1703" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-purple-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1703</span>
+            <h1 class="text-3xl font-bold text-purple-400">骷髅来袭 (Break运用)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-skull mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们要凑够 <code class="text-purple-400">m</code> 个石头。</p>
+                    <p>农民排队交石头，一旦总数够了，就不用收后面人的了。</p>
+                    <p class="mt-2 text-white font-bold">Break 的作用：</p>
+                    <p>就像装满水桶，水一满马上关水龙头（退出循环），防止溢出或浪费时间。</p>
+                    <div class="mt-4 flex justify-center text-4xl">
+                        <i class="fas fa-hand-paper text-red-400 animate-pulse"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">m, n = map(int, input().split())<br>stones = list(map(int, input().split()))</div>
+                    <div class="explain-box">1. 读取输入<br><span class="text-[0.6rem] font-normal">目标量, 人数, 石头数组</span></div>
+                    <div class="code-box">int m, n; cin >> m >> n;<br>int stones[100]; //输入循环略</div>
+                </div>
+                <div class="logic-row theme-init">
+                    <div class="code-box">total = 0</div>
+                    <div class="explain-box">2. 当前总量</div>
+                    <div class="code-box">int total = 0;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">for x in stones:</div>
+                    <div class="explain-box">3. 遍历每个农民</div>
+                    <div class="code-box">for(int i=0; i&lt;n; i++) {</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;total += x</div>
+                    <div class="explain-box">4. 收集石头</div>
+                    <div class="code-box">&nbsp;&nbsp;total += stones[i];</div>
+                </div>
+                <div class="logic-row theme-break">
+                    <div class="code-box">&nbsp;&nbsp;if total > m:<br>&nbsp;&nbsp;&nbsp;&nbsp;break</div>
+                    <div class="explain-box">5. 够了就停！<br><span class="text-[0.6rem] font-normal">触发 Break 强制退出</span></div>
+                    <div class="code-box">&nbsp;&nbsp;if(total > m) break;<br>}</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">if total > m: print("Yes")<br>else: print("No")</div>
+                    <div class="explain-box">6. 判断是否足够</div>
+                    <div class="code-box">if(total > m) cout << "Yes";<br>else cout << "No";</div>
+                </div>
+                </div>
+        </div>
+    </section>
+
+    <section id="p1704" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-green-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1704</span>
+            <h1 class="text-3xl font-bold text-green-400">光石奖励 (Continue运用)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-gem mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>我们要计算正数的总和和平均值。</p>
+                    <p class="mt-2 text-white font-bold">Continue 的作用：</p>
+                    <p>如果遇到坏石头（负数或0），直接跳过，看下一个，不要计入总数。</p>
+                    <p class="mt-2 text-xs">虽然题目样例全是正数，但为了健壮性或题目隐藏要求，我们通常会过滤无效数据。</p>
+                    <p class="text-xs text-green-300">平均数 = 总和 / 人数(10.0)</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">arr = list(map(int, input().split()))</div>
+                    <div class="explain-box">1. 输入10个数</div>
+                    <div class="code-box">int a; int sum = 0;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">sum_val = 0<br>for x in arr:</div>
+                    <div class="explain-box">2. 循环处理</div>
+                    <div class="code-box">for(int i=0; i<10; i++) {<br>&nbsp;&nbsp;cin >> a;</div>
+                </div>
+                <div class="logic-row theme-break">
+                    <div class="code-box">&nbsp;&nbsp;if x <= 0:<br>&nbsp;&nbsp;&nbsp;&nbsp;continue</div>
+                    <div class="explain-box">3. 负数跳过<br><span class="text-[0.6rem] font-normal">进入下一次循环</span></div>
+                    <div class="code-box">&nbsp;&nbsp;if(a <= 0) continue;</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;sum_val += x</div>
+                    <div class="explain-box">4. 累加</div>
+                    <div class="code-box">&nbsp;&nbsp;sum += a;<br>}</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">print(sum_val)<br>print(sum_val / 10)</div>
+                    <div class="explain-box">5. 输出<br><span class="text-[0.6rem] font-normal">注意C++浮点除法</span></div>
+                    <div class="code-box">cout << sum << endl;<br>cout << sum / 10.0;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="p1705" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1705</span>
+            <h1 class="text-3xl font-bold text-amber-400">药店模拟器 (库存管理)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-clinic-medical mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>安雅当店长，管理库存 <code class="text-amber-400">m</code>。</p>
+                    <p>来一个客人，看看他要多少 <code class="text-blue-300">need</code>。</p>
+                    <ul class="list-disc ml-4 space-y-1">
+                        <li>如果库存够 (<code class="text-green-300">m >= need</code>)：卖给他！库存减少，满意人数+1。</li>
+                        <li>如果库存不够：不卖，下一位。</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">m = int(input())<br>n = int(input())</div>
+                    <div class="explain-box">1. 总库存与人数</div>
+                    <div class="code-box">int m; cin >> m;<br>int n; cin >> n;</div>
+                </div>
+                <div class="logic-row theme-init">
+                    <div class="code-box">reqs = list(map(int, input().split()))<br>cnt = 0</div>
+                    <div class="explain-box">2. 需求列表与计数</div>
+                    <div class="code-box">int req; int cnt = 0;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">for need in reqs:</div>
+                    <div class="explain-box">3. 循环接待</div>
+                    <div class="code-box">for(int i=0; i&lt;n; i++) {<br>&nbsp;&nbsp;cin >> req;</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;if m >= need:<br>&nbsp;&nbsp;&nbsp;&nbsp;m -= need<br>&nbsp;&nbsp;&nbsp;&nbsp;cnt += 1</div>
+                    <div class="explain-box">4. 够就卖<br><span class="text-[0.6rem] font-normal">扣库存，加人数</span></div>
+                    <div class="code-box">&nbsp;&nbsp;if(m >= req) {<br>&nbsp;&nbsp;&nbsp;&nbsp;m -= req; cnt++;<br>&nbsp;&nbsp;}<br>}</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">print(cnt)</div>
+                    <div class="explain-box">5. 满意人数</div>
+                    <div class="code-box">cout << cnt;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="p1706" class="slide">
+        <header class="mb-4 flex items-center gap-3">
+            <span class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-bold">CSP-J1706</span>
+            <h1 class="text-3xl font-bold text-indigo-400">翻转魔法2 (Do-While)</h1>
+        </header>
+        <div class="grid grid-cols-12 gap-8 h-full">
+            <div class="col-span-4 glass-card p-6 gap-4">
+                <h3 class="text-xl font-bold text-yellow-400"><i class="fas fa-history mr-2"></i>思路分析</h3>
+                <div class="text-slate-300 text-sm leading-relaxed">
+                    <p>这次不仅要反转数字，还要记录它是几位数。</p>
+                    <p class="mt-2 text-white font-bold">任务拆解：</p>
+                    <ol class="list-decimal ml-4 space-y-1">
+                        <li>反转数字 (同题1702)。</li>
+                        <li>每剥离一位数字，计数器 <code class="text-indigo-300">len++</code>。</li>
+                        <li>最后输出反转数，再输出位数。</li>
+                    </ol>
+                    <p class="mt-4 text-xs text-indigo-300">提示：C++同学必须用 do-while 循环哦！这能保证即使输入0，也能运行一次（位数1）。</p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-6 overflow-y-auto">
+                <div class="logic-row theme-init">
+                    <div class="code-box">n = int(input())<br>rev = 0; length = 0</div>
+                    <div class="explain-box">1. 初始化</div>
+                    <div class="code-box">int n; cin >> n;<br>int rev=0; int len=0;</div>
+                </div>
+                <div class="logic-row theme-loop">
+                    <div class="code-box">while True:</div>
+                    <div class="explain-box">2. 循环结构<br><span class="text-[0.6rem] font-normal">C++用do-while</span></div>
+                    <div class="code-box">do {</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;rev = rev * 10 + n % 10<br>&nbsp;&nbsp;n //= 10</div>
+                    <div class="explain-box">3. 反转与截断</div>
+                    <div class="code-box">&nbsp;&nbsp;rev = rev * 10 + n % 10;<br>&nbsp;&nbsp;n /= 10;</div>
+                </div>
+                <div class="logic-row theme-calc">
+                    <div class="code-box">&nbsp;&nbsp;length += 1<br>&nbsp;&nbsp;if n == 0: break</div>
+                    <div class="explain-box">4. 记位与退出</div>
+                    <div class="code-box">&nbsp;&nbsp;len++;<br>} while(n > 0);</div>
+                </div>
+                <div class="logic-row theme-out">
+                    <div class="code-box">print(f"{rev}{length}")</div>
+                    <div class="explain-box">5. 拼接输出</div>
+                    <div class="code-box">cout << rev << len;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

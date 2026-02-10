@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J 第二章：数组与数据批量储存 (30题全解)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 全局设置 */
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #0f172a; color: #e2e8f0; scroll-behavior: smooth; overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* 幻灯片容器 */
+        .slide {
+            min-height: 100vh; width: 100%; padding: 1.5rem 3rem; box-sizing: border-box;
+            display: flex; flex-direction: column; justify-content: center;
+            border-bottom: 1px solid #1e293b; position: relative;
+        }
+
+        /* 卡片样式 */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3); height: 100%; display: flex; flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* 逻辑行布局 */
+        .logic-row {
+            display: grid; grid-template-columns: 1fr 140px 1fr; gap: 10px;
+            margin-bottom: 6px; align-items: stretch; transition: transform 0.2s;
+        }
+        .logic-row:hover { background: rgba(255,255,255,0.02); }
+
+        .code-box {
+            font-family: 'JetBrains Mono', monospace; padding: 8px; font-size: 0.75rem;
+            display: flex; align-items: center; white-space: pre-wrap; border-radius: 4px;
+            color: #e2e8f0; overflow-x: auto;
+        }
+
+        .explain-box {
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; font-size: 0.7rem; font-weight: bold; color: #0f172a;
+            border-radius: 4px; padding: 2px;
+        }
+
+        /* 主题色 */
+        .theme-in .code-box { background: rgba(56, 189, 248, 0.1); border-left: 2px solid #38bdf8; }
+        .theme-in .explain-box { background: #7dd3fc; }
+        .theme-alg .code-box { background: rgba(167, 139, 250, 0.1); border-left: 2px solid #a78bfa; }
+        .theme-alg .explain-box { background: #c4b5fd; }
+        .theme-out .code-box { background: rgba(74, 222, 128, 0.1); border-left: 2px solid #4ade80; }
+        .theme-out .explain-box { background: #86efac; }
+
+        /* 导航 */
+        .nav-bar {
+            position: fixed; right: 10px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 5px; z-index: 50;
+            max-height: 90vh; overflow-y: auto; padding-right: 5px;
+        }
+        .nav-dot {
+            width: 24px; height: 24px; background: #334155; color: #94a3b8;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 10px; cursor: pointer; transition: all 0.2s; text-decoration: none;
+        }
+        .nav-dot:hover { background: #38bdf8; color: white; transform: scale(1.2); }
+        
+        .title-badge { background: linear-gradient(to right, #3b82f6, #8b5cf6); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin-right: 10px;}
+    </style>
+</head>
+<body>
+
+    <!-- 右侧导航栏 -->
+    <div class="nav-bar">
+        <a href="#t1" class="nav-dot" title="2101">01</a>
+        <a href="#t2" class="nav-dot" title="2102">02</a>
+        <a href="#t3" class="nav-dot" title="2103">03</a>
+        <a href="#t4" class="nav-dot" title="2104">04</a>
+        <a href="#t5" class="nav-dot" title="2105">05</a>
+        <a href="#t6" class="nav-dot" title="2106">06</a>
+        <a href="#t7" class="nav-dot" title="2107">07</a>
+        <a href="#t8" class="nav-dot" title="2201">08</a>
+        <a href="#t9" class="nav-dot" title="2202">09</a>
+        <a href="#t10" class="nav-dot" title="2203">10</a>
+        <a href="#t11" class="nav-dot" title="2204">11</a>
+        <a href="#t12" class="nav-dot" title="2205">12</a>
+        <a href="#t13" class="nav-dot" title="2206">13</a>
+        <a href="#t14" class="nav-dot" title="2207">14</a>
+        <a href="#t15" class="nav-dot" title="2208">15</a>
+        <a href="#t16" class="nav-dot" title="2301">16</a>
+        <a href="#t17" class="nav-dot" title="2302">17</a>
+        <a href="#t18" class="nav-dot" title="2701">18</a>
+        <a href="#t19" class="nav-dot" title="2702">19</a>
+        <a href="#t20" class="nav-dot" title="2703">20</a>
+        <a href="#t21" class="nav-dot" title="2705">21</a>
+        <a href="#t22" class="nav-dot" title="2706">22</a>
+        <a href="#t23" class="nav-dot" title="2707">23</a>
+        <a href="#t24" class="nav-dot" title="2708">24</a>
+        <a href="#t25" class="nav-dot" title="2709">25</a>
+        <a href="#t26" class="nav-dot" title="2710">26</a>
+        <a href="#t27" class="nav-dot" title="2711">27</a>
+        <a href="#t28" class="nav-dot" title="2712">28</a>
+        <a href="#t29" class="nav-dot" title="2713">29</a>
+    </div>
+
+    <!-- 模板生成函数 (HTML生成时会展开为实际代码) -->
+    
+    <!-- 1. CSP-J2101 交换位置 -->
+    <section id="t1" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2101</span>交换位置</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-exchange-alt"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">找到数组中的“最大值”，然后把它和第1个数字交换座位。</p>
+                <div class="mt-4 text-xs bg-slate-800 p-2 rounded">
+                    例子: [1, 5, 2]<br>
+                    最大是5 (下标1)<br>
+                    交换后: [5, 1, 2]
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-in"><div class="code-box">n=int(input())<br>a=list(map(int,input().split()))</div><div class="explain-box">输入数组</div><div class="code-box">int n; cin>>n;<br>for(int i=0;i&lt;n;i++) cin>>a[i];</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">idx = a.index(max(a))</div><div class="explain-box">找最大值位置</div><div class="code-box">int idx=0;<br>for(int i=1;i&lt;n;i++) if(a[i]>a[idx]) idx=i;</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">a[0], a[idx] = a[idx], a[0]</div><div class="explain-box">交换</div><div class="code-box">swap(a[0], a[idx]);</div></div>
+                <div class="logic-row theme-out"><div class="code-box">print(*a)</div><div class="explain-box">输出</div><div class="code-box">for(int i=0;i&lt;n;i++) cout<<a[i]<<" ";</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. CSP-J2102 逆向输出 -->
+    <section id="t2" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2102</span>逆向输出</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-history"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">倒着读数组，从最后一个下标 n-1 循环到 0。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-in"><div class="code-box">n=int(input())<br>a=list(map(int,input().split()))</div><div class="explain-box">输入</div><div class="code-box">int n; cin>>n;<br>for(int i=0;i&lt;n;i++) cin>>a[i];</div></div>
+                <div class="logic-row theme-out"><div class="code-box">for i in range(n-1, -1, -1):<br>  print(a[i], end=" ")</div><div class="explain-box">倒序循环</div><div class="code-box">for(int i=n-1; i>=0; i--)<br>  cout << a[i] << " ";</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. CSP-J2103 数的变化 -->
+    <section id="t3" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2103</span>数的变化</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-plus-circle"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">第1个数+1，第2个数+2... 第i个数+i。<br>注意数组下标和“第几个”差1。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-in"><div class="code-box">n=int(input())<br>a=list(map(int,input().split()))</div><div class="explain-box">输入</div><div class="code-box">int n; cin>>n; int a[100];<br>for(int i=0;i&lt;n;i++) cin>>a[i];</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">for i in range(n):<br>  a[i] += (i+1)</div><div class="explain-box">累加位置值</div><div class="code-box">for(int i=0; i&lt;n; i++)<br>  a[i] += (i+1);</div></div>
+                <div class="logic-row theme-out"><div class="code-box">print(*a)</div><div class="explain-box">输出</div><div class="code-box">for(int i=0;i&lt;n;i++) cout<<a[i]<<" ";</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. CSP-J2104 选择排序 -->
+    <section id="t4" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2104</span>选择排序</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-sort-amount-down"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">每次从剩下的数字里找到最大的，放到最前面。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">for i in range(n-1):<br> k=i<br> for j in range(i+1, n):</div><div class="explain-box">寻找最大</div><div class="code-box">for(int i=0;i&lt;n-1;i++){<br> int k=i;<br> for(int j=i+1;j&lt;n;j++)</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">  if a[j] > a[k]: k=j<br> a[i],a[k] = a[k],a[i]</div><div class="explain-box">交换</div><div class="code-box">  if(a[j]>a[k]) k=j;<br> swap(a[i], a[k]); }</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. CSP-J2105 有多少个不同的数 -->
+    <section id="t5" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2105</span>有多少个不同的数</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-fingerprint"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">使用桶标记法（因为数<=100）或者集合Set去重。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">s = set(a)<br>print(len(s))</div><div class="explain-box">去重计数</div><div class="code-box">int b[101]={0}, cnt=0;<br>for(int x:a) b[x]++;<br>for(int i=0;i<=100;i++) if(b[i]) cnt++;</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. CSP-J2106 循环移动m位 -->
+    <section id="t6" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2106</span>循环移动 m 位</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-arrow-left"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">前m个数移到最后。<br>Python用切片 <code>a[m:] + a[:m]</code>。<br>C++先输出后面，再输出前面。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-in"><div class="code-box">n,m = map(int,input().split())</div><div class="explain-box">输入</div><div class="code-box">cin>>n>>m;</div></div>
+                <div class="logic-row theme-out"><div class="code-box">b = a[m:] + a[:m]<br>print(*b)</div><div class="explain-box">切片/分段输出</div><div class="code-box">for(int i=m;i&lt;n;i++) cout<<a[i]<<" ";<br>for(int i=0;i&lt;m;i++) cout<<a[i]<<" ";</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. CSP-J2107 循环移动一位 -->
+    <section id="t7" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2107</span>循环移动一位</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-step-backward"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">同上一题，m=1 的特殊情况。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-out"><div class="code-box">b = a[1:] + a[:1]<br>print(*b)</div><div class="explain-box">分段输出</div><div class="code-box">for(int i=1;i&lt;n;i++) cout<<a[i]<<" ";<br>cout<<a[0];</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8. CSP-J2201 查找数字 -->
+    <section id="t8" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2201</span>查找数字</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-search"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">输入10个数，再输入目标x，遍历查找是否存在。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">if x in a:<br> print("Yes")</div><div class="explain-box">查找</div><div class="code-box">bool found=false;<br>for(int v:a) if(v==x) found=true;</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 9. CSP-J2202 小鱼比可爱 -->
+    <section id="t9" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2202</span>小鱼比可爱</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-fish"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">对于每一只鱼，循环看它左边所有的鱼，统计比它小的数量。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">for i in range(n):<br> cnt=0<br> for j in range(i):</div><div class="explain-box">双重循环</div><div class="code-box">for(int i=0;i&lt;n;i++){<br> int cnt=0;<br> for(int j=0;j&lt;i;j++)</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">  if a[j] < a[i]: cnt+=1<br> print(cnt, end=" ")</div><div class="explain-box">统计输出</div><div class="code-box">  if(a[j] < a[i]) cnt++;<br> cout<<cnt<<" "; }</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 10. CSP-J2203 陶陶摘苹果 -->
+    <section id="t10" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2203</span>陶陶摘苹果</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-apple-alt"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">陶陶最大高度 = 手长 + 板凳(30)。遍历每个苹果，如果苹果高度 <= 最大高度，就能摘到。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-in"><div class="code-box">h = list(map(int,input().split()))<br>max_h = int(input()) + 30</div><div class="explain-box">输入+30</div><div class="code-box">int h[10], mh; <br>for(int i=0;i&lt;10;i++) cin>>h[i];<br>cin>>mh; mh+=30;</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">cnt = 0<br>for i in h:<br> if i <= max_h: cnt+=1</div><div class="explain-box">统计</div><div class="code-box">int cnt=0;<br>for(int i=0;i&lt;10;i++)<br> if(h[i]<=mh) cnt++;</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 11. CSP-J2204 求平均值 -->
+    <section id="t11" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2204</span>求平均值</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-calculator"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">整数平均值 = 总和 // 个数。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-out"><div class="code-box">print(sum(a) // 5)</div><div class="explain-box">求和整除</div><div class="code-box">int s=0; for(int x:a) s+=x;<br>cout << s/5;</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 12. CSP-J2205 找最小值 -->
+    <section id="t12" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2205</span>找最小值</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-arrow-down"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">Python用 <code>min()</code>，C++遍历打擂台。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-out"><div class="code-box">print(min(a))</div><div class="explain-box">最小值</div><div class="code-box">int m=a[0];<br>for(int x:a) if(x&lt;m) m=x;<br>cout<<m;</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 13. CSP-J2206 数字个数 -->
+    <section id="t13" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2206</span>数字个数</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-list-ol"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">遍历数组，分别统计 >0, <0, ==0 的个数。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">p=n=z=0<br>for x in a:<br> if x>0: p+=1</div><div class="explain-box">统计</div><div class="code-box">int p=0,n=0,z=0;<br>for(int x:a) if(x>0) p++;</div></div>
+                <div class="logic-row theme-alg"><div class="code-box"> elif x<0: n+=1<br> else: z+=1</div><div class="explain-box">判断</div><div class="code-box"> else if(x<0) n++;<br> else z++;</div></div>
+                <div class="logic-row theme-out"><div class="code-box">print(p,n,z,sep='\n')</div><div class="explain-box">输出</div><div class="code-box">cout<<p<<endl<<n<<endl<<z;</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 14. CSP-J2207 数组斐波那契 -->
+    <section id="t14" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2207</span>数组斐波那契数列</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-project-diagram"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">a[0]=1, a[1]=1。<br>从第2项开始，a[i] = a[i-1] + a[i-2]。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">a = [1, 1]<br>for i in range(2, 10):</div><div class="explain-box">生成</div><div class="code-box">int a[10]={1,1};<br>for(int i=2; i&lt;10; i++)</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">  a.append(a[i-1] + a[i-2])</div><div class="explain-box">递推</div><div class="code-box">  a[i] = a[i-1] + a[i-2];</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 15. CSP-J2208 进制转换 -->
+    <section id="t15" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2208</span>进制转换</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-exchange-alt"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">先把 n 进制转为 10 进制，再把 10 进制转为 m 进制。<br>这里直接用 Python 内置函数最快，C++需要手写。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-in"><div class="code-box">x_str, n, m = input().split()</div><div class="explain-box">输入</div><div class="code-box">string x; int n, m; cin>>x>>n>>m;</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">dec = int(x_str, int(n))</div><div class="explain-box">转十进制</div><div class="code-box">// 手写转10进制逻辑...</div></div>
+                <div class="logic-row theme-out"><div class="code-box"># 转m进制需手写loop<br># 此处略展示核心</div><div class="explain-box">转m进制</div><div class="code-box">vector&lt;int&gt; res; while(dec) { res.push_back(dec%m); dec/=m; }</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 16. CSP-J2301 新年礼物 -->
+    <section id="t16" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2301</span>新年礼物</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-gift"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">已知“我送给了谁”，求“谁送给了我”。这是数组的<strong class="text-pink-400">反向映射</strong>。<br>如果 a[i] = target，那么 ans[target] = i。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">ans = [0]*(n+1)<br>for i in range(n):</div><div class="explain-box">建立映射</div><div class="code-box">int ans[105];<br>for(int i=1;i<=n;i++) {</div></div>
+                <div class="logic-row theme-alg"><div class="code-box"> target = a[i]<br> ans[target] = i+1</div><div class="explain-box">反向填充</div><div class="code-box"> int target = a[i];<br> ans[target] = i; }</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 17. CSP-J2302 国王分钱 -->
+    <section id="t17" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2302</span>国王分钱</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-coins"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">1. 求总金币数 sum。<br>2. 目标平均值 avg = sum / n。<br>3. 国王需要补的钱 = n * avg - sum。等等，题目意思是需要发多少钱让大家一样多？<br>实际上，让大家一样多，至少要达到当前最大值，或者题目隐含意思是总和重新分配。看样例：3 2 4 1 -> 6。平均是(10)/4=2.5? 不对。样例解释不清。按题意“收集所有，计算总和，除以人数”，说明总和不变。那国王不需要发钱？<br>重新理解：题目说“国王...发放金币...让每个人一样多”。样例 3 2 4 1, 和10。目标如果是4(最大值)，总需16，差6。对！目标是补齐到<strong class="text-pink-400">当前最大值</strong>。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">mx = max(a)<br>need = 0</div><div class="explain-box">找最大值</div><div class="code-box">int mx = 0; long long need=0;<br>for(int x:a) if(x>mx) mx=x;</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">for x in a:<br> need += (mx - x)</div><div class="explain-box">计算差额</div><div class="code-box">for(int x:a)<br> need += (mx - x);</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 18. CSP-J2701 魔法成绩表 -->
+    <section id="t18" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2701</span>魔法成绩表</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-table"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">二维数组输入。每行代表一个人，计算该行的平均分。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">for i in range(4):<br> row = list(map(int,input().split()))</div><div class="explain-box">每行输入</div><div class="code-box">for(int i=0;i&lt;4;i++){<br> double sum=0; int x;</div></div>
+                <div class="logic-row theme-out"><div class="code-box"> avg = sum(row) / 6<br> print(f"{avg:g}")</div><div class="explain-box">计算输出</div><div class="code-box"> for(int j=0;j&lt;6;j++){cin>>x; sum+=x;}<br> cout<<sum/6<<endl; }</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 19. CSP-J2702 魔法药剂 -->
+    <section id="t19" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2702</span>魔法药剂</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-flask"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">组合问题。5选3。三重循环 i < j < k。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-in"><div class="code-box">c = ["red","yellow","blue"...]</div><div class="explain-box">颜色数组</div><div class="code-box">string c[]={"red",...};</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">for i in range(5):<br> for j in range(i+1, 5):<br>  for k in range(j+1, 5):</div><div class="explain-box">三重循环</div><div class="code-box">for(int i=0;i&lt;5;i++)<br> for(int j=i+1;j&lt;5;j++)<br>  for(int k=j+1;k&lt;5;k++)</div></div>
+                <div class="logic-row theme-out"><div class="code-box">   print(c[i], c[j], c[k])</div><div class="explain-box">输出</div><div class="code-box">   cout<<c[i]<<" "<<c[j]<<" "<<c[k]<<endl;</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 20. CSP-J2703 魔法商店 -->
+    <section id="t20" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2703</span>魔法商店</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-store"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">矩阵乘法思想。营业额 = 数量 * 单价。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-in"><div class="code-box">price = [395, 398, 384]</div><div class="explain-box">单价</div><div class="code-box">int p[]={395,398,384};</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">for _ in range(4):<br> nums = list(map(int,input().split()))</div><div class="explain-box">每行计算</div><div class="code-box">for(int i=0;i&lt;4;i++){<br> int t=0, x;</div></div>
+                <div class="logic-row theme-out"><div class="code-box"> total = sum(nums[i]*price[i])<br> print(total)</div><div class="explain-box">累加输出</div><div class="code-box"> for(int j=0;j&lt;3;j++){cin>>x; t+=x*p[j];}<br> cout<<t<<endl; }</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 21. CSP-J2705 扫雷游戏 -->
+    <section id="t21" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2705</span>扫雷游戏</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-bomb"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">遍历每个格子，如果是'?'，则检查周围8个方向有几个'*'。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">dirs=[(-1,-1),(-1,0)...]<br>for i in range(n):</div><div class="explain-box">方向数组</div><div class="code-box">int dx[]={-1,-1,-1,0...};<br>for(int i=0;i&lt;n;i++)</div></div>
+                <div class="logic-row theme-alg"><div class="code-box"> cnt = 0<br> for dx,dy in dirs:</div><div class="explain-box">8邻域</div><div class="code-box"> int cnt=0;<br> for(int k=0;k&lt;8;k++)</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">  if grid[nx][ny]=='*': cnt+=1</div><div class="explain-box">统计</div><div class="code-box">  if(map[nx][ny]=='*') cnt++;</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 22. CSP-J2706 杨辉三角 -->
+    <section id="t22" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2706</span>杨辉三角</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-caret-up"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300"><code>a[i][j] = a[i-1][j-1] + a[i-1][j]</code>。<br>注意输出格式，像金字塔一样。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">a[i][0]=a[i][i]=1<br>a[i][j]=a[i-1][j-1]+a[i-1][j]</div><div class="explain-box">递推公式</div><div class="code-box">a[i][0]=a[i][i]=1;<br>a[i][j]=a[i-1][j-1]+a[i-1][j];</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 23. CSP-J2707 数字方阵 -->
+    <section id="t23" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2707</span>数字方阵</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-th"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">双重循环打印 1 到 n*n。<br>重点是格式：<code>setw(5)</code>。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-out"><div class="code-box">cnt=1<br>for i in range(n):</div><div class="explain-box">计数循环</div><div class="code-box">int cnt=1;<br>for(int i=0;i&lt;n;i++)</div></div>
+                <div class="logic-row theme-out"><div class="code-box"> print(f"{cnt:5}", end="")<br> cnt+=1</div><div class="explain-box">格式化输出</div><div class="code-box"> cout<<setw(5)<<cnt++;</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 24. CSP-J2708 蛇形移动（右上角出发） -->
+    <section id="t24" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2708</span>蛇形移动（右上）</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-dragon"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">起点(0, n-1)。<br>方向顺序：下->左->上->右。<br>撞墙或撞到数字就换方向。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-in"><div class="code-box">dx=[1,0,-1,0]; dy=[0,-1,0,1]<br>x,y,d=0,n-1,0</div><div class="explain-box">方向定义</div><div class="code-box">int dx[]={1,0,-1,0};<br>int dy[]={0,-1,0,1};</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">if 越界 or 有数:<br> d=(d+1)%4</div><div class="explain-box">撞墙转向</div><div class="code-box">if(nx<0||ny<0||...||a[nx][ny])<br> d=(d+1)%4;</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 25. CSP-J2709 蛇形移动（左上角出发） -->
+    <section id="t25" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2709</span>蛇形移动（左上）</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-dragon"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">同上，起点(0,0)。<br>方向顺序：右->下->左->上。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-in"><div class="code-box">dx=[0,1,0,-1]; dy=[1,0,-1,0]<br>x,y,d=0,0,0</div><div class="explain-box">方向不同</div><div class="code-box">int dx[]={0,1,0,-1};<br>int dy[]={1,0,-1,0};</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 26. CSP-J2710 宝石幻方 -->
+    <section id="t26" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2710</span>宝石幻方</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-gem"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">奇数阶幻方口诀：<br>1居上行正中央，依次斜填右上方。<br>上出框时往下填，右出框时往左填。<br>排重便在下格填，右上重复一个样。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">row=0; col=n//2<br>for i in range(1, n*n+1):</div><div class="explain-box">起点</div><div class="code-box">int r=0, c=n/2;<br>for(int i=1;i<=n*n;i++)</div></div>
+                <div class="logic-row theme-alg"><div class="code-box"> if r<0: r=n-1<br> if c==n: c=0<br> if 有数: r+=2; c-=1</div><div class="explain-box">移动规则</div><div class="code-box"> if(r<0) r=n-1;<br> if(a[r][c]) ...</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 27. CSP-J2711 农民的工作 -->
+    <section id="t27" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2711</span>农民的工作</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-users-cog"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">3个人分配3个工作。枚举所有排列情况（3! = 6种），找最大值。<br>可以使用三重循环，确保i!=j, j!=k, i!=k。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">w=[[4,3,3],[2,4,3]...]<br>ans=0</div><div class="explain-box">效率矩阵</div><div class="code-box">int w[3][3]={{4,3,3}...};<br>int ans=0;</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">for i in range(3):<br> for j in range(3):<br>  for k in range(3):</div><div class="explain-box">全排列枚举</div><div class="code-box">for(int i=0;i&lt;3;i++)<br> for(int j=0;j&lt;3;j++)...</div></div>
+                <div class="logic-row theme-out"><div class="code-box">   if i!=j and j!=k...<br>    ans = max(...)</div><div class="explain-box">判断不同</div><div class="code-box">   if(i!=j && j!=k && i!=k)<br>    ans=max(ans, w[0][i]+w[1][j]+w[2][k]);</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 28. CSP-J2712 树木高度 -->
+    <section id="t28" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2712</span>树木高度</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-tree"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">找最大连通块（平台）。<br>遍历每个格子，如果没访问过，就进行 BFS/DFS 搜索所有相同高度的相邻格子，计算面积。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-alg"><div class="code-box">def dfs(x,y,val):<br> ...<br> for dx,dy in dirs...</div><div class="explain-box">搜索算法</div><div class="code-box">void dfs(int x,int y,int val){<br> vis[x][y]=1; cnt++; ...</div></div>
+                <div class="logic-row theme-out"><div class="code-box">for i.. for j..<br> if not vis[i][j]: dfs(...)</div><div class="explain-box">遍历所有点</div><div class="code-box">for(int i..)<br> if(!vis[i][j]) { cnt=0; dfs(...); }</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 29. CSP-J2713 最短路径 -->
+    <section id="t29" class="slide">
+        <h2 class="text-2xl font-bold mb-4 text-blue-400"><span class="title-badge">2713</span>最短路径</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-4">
+                <h3 class="text-lg text-yellow-400 font-bold mb-2"><i class="fas fa-route"></i> 思路分析</h3>
+                <p class="text-sm text-slate-300">数字三角形问题。动态规划 (DP)。<br>从倒数第二行开始往上推：<br><code>a[i][j] += min(a[i+1][j], a[i+1][j+1])</code>。<br>顶部 a[0][0] 就是答案。</p>
+            </div>
+            <div class="col-span-8 glass-card p-4">
+                <div class="logic-row theme-in"><div class="code-box">a = [list(map(int,input().split()))]</div><div class="explain-box">输入三角形</div><div class="code-box">for(int i=1;i<=n;i++)<br> for(int j=1;j<=i;j++) cin>>a[i][j];</div></div>
+                <div class="logic-row theme-alg"><div class="code-box">for i in range(n-2, -1, -1):<br> for j in range(i+1):</div><div class="explain-box">自底向上</div><div class="code-box">for(int i=n-1; i>=1; i--)<br> for(int j=1; j<=i; j++)</div></div>
+                <div class="logic-row theme-out"><div class="code-box">  a[i][j] += min(下, 右下)</div><div class="explain-box">取最小值累加</div><div class="code-box">  a[i][j] += min(a[i+1][j], a[i+1][j+1]);</div></div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

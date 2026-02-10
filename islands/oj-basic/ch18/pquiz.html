@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python 编程小英雄 - 遍历探险家 (For)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 --- */
+        :root {
+            /* 主题色：天空蓝与活力紫 - 象征遍历与序列 */
+            --primary-color: #0984e3;
+            --secondary-color: #6c5ce7;
+            --bg-color: #dfe6e9;
+            --card-bg: #ffffff;
+            --text-color: #2d3436;
+            --correct-color: #00b894;
+            --wrong-color: #d63031;
+            
+            /* 代码高亮配色 (VS Code 风格优化) */
+            --code-bg: #2d3436;
+            --code-text: #dfe6e9;
+            --code-kw: #e056fd;   /* 关键字 (紫粉) */
+            --code-fn: #ffeaa7;   /* 函数 (黄) */
+            --code-num: #74b9ff;  /* 数字 (蓝) */
+            --code-str: #55efc4;  /* 字符串 (绿) */
+            --code-cmt: #636e72;  /* 注释 (灰) */
+            --code-op: #dfe6e9;   /* 运算符 (白) */
+            --code-bool: #fd79a8; /* 布尔值 */
+        }
+
+        body {
+            font-family: 'Poppins', 'YouYuan', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 800px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 5px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--secondary-color);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #ffffff;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+            box-shadow: 0 4px 0 #a29bfe;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #b2bec3;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目与代码 --- */
+        .question-area h2 {
+            text-align: left;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* 代码块样式：严格保留空格 */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', Consolas, monospace;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 核心：保留缩进和换行 */
+            word-break: break-all;
+            text-align: left;
+            font-size: 1rem;
+            line-height: 1.6;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            overflow-x: auto;
+            tab-size: 4;
+        }
+
+        /* 高亮类定义 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .op { color: var(--code-op); }
+        .bool { color: var(--code-bool); font-weight: bold; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #b2bec3;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1rem; 
+            font-family: 'Fira Code', 'Microsoft YaHei', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #95a5a6;
+            position: relative;
+            top: 0;
+            line-height: 1.5;
+            white-space: pre-wrap; /* 允许选项内换行 */
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #a29bfe;
+        }
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #95a5a6;
+            transform: translateY(0);
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00947e;
+        }
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析与反馈 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #e0f7fa;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        .explanation-text { line-height: 1.6; color: #555; }
+        
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #0984e3;
+            transition: transform 0.1s;
+        }
+        .next-btn:active { transform: translateY(3px); box-shadow: none; }
+        
+        /* 结束画面 */
+        .end-screen { display: none; padding: 20px 0; }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score { font-size: 3.5rem; font-weight: bold; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        // Python 循环结构 - for 与遍历 测试数据
+        const quizData = [
+            {
+                q: "1. 关于for循环的基本语法，以下正确的是：",
+                options: [
+                    "A. for i in range(5) { print(i) }",
+                    "B. for i in range(5): print(i)",
+                    "C. for i = 1 to 5: print(i)",
+                    "D. for i in (1,5): print(i)"
+                ],
+                correct: 1, // B
+                desc: "Python 中 for 循环的正确语法是 'for 变量 in 序列:'，后面必须跟冒号，循环体通过缩进来表示。A是JS/C风格，C是BASIC/Pascal风格。"
+            },
+            {
+                q: "2. 以下代码的输出结果是什么？",
+                code: `for i in range(3):\n    print(i, end=\" \")`,
+                options: ["A. 0 1 2", "B. 1 2 3", "C. 0 1 2 3", "D. 1 2"],
+                correct: 0, // A
+                desc: "range(3) 默认从 0 开始，到 3 结束（不包含 3），生成序列 0, 1, 2。"
+            },
+            {
+                q: "3. 要输出数字 1 到 5，应该使用：",
+                options: [
+                    "A. for i in range(5): print(i)",
+                    "B. for i in range(1, 5): print(i)",
+                    "C. for i in range(1, 6): print(i)",
+                    "D. for i in range(0, 5): print(i)"
+                ],
+                correct: 2, // C
+                desc: "range(start, stop) 函数生成从 start 到 stop-1 的序列。要输出 1 到 5，start 应为 1，stop 应为 6（因为 6 不包含）。"
+            },
+            {
+                q: "4. 以下代码的输出结果是什么？",
+                code: `total = 0\nfor i in range(1, 6):\n    total += i\nprint(total)`,
+                options: ["A. 15", "B. 10", "C. 21", "D. 5"],
+                correct: 0, // A
+                desc: "range(1, 6) 生成 1, 2, 3, 4, 5。计算累加和：1 + 2 + 3 + 4 + 5 = 15。"
+            },
+            {
+                q: "5. 关于 range 函数的步长参数，以下描述正确的是：",
+                options: [
+                    "A. range(2, 11, 2)会生成2,4,6,8,10",
+                    "B. range(2, 11, 2)会生成2,4,6,8",
+                    "C. range(0, 10, 3)会生成0,3,6,9,12",
+                    "D. range(10, 0, -1)会生成10,9,8,7,6,5,4,3,2,1,0"
+                ],
+                correct: 0, // A
+                desc: "range(2, 11, 2) 从 2 开始，每次加 2，直到 <11。序列为：2, 4, 6, 8, 10。注意 10 是小于 11 的，所以会被包含。"
+            },
+            {
+                q: "6. 计算 1 到 n 的乘积，空白处应填入：",
+                code: `n = int(input())\nproduct = 1\nfor i in range(1, n+1):\n    product = ________\nprint(product)`,
+                options: ["A. i", "B. product + i", "C. product * i", "D. product * n"],
+                correct: 2, // C
+                desc: "累乘算法需要将当前数 i 乘到累积变量 product 上，所以是 product = product * i。"
+            },
+            {
+                q: "7. 以下代码的输出结果是什么？",
+                code: `for i in range(1, 11):\n    if i % 3 == 0:\n        print(i, end=\" \")`,
+                options: ["A. 3 6 9", "B. 1 2 3", "C. 3 6 9 12", "D. 1 2 4 5 7 8 10"],
+                correct: 0, // A
+                desc: "range(1, 11) 生成 1 到 10。if i % 3 == 0 筛选出能被 3 整除的数：3, 6, 9。"
+            },
+            {
+                q: "8. 关于水仙花数的判断，以下描述正确的是：",
+                options: [
+                    "A. 水仙花数是三位数，满足各位数字立方和等于该数本身",
+                    "B. 水仙花数是四位数，满足各位数字平方和等于该数本身",
+                    "C. 水仙花数是能被3整除的数",
+                    "D. 水仙花数是质数"
+                ],
+                correct: 0, // A
+                desc: "水仙花数（Narcissistic number）通常指一个 3 位数，其各位数字的立方和等于该数本身。例如 153 = 1³ + 5³ + 3³。"
+            },
+            {
+                q: "9. 以下代码的输出结果是什么？",
+                code: `for i in range(3):\n    for j in range(2):\n        print(f\"({i},{j})\", end=\" \")`,
+                options: [
+                    "A. (0,0) (0,1) (1,0) (1,1) (2,0) (2,1)",
+                    "B. (0,0) (1,0) (2,0) (0,1) (1,1) (2,1)",
+                    "C. (0,0) (0,1) (1,0) (1,1)",
+                    "D. (0,0) (0,1) (0,2) (1,0) (1,1) (1,2)"
+                ],
+                correct: 0, // A
+                desc: "外层 i 循环 0, 1, 2。内层 j 循环 0, 1。当 i=0 时输出 (0,0) (0,1)；当 i=1 时输出 (1,0) (1,1)... 依次类推。"
+            },
+            {
+                q: "10. 以下代码中，如果输入 n=4，输出结果是什么？",
+                code: `n = int(input())\nfor i in range(n, 0, -1):\n    print(i, end=\" \")`,
+                options: ["A. 4 3 2 1", "B. 1 2 3 4", "C. 0 1 2 3", "D. 3 2 1 0"],
+                correct: 0, // A
+                desc: "range(4, 0, -1) 表示从 4 开始，步长为 -1（递减），直到 >0。序列为：4, 3, 2, 1。"
+            },
+            {
+                q: "11. 遍历列表的正确方法是：",
+                options: [
+                    "A. for i in len(list): print(list[i])",
+                    "B. for i in range(list): print(i)",
+                    "C. for item in list: print(item)",
+                    "D. for i from 0 to len(list): print(list[i])"
+                ],
+                correct: 2, // C
+                desc: "Python 中遍历列表最直接、最 Pythonic 的方式是 'for item in list:'，直接获取列表中的元素。A、B、D 语法有误或不规范。"
+            },
+            {
+                q: "12. 关于 for 循环和 while 循环的比较，以下描述正确的是：",
+                options: [
+                    "A. for循环更适合已知循环次数的情况",
+                    "B. while循环更适合遍历序列",
+                    "C. for循环不需要循环变量",
+                    "D. while循环不能用于无限循环"
+                ],
+                correct: 0, // A
+                desc: "for 循环通常用于遍历序列（列表、字符串）或已知次数的循环（range）。while 循环更适合条件控制或次数未知的循环。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                html += `<div class="code-block">${highlightCode(data.code)}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * Python 专用一次性词法分析高亮引擎
+         * 优化支持：for, in, range, print, if, else 等
+         */
+        function highlightCode(code) {
+            // Python 正则表达式模式
+            const pattern = /(".*?"|'.*?')|(#.*)|(\b\d+(?:\.\d+)?\b)|(\b(?:for|in|range|while|if|else|elif|break|continue|def|return|print|input|int)\b)|(\+=|-=|\*=|==|!=|<=|>=|[+\-*/%=:,])/g;
+
+            let lastIndex = 0;
+            let html = "";
+            let match;
+
+            while ((match = pattern.exec(code)) !== null) {
+                // 添加普通文本
+                const plainText = code.slice(lastIndex, match.index);
+                html += escapeHtml(plainText);
+
+                let content = match[0];
+                let cls = "";
+
+                if (match[1]) cls = "str";       // 字符串
+                else if (match[2]) cls = "cmt";  // 注释
+                else if (match[3]) cls = "num";  // 数字
+                else if (match[4]) cls = "kw";   // 关键字/函数
+                else if (match[5]) cls = "op";   // 运算符
+
+                if (cls) {
+                    html += `<span class="${cls}">${escapeHtml(content)}</span>`;
+                } else {
+                    html += escapeHtml(content);
+                }
+
+                lastIndex = pattern.lastIndex;
+            }
+
+            // 添加剩余文本
+            html += escapeHtml(code.slice(lastIndex));
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => allBtns[data.correct].classList.add('correct'), 400);
+                const chars = ["A", "B", "C", "D"];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${chars[data.correct]}`, data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none';
+            
+            let html = '';
+            const totalScore = quizData.length * 100;
+            if (score === totalScore) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 遍历探险家！ 🎉</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">太棒了！你已经完全掌握了 for 循环和 range 的奥秘！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score} / ${totalScore}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">做得不错！多练习循环和嵌套，你会更强大的！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; padding:15px 40px; margin-top:30px">🔄 再玩一次</button>`;
+            endScreen.innerHTML = html;
+        }
+
+        function createConfetti() {
+            const colors = ['#0984e3', '#6c5ce7', '#00b894', '#fdcb6e', '#e17055'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.transform = `scale(${Math.random() * 0.6 + 0.4}) rotate(${Math.random()*360}deg)`;
+                c.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2500);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>
