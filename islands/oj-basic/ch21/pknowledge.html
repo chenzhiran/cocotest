@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扣哒秘籍 Python 第二十一课：类与对象 (Class & Object)</title>
+    <style>
+        /* --- 全局样式参考 "编程魔法课堂" --- */
+        :root {
+            --bg-color: #FFF8E1;       /* 浅黄背景 */
+            --card-bg: #ffffff;
+            --text-color: #3E2723;     /* 深褐字 */
+            --accent-yellow: #FFC107;  /* 琥珀黄 */
+            --accent-orange: #FF6F00;  /* 活力橙 */
+            --accent-brown: #5D4037;   /* 稳重褐 */
+            --accent-blue: #29B6F6;    /* 对比蓝 */
+            --code-bg: #263238;        /* 代码黑 */
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#FFE082 20%, transparent 20%), radial-gradient(#FFE082 20%, transparent 20%);
+            background-position: 0 0, 50px 50px;
+            background-size: 100px 100px;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            border: 5px solid var(--accent-orange);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* --- 标题区域 --- */
+        header {
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 3px dashed var(--accent-orange);
+            border-radius: 15px 15px 0 0;
+            margin: -20px -20px 20px -20px;
+        }
+
+        h1 {
+            color: var(--accent-orange);
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 0px #fff;
+        }
+
+        h2 {
+            color: #fff;
+            background: linear-gradient(to right, var(--accent-orange), var(--accent-yellow));
+            padding: 10px 25px;
+            border-radius: 20px;
+            margin-top: 40px;
+            font-size: 1.6em;
+            display: inline-block;
+            box-shadow: 4px 4px 0 #E65100;
+            border: 2px solid #fff;
+        }
+
+        h3 {
+            color: #E65100;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 1.4em;
+            border-left: 6px solid #FFAB00;
+            padding-left: 10px;
+            background: linear-gradient(90deg, #FFF3E0 0%, transparent 100%);
+        }
+
+        p, li {
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            color: #4E342E;
+        }
+
+        /* --- 目录 --- */
+        .toc {
+            background: #FFF3E0;
+            padding: 20px 30px;
+            border-radius: 15px;
+            border: 3px solid #FFCC80;
+            margin-bottom: 30px;
+            box-shadow: inset 0 0 10px rgba(255, 204, 128, 0.3);
+        }
+        .toc-list {
+            list-style: none; padding: 0; display: grid; gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+        .toc-item a {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            padding: 10px 15px;
+            border-radius: 50px;
+            border: 2px solid #FFE0B2;
+            color: #BF360C;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .toc-item a:hover {
+            background: #FFE0B2;
+            color: #BF360C;
+            transform: translateY(-2px);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+        .toc-icon { margin-right: 8px; }
+
+        /* --- 视觉图解容器 --- */
+        .visual-container {
+            background: #fff;
+            border: 3px dashed #FFB74D;
+            border-radius: 20px;
+            padding: 25px;
+            margin: 25px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(255, 183, 77, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .visual-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .visual-label {
+            font-weight: bold;
+            color: var(--accent-brown);
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            background: #FFE0B2;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        /* --- 代码卡片 --- */
+        .code-card {
+            background-color: #ECEFF1;
+            border-left: 8px solid var(--accent-yellow);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 25px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .code-card::before {
+            content: "💻 Python Code";
+            display: block;
+            font-weight: bold;
+            color: var(--accent-orange);
+            margin-bottom: 8px;
+            font-family: "幼圆", sans-serif;
+            font-size: 1.1em;
+        }
+
+        .code-editor {
+            background-color: var(--code-bg);
+            color: #dcdfe4;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace; 
+            font-size: 18px;
+            line-height: 1.6;
+            border: 3px solid #FFAB91;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* --- 提示框 --- */
+        .teacher-note {
+            background-color: #E1F5FE;
+            border: none;
+            border-left: 8px solid #039BE5;
+            border-radius: 15px;
+            padding: 20px 20px 20px 50px;
+            margin-top: 20px;
+            color: #01579B;
+            position: relative;
+            box-shadow: 0 3px 10px rgba(3, 155, 229, 0.1);
+        }
+        .teacher-note::before {
+            content: "🧙‍♂️";
+            font-size: 2.5em;
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.8;
+        }
+
+        /* --- 练习列表 --- */
+        .challenge-box {
+            background: linear-gradient(135deg, #FFCC80 0%, #FFA726 100%);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(255, 167, 38, 0.3);
+            border: 3px solid #E65100;
+        }
+
+        .challenge-list {
+            list-style: none;
+            padding: 0;
+        }
+        .challenge-item {
+            background: white;
+            border: 2px solid #FFB74D; 
+            border-left: 8px solid #FF6F00;
+            margin-bottom: 15px;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .challenge-item:hover {
+            transform: scale(1.02) translateX(5px);
+            background: #FFF3E0;
+            cursor: pointer;
+            box-shadow: 0 5px 10px rgba(255, 111, 0, 0.2);
+        }
+        .challenge-item a {
+            text-decoration: none;
+            color: #E65100;
+            display: block;
+            width: 100%;
+            margin-left: 10px;
+        }
+
+        /* Python Syntax Highlighting */
+        .c-kw { color: #c678dd; font-weight: bold; } /* def, class, return */
+        .c-func { color: #61afef; font-weight: bold; } /* function names */
+        .c-str { color: #98c379; } /* strings */
+        .c-num { color: #d19a66; } /* numbers */
+        .c-self { color: #e5c07b; font-style: italic; } /* self */
+        .c-cmt { color: #7f848e; font-style: italic; } /* comments */
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📘 扣哒秘籍 Python <br><span style="font-size:0.6em">第二十一课：类与对象 (Class & Object)</span></h1>
+        <p>普通的列表只能存一堆数字。如果我们想把名字、身高、分数这些不同类型的信息“打包”在一起，该怎么办？<br>欢迎来到<b>“定制档案袋”</b>的世界！我们将学习如何创建自己的数据类型！📦✨</p>
+    </header>
+
+    <div class="toc">
+        <h3>🌟 本周目录</h3>
+        <ul class="toc-list">
+            <li class="toc-item"><a href="#part1"><span class="toc-icon">🤔</span>1. 复习：基本数据类型的局限</a></li>
+            <li class="toc-item"><a href="#part2"><span class="toc-icon">📂</span>2. 定义：定制专属“档案袋” (Class)</a></li>
+            <li class="toc-item"><a href="#part3"><span class="toc-icon">📚</span>3. 列表：存储全班同学 (Objects List)</a></li>
+            <li class="toc-item"><a href="#part4"><span class="toc-icon">⚖️</span>4. 排序：Key 与 Lambda 的魔法</a></li>
+            <li class="toc-item"><a href="#part5"><span class="toc-icon">🛠️</span>5. 应用：学生成绩管理系统</a></li>
+            <li class="toc-item"><a href="#part6"><span class="toc-icon">🎯</span>6. 练习：实战演练</a></li>
+        </ul>
+    </div>
+
+    <div style="padding: 0 30px;">
+
+        <section id="part1">
+            <h2>一、复习回顾：基本数据类型的局限 🤔</h2>
+            <p>以前我们要存一个同学的信息，可能需要定义好几个独立的变量：</p>
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+name1 <span class="c-op">=</span> <span class="c-str">"Xiaoming"</span> <span class="c-cmt"># 名字</span>
+age1 <span class="c-op">=</span> <span class="c-num">10</span>          <span class="c-cmt"># 年龄</span>
+score1 <span class="c-op">=</span> <span class="c-num">95.5</span>      <span class="c-cmt"># 分数</span>
+</pre>
+                </div>
+            </div>
+            <p>如果有 100 个同学，就需要 300 个变量！这就像把所有人的书、笔、作业本都混在地上，太乱了！🤯 我们希望能有一个<strong>“大箱子”</strong>，把一个人的所有信息整整齐齐地打包在一起。</p>
+        </section>
+
+        <section id="part2">
+            <h2>二、类定义：定制专属的“档案袋” (Class) 📂</h2>
+            <p>在 Python 中，我们用 <strong>类 (Class)</strong> 来设计这个“大箱子”。它就像一个模具，用来生产一个个具体的“对象”。</p>
+
+            <div class="visual-container">
+                <div class="visual-content">
+                    <div class="visual-label">🏗️ 类 vs 对象：模具与饼干</div>
+                    <svg width="500" height="220" viewBox="0 0 500 220">
+                        <g transform="translate(20, 20)">
+                            <rect x="0" y="0" width="180" height="180" fill="#E3F2FD" stroke="#1565C0" stroke-width="2" stroke-dasharray="5,5" rx="10"/>
+                            <text x="90" y="30" text-anchor="middle" font-weight="bold" fill="#0D47A1">Class Student</text>
+                            <text x="90" y="55" text-anchor="middle" font-size="12" fill="#0D47A1">(设计图纸/空白表格)</text>
+                            <line x1="20" y1="70" x2="160" y2="70" stroke="#1565C0" stroke-width="2"/>
+                            <text x="30" y="100" fill="#555">📝 self.name</text>
+                            <text x="30" y="130" fill="#555">🔢 self.id</text>
+                            <text x="30" y="160" fill="#555">💯 self.score</text>
+                        </g>
+                        
+                        <path d="M210,110 L270,110" stroke="#FF6F00" stroke-width="3" marker-end="url(#arrow)"/>
+                        <text x="240" y="100" text-anchor="middle" fill="#FF6F00" font-weight="bold">实例化</text>
+                        
+                        <g transform="translate(280, 20)">
+                            <rect x="0" y="0" width="200" height="180" fill="#FFF3E0" stroke="#E65100" stroke-width="3" rx="15"/>
+                            <text x="100" y="30" text-anchor="middle" font-weight="bold" fill="#E65100" font-size="18">对象 s1</text>
+                            <text x="100" y="55" text-anchor="middle" font-size="12" fill="#E65100">(填好的表格)</text>
+                            <rect x="20" y="70" width="160" height="30" fill="#fff" stroke="#FFCC80" rx="5"/>
+                            <text x="30" y="90" fill="#333">name: "Xiaoming"</text>
+                            
+                            <rect x="20" y="105" width="160" height="30" fill="#fff" stroke="#FFCC80" rx="5"/>
+                            <text x="30" y="125" fill="#333">id: 1001</text>
+                            
+                            <rect x="20" y="140" width="160" height="30" fill="#fff" stroke="#FFCC80" rx="5"/>
+                            <text x="30" y="160" fill="#333">score: 99.5</text>
+                        </g>
+
+                        <defs>
+                            <marker id="arrow" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#FF6F00" />
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-comment"># 1. 定义图纸 (Class)</span>
+<span class="c-kw">class</span> <span class="c-func">Student</span>:
+    <span class="c-comment"># 初始化函数：每次创建新学生，自动调用这里填表</span>
+    <span class="c-kw">def</span> <span class="c-func">__init__</span>(<span class="c-self">self</span>, name, sid, score):
+        <span class="c-self">self</span>.name <span class="c-op">=</span> name   <span class="c-cmt"># 把传进来的名字记在自己身上</span>
+        <span class="c-self">self</span>.sid <span class="c-op">=</span> sid
+        <span class="c-self">self</span>.score <span class="c-op">=</span> score
+
+<span class="c-comment"># 2. 制造实物 (创建对象)</span>
+s1 <span class="c-op">=</span> Student(<span class="c-str">"Xiaoming"</span>, <span class="c-num">1001</span>, <span class="c-num">99.5</span>)
+
+<span class="c-comment"># 3. 使用数据 (用 . 访问)</span>
+<span class="c-func">print</span>(s1.name, <span class="c-str">"的分数是:"</span>, s1.score)
+</pre>
+                </div>
+            </div>
+            <div class="teacher-note">
+                <strong>🧙‍♂️ 魔法解析：</strong><br>
+                <code>__init__</code> 就像是新生报到处。<code>self</code> 就是“我这个学生自己”。<br>
+                <code>self.name = name</code> 的意思是：“把我（self）的名字表格，填上参数里传来的名字”。
+            </div>
+        </section>
+
+        <section id="part3">
+            <h2>三、列表存储：存储全班同学的信息 📚</h2>
+            <p>既然 <code>s1</code> 是一个变量，那我们完全可以把这些学生对象放进一个 <strong>列表 (List)</strong> 里！</p>
+            <p>这就像是一本厚厚的<strong>“班级花名册”</strong>，每一页都是一个同学的完整档案。</p>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+students <span class="c-op">=</span> [] <span class="c-cmt"># 创建一个空的花名册</span>
+
+<span class="c-comment"># 输入3个同学的信息</span>
+<span class="c-kw">for</span> i <span class="c-kw">in</span> <span class="c-func">range</span>(<span class="c-num">3</span>):
+    <span class="c-func">print</span>(<span class="c-str">"请输入第"</span>, i+1, <span class="c-str">"个同学的 姓名 学号 分数:"</span>)
+    <span class="c-comment"># 假设输入：Alice 101 90</span>
+    line <span class="c-op">=</span> <span class="c-func">input</span>().split() 
+    name <span class="c-op">=</span> line[<span class="c-num">0</span>]
+    sid <span class="c-op">=</span> <span class="c-func">int</span>(line[<span class="c-num">1</span>])
+    score <span class="c-op">=</span> <span class="c-func">float</span>(line[<span class="c-num">2</span>])
+    
+    <span class="c-comment"># 创建对象并放入列表</span>
+    s <span class="c-op">=</span> Student(name, sid, score)
+    students.append(s)
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part4">
+            <h2>四、排序魔法：按成绩排还是按身高排？(Key) ⚖️</h2>
+            <p>普通的数字排序很简单。但是学生有名字、有分数、有学号，<strong>电脑怎么知道按哪个排呢？</strong> 🤔</p>
+            <p>Python 的 <code>sort</code> 函数有一个超级强大的参数叫 <code>key</code>（钥匙）。你需要给它一把“尺子”，告诉它只量哪个属性。</p>
+
+            <div class="visual-container">
+                <div class="visual-content">
+                    <div class="visual-label">🔑 Key 的工作原理：只看一点</div>
+                    
+                    <svg width="450" height="180" viewBox="0 0 450 180">
+                        <defs>
+                            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="#aaa"/>
+                            </filter>
+                        </defs>
+
+                        <g transform="translate(50, 50)">
+                            <rect x="0" y="0" width="80" height="100" fill="#BBDEFB" stroke="#1976D2" rx="5" filter="url(#shadow)"/>
+                            <text x="40" y="30" text-anchor="middle" font-weight="bold">同学A</text>
+                            <text x="40" y="60" text-anchor="middle" font-size="12">ID: 1</text>
+                            <text x="40" y="85" text-anchor="middle" font-size="14" fill="#E65100">95分</text>
+                        </g>
+
+                        <g transform="translate(150, 50)">
+                            <rect x="0" y="0" width="80" height="100" fill="#C8E6C9" stroke="#388E3C" rx="5" filter="url(#shadow)"/>
+                            <text x="40" y="30" text-anchor="middle" font-weight="bold">同学B</text>
+                            <text x="40" y="60" text-anchor="middle" font-size="12">ID: 2</text>
+                            <text x="40" y="85" text-anchor="middle" font-size="14" fill="#E65100">88分</text>
+                        </g>
+
+                        <g transform="translate(280, 20)">
+                            <text x="0" y="20" font-weight="bold" fill="#D81B60">Key 函数 (尺子)</text>
+                            <text x="0" y="45" font-size="12" fill="#555">只提取分数比较</text>
+                            
+                            <path d="M-20,70 L150,70" stroke="#FF6F00" stroke-width="2" stroke-dasharray="5,5"/>
+                            <text x="70" y="90" text-anchor="middle" font-weight="bold" fill="#FF6F00">lambda s: s.score</text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-comment"># 规则1：按分数从高到低 (reverse=True)</span>
+<span class="c-comment"># lambda s: s.score 意思是：对于每个学生 s，我只看 s.score</span>
+students.sort(key<span class="c-op">=</span><span class="c-kw">lambda</span> s: s.score, reverse<span class="c-op">=</span><span class="c-kw">True</span>)
+
+<span class="c-comment"># 规则2：按学号从小到大</span>
+students.sort(key<span class="c-op">=</span><span class="c-kw">lambda</span> s: s.sid)
+</pre>
+                </div>
+            </div>
+            
+            <div class="teacher-note">
+                <strong>💡 复合排序（进阶）：</strong><br>
+                如果想“分数高优先，分数一样看学号小优先”怎么办？<br>
+                Python 可以返回一个元组：<code>key=lambda s: (-s.score, s.sid)</code><br>
+                (负号是为了让分数降序，因为默认是升序)
+            </div>
+        </section>
+
+        <section id="part5">
+            <h2>五、应用案例：学生成绩管理系统 🛠️</h2>
+            <p><strong>任务：</strong> 输入 n 个学生的信息（姓名、语文、数学），按总分从高到低排序输出。</p>
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-kw">class</span> <span class="c-func">Student</span>:
+    <span class="c-kw">def</span> <span class="c-func">__init__</span>(<span class="c-self">self</span>, name, ch, math):
+        <span class="c-self">self</span>.name <span class="c-op">=</span> name
+        <span class="c-self">self</span>.total <span class="c-op">=</span> ch <span class="c-op">+</span> math <span class="c-cmt"># 直接算出总分存起来</span>
+
+n <span class="c-op">=</span> <span class="c-func">int</span>(<span class="c-func">input</span>())
+stus <span class="c-op">=</span> []
+
+<span class="c-kw">for</span> _ <span class="c-kw">in</span> <span class="c-func">range</span>(n):
+    data <span class="c-op">=</span> <span class="c-func">input</span>().split()
+    s <span class="c-op">=</span> Student(data[<span class="c-num">0</span>], <span class="c-func">int</span>(data[<span class="c-num">1</span>]), <span class="c-func">int</span>(data[<span class="c-num">2</span>]))
+    stus.append(s)
+
+<span class="c-comment"># 排序：按 total 总分，倒序</span>
+stus.sort(key<span class="c-op">=</span><span class="c-kw">lambda</span> x: x.total, reverse<span class="c-op">=</span><span class="c-kw">True</span>)
+
+<span class="c-func">print</span>(<span class="c-str">"--- 成绩单 ---"</span>)
+<span class="c-kw">for</span> s <span class="c-kw">in</span> stus:
+    <span class="c-func">print</span>(s.name, s.total)
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part6">
+            <h2>六、今日练习 —— 实战演练 🎯</h2>
+            <div class="challenge-box">
+                <h3 style="color: #3E2723; margin-top:0;">🚀 结构体挑战开启！</h3>
+                <p style="color: #5D4037;">类和对象是 Python 编程的基石，一定要熟练掌握 <code>key=lambda</code> 的写法哦！💪</p>
+                <div style="background: rgba(255,255,255,0.5); padding: 10px 20px; border-radius: 20px; display: inline-block; font-weight: bold; color: #E65100; border: 2px dashed #E65100;">
+                    oj.koudashijie.com
+                </div>
+            </div>
+
+            <ul class="challenge-list">
+                <li class="challenge-item">
+                    <span style="font-size: 1.5em; margin-right: 10px;">🏆</span>
+                    <a href="../oj/CSP-J3301.html">CSP-J3301 榜首之星 (寻找对象列表中的最大值)</a>
+                </li>
+                <li class="challenge-item">
+                    <span style="font-size: 1.5em; margin-right: 10px;">🏆</span>
+                    <a href="../oj/CSP-J3302.html">CSP-J3302 榜单重排 (List sort with Key 基础)</a>
+                </li>
+                <li class="challenge-item">
+                    <span style="font-size: 1.5em; margin-right: 10px;">🏆</span>
+                    <a href="../oj/CSP-J3303.html">CSP-J3303 序号刻印 (记录原始索引排序)</a>
+                </li>
+                <li class="challenge-item">
+                    <span style="font-size: 1.5em; margin-right: 10px;">🏆</span>
+                    <a href="../oj/CSP-J3305.html">CSP-J3305 三点封印 (平面坐标点 Class 应用)</a>
+                </li>
+            </ul>
+        </section>
+
+        <footer style="text-align:center; margin-top:50px; color:#aaa; border-top: 1px solid #ddd; padding-top:20px;">
+            <p>🚀 扣哒世界教研团队 - 对象让数据更有条理</p>
+        </footer>
+    </div>
+</div>
+
+</body>
+</html>

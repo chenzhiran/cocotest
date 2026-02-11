@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python 编程小英雄 - 字符串魔法篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 --- */
+        :root {
+            /* 主题色：樱花粉与紫罗兰 - 象征文本的编织 */
+            --primary-color: #e84393;
+            --secondary-color: #a29bfe;
+            --bg-color: #fce4ec;
+            --card-bg: #ffffff;
+            --text-color: #2d3436;
+            --correct-color: #00b894;
+            --wrong-color: #d63031;
+            
+            /* 代码高亮配色 (VS Code 风格优化) */
+            --code-bg: #2d3436;
+            --code-text: #dfe6e9;
+            --code-kw: #ff7675;   /* 关键字 (粉红) */
+            --code-fn: #ffeaa7;   /* 函数 (黄) */
+            --code-num: #74b9ff;  /* 数字 (蓝) */
+            --code-str: #55efc4;  /* 字符串 (绿) */
+            --code-cmt: #636e72;  /* 注释 (灰) */
+            --code-op: #dfe6e9;   /* 运算符 (白) */
+            --code-method: #a29bfe; /* 方法调用 (紫) */
+        }
+
+        body {
+            font-family: 'Poppins', 'YouYuan', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#f8a5c2 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 800px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 5px solid var(--primary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--secondary-color);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #ffffff;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+            box-shadow: 0 4px 0 #6c5ce7;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ffcdd2;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目与代码 --- */
+        .question-area h2 {
+            text-align: left;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* 代码块样式：严格保留空格 */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', Consolas, monospace;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 核心：保留缩进和换行 */
+            word-break: break-all;
+            text-align: left;
+            font-size: 1rem;
+            line-height: 1.6;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            overflow-x: auto;
+            tab-size: 4;
+        }
+
+        /* 高亮类定义 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .op { color: var(--code-op); }
+        .method { color: var(--code-method); }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ffcdd2;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1rem; 
+            font-family: 'Fira Code', 'Microsoft YaHei', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #ef9a9a;
+            position: relative;
+            top: 0;
+            line-height: 1.5;
+            white-space: pre-wrap; /* 允许选项内换行 */
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #d81b60;
+        }
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #ef9a9a;
+            transform: translateY(0);
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00947e;
+        }
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析与反馈 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #fce4ec;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        .explanation-text { line-height: 1.6; color: #555; }
+        
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #c2185b;
+            transition: transform 0.1s;
+        }
+        .next-btn:active { transform: translateY(3px); box-shadow: none; }
+        
+        /* 结束画面 */
+        .end-screen { display: none; padding: 20px 0; }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score { font-size: 3.5rem; font-weight: bold; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        // Python 字符串与文件操作测试数据
+        const quizData = [
+            {
+                q: "1. 在Python中，字符串的索引从什么数字开始？",
+                options: ["A. 0", "B. 1", "C. -1", "D. 任意值"],
+                correct: 0, // A
+                desc: "在Python中，字符串（以及其他序列类型）的索引都是从 0 开始的。第一个字符的索引是 0。"
+            },
+            {
+                q: "2. 对于字符串 s = \"Python\"，s[2] 的值是：",
+                options: ["A. 'P'", "B. 'y'", "C. 't'", "D. 'h'"],
+                correct: 2, // C
+                desc: "索引从 0 开始：P(0), y(1), t(2), h(3)... 所以 s[2] 是 't'。"
+            },
+            {
+                q: "3. 以下哪个方法可以将字符串转换为小写？",
+                options: [
+                    "A. s.lower()",
+                    "B. s.small()",
+                    "C. s.toLower()",
+                    "D. s.downcase()"
+                ],
+                correct: 0, // A
+                desc: "lower() 是 Python 字符串的内置方法，用于将字符串中的所有大写字符转换为小写。"
+            },
+            {
+                q: "4. 要获取字符串的长度，应该使用：",
+                options: [
+                    "A. s.length",
+                    "B. len(s)",
+                    "C. s.size",
+                    "D. count(s)"
+                ],
+                correct: 1, // B
+                desc: "len() 是 Python 的内置函数，用于返回对象（如字符串、列表等）的长度（元素个数）。"
+            },
+            {
+                q: "5. 以下代码的输出结果是什么？",
+                code: `s = "hello"\nprint(s.upper())`,
+                options: ["A. HELLO", "B. hello", "C. Hello", "D. hELLO"],
+                correct: 0, // A
+                desc: "upper() 方法将字符串中的所有小写字符转换为大写，所以 \"hello\" 变为 \"HELLO\"。"
+            },
+            {
+                q: "6. 关于字符串切片 s[1:4]，以下描述正确的是：",
+                options: [
+                    "A. 包含索引1到4的所有字符",
+                    "B. 包含索引1到3的所有字符",
+                    "C. 包含索引1到4的所有字符，不包括索引4",
+                    "D. 包含索引1到3的所有字符，不包括索引4"
+                ],
+                correct: 1, // B (题目原文的B是“包含索引1到3的所有字符”)
+                desc: "切片语法 [start:end] 包含 start 索引，但不包含 end 索引。所以 s[1:4] 包含索引 1, 2, 3 的字符。"
+            },
+            {
+                q: "7. 判断字符串是否为回文的常用方法是：",
+                options: [
+                    "A. s == s.reverse()",
+                    "B. s == s[::-1]",
+                    "C. s == s[-1:]",
+                    "D. s == s[::2]"
+                ],
+                correct: 1, // B
+                desc: "s[::-1] 利用切片步长为 -1 的特性，生成一个逆序的字符串。如果原字符串和逆序字符串相等，则为回文。"
+            },
+            {
+                q: "8. 以下代码的输出结果是什么？",
+                code: `s = "a" + "b" * 3\nprint(s)`,
+                options: ["A. ab", "B. abbb", "C. ababab", "D. ab3"],
+                correct: 1, // B
+                desc: "字符串乘法优先级高于加法（类似数学）。\"b\" * 3 得到 \"bbb\"。然后 \"a\" + \"bbb\" 得到 \"abbb\"。"
+            },
+            {
+                q: "9. 要将字符串按空格分割成单词列表，应该使用：",
+                options: [
+                    "A. s.split()",
+                    "B. s.divide()",
+                    "C. s.words()",
+                    "D. s.separate()"
+                ],
+                correct: 0, // A
+                desc: "split() 方法默认以空白字符（空格、换行、制表符）为分隔符，将字符串切割成列表。"
+            },
+            {
+                q: "10. 以下代码的输出结果是什么？",
+                code: `s = "Hello World"\nwords = s.split()\nprint(len(words))`,
+                options: ["A. 2", "B. 10", "C. 11", "D. 1"],
+                correct: 0, // A
+                desc: "\"Hello World\" 被 split() 分割为列表 [\"Hello\", \"World\"]，包含 2 个元素。"
+            },
+            {
+                q: "11. 在字符串压缩问题中，如果输入\"AAABBC\"，压缩后的结果应该是：",
+                options: [
+                    "A. (A,3)(B,2)(C,1)",
+                    "B. A3B2C1",
+                    "C. AAABBC",
+                    "D. 3A2B1C"
+                ],
+                correct: 0, // A (Fixed duplicate options from prompt)
+                desc: "字符串压缩通常将连续出现的字符及其计数配对。\"AAABBC\" -> 3个A，2个B，1个C。格式可以是 A3B2C1 或 (A,3)... 此处选最符合描述的 A。"
+            },
+            {
+                q: "12. 关于字符串比较，以下描述正确的是：",
+                options: [
+                    "A. 可以使用==比较两个字符串是否相等",
+                    "B. 字符串比较区分大小写",
+                    "C. 可以使用lower()方法进行不区分大小写的比较",
+                    "D. 所有以上选项"
+                ],
+                correct: 3, // D
+                desc: "Python 中字符串可以直接用 == 比较内容；比较是区分大小写的（'a' != 'A'）；可以通过先转小写再比较来实现忽略大小写。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                html += `<div class="code-block">${highlightCode(data.code)}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * Python 专用一次性词法分析高亮引擎
+         * 优化支持：字符串, 常用方法, 切片, 操作符
+         */
+        function highlightCode(code) {
+            // Python 正则表达式模式
+            // 重点优化：字符串字面量, 方法调用 (.method), 切片 [:]
+            const pattern = /(".*?"|'.*?')|(#.*)|(\b\d+(?:\.\d+)?\b)|(\b(?:print|input|len|str|int|float|list|split|upper|lower)\b)|(\.[a-zA-Z_]\w*)|(\[.*?\])|(\+=|-=|\*=|==|!=|<=|>=|[+\-*/%=:,])/g;
+
+            let lastIndex = 0;
+            let html = "";
+            let match;
+
+            while ((match = pattern.exec(code)) !== null) {
+                // 添加普通文本
+                const plainText = code.slice(lastIndex, match.index);
+                html += escapeHtml(plainText);
+
+                let content = match[0];
+                let cls = "";
+
+                if (match[1]) cls = "str";       // 字符串
+                else if (match[2]) cls = "cmt";  // 注释
+                else if (match[3]) cls = "num";  // 数字
+                else if (match[4]) cls = "fn";   // 内置函数
+                else if (match[5]) cls = "method"; // 方法调用
+                else if (match[6]) {             // 方括号内容(切片/索引)
+                     cls = "op"; // 简单归类为操作符颜色，或者可以细分
+                }
+                else if (match[7]) cls = "op";   // 运算符
+
+                if (cls) {
+                    html += `<span class="${cls}">${escapeHtml(content)}</span>`;
+                } else {
+                    html += escapeHtml(content);
+                }
+
+                lastIndex = pattern.lastIndex;
+            }
+
+            // 添加剩余文本
+            html += escapeHtml(code.slice(lastIndex));
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => allBtns[data.correct].classList.add('correct'), 400);
+                const chars = ["A", "B", "C", "D"];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${chars[data.correct]}`, data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none';
+            
+            let html = '';
+            const totalScore = quizData.length * 100;
+            if (score === totalScore) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 字符串魔法师！ 🎉</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">太棒了！你已经完全掌握了字符串的魔法操作！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score} / ${totalScore}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">做得不错！多练习字符串处理，你会更强大的！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; padding:15px 40px; margin-top:30px">🔄 再玩一次</button>`;
+            endScreen.innerHTML = html;
+        }
+
+        function createConfetti() {
+            const colors = ['#e84393', '#a29bfe', '#55efc4', '#ffeaa7', '#74b9ff'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.transform = `scale(${Math.random() * 0.6 + 0.4}) rotate(${Math.random()*360}deg)`;
+                c.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2500);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>

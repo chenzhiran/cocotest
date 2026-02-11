@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSP-J 第二章：函数与结构体 题解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Noto Sans SC', sans-serif; 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            scroll-behavior: smooth; 
+            overflow-x: hidden; 
+            line-height: 1.6;
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* 幻灯片布局 */
+        .slide {
+            min-height: 100vh; width: 100%; padding: 2rem 3rem; box-sizing: border-box;
+            display: flex; flex-direction: column; justify-content: center;
+            border-bottom: 2px solid #1e293b; position: relative;
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3); height: 100%; 
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* 三栏代码布局 */
+        .code-grid {
+            display: grid; grid-template-columns: 1fr 160px 1fr; gap: 10px;
+            overflow-y: auto; padding: 10px; height: 100%; align-content: start;
+        }
+
+        .logic-row {
+            display: contents; /* 让子元素直接参与 grid 布局 */
+        }
+
+        .code-box {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; padding: 12px;
+            border-radius: 6px; white-space: pre-wrap; line-height: 1.5;
+            display: flex; align-items: center;
+            color: #f1f5f9; /* 设置代码框内文本颜色为浅色 */
+        }
+
+        .explain-box {
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; font-size: 0.8rem; font-weight: bold; color: #0f172a;
+            border-radius: 6px; padding: 8px; margin: 4px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* 颜色主题 */
+        .theme-func .code-box { background: rgba(167, 139, 250, 0.1); border-left: 3px solid #a78bfa; }
+        .theme-func .explain-box { background: #c4b5fd; }
+
+        .theme-loop .code-box { background: rgba(251, 146, 60, 0.1); border-left: 3px solid #fb923c; }
+        .theme-loop .explain-box { background: #fdba74; }
+
+        .theme-cond .code-box { background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; }
+        .theme-cond .explain-box { background: #7dd3fc; }
+
+        .theme-base .code-box { background: rgba(148, 163, 184, 0.1); border-left: 3px solid #94a3b8; }
+        .theme-base .explain-box { background: #cbd5e1; }
+
+        .theme-ans .code-box { background: rgba(244, 63, 94, 0.15); border-left: 3px solid #f43f5e; color: #fca5a5; font-weight: bold;}
+        .theme-ans .explain-box { background: #fda4af; color: #881337;}
+
+        /* 导航 */
+        .nav-dots {
+            position: fixed; right: 15px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 8px; z-index: 50;
+        }
+        .nav-dot {
+            width: 12px; height: 12px; background: #475569; border-radius: 50%;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .nav-dot:hover, .nav-dot.active { background: #38bdf8; transform: scale(1.4); box-shadow: 0 0 10px #38bdf8; }
+
+        .highlight-ans { color: #f43f5e; font-weight: bold; text-decoration: underline; }
+        
+        /* 代码语法高亮 */
+        .code-keyword { color: #ff79c6; font-weight: bold; }
+        .code-type { color: #8be9fd; font-weight: bold; }
+        .code-string { color: #f1fa8c; }
+        .code-number { color: #bd93f9; }
+        .code-comment { color: #6272a4; font-style: italic; }
+        
+        /* 标题和文本颜色优化 */
+        h2 { color: #f8fafc; }
+        h3 { color: #e2e8f0; }
+        p { color: #cbd5e1; }
+        strong { color: #f8fafc; }
+        
+        /* 内容区域优化 */
+        .content-area p {
+            margin-bottom: 1rem;
+            line-height: 1.7;
+        }
+        
+        /* 代码注释样式 */
+        .code-comment {
+            color: #64748b;
+            font-style: italic;
+        }
+        
+        /* 确保所有代码都能正常换行 */
+        pre, code {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="nav-dots">
+        <a href="#p3101" class="nav-dot" title="n以内的素数"></a>
+        <a href="#p3102" class="nav-dot" title="数列求和"></a>
+        <a href="#p3103" class="nav-dot" title="直角三角形"></a>
+        <a href="#p3104" class="nav-dot" title="计算阶乘"></a>
+        <a href="#p3201" class="nav-dot" title="汉诺塔步骤"></a>
+        <a href="#p3202" class="nav-dot" title="汉诺塔次数"></a>
+        <a href="#p3301" class="nav-dot" title="谁是第一名"></a>
+        <a href="#p3302" class="nav-dot" title="班级排名"></a>
+        <a href="#p3303" class="nav-dot" title="离散数字"></a>
+        <a href="#p3305" class="nav-dot" title="三角形面积"></a>
+    </div>
+
+    <!-- 3101 n以内的素数 -->
+    <section id="p3101" class="slide">
+        <h2 class="text-3xl font-bold mb-6 text-blue-400"><span class="bg-blue-900 text-white px-3 py-1 rounded text-lg mr-3">3101</span>n以内素数对 (函数填空)</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-5">
+                <h3 class="text-xl text-yellow-400 font-bold mb-3"><i class="fas fa-search"></i> 思路分析</h3>
+                <div class="content-area">
+                    <p>
+                        我们需要找相差为2的素数对 (p, p+2)。<br>
+                        程序分为两部分：判断素数的函数 <code>isPrime</code> 和 主函数循环。
+                    </p>
+                    <p>
+                        <strong class="text-pink-400">填空分析：</strong><br>
+                        1. 判断素数：如果 m 能被 i 整除 <code>m%i==0</code>，则不是素数。<br>
+                        2. 标记变量：<code>bj</code> 用来记录是否找到，初始为 0。<br>
+                        3. 主循环：判断 <code>i</code> 是素数 且 <code>i+2</code> 也是素数。<br>
+                        4. 输出判断：如果 <code>bj==0</code> 说明没找到，输出 empty。
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-4 code-grid">
+                <div class="logic-row">
+                    <div class="code-box theme-func">def is_prime(m):
+  for i in range(2, int(m**0.5)+1):</div>
+                    <div class="explain-box theme-func">函数定义</div>
+                    <div class="code-box theme-func"><span class="code-keyword">bool</span> <span class="code-type">isPrime</span>(<span class="code-keyword">int</span> m){
+ <span class="code-keyword">for</span>(<span class="code-keyword">int</span> i=<span class="code-number">2</span>;i*i<=m;i++)</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">    if m % i == 0: <span class="code-keyword">return</span> False</div>
+                    <div class="explain-box theme-ans">【①】整除判断</div>
+                    <div class="code-box theme-ans">  <span class="code-keyword">if</span>(m % i == <span class="code-number">0</span>) <span class="code-keyword">return</span> <span class="code-keyword">false</span>;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-base">n = int(input())
+bj = 0</div>
+                    <div class="explain-box theme-ans">【②】初始标记</div>
+                    <div class="code-box theme-base"><span class="code-keyword">int</span> n, bj = <span class="code-number">0</span>;
+cin >> n;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-loop">for i in range(2, n-1):</div>
+                    <div class="explain-box theme-loop">循环遍历</div>
+                    <div class="code-box theme-loop"><span class="code-keyword">for</span>(<span class="code-keyword">int</span> i=<span class="code-number">2</span>;i<=n-<span class="code-number">2</span>;i++){</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">  if is_prime(i) and is_prime(i+2):</div>
+                    <div class="explain-box theme-ans">【③】【④】<br>双素数判断</div>
+                    <div class="code-box theme-ans">  <span class="code-keyword">if</span>(isPrime(i) && isPrime(i+<span class="code-number">2</span>)){</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-base">    print(i, i+2)
+    bj = 1</div>
+                    <div class="explain-box theme-base">输出并标记</div>
+                    <div class="code-box theme-base">   cout<<i<<<span class="code-string">' '</span><<i+<span class="code-number">2</span><<endl;
+   bj=<span class="code-number">1</span>; }</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">if bj == 0: print("empty")</div>
+                    <div class="explain-box theme-ans">【⑤】未找到</div>
+                    <div class="code-box theme-ans"><span class="code-keyword">if</span>(bj == <span class="code-number">0</span>) cout<<<span class="code-string">"empty"</span>;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3102 数列求和 -->
+    <section id="p3102" class="slide">
+        <h2 class="text-3xl font-bold mb-6 text-green-400"><span class="bg-green-900 text-white px-3 py-1 rounded text-lg mr-3">3102</span>数列求和 (函数定义)</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-5">
+                <h3 class="text-xl text-yellow-400 font-bold mb-3"><i class="fas fa-calculator"></i> 思路分析</h3>
+                <div class="content-area">
+                    <p>
+                        题目要求计算数列和。根据代码推测，每一项的公式是 $val = a / (1+2+...+a)$。
+                    </p>
+                    <p>
+                        <strong class="text-pink-400">填空分析：</strong><br>
+                        1. 函数返回类型：结果有小数，应为 <code>double</code>。<br>
+                        2. 参数：传入整数 <code>a</code>，但为了计算方便参数类型定义为 <code>int a</code>。<br>
+                        3. 累加器初始化：<code>sum</code> 必须初始化为 0。<br>
+                        4. 返回值：分子是 <code>a</code>，分母是 sum。<br>
+                        5. 主函数累加：调用函数 <code>f(i)</code>。
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-4 code-grid">
+                <div class="logic-row">
+                    <div class="code-box theme-ans">def f(a):</div>
+                    <div class="explain-box theme-ans">【①】【②】<br>函数头</div>
+                    <div class="code-box theme-ans"><span class="code-keyword">double</span> <span class="code-type">f</span>(<span class="code-keyword">int</span> a){</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">  sum_val = 0</div>
+                    <div class="explain-box theme-ans">【③】初始化</div>
+                    <div class="code-box theme-ans">  <span class="code-keyword">double</span> sum = <span class="code-number">0</span>;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-loop">  for i in range(1, a+1):
+    sum_val += i</div>
+                    <div class="explain-box theme-loop">计算分母</div>
+                    <div class="code-box theme-loop">  <span class="code-keyword">for</span>(<span class="code-keyword">int</span> i=<span class="code-number">1</span>;i<=a;i++) sum+=i;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">  return a / sum_val</div>
+                    <div class="explain-box theme-ans">【④】返回结果</div>
+                    <div class="code-box theme-ans">  <span class="code-keyword">return</span> a / sum; }</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-base">n = int(input()); s = 0</div>
+                    <div class="explain-box theme-base">主程序</div>
+                    <div class="code-box theme-base"><span class="code-keyword">int</span> main(){ ... <span class="code-keyword">double</span> s=<span class="code-number">0</span>;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">for i in range(1, n+1):
+  s += f(i)</div>
+                    <div class="explain-box theme-ans">【⑤】累加调用</div>
+                    <div class="code-box theme-ans"><span class="code-keyword">for</span>(... s += f(i);</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3103 直角三角形 -->
+    <section id="p3103" class="slide">
+        <h2 class="text-3xl font-bold mb-6 text-purple-400"><span class="bg-purple-900 text-white px-3 py-1 rounded text-lg mr-3">3103</span>直角三角形 (逻辑判断)</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-5">
+                <h3 class="text-xl text-yellow-400 font-bold mb-3"><i class="fas fa-shapes"></i> 思路分析</h3>
+                <div class="content-area">
+                    <p>
+                        判断勾股定理：$a^2 + b^2 = c^2$。注意题目未说明a,b,c的大小顺序，所以任意两边平方和等于第三边平方即可。
+                    </p>
+                    <p>
+                        <strong class="text-pink-400">填空分析：</strong><br>
+                        1. 函数类型：返回真假，<code>bool</code>。<br>
+                        2. 判断条件：<code>a*a+b*b==c*c || a*a+c*c==b*b || ...</code><br>
+                        3. 返回假：<code>false</code>。<br>
+                        4. 变量定义：<code>int n;</code>。<br>
+                        5. 调用：<code>RT(x,y,z)</code>。
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-4 code-grid">
+                <div class="logic-row">
+                    <div class="code-box theme-ans">def RT(a, b, c):</div>
+                    <div class="explain-box theme-ans">【①】类型</div>
+                    <div class="code-box theme-ans"><span class="code-keyword">bool</span> <span class="code-type">RT</span>(<span class="code-keyword">int</span> a,<span class="code-keyword">int</span> b,<span class="code-keyword">int</span> c){</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">  if a*a+b*b==c*c or ...:</div>
+                    <div class="explain-box theme-ans">【②】勾股定理</div>
+                    <div class="code-box theme-ans">  <span class="code-keyword">if</span>(a*a+b*b==c*c||...) <span class="code-keyword">return</span> <span class="code-keyword">true</span>;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">  else: return False</div>
+                    <div class="explain-box theme-ans">【③】返回假</div>
+                    <div class="code-box theme-ans">  <span class="code-keyword">else</span> <span class="code-keyword">return</span> <span class="code-keyword">false</span>; }</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">n = int(input())</div>
+                    <div class="explain-box theme-ans">【④】定义输入</div>
+                    <div class="code-box theme-ans"><span class="code-keyword">int</span> n; cin >> n;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">if RT(x,y,z): ...</div>
+                    <div class="explain-box theme-ans">【⑤】调用函数</div>
+                    <div class="code-box theme-ans"><span class="code-keyword">if</span>(RT(x,y,z) == <span class="code-keyword">true</span>) ...</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3104 计算阶乘 -->
+    <section id="p3104" class="slide">
+        <h2 class="text-3xl font-bold mb-6 text-orange-400"><span class="bg-orange-900 text-white px-3 py-1 rounded text-lg mr-3">3104</span>计算阶乘 (简单递归/循环)</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-5">
+                <h3 class="text-xl text-yellow-400 font-bold mb-3"><i class="fas fa-exclamation"></i> 思路分析</h3>
+                <div class="content-area">
+                    <p>
+                        计算 $n! = 1 \times 2 \times \dots \times n$。
+                    </p>
+                    <p>
+                        <strong class="text-pink-400">填空分析：</strong><br>
+                        1. 参数：<code>int n</code>。<br>
+                        2. 积的初始值：乘法单位元是 <code>1</code>。<br>
+                        3. 返回结果：<code>p</code>。<br>
+                        4. 主函数定义变量：<code>int n</code>。<br>
+                        5. 输出调用：<code>jc(n)</code>。
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-4 code-grid">
+                <div class="logic-row">
+                    <div class="code-box theme-ans">def jc(n):</div>
+                    <div class="explain-box theme-ans">【①】参数</div>
+                    <div class="code-box theme-ans"><span class="code-keyword">long long</span> <span class="code-type">jc</span>(<span class="code-keyword">int</span> n){</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">  p = 1</div>
+                    <div class="explain-box theme-ans">【②】初始化</div>
+                    <div class="code-box theme-ans">  <span class="code-keyword">long long</span> p = <span class="code-number">1</span>;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-loop">  for i in range(1, n+1):
+    p = p * i</div>
+                    <div class="explain-box theme-loop">累乘</div>
+                    <div class="code-box theme-loop">  <span class="code-keyword">for</span>(<span class="code-keyword">int</span> i=<span class="code-number">1</span>;i<=n;i++) p=p*i;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">  return p</div>
+                    <div class="explain-box theme-ans">【③】返回</div>
+                    <div class="code-box theme-ans">  <span class="code-keyword">return</span> p; }</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">n = int(input())</div>
+                    <div class="explain-box theme-ans">【④】定义</div>
+                    <div class="code-box theme-ans"><span class="code-keyword">int</span> n;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-ans">print(jc(n))</div>
+                    <div class="explain-box theme-ans">【⑤】调用</div>
+                    <div class="code-box theme-ans">cout << jc(n);</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3201 汉诺塔步骤 -->
+    <section id="p3201" class="slide">
+        <h2 class="text-3xl font-bold mb-6 text-teal-400"><span class="bg-teal-900 text-white px-3 py-1 rounded text-lg mr-3">3201</span>汉诺塔步骤 (递归)</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-5">
+                <h3 class="text-xl text-yellow-400 font-bold mb-3"><i class="fas fa-layer-group"></i> 思路分析</h3>
+                <div class="content-area">
+                    <p>
+                        经典递归问题。将 n 个盘子从 A 移到 C，借助于 B。
+                    </p>
+                    <p>
+                        1. 将 n-1 个盘子从 A -> B。<br>
+                        2. 将第 n 个盘子从 A -> C。<br>
+                        3. 将 n-1 个盘子从 B -> C。<br>
+                        递归终止条件：n=0 或 n=1。
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-4 code-grid">
+                <div class="logic-row">
+                    <div class="code-box theme-func">def hanoi(n, a, b, c):</div>
+                    <div class="explain-box theme-func">递归函数</div>
+                    <div class="code-box theme-func"><span class="code-keyword">void</span> <span class="code-type">hanoi</span>(<span class="code-keyword">int</span> n, <span class="code-keyword">char</span> a, <span class="code-keyword">char</span> b, <span class="code-keyword">char</span> c) {</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-cond">  if n == 0: return</div>
+                    <div class="explain-box theme-cond">基准情况</div>
+                    <div class="code-box theme-cond">  <span class="code-keyword">if</span>(n == <span class="code-number">0</span>) <span class="code-keyword">return</span>;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-func">  hanoi(n-1, a, c, b)</div>
+                    <div class="explain-box theme-func">移走上面n-1个</div>
+                    <div class="code-box theme-func">  hanoi(n-<span class="code-number">1</span>, a, c, b);</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-base">  print(f"{a} -> {c}")</div>
+                    <div class="explain-box theme-base">移动底部盘子</div>
+                    <div class="code-box theme-base">  cout << a << <span class="code-string">" -> "</span> << c << endl;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-func">  hanoi(n-1, b, a, c)</div>
+                    <div class="explain-box theme-func">移回n-1个</div>
+                    <div class="code-box theme-func">  hanoi(n-<span class="code-number">1</span>, b, a, c); }</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-base">n = int(input())
+hanoi(n, 'A', 'B', 'C')</div>
+                    <div class="explain-box theme-base">调用</div>
+                    <div class="code-box theme-base"><span class="code-keyword">int</span> main() { <span class="code-keyword">int</span> n; cin>>n;
+ hanoi(n,<span class="code-string">'A'</span>,<span class="code-string">'B'</span>,<span class="code-string">'C'</span>); }</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3202 汉诺塔次数 -->
+    <section id="p3202" class="slide">
+        <h2 class="text-3xl font-bold mb-6 text-cyan-400"><span class="bg-cyan-900 text-white px-3 py-1 rounded text-lg mr-3">3202</span>汉诺塔次数 (递推/公式)</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-5">
+                <h3 class="text-xl text-yellow-400 font-bold mb-3"><i class="fas fa-sort-numeric-up"></i> 思路分析</h3>
+                <div class="content-area">
+                    <p>
+                        汉诺塔移动 n 个盘子的总次数公式为 $2^n - 1$。<br>
+                        也可以通过递归函数计算：$f(n) = 2 * f(n-1) + 1$。<br>
+                        这里我们可以直接用循环或者位运算计算 $2^n$。
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-4 code-grid">
+                <div class="logic-row">
+                    <div class="code-box theme-base">n = int(input())</div>
+                    <div class="explain-box theme-base">输入</div>
+                    <div class="code-box theme-base"><span class="code-keyword">int</span> n; cin >> n;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-func"># 方法1: 公式
+print(2**n - 1)</div>
+                    <div class="explain-box theme-func">公式法</div>
+                    <div class="code-box theme-func">// 1 左移 n 位即 2^n
+cout << (<span class="code-number">1LL</span> << n) - <span class="code-number">1</span>;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-loop"># 方法2: 递归逻辑模拟
+ans = 0
+for _ in range(n):
+  ans = ans * 2 + 1</div>
+                    <div class="explain-box theme-loop">递推法</div>
+                    <div class="code-box theme-loop"><span class="code-keyword">long long</span> ans = <span class="code-number">0</span>;
+<span class="code-keyword">for</span>(<span class="code-keyword">int</span> i=<span class="code-number">0</span>; i&lt;n; i++)
+  ans = ans * <span class="code-number">2</span> + <span class="code-number">1</span>;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3301 谁是第一名 -->
+    <section id="p3301" class="slide">
+        <h2 class="text-3xl font-bold mb-6 text-indigo-400"><span class="bg-indigo-900 text-white px-3 py-1 rounded text-lg mr-3">3301</span>谁是第一名 (结构体/最值)</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-5">
+                <h3 class="text-xl text-yellow-400 font-bold mb-3"><i class="fas fa-trophy"></i> 思路分析</h3>
+                <div class="content-area">
+                    <p>
+                        我们需要存储学生的信息（姓名、学号、年龄、分数）。<br>
+                        并在输入过程中，找到分数最高的学生。<br>
+                        C++ 使用 <code>struct</code>，Python 可以用类或者简单的元组/字典。
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-4 code-grid">
+                <div class="logic-row">
+                    <div class="code-box theme-base">n = int(input())
+max_score = -1
+best_student = ""</div>
+                    <div class="explain-box theme-base">初始化</div>
+                    <div class="code-box theme-base"><span class="code-keyword">struct</span> Stu { <span class="code-keyword">string</span> name; ... <span class="code-keyword">int</span> score; } s;
+<span class="code-keyword">int</span> n, max_s = -<span class="code-number">1</span>; <span class="code-keyword">string</span> best;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-loop">for _ in range(n):
+  data = input().split()
+  name = data[0]
+  score = int(data[3])</div>
+                    <div class="explain-box theme-loop">循环输入</div>
+                    <div class="code-box theme-loop">cin >> n;
+<span class="code-keyword">for</span>(<span class="code-keyword">int</span> i=<span class="code-number">0</span>; i&lt;n; i++) {
+  cin >> s.name >> s.num >> s.age >> s.score;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-cond">  if score > max_score:
+    max_score = score
+    best_student = name</div>
+                    <div class="explain-box theme-cond">打擂台找最大</div>
+                    <div class="code-box theme-cond">  <span class="code-keyword">if</span>(s.score > max_s) {
+    max_s = s.score;
+    best = s.name; } }</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-base">print(best_student)</div>
+                    <div class="explain-box theme-base">输出</div>
+                    <div class="code-box theme-base">cout << best;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3302 班级排名 -->
+    <section id="p3302" class="slide">
+        <h2 class="text-3xl font-bold mb-6 text-pink-400"><span class="bg-pink-900 text-white px-3 py-1 rounded text-lg mr-3">3302</span>班级排名 (结构体排序)</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-5">
+                <h3 class="text-xl text-yellow-400 font-bold mb-3"><i class="fas fa-list-ol"></i> 思路分析</h3>
+                <div class="content-area">
+                    <p>
+                        需要计算每个学生的总分，并按照总分从高到低排序。<br>
+                        如果总分相同，则按照输入顺序（即比较稳定的排序）输出。<br>
+                        C++ <code>std::sort</code> 默认不稳定，需手写比较函数或者使用 <code>stable_sort</code>。<br>
+                        Python 的 <code>sort</code> 是稳定的。
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-4 code-grid">
+                <div class="logic-row">
+                    <div class="code-box theme-base">class Student:
+ def __init__(self, name, c, m):
+  self.name, self.c, self.m = name, c, m
+  self.total = c + m</div>
+                    <div class="explain-box theme-base">定义结构</div>
+                    <div class="code-box theme-base"><span class="code-keyword">struct</span> Stu {
+ <span class="code-keyword">string</span> name; <span class="code-keyword">int</span> c, m, total, id;
+};</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-loop">students = []
+for i in range(n): ...
+ students.append(Student(...))</div>
+                    <div class="explain-box theme-loop">输入存储</div>
+                    <div class="code-box theme-loop">Stu a[<span class="code-number">105</span>];
+<span class="code-keyword">for</span>(<span class="code-keyword">int</span> i=<span class="code-number">0</span>;i&lt;n;i++) { ...
+ a[i].total = a[i].c + a[i].m; a[i].id=i; }</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-func">students.sort(key=lambda x: x.total, reverse=True)</div>
+                    <div class="explain-box theme-func">排序规则<br>分数降序, ID升序</div>
+                    <div class="code-box theme-func"><span class="code-keyword">bool</span> cmp(Stu x, Stu y) {
+ <span class="code-keyword">if</span>(x.total != y.total) <span class="code-keyword">return</span> x.total > y.total;
+ <span class="code-keyword">return</span> x.id < y.id;
+}
+sort(a, a+n, cmp);</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-base">for s in students:
+ print(s.name, s.c, s.m, s.total)</div>
+                    <div class="explain-box theme-base">输出</div>
+                    <div class="code-box theme-base"><span class="code-keyword">for</span>(<span class="code-keyword">int</span> i=<span class="code-number">0</span>;i&lt;n;i++) ... cout...</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3303 离散数字 -->
+    <section id="p3303" class="slide">
+        <h2 class="text-3xl font-bold mb-6 text-blue-500"><span class="bg-blue-900 text-white px-3 py-1 rounded text-lg mr-3">3303</span>离散数字 (离散化)</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-5">
+                <h3 class="text-xl text-yellow-400 font-bold mb-3"><i class="fas fa-compress"></i> 思路分析</h3>
+                <div class="content-area">
+                    <p>
+                        离散化的目的是把数值很大但数量有限的数据，映射到较小的区间（排名）。<br>
+                        方法：<br>
+                        1. 创建结构体存储数值和原始下标。<br>
+                        2. 按数值从小到大排序。<br>
+                        3. 排序后，第 i 个元素的排名就是 i+1。<br>
+                        4. 将排名存回原始位置数组，最后按顺序输出。
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-4 code-grid">
+                <div class="logic-row">
+                    <div class="code-box theme-base">n = int(input())
+a = list(map(int, input().split()))</div>
+                    <div class="explain-box theme-base">输入</div>
+                    <div class="code-box theme-base"><span class="code-keyword">struct</span> Node { <span class="code-keyword">int</span> val, id; } a[<span class="code-number">10005</span>];
+<span class="code-keyword">int</span> rank[<span class="code-number">10005</span>];</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-loop"># 列表存 (值, 原始下标)
+d = []
+for i in range(n): d.append((a[i], i))</div>
+                    <div class="explain-box theme-loop">记录ID</div>
+                    <div class="code-box theme-loop"><span class="code-keyword">for</span>(<span class="code-keyword">int</span> i=<span class="code-number">0</span>; i&lt;n; i++) {
+ cin >> a[i].val; a[i].id = i; }</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-func">d.sort(key=lambda x: x[0])</div>
+                    <div class="explain-box theme-func">按值排序</div>
+                    <div class="code-box theme-func"><span class="code-keyword">bool</span> cmp(Node x, Node y){ <span class="code-keyword">return</span> x.val < y.val; }
+sort(a, a+n, cmp);</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-cond">ans = [0] * n
+for r, (val, original_idx) in enumerate(d):
+  ans[original_idx] = r + 1</div>
+                    <div class="explain-box theme-cond">映射排名</div>
+                    <div class="code-box theme-cond"><span class="code-keyword">for</span>(<span class="code-keyword">int</span> i=<span class="code-number">0</span>; i&lt;n; i++)
+  rank[a[i].id] = i + <span class="code-number">1</span>;</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-base">print(*ans)</div>
+                    <div class="explain-box theme-base">输出</div>
+                    <div class="code-box theme-base"><span class="code-keyword">for</span>(<span class="code-keyword">int</span> i=<span class="code-number">0</span>; i&lt;n; i++) cout << rank[i] << <span class="code-string">" "</span>;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3305 三角形面积 -->
+    <section id="p3305" class="slide">
+        <h2 class="text-3xl font-bold mb-6 text-red-400"><span class="bg-red-900 text-white px-3 py-1 rounded text-lg mr-3">3305</span>三角形面积 (坐标公式)</h2>
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 glass-card p-5">
+                <h3 class="text-xl text-yellow-400 font-bold mb-3"><i class="fas fa-draw-polygon"></i> 思路分析</h3>
+                <div class="content-area">
+                    <p>
+                        已知三个点坐标 $(x_1, y_1), (x_2, y_2), (x_3, y_3)$，求面积。<br>
+                        使用叉乘公式（鞋带公式）：<br>
+                        $S = 0.5 \times |x_1(y_2 - y_3) + x_2(y_3 - y_1) + x_3(y_1 - y_2)|$<br>
+                        题目输入 n 个点，但样例只给了 3 个点，通常这类题意是让计算前三个或者特定三个点的面积。按样例 n=3 处理。
+                    </p>
+                </div>
+            </div>
+            <div class="col-span-8 glass-card p-4 code-grid">
+                <div class="logic-row">
+                    <div class="code-box theme-base">n = int(input())
+x, y = [], []</div>
+                    <div class="explain-box theme-base">坐标数组</div>
+                    <div class="code-box theme-base"><span class="code-keyword">int</span> n; cin >> n;
+<span class="code-keyword">double</span> x[<span class="code-number">10</span>], y[<span class="code-number">10</span>];</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-loop">for _ in range(n):
+  a, b = map(int, input().split())
+  x.append(a); y.append(b)</div>
+                    <div class="explain-box theme-loop">输入</div>
+                    <div class="code-box theme-loop"><span class="code-keyword">for</span>(<span class="code-keyword">int</span> i=<span class="code-number">1</span>; i<=n; i++)
+ cin >> x[i] >> y[i];</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-func">area = 0.5 * abs(
+  x[0]*(y[1]-y[2]) + 
+  x[1]*(y[2]-y[0]) + 
+  x[2]*(y[0]-y[1]) )</div>
+                    <div class="explain-box theme-func">面积公式</div>
+                    <div class="code-box theme-func"><span class="code-keyword">double</span> s = <span class="code-number">0.5</span> * abs(
+ x[<span class="code-number">1</span>]*(y[<span class="code-number">2</span>]-y[<span class="code-number">3</span>]) + 
+ x[<span class="code-number">2</span>]*(y[<span class="code-number">3</span>]-y[<span class="code-number">1</span>]) + 
+ x[<span class="code-number">3</span>]*(y[<span class="code-number">1</span>]-y[<span class="code-number">2</span>]) );</div>
+                </div>
+                <div class="logic-row">
+                    <div class="code-box theme-base">print(int(area)) # 样例输出是整数</div>
+                    <div class="explain-box theme-base">输出</div>
+                    <div class="code-box theme-base">cout << s;</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

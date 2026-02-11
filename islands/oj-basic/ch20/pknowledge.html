@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扣哒秘籍 Python 第二十课：递归函数 - 魔法套娃</title>
+    <style>
+        /* --- 全局样式 --- */
+        :root {
+            --bg-color: #f3e5f5;       /* 浅紫背景 */
+            --card-bg: #ffffff;
+            --text-color: #4a148c;     /* 深紫字 */
+            --accent-yellow: #ffea00;  /* 亮黄 */
+            --accent-red: #ff5252;     /* 警告红 */
+            --accent-green: #00e676;   /* 成功绿 */
+            --accent-blue: #2979ff;    /* 科技蓝 */
+            --accent-purple: #7b1fa2;  /* 主题紫 */
+            --code-bg: #282c34;        /* 代码黑 */
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#d1c4e9 20%, transparent 20%), radial-gradient(#d1c4e9 20%, transparent 20%);
+            background-position: 0 0, 50px 50px;
+            background-size: 100px 100px;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            border: 5px solid var(--accent-purple);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* --- 标题区域 --- */
+        header {
+            background: linear-gradient(135deg, #ede7f6 0%, #b39ddb 100%);
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 3px dashed var(--accent-purple);
+            border-radius: 15px 15px 0 0;
+            margin: -20px -20px 20px -20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: var(--accent-purple);
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 0px #fff;
+            position: relative;
+            z-index: 10;
+        }
+
+        h2 {
+            color: #fff;
+            background: var(--accent-purple);
+            padding: 10px 25px;
+            border-radius: 20px;
+            margin-top: 40px;
+            font-size: 1.6em;
+            display: inline-block;
+            box-shadow: 4px 4px 0 #4a148c;
+            border: 2px solid #fff;
+        }
+
+        h3 {
+            color: #d81b60;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 1.4em;
+            border-left: 6px solid #d81b60;
+            padding-left: 10px;
+            background: linear-gradient(90deg, #fce4ec 0%, transparent 100%);
+        }
+
+        /* --- 视觉图解容器 --- */
+        .visual-container {
+            background: #fff;
+            border: 2px dashed #b39ddb;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .visual-label {
+            font-weight: bold;
+            color: var(--accent-purple);
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        /* --- CSS 动画套娃效果 --- */
+        .nesting-box {
+            border: 2px solid var(--accent-purple);
+            background: rgba(123, 31, 162, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            animation: pulse 3s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(0.95); }
+        }
+
+        /* --- 代码卡片 --- */
+        .code-card {
+            background-color: #eceff1;
+            border-left: 8px solid var(--accent-blue);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 25px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .code-card::before {
+            content: "💻 Python Code";
+            display: block;
+            font-weight: bold;
+            color: var(--accent-blue);
+            margin-bottom: 8px;
+            font-family: "幼圆", sans-serif;
+        }
+
+        .code-editor {
+            background-color: var(--code-bg);
+            color: #dcdfe4;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace; 
+            font-size: 18px;
+            line-height: 1.6;
+            border: 2px solid #90caf9;
+        }
+
+        /* --- 提示框 --- */
+        .teacher-note {
+            background-color: #e3f2fd;
+            border: none;
+            border-left: 8px solid #2196f3;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            color: #0d47a1;
+            position: relative;
+        }
+        .teacher-note::before {
+            content: "🧙‍♂️";
+            font-size: 2em;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            opacity: 0.3;
+        }
+
+        .warning-box {
+            background-color: #ffebee;
+            border-left: 8px solid #f44336;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #b71c1c;
+        }
+
+        /* --- 目录 --- */
+        .toc {
+            background: #ede7f6;
+            padding: 20px 30px;
+            border-radius: 15px;
+            border: 3px solid #b39ddb;
+            margin-bottom: 30px;
+        }
+        .toc-list {
+            list-style: none; padding: 0; display: grid; gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+        .toc-item a {
+            display: block;
+            background: #fff;
+            padding: 10px 15px;
+            border-radius: 50px;
+            border: 2px solid #d1c4e9;
+            color: var(--accent-purple);
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .toc-item a:hover {
+            background: #b39ddb;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        /* --- 练习列表样式 --- */
+        .challenge-list {
+            list-style: none;
+            padding: 0;
+        }
+        .challenge-item {
+            background: white;
+            border: 2px solid #b39ddb; 
+            border-left: 8px solid #7b1fa2;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .challenge-item:hover {
+            transform: scale(1.02);
+            background: #f3e5f5;
+            cursor: pointer;
+        }
+        .challenge-item a {
+            text-decoration: none;
+            color: #4a148c;
+            display: block;
+            width: 100%;
+        }
+
+        /* Syntax Highlighting */
+        .c-kw { color: #c678dd; font-weight: bold; } 
+        .c-type { color: #e5c07b; font-weight: bold; }
+        .c-fn { color: #61afef; font-weight: bold; }
+        .c-num { color: #d19a66; }
+        .c-cmt { color: #7f848e; font-style: italic; }
+        .c-str { color: #98c379; }
+        
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div style="position: absolute; top: -50px; left: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.2); border-radius: 50%;"></div>
+        <div style="position: absolute; bottom: -30px; right: -30px; width: 150px; height: 150px; background: rgba(255,255,255,0.3); border-radius: 50%;"></div>
+        
+        <h1>📘 扣哒秘籍 Python <br><span style="font-size:0.6em">第二十课：递归函数 (Recursion)</span></h1>
+        <p>你听说过“从前有座山，山里有座庙”的故事吗？那就是递归！<br>今天我们要学习编程界最神秘的魔法——<strong>自己调用自己</strong>。</p>
+    </header>
+
+    <div class="toc">
+        <h3>🌟 本周目录</h3>
+        <ul class="toc-list">
+            <li class="toc-item"><a href="#part1">1. 复习：函数的调用流程</a></li>
+            <li class="toc-item"><a href="#part2">2. 概念：什么是递归？</a></li>
+            <li class="toc-item"><a href="#part3">3. 关键：递归出口 (别死循环!)</a></li>
+            <li class="toc-item"><a href="#part4">4. 应用：斐波那契兔子</a></li>
+            <li class="toc-item"><a href="#part5">5. 应用：阶乘宝箱</a></li>
+            <li class="toc-item"><a href="#part6">6. 挑战：汉诺塔</a></li>
+            <li class="toc-item"><a href="#part7">7. 实战：OJ闯关</a></li>
+        </ul>
+    </div>
+
+    <div style="padding: 0 30px;">
+
+        <section id="part1">
+            <h2>一、复习回顾：函数的调用流程</h2>
+            <p>在学递归前，我们要记住：当一个函数被调用时，电脑会<strong>暂停</strong>手里的活，跑到那个函数里去执行，执行完了再<strong>回来</strong>。</p>
+            
+            
+
+            <div class="visual-container">
+                <div class="visual-label">🥞 函数调用栈：就像叠盘子</div>
+                <svg width="400" height="220" viewBox="0 0 400 220">
+                    <rect x="50" y="180" width="300" height="10" fill="#ccc"/>
+                    
+                    <rect x="100" y="140" width="200" height="40" fill="#BBDEFB" stroke="#1976D2" rx="5"/>
+                    <text x="200" y="165" text-anchor="middle" font-weight="bold">main() 函数</text>
+                    <text x="350" y="165" fill="#1976D2">最先开始，最后结束</text>
+
+                    <rect x="100" y="90" width="200" height="40" fill="#C8E6C9" stroke="#388E3C" rx="5"/>
+                    <text x="200" y="115" text-anchor="middle" font-weight="bold">func()</text>
+                    <path d="M80,150 Q50,120 80,100" fill="none" stroke="#388E3C" stroke-width="2" marker-end="url(#arrow)"/>
+                    <text x="40" y="130" font-size="12" fill="#388E3C">调用</text>
+
+                    <rect x="100" y="40" width="200" height="40" fill="#E1BEE7" stroke="#7B1FA2" rx="5"/>
+                    <text x="200" y="65" text-anchor="middle" font-weight="bold">func() 的分身</text>
+                    <path d="M320,100 Q350,70 320,50" fill="none" stroke="#7B1FA2" stroke-width="2" marker-end="url(#arrow)"/>
+                    <text x="360" y="80" font-size="12" fill="#7B1FA2">再调用自己</text>
+
+                    <defs>
+                        <marker id="arrow" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L9,3 z" fill="#555" />
+                        </marker>
+                    </defs>
+                </svg>
+            </div>
+        </section>
+
+        <section id="part2">
+            <h2>二、递归概念：函数自己调用自己？</h2>
+            <p><strong>递归 (Recursion)</strong> 是一种奇妙的魔法。它指的是：一个函数在它的内部，又调用了它自己。</p>
+            
+            <div class="highlight-box" style="display:flex; align-items:center; justify-content:center; gap:20px;">
+                <div style="text-align:center;">
+                    <div style="width:120px; height:120px;" class="nesting-box">
+                        <div style="width:90px; height:90px;" class="nesting-box">
+                            <div style="width:60px; height:60px;" class="nesting-box">
+                                <div style="width:30px; height:30px; background:var(--accent-purple); border-radius:50%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="margin-top:10px;"><strong>🪆 俄罗斯套娃</strong></p>
+                </div>
+                <div>
+                    <p>在编程里，递归就是：<br><strong>把大问题变成长得一样、但规模更小的问题</strong>。</p>
+                    <p>比如：想知道 5!，就先问 4! 是多少... 直到问 1!。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="part3">
+            <h2>三、递归出口：停止“套娃”的条件</h2>
+            <p>如果函数一直调用自己，电脑就会像原地转圈的陀螺，最后“头晕”崩溃（这叫栈溢出 RecursionError）。</p>
+            
+            <div class="warning-box">
+                <strong>🚨 警告：无限递归</strong><br>
+                如果不写出口，程序会一直运行直到报错！一定要告诉函数：<strong>“什么时候停下来！”</strong>
+            </div>
+
+            <div class="teacher-note">
+                <strong>🧙‍♂️ 递归两要素：</strong>
+                <ol>
+                    <li><strong>递归出口 (Base Case)：</strong> 最小的问题，可以直接回答（比如 1! = 1）。</li>
+                    <li><strong>递归公式 (Recursive Step)：</strong> 如何把大问题变小（比如 n! = n * (n-1)!）。</li>
+                </ol>
+            </div>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-kw">def</span> <span class="c-fn">story</span>():
+    <span class="c-kw">if</span> 没人听了: <span class="c-kw">return</span> <span class="c-comment"># 1. 出口：没人听就不讲了</span>
+    <span class="c-fn">print</span>(<span class="c-str">"从前有座山..."</span>)
+    <span class="c-fn">story</span>()             <span class="c-comment"># 2. 公式：继续讲同样的故事</span>
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part4">
+            <h2>四、应用案例：斐波那契数列 (兔子的繁衍)</h2>
+            <p>数列：1, 1, 2, 3, 5, 8, 13... （每个数是前两个数之和）。</p>
+            
+            
+
+            <div class="visual-container">
+                <div class="visual-label">🌳 递归树：计算 f(4)</div>
+                <svg width="400" height="200" viewBox="0 0 400 200">
+                    <circle cx="200" cy="30" r="20" fill="#FFF9C4" stroke="#FBC02D"/>
+                    <text x="200" y="35" text-anchor="middle" font-weight="bold">f(4)</text>
+
+                    <line x1="200" y1="50" x2="120" y2="90" stroke="#ccc" stroke-width="2"/>
+                    <line x1="200" y1="50" x2="280" y2="90" stroke="#ccc" stroke-width="2"/>
+                    <circle cx="120" cy="90" r="20" fill="#E1BEE7" stroke="#7B1FA2"/>
+                    <text x="120" y="95" text-anchor="middle">f(3)</text>
+                    <circle cx="280" cy="90" r="20" fill="#C8E6C9" stroke="#388E3C"/>
+                    <text x="280" y="95" text-anchor="middle">f(2)</text>
+
+                    <line x1="120" y1="110" x2="80" y2="150" stroke="#ccc" stroke-width="2"/>
+                    <line x1="120" y1="110" x2="160" y2="150" stroke="#ccc" stroke-width="2"/>
+                    <circle cx="80" cy="150" r="20" fill="#C8E6C9" stroke="#388E3C"/>
+                    <text x="80" y="155" text-anchor="middle">f(2)</text>
+                    <circle cx="160" cy="150" r="20" fill="#FFCCBC" stroke="#D84315"/>
+                    <text x="160" y="155" text-anchor="middle">f(1)</text>
+
+                    <text x="280" y="130" text-anchor="middle" fill="#388E3C" font-size="12">= 1 (出口)</text>
+                    <text x="160" y="190" text-anchor="middle" fill="#D84315" font-size="12">= 1 (出口)</text>
+                </svg>
+            </div>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-kw">def</span> <span class="c-fn">f</span>(n):
+    <span class="c-kw">if</span> n == <span class="c-num">1</span> <span class="c-kw">or</span> n == <span class="c-num">2</span>: 
+        <span class="c-kw">return</span> <span class="c-num">1</span> <span class="c-comment"># 出口</span>
+    <span class="c-kw">return</span> <span class="c-fn">f</span>(n - <span class="c-num">1</span>) + <span class="c-fn">f</span>(n - <span class="c-num">2</span>) <span class="c-comment"># 公式</span>
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part5">
+            <h2>五、应用案例：阶乘宝箱</h2>
+            <p>计算 n! (即 1×2×3×...×n)。我们可以理解为：n! = n × (n-1)!</p>
+            
+            <div class="visual-container">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="background:#E3F2FD; padding:10px; border:2px solid #2196F3;">fact(4)</div>
+                    <div>= 4 ×</div>
+                    <div style="background:#E1BEE7; padding:10px; border:2px solid #7B1FA2;">fact(3)</div>
+                    <div>= 3 ×</div>
+                    <div style="background:#C8E6C9; padding:10px; border:2px solid #4CAF50;">fact(2)</div>
+                    <div>...</div>
+                </div>
+                <p style="margin-top:10px;">一直拆到 fact(1) = 1，然后再带着结果一层层返回！</p>
+            </div>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-kw">def</span> <span class="c-fn">fact</span>(n):
+    <span class="c-kw">if</span> n == <span class="c-num">1</span>:
+        <span class="c-kw">return</span> <span class="c-num">1</span> <span class="c-comment"># 出口：1的阶乘就是1</span>
+    <span class="c-kw">return</span> n * <span class="c-fn">fact</span>(n - <span class="c-num">1</span>) <span class="c-comment"># 公式：n乘以更小的阶乘</span>
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part6">
+            <h2>六、应用案例：汉诺塔 (Tower of Hanoi)</h2>
+            <p>有三根柱子 (A, B, C)，要把 A 柱上的圆盘全部移到 C 柱，大盘不能压在小盘上。</p>
+            
+            
+
+            <div class="visual-container">
+                <svg width="500" height="200" viewBox="0 0 500 200">
+                    <line x1="100" y1="50" x2="100" y2="150" stroke="#333" stroke-width="5"/>
+                    <text x="100" y="170" text-anchor="middle">A</text>
+                    <line x1="250" y1="50" x2="250" y2="150" stroke="#333" stroke-width="5"/>
+                    <text x="250" y="170" text-anchor="middle">B</text>
+                    <line x1="400" y1="50" x2="400" y2="150" stroke="#333" stroke-width="5"/>
+                    <text x="400" y="170" text-anchor="middle">C</text>
+
+                    <rect x="220" y="130" width="60" height="15" fill="#E1BEE7" stroke="#7B1FA2" rx="3"/>
+                    <rect x="230" y="115" width="40" height="15" fill="#E1BEE7" stroke="#7B1FA2" rx="3"/>
+                    <text x="250" y="100" text-anchor="middle" font-size="12" fill="#7B1FA2">n-1个盘子(临时)</text>
+
+                    <rect x="370" y="130" width="80" height="15" fill="#FFCCBC" stroke="#BF360C" rx="3"/>
+                    <text x="400" y="125" text-anchor="middle" font-size="12" fill="#BF360C">最大的盘子</text>
+
+                    <path d="M100,100 Q175,20 250,100" fill="none" stroke="#2196F3" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow)"/>
+                    <text x="175" y="40" text-anchor="middle" font-size="10" fill="#2196F3">1. 移走上面的</text>
+                </svg>
+                <div style="text-align:left; padding:10px;">
+                    <strong>三步走魔法：</strong><br>
+                    1. 把 <code>n-1</code> 个盘子从 A 移到 B (借助 C)<br>
+                    2. 把最大的盘子从 A 移到 C<br>
+                    3. 把 <code>n-1</code> 个盘子从 B 移到 C (借助 A)
+                </div>
+            </div>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-kw">def</span> <span class="c-fn">hanoi</span>(n, A, B, C):
+    <span class="c-kw">if</span> n == <span class="c-num">1</span>: 
+        <span class="c-fn">print</span>(A, <span class="c-str">"->"</span>, C)
+        <span class="c-kw">return</span>
+    <span class="c-fn">hanoi</span>(n - <span class="c-num">1</span>, A, C, B) <span class="c-comment"># 1. 移走上面的</span>
+    <span class="c-fn">print</span>(A, <span class="c-str">"->"</span>, C)     <span class="c-comment"># 2. 移动底盘</span>
+    <span class="c-fn">hanoi</span>(n - <span class="c-num">1</span>, B, A, C) <span class="c-comment"># 3. 移回上面的</span>
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part7">
+            <h2>七、今日练习 —— 实战演练</h2>
+            
+            <div style="background: linear-gradient(135deg, #7b1fa2 0%, #4a148c 100%); border-radius: 15px; padding: 20px; color: white; text-align: center; margin-bottom: 20px;">
+                <h3 style="color:white; margin-top:0;">🚀 挑战开启！</h3>
+                <p>只有理解了递归，才能理解递归。登录 OJ 开始解谜吧！</p>
+                <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 10px; display: inline-block;">
+                    oj.koudashijie.com
+                </div>
+            </div>
+
+            <ul class="challenge-list">
+                <li class="challenge-item">🏆 <a href="../oj/CSP-J3201.html">CSP-J3201 柱塔密令 (汉诺塔模拟)</a></li>
+                <li class="challenge-item">🏆 <a href="../oj/CSP-J3202.html">CSP-J3202 柱塔计数 (递归深度计算)</a></li>
+                <li class="challenge-item">🏆 <a href="../oj/CSP-J3203.html">CSP-J3203 救令棋盘 (递归找路径)</a></li>
+                <li class="challenge-item">🏆 <a href="../oj/CSP-J3204.html">CSP-J3204 猴子吃桃 (逆向递归思维)</a></li>
+            </ul>
+        </section>
+
+        <footer style="text-align:center; margin-top:50px; color:#aaa; border-top: 1px solid #ddd; padding-top:20px;">
+            <p>🚀 扣哒世界教研团队</p>
+        </footer>
+    </div>
+</div>
+
+</body>
+</html>

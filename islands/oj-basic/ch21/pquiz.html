@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python 编程小英雄 - 函数与数据结构篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 --- */
+        :root {
+            /* 主题色：皇家蓝与金盏黄 - 象征构建与规则 */
+            --primary-color: #4169e1;
+            --secondary-color: #ffd700;
+            --bg-color: #f0f8ff;
+            --card-bg: #ffffff;
+            --text-color: #2d3436;
+            --correct-color: #2ecc71;
+            --wrong-color: #e74c3c;
+            
+            /* 代码高亮配色 (VS Code 风格优化) */
+            --code-bg: #2d3436;
+            --code-text: #dfe6e9;
+            --code-kw: #ff7675;   /* 关键字 (粉红) */
+            --code-fn: #ffeaa7;   /* 函数 (黄) */
+            --code-num: #74b9ff;  /* 数字 (蓝) */
+            --code-str: #55efc4;  /* 字符串 (绿) */
+            --code-cmt: #636e72;  /* 注释 (灰) */
+            --code-op: #dfe6e9;   /* 运算符 (白) */
+            --code-bracket: #a29bfe; /* 括号 (紫) */
+        }
+
+        body {
+            font-family: 'Poppins', 'YouYuan', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#cbd5e0 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 800px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 5px solid var(--primary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--secondary-color);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #2d3436;
+            text-shadow: none;
+            box-shadow: 0 4px 0 #d4ac0d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #b0c4de;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目与代码 --- */
+        .question-area h2 {
+            text-align: left;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* 代码块样式：严格保留空格 */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', Consolas, monospace;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 核心：保留缩进和换行 */
+            word-break: break-all;
+            text-align: left;
+            font-size: 1rem;
+            line-height: 1.6;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            overflow-x: auto;
+            tab-size: 4;
+        }
+
+        /* 高亮类定义 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .op { color: var(--code-op); }
+        .bracket { color: var(--code-bracket); font-weight: bold; }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #b0c4de;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1rem; 
+            font-family: 'Fira Code', 'Microsoft YaHei', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #95a5a6;
+            position: relative;
+            top: 0;
+            line-height: 1.5;
+            white-space: pre-wrap; /* 允许选项内换行 */
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #6495ed;
+        }
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #b0c4de;
+            transform: translateY(0);
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #27ae60;
+        }
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析与反馈 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #e6f2ff;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        .explanation-text { line-height: 1.6; color: #555; }
+        
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #2c3e50;
+            transition: transform 0.1s;
+        }
+        .next-btn:active { transform: translateY(3px); box-shadow: none; }
+        
+        /* 结束画面 */
+        .end-screen { display: none; padding: 20px 0; }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score { font-size: 3.5rem; font-weight: bold; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        // Python 函数与复合数据类型测试数据
+        const quizData = [
+            {
+                q: "1. 在Python中，定义函数的关键字是：",
+                options: ["A. function", "B. def", "C. define", "D. func"],
+                correct: 1, // B
+                desc: "在 Python 中，使用 `def` 关键字（define 的缩写）来定义函数，后面跟函数名和圆括号。"
+            },
+            {
+                q: "2. 以下哪个是函数的正确定义？",
+                options: [
+                    "A. function add(a, b): return a + b",
+                    "B. def add(a, b): return a + b",
+                    "C. define add(a, b): return a + b",
+                    "D. func add(a, b): return a + b"
+                ],
+                correct: 1, // B
+                desc: "正确的语法是 `def 函数名(参数):`。选项 B 符合这一规则，且包含了正确的 return 语句。"
+            },
+            {
+                q: "3. 关于函数返回值，以下描述正确的是：",
+                options: [
+                    "A. 函数必须要有return语句",
+                    "B. 函数可以没有return语句，此时返回None",
+                    "C. 函数只能返回一个值",
+                    "D. 函数不能返回字符串"
+                ],
+                correct: 1, // B
+                desc: "Python 函数可以没有 return 语句，执行完毕后会自动返回 `None`。Python 也可以返回多个值（以元组形式）。"
+            },
+            {
+                q: "4. 以下代码的输出结果是什么？",
+                code: `def multiply(a, b):\n    return a * b\n\nresult = multiply(3, 4)\nprint(result)`,
+                options: ["A. 7", "B. 12", "C. 34", "D. 无输出"],
+                correct: 1, // B
+                desc: "函数 `multiply` 接收 3 和 4，计算 3 * 4 = 12，并将结果返回给变量 result。"
+            },
+            {
+                q: "5. 关于局部变量，以下描述正确的是：",
+                options: [
+                    "A. 函数内部定义的变量可以在函数外部访问",
+                    "B. 函数内部定义的变量只能在函数内部访问",
+                    "C. 局部变量和全局变量总是相同的",
+                    "D. 函数内部不能定义变量"
+                ],
+                correct: 1, // B
+                desc: "在函数内部定义的变量（局部变量）的作用域仅限于该函数内部，外部无法直接访问。"
+            },
+            {
+                q: "6. 以下哪个是列表的正确表示？",
+                options: [
+                    "A. (1, 2, 3)",
+                    "B. [1, 2, 3]",
+                    "C. {1, 2, 3}",
+                    "D. <1, 2, 3>"
+                ],
+                correct: 1, // B
+                desc: "列表 (List) 使用方括号 `[]` 表示；元组使用圆括号 `()`；字典和集合使用花括号 `{}`。"
+            },
+            {
+                q: "7. 关于元组，以下描述正确的是：",
+                options: [
+                    "A. 元组创建后可以修改其中的元素",
+                    "B. 元组使用方括号表示",
+                    "C. 元组创建后不能修改其中的元素",
+                    "D. 元组比列表更灵活"
+                ],
+                correct: 2, // C
+                desc: "元组 (Tuple) 是不可变序列，一旦创建，其内部元素就不能被修改、添加或删除。"
+            },
+            {
+                q: "8. 以下哪个是字典的正确表示？",
+                options: [
+                    "A. [\"name\": \"John\", \"age\": 20]",
+                    "B. {\"name\": \"John\", \"age\": 20}",
+                    "C. (\"name\": \"John\", \"age\": 20)",
+                    "D. <\"name\": \"John\", \"age\": 20>"
+                ],
+                correct: 1, // B
+                desc: "字典 (Dictionary) 使用花括号 `{}` 表示，内部包含键值对，键和值之间用冒号 `:` 分隔。"
+            },
+            {
+                q: "9. 以下代码的输出结果是什么？",
+                code: `def is_even(n):\n    return n % 2 == 0\nprint(is_even(5))`,
+                options: ["A. True", "B. False", "C. 5", "D. 无输出"],
+                correct: 1, // B
+                desc: "函数判断 n 是否为偶数。5 % 2 等于 1，不等于 0，所以表达式结果为 False。"
+            },
+            {
+                q: "10. 关于函数参数，以下描述正确的是：",
+                options: [
+                    "A. 函数可以有多个参数",
+                    "B. 函数只能有一个参数",
+                    "C. 函数不能有参数",
+                    "D. 函数的参数必须是数字"
+                ],
+                correct: 0, // A
+                desc: "函数定义时可以包含任意数量的参数（包括零个），参数类型也不受限制（可以是数字、字符串、列表等）。"
+            },
+            {
+                q: "11. 以下代码的输出结果是什么？",
+                code: `my_list = [1, 2, 3]\nmy_list[1] = 5\nprint(my_list)`,
+                options: ["A. [1, 2, 3]", "B. [1, 5, 3]", "C. [5, 2, 3]", "D. 报错"],
+                correct: 1, // B
+                desc: "列表是可变的。`my_list[1] = 5` 将索引为 1 的元素（原本是 2）修改为 5。结果为 `[1, 5, 3]`。"
+            },
+            {
+                q: "12. 以下代码的输出结果是什么？",
+                code: `my_dict = {\"a\": 1, \"b\": 2}\nprint(my_dict[\"a\"])`,
+                options: ["A. 1", "B. 2", "C. \"a\"", "D. \"b\""],
+                correct: 0, // A
+                desc: "字典通过键 (Key) 来访问值 (Value)。`my_dict[\"a\"]` 查找键 \"a\" 对应的值，即 1。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                html += `<div class="code-block">${highlightCode(data.code)}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * Python 专用一次性词法分析高亮引擎
+         * 优化支持：函数定义, 列表/字典/元组语法, 常用内置函数
+         */
+        function highlightCode(code) {
+            // Python 正则表达式模式
+            // 重点优化：[] {} () 识别，def, return, 内置函数
+            const pattern = /(".*?"|'.*?')|(#.*)|(\b\d+(?:\.\d+)?\b)|(\b(?:def|return|if|else|elif|for|while|in|True|False|None)\b)|(\b(?:print|input|int|str|list|dict|len|range|type|map|split|sorted)\b)|(\[|\]|\{|\}|\(|\))|(\+=|-=|\*=|==|!=|<=|>=|[+\-*/%=:,])/g;
+
+            let lastIndex = 0;
+            let html = "";
+            let match;
+
+            while ((match = pattern.exec(code)) !== null) {
+                // 添加普通文本
+                const plainText = code.slice(lastIndex, match.index);
+                html += escapeHtml(plainText);
+
+                let content = match[0];
+                let cls = "";
+
+                if (match[1]) cls = "str";       // 字符串
+                else if (match[2]) cls = "cmt";  // 注释
+                else if (match[3]) cls = "num";  // 数字
+                else if (match[4]) cls = "kw";   // 关键字
+                else if (match[5]) cls = "fn";   // 内置函数/类型
+                else if (match[6]) cls = "bracket"; // 括号/方括号/花括号
+                else if (match[7]) cls = "op";   // 运算符
+
+                if (cls) {
+                    html += `<span class="${cls}">${escapeHtml(content)}</span>`;
+                } else {
+                    html += escapeHtml(content);
+                }
+
+                lastIndex = pattern.lastIndex;
+            }
+
+            // 添加剩余文本
+            html += escapeHtml(code.slice(lastIndex));
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => allBtns[data.correct].classList.add('correct'), 400);
+                const chars = ["A", "B", "C", "D"];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${chars[data.correct]}`, data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none';
+            
+            let html = '';
+            const totalScore = quizData.length * 100;
+            if (score === totalScore) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 代码建筑师！ 🎉</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">太棒了！你已经精通了函数和数据结构的搭建艺术！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score} / ${totalScore}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">做得不错！熟练掌握函数和字典，你的程序会更强大！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; padding:15px 40px; margin-top:30px">🔄 再玩一次</button>`;
+            endScreen.innerHTML = html;
+        }
+
+        function createConfetti() {
+            const colors = ['#4169e1', '#ffd700', '#2ecc71', '#e74c3c', '#a29bfe'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.transform = `scale(${Math.random() * 0.6 + 0.4}) rotate(${Math.random()*360}deg)`;
+                c.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2500);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>

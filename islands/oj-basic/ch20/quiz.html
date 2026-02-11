@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 编程小英雄 - 字符串魔法篇</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 --- */
+        :root {
+            /* 主题色：紫罗兰与梦幻粉 - 象征字符串的串联与魔法 */
+            --primary-color: #8e44ad;
+            --secondary-color: #9b59b6;
+            --bg-color: #f3e5f5;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --correct-color: #27ae60;
+            --wrong-color: #c0392b;
+            --accent-yellow: #f1c40f;
+            
+            /* 代码高亮配色 (VS Code Light 风格优化) */
+            --code-bg: #2d3436;
+            --code-text: #dfe6e9;
+            --code-kw: #e056fd;   /* 关键字 (紫粉) */
+            --code-type: #74b9ff; /* 类型 (蓝) */
+            --code-fn: #ffeaa7;   /* 函数 (黄) */
+            --code-num: #a29bfe;  /* 数字 (淡紫) */
+            --code-str: #55efc4;  /* 字符串/字符 (绿) */
+            --code-cmt: #636e72;  /* 注释 (灰) */
+            --code-op: #dfe6e9;   /* 运算符 (白) */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#d1c4e9 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 800px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        /* --- 顶部状态栏 --- */
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #2c3e50;
+            text-shadow: none;
+            box-shadow: 0 4px 0 #f39c12;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- 进度条 --- */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #e1bee7;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- 题目与代码 --- */
+        .question-area h2 {
+            text-align: left;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* 代码块样式：保证换行和空格 */
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', Consolas, monospace;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            white-space: pre-wrap; /* 核心：保留空格和换行 */
+            word-break: break-all;
+            text-align: left;
+            font-size: 1rem;
+            line-height: 1.6;
+            border-left: 5px solid var(--primary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+            overflow-x: auto;
+        }
+
+        /* 高亮类定义 */
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .type { color: var(--code-type); }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+        .op { color: var(--code-op); }
+
+        /* --- 选项按钮 --- */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #e1bee7;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1rem; 
+            font-family: 'Fira Code', 'Microsoft YaHei', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #ce93d8;
+            position: relative;
+            top: 0;
+            line-height: 1.4;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #ba68c8;
+        }
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #e1bee7;
+            transform: translateY(0);
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #219150;
+        }
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #a93226;
+            animation: shake 0.5s;
+        }
+
+        /* --- 解析与反馈 --- */
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f3e5f5;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+            animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        .explanation-text { line-height: 1.6; color: #555; }
+        
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #71368a;
+            transition: transform 0.1s;
+        }
+        .next-btn:active { transform: translateY(3px); box-shadow: none; }
+        
+        /* 结束画面 */
+        .end-screen { display: none; padding: 20px 0; }
+        .end-title { font-size: 2.2rem; color: var(--primary-color); margin-bottom: 10px; }
+        .end-score { font-size: 3.5rem; font-weight: bold; }
+        .end-desc { color: #636e72; font-size: 1.1rem; margin-bottom: 30px; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .confetti {
+            position: absolute;
+            width: 12px; height: 12px;
+            background-color: #f00;
+            border-radius: 3px;
+            animation: fall linear forwards;
+            z-index: 10;
+        }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 12</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        // C++ String & Char Array Quiz Data
+        const quizData = [
+            {
+                q: "1. 关于字符类型 char，以下描述正确的是：",
+                options: [
+                    "A. char变量可以存储多个字符",
+                    "B. 字符'A'的ASCII码是65",
+                    "C. 字符'0'的ASCII码是0",
+                    "D. 字符变量只能用单引号定义"
+                ],
+                correct: 1, // B
+                desc: "char 只能存储一个字符。字符 '0' 的 ASCII 码是 48（不是 0）。D 选项描述不严谨（可以使用整数赋值）。故 B 正确。"
+            },
+            {
+                q: "2. 以下哪个是字符数组的正确声明和初始化？",
+                options: [
+                    "A. char str = \"Hello\";",
+                    "B. char str[5] = \"Hello\";",
+                    "C. char str[6] = \"Hello\";",
+                    "D. char str[] = {'H','e','l','l','o'};"
+                ],
+                correct: 2, // C
+                desc: "\"Hello\" 包含 5 个字母加上 1 个隐式的结束符 '\\0'，共需要 6 个字节的空间。B 选项空间不足，D 选项缺少结束符。"
+            },
+            {
+                q: "3. 在字符数组中，字符串结束的标志是：",
+                options: ["A. 空格字符", "B. 换行符", "C. 空字符'\\0'", "D. 句号字符"],
+                correct: 2, // C
+                desc: "在 C++ 中，空字符 '\\0' (ASCII 码为 0) 用作字符串的结束标志，告诉程序字符串到此为止。"
+            },
+            {
+                q: "4. 以下哪个函数可以读取包含空格的整行输入到字符数组中？",
+                options: [
+                    "A. cin >> str;",
+                    "B. cin.getline(str, size);",
+                    "C. gets(str);",
+                    "D. scanf(\"%s\", str);"
+                ],
+                correct: 1, // B
+                desc: "cin.getline(str, size) 可以读取包含空格的整行。cin >> 和 scanf 遇到空格会停止；gets() 已经被废弃且不安全。"
+            },
+            {
+                q: "5. 函数 strlen() 的作用是：",
+                options: [
+                    "A. 连接两个字符串",
+                    "B. 比较两个字符串",
+                    "C. 计算字符串长度（不包括'\\0'）",
+                    "D. 复制字符串"
+                ],
+                correct: 2, // C
+                desc: "strlen() 函数专门用于计算字符串的有效长度，计数直到遇到结束符 '\\0'，且不包括 '\\0' 本身。"
+            },
+            {
+                q: "6. 以下代码的输出结果是什么？",
+                code: `char s1[10] = "Hello";\nchar s2[10] = "World";\nstrcat(s1, s2);\ncout << s1;`,
+                options: ["A. Hello", "B. World", "C. HelloWorld", "D. 编译错误"],
+                correct: 2, // C
+                desc: "strcat(dest, src) 函数将 src 字符串拼接到 dest 字符串的末尾。所以 \"Hello\" + \"World\" = \"HelloWorld\"。"
+            },
+            {
+                q: "7. 关于 string 类型和字符数组的比较，正确的是：",
+                options: [
+                    "A. string类型需要手动管理内存大小",
+                    "B. 字符数组可以使用=运算符直接赋值",
+                    "C. string类型提供了更多方便的操作方法",
+                    "D. 字符数组比string类型更安全"
+                ],
+                correct: 2, // C
+                desc: "string 是 C++ 标准库类，提供了如 = 赋值、+ 连接、== 比较等丰富功能，且自动管理内存，比字符数组更安全方便。"
+            },
+            {
+                q: "8. 函数 strcmp() 在什么情况下返回 0？",
+                options: [
+                    "A. 第一个字符串大于第二个字符串",
+                    "B. 第一个字符串小于第二个字符串",
+                    "C. 两个字符串相等",
+                    "D. 任何时候都不返回0"
+                ],
+                correct: 2, // C
+                desc: "strcmp(s1, s2) 用于比较两个字符串：相等返回 0；s1 大于 s2 返回正数；s1 小于 s2 返回负数。"
+            },
+            {
+                q: "9. 以下代码的输出结果是什么？",
+                code: `char str[] = "Hello";\ncout << strlen(str);`,
+                options: ["A. 4", "B. 5", "C. 6", "D. 编译错误"],
+                correct: 1, // B
+                desc: "\"Hello\" 由 H,e,l,l,o 组成，共 5 个字符。strlen 不计算末尾的 '\\0'。"
+            },
+            {
+                q: "10. 将字符从小写转换为大写的正确方法是：",
+                options: [
+                    "A. ch = ch + 26;",
+                    "B. ch = ch - 32;",
+                    "C. ch = ch + 32;",
+                    "D. ch = toupper(ch);"
+                ],
+                correct: 1, // B
+                desc: "小写字母的 ASCII 码比对应大写字母大 32（例如 'a'=97, 'A'=65）。所以减去 32 可以转换。D 选项也是对的，但 B 更符合底层 ASCII 原理考察。"
+            },
+            {
+                q: "11. 以下哪个函数用于在字符串中查找字符？",
+                options: ["A. strchr", "B. strstr", "C. strfind", "D. strsearch"],
+                correct: 0, // A
+                desc: "strchr(str, ch) 用于在字符串中查找特定字符第一次出现的位置。strstr 用于查找子串。"
+            },
+            {
+                q: "12. 关于字符串输入，以下描述正确的是：",
+                options: [
+                    "A. cin >>可以读取包含空格的字符串",
+                    "B. getline(cin, str)只能用于字符数组",
+                    "C. cin.getline()可以读取整行输入到字符数组",
+                    "D. 所有输入方法都会自动忽略空格"
+                ],
+                correct: 2, // C
+                desc: "cin.getline() 是 istream 类的成员函数，用于读取一行到字符数组。getline(cin, str) 是全局函数，用于 string 类对象。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const quizView = document.getElementById('quiz-view');
+        const endScreen = document.getElementById('end-screen');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            scoreDisplay.innerText = score;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                html += `<div class="code-block">${highlightCode(data.code)}</div>`;
+            }
+            questionContainer.innerHTML = html;
+            
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * 强力词法分析器 (Single-Pass Regex Lexer)
+         * 专门针对C++ 字符串、字符及常用函数优化。
+         */
+        function highlightCode(code) {
+            // 正则表达式优先级：
+            // 1. 字符串 ("..." 或 '...') - 包括单引号字符
+            // 2. 注释与预处理 (//... 或 #include...)
+            // 3. 数字 (123, 3.14)
+            // 4. 关键字 (char, int, string, if, else, return, void, using, namespace)
+            // 5. 常用函数 (main, cout, cin, endl, strlen, strcat, strcmp, getline, toupper, strchr)
+            // 6. 运算符与标点
+            const pattern = /(".*?"|'.*?')|(\/\/.*|#include\s*<.*?>)|(\b\d+(?:\.\d+)?\b)|(\b(?:char|int|float|void|bool|string|if|else|return|using|namespace|true|false)\b)|(\b(?:cout|cin|endl|strlen|strcat|strcmp|getline|toupper|strchr)\b)|(\[|\]|\{|\}|\(|\)|<<|>>|==|!=|<=|>=|\+=|-=|\+\+|--|[!%+\-*/=;,])/g;
+
+            let lastIndex = 0;
+            let html = "";
+            let match;
+
+            while ((match = pattern.exec(code)) !== null) {
+                // 1. 添加匹配项之前的普通文本 (需转义)
+                const plainText = code.slice(lastIndex, match.index);
+                html += escapeHtml(plainText);
+
+                // 2. 识别 token 类型
+                let content = match[0];
+                let cls = "";
+
+                if (match[1]) cls = "str";       // 字符串/字符
+                else if (match[2]) cls = "cmt";  // 注释
+                else if (match[3]) cls = "num";  // 数字
+                else if (match[4]) cls = "kw";   // 关键字
+                else if (match[5]) cls = "fn";   // 函数/IO
+                else if (match[6]) cls = "op";   // 运算符/标点
+                
+                // 特殊处理：预处理指令颜色
+                if (content.startsWith("#")) cls = "cmt";
+
+                // 3. 包裹 span
+                if (cls) {
+                    html += `<span class="${cls}">${escapeHtml(content)}</span>`;
+                } else {
+                    html += escapeHtml(content);
+                }
+
+                lastIndex = pattern.lastIndex;
+            }
+
+            // 4. 添加剩余文本
+            html += escapeHtml(code.slice(lastIndex));
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;");
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                createConfetti();
+                showFeedback(true, "🎉 回答正确！", data.desc);
+            } else {
+                btnElement.classList.add('wrong');
+                setTimeout(() => allBtns[data.correct].classList.add('correct'), 400);
+                const chars = ["A", "B", "C", "D"];
+                showFeedback(false, `❌ 回答错误，正确答案是 ${chars[data.correct]}`, data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.classList.remove('correct', 'wrong');
+            feedbackArea.classList.add(isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerHTML = title;
+            explanationText.innerHTML = desc;
+            feedbackArea.style.display = 'block';
+            feedbackArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            quizView.style.display = 'none';
+            endScreen.style.display = 'block';
+            progressBar.parentElement.style.display = 'none';
+            
+            let html = '';
+            const totalScore = quizData.length * 100;
+            if (score === totalScore) {
+                for(let i=0; i<5; i++) setTimeout(createConfetti, i*300);
+                html += `<div class="end-title">🎉 字符串魔法师！ 🎉</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">太棒了！你已经完全掌握了字符和字符串的奥秘！</div>`;
+            } else {
+                html += `<div class="end-title">挑战完成！</div>`;
+                html += `<div class="score-box" style="display:inline-flex; font-size:1.5rem">总得分: ${score} / ${totalScore}</div>`;
+                html += `<div class="end-desc" style="margin-top:20px">做得不错！多练习字符串操作，你的编程魔法会更强大！</div>`;
+            }
+            html += `<button class="next-btn" onclick="location.reload()" style="float:none; padding:15px 40px; margin-top:30px">🔄 再挑战一次</button>`;
+            endScreen.innerHTML = html;
+        }
+
+        function createConfetti() {
+            const colors = ['#8e44ad', '#9b59b6', '#e1bee7', '#f1c40f', '#27ae60', '#3498db'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.classList.add('confetti');
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-20px';
+                c.style.transform = `scale(${Math.random() * 0.6 + 0.4}) rotate(${Math.random()*360}deg)`;
+                c.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2500);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>

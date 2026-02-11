@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扣哒秘籍 C++ 第二十一课：结构体 (Struct)</title>
+    <style>
+        /* --- 全局样式参考 "编程魔法课堂" --- */
+        :root {
+            --bg-color: #FFF8E1;       /* 浅黄背景 */
+            --card-bg: #ffffff;
+            --text-color: #3E2723;     /* 深褐字 */
+            --accent-yellow: #FFC107;  /* 琥珀黄 */
+            --accent-orange: #FF6F00;  /* 活力橙 */
+            --accent-brown: #5D4037;   /* 稳重褐 */
+            --accent-blue: #29B6F6;    /* 对比蓝 */
+            --code-bg: #263238;        /* 代码黑 */
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#FFE082 20%, transparent 20%), radial-gradient(#FFE082 20%, transparent 20%);
+            background-position: 0 0, 50px 50px;
+            background-size: 100px 100px;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            border: 5px solid var(--accent-orange);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* --- 标题区域 --- */
+        header {
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 3px dashed var(--accent-orange);
+            border-radius: 15px 15px 0 0;
+            margin: -20px -20px 20px -20px;
+        }
+
+        h1 {
+            color: var(--accent-orange);
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 0px #fff;
+        }
+
+        h2 {
+            color: #fff;
+            background: linear-gradient(to right, var(--accent-orange), var(--accent-yellow));
+            padding: 10px 25px;
+            border-radius: 20px;
+            margin-top: 40px;
+            font-size: 1.6em;
+            display: inline-block;
+            box-shadow: 4px 4px 0 #E65100;
+            border: 2px solid #fff;
+        }
+
+        h3 {
+            color: #E65100;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 1.4em;
+            border-left: 6px solid #FFAB00;
+            padding-left: 10px;
+            background: linear-gradient(90deg, #FFF3E0 0%, transparent 100%);
+        }
+
+        p, li {
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            color: #4E342E;
+        }
+
+        /* --- 目录 --- */
+        .toc {
+            background: #FFF3E0;
+            padding: 20px 30px;
+            border-radius: 15px;
+            border: 3px solid #FFCC80;
+            margin-bottom: 30px;
+            box-shadow: inset 0 0 10px rgba(255, 204, 128, 0.3);
+        }
+        .toc-list {
+            list-style: none; padding: 0; display: grid; gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+        .toc-item a {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            padding: 10px 15px;
+            border-radius: 50px;
+            border: 2px solid #FFE0B2;
+            color: #BF360C;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .toc-item a:hover {
+            background: #FFE0B2;
+            color: #BF360C;
+            transform: translateY(-2px);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+        .toc-icon { margin-right: 8px; }
+
+        /* --- 视觉图解容器 --- */
+        .visual-container {
+            background: #fff;
+            border: 3px dashed #FFB74D;
+            border-radius: 20px;
+            padding: 25px;
+            margin: 25px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(255, 183, 77, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .visual-container::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at top left, #FFF8E1, transparent 70%);
+            z-index: 0;
+        }
+        .visual-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .visual-label {
+            font-weight: bold;
+            color: var(--accent-brown);
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            background: #FFE0B2;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        /* --- 代码卡片 --- */
+        .code-card {
+            background-color: #ECEFF1;
+            border-left: 8px solid var(--accent-yellow);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 25px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .code-card::before {
+            content: "💻 C++ Code";
+            display: block;
+            font-weight: bold;
+            color: var(--accent-orange);
+            margin-bottom: 8px;
+            font-family: "幼圆", sans-serif;
+            font-size: 1.1em;
+        }
+
+        .code-editor {
+            background-color: var(--code-bg);
+            color: #dcdfe4;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace; 
+            font-size: 18px;
+            line-height: 1.6;
+            border: 3px solid #FFAB91;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* --- 提示框 --- */
+        .teacher-note {
+            background-color: #E1F5FE;
+            border: none;
+            border-left: 8px solid #039BE5;
+            border-radius: 15px;
+            padding: 20px 20px 20px 50px;
+            margin-top: 20px;
+            color: #01579B;
+            position: relative;
+            box-shadow: 0 3px 10px rgba(3, 155, 229, 0.1);
+        }
+        .teacher-note::before {
+            content: "🧙‍♂️";
+            font-size: 2.5em;
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.8;
+        }
+
+        /* --- 练习列表 --- */
+        .challenge-box {
+            background: linear-gradient(135deg, #FFCC80 0%, #FFA726 100%);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(255, 167, 38, 0.3);
+            border: 3px solid #E65100;
+        }
+
+        .challenge-list {
+            list-style: none;
+            padding: 0;
+        }
+        .challenge-item {
+            background: white;
+            border: 2px solid #FFB74D; 
+            border-left: 8px solid #FF6F00;
+            margin-bottom: 15px;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .challenge-item:hover {
+            transform: scale(1.02) translateX(5px);
+            background: #FFF3E0;
+            cursor: pointer;
+            box-shadow: 0 5px 10px rgba(255, 111, 0, 0.2);
+        }
+        .challenge-item a {
+            text-decoration: none;
+            color: #E65100;
+            display: block;
+            width: 100%;
+            margin-left: 10px;
+        }
+
+        /* Syntax Highlighting */
+        .c-kw { color: #c678dd; font-weight: bold; } 
+        .c-type { color: #e5c07b; font-weight: bold; }
+        .c-fn { color: #61afef; font-weight: bold; }
+        .c-num { color: #d19a66; }
+        .c-cmt { color: #7f848e; font-style: italic; }
+        .c-str { color: #98c379; }
+        .c-obj { color: #e06c75; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📘 扣哒秘籍 C++ <br><span style="font-size:0.6em">第二十一课：结构体 (Struct)</span></h1>
+        <p>普通的变量只能存一个数，就像小盒子。如果我们想把名字、身高、分数这些不同类型的信息“打包”在一起，该怎么办？<br>欢迎来到<b>“定制档案袋”</b>的世界！我们将学习如何创建自己的数据类型！📦✨</p>
+    </header>
+
+    <div class="toc">
+        <h3>🌟 本周目录</h3>
+        <ul class="toc-list">
+            <li class="toc-item"><a href="#part1"><span class="toc-icon">🤔</span>1. 复习：基本数据类型的局限</a></li>
+            <li class="toc-item"><a href="#part2"><span class="toc-icon">📂</span>2. 定义：定制专属“档案袋”</a></li>
+            <li class="toc-item"><a href="#part3"><span class="toc-icon">📚</span>3. 数组：存储全班同学</a></li>
+            <li class="toc-item"><a href="#part4"><span class="toc-icon">⚖️</span>4. 排序：Sort 与 cmp 的魔法</a></li>
+            <li class="toc-item"><a href="#part5"><span class="toc-icon">🛠️</span>5. 应用：学生成绩管理系统</a></li>
+            <li class="toc-item"><a href="#part6"><span class="toc-icon">🎯</span>6. 练习：实战演练</a></li>
+        </ul>
+    </div>
+
+    <div style="padding: 0 30px;">
+
+        <section id="part1">
+            <h2>一、复习回顾：基本数据类型的局限 🤔</h2>
+            <p>以前我们要存一个同学的信息，可能需要这样做，定义好几个独立的变量：</p>
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-kw">string</span> name1 = <span class="c-str">"Xiaoming"</span>; <span class="c-cmt">// 名字</span>
+<span class="c-kw">int</span> age1 = <span class="c-num">10</span>;             <span class="c-cmt">// 年龄</span>
+<span class="c-kw">double</span> score1 = <span class="c-num">95.5</span>;      <span class="c-cmt">// 分数</span>
+</pre>
+                </div>
+            </div>
+            <p>如果有 100 个同学，就需要 300 个变量！这就像把所有人的书、笔、作业本都混在地上，太乱了！🤯 我们希望能有一个<strong>“大箱子”</strong>，把一个人的所有信息整整齐齐地打包在一起。</p>
+        </section>
+
+        <section id="part2">
+            <h2>二、结构体定义：定制专属的“档案袋” 📂</h2>
+            <p><strong>结构体 (Structure)</strong> 就是我们定制的这个“大箱子”。它允许我们创造一个新的数据类型，就像搭积木一样，把 string、int、double 组合在一起。</p>
+            
+            <div class="visual-container">
+                <div class="visual-content">
+                    <div class="visual-label">🏗️ 结构体：从图纸到实物</div>
+                    <svg width="500" height="220" viewBox="0 0 500 220">
+                        <g transform="translate(20, 20)">
+                            <rect x="0" y="0" width="180" height="180" fill="#E3F2FD" stroke="#1565C0" stroke-width="2" stroke-dasharray="5,5" rx="10"/>
+                            <text x="90" y="30" text-anchor="middle" font-weight="bold" fill="#0D47A1">设计图纸 (struct)</text>
+                            <line x1="20" y1="50" x2="160" y2="50" stroke="#1565C0" stroke-width="2"/>
+                            <text x="30" y="80" fill="#555">📜 string name</text>
+                            <text x="30" y="110" fill="#555">🔢 int id</text>
+                            <text x="30" y="140" fill="#555">💯 double score</text>
+                            <text x="90" y="170" text-anchor="middle" font-size="12" fill="#0D47A1">(只是定义，不占内存)</text>
+                        </g>
+                        
+                        <path d="M210,110 L270,110" stroke="#FF6F00" stroke-width="3" marker-end="url(#arrow)"/>
+                        <text x="240" y="100" text-anchor="middle" fill="#FF6F00" font-weight="bold">制造实例</text>
+                        
+                        <g transform="translate(280, 20)">
+                            <rect x="0" y="0" width="200" height="180" fill="#FFF3E0" stroke="#E65100" stroke-width="3" rx="15"/>
+                            <text x="100" y="30" text-anchor="middle" font-weight="bold" fill="#E65100" font-size="18">实物档案袋 (s1)</text>
+                            <rect x="20" y="50" width="160" height="35" fill="#fff" stroke="#FFCC80" rx="5"/>
+                            <text x="30" y="73" fill="#333">name: "Xiaoming"</text>
+                            
+                            <rect x="20" y="95" width="160" height="35" fill="#fff" stroke="#FFCC80" rx="5"/>
+                            <text x="30" y="118" fill="#333">id: 1001</text>
+                            
+                            <rect x="20" y="140" width="160" height="35" fill="#fff" stroke="#FFCC80" rx="5"/>
+                            <text x="30" y="163" fill="#333">score: 99.5</text>
+                        </g>
+
+                        <defs>
+                            <marker id="arrow" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#FF6F00" />
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-comment">// 1. 定义图纸 (告诉电脑 Student 长什么样)</span>
+<span class="c-kw">struct</span> <span class="c-type">Student</span> {
+    <span class="c-type">string</span> name;  <span class="c-comment">// 姓名</span>
+    <span class="c-kw">int</span> id;       <span class="c-comment">// 学号</span>
+    <span class="c-kw">double</span> score; <span class="c-comment">// 分数</span>
+}; <span class="c-comment">// ⚠️ 这里的封口分号千万别忘了！</span>
+
+<span class="c-kw">int</span> main() {
+    <span class="c-comment">// 2. 制造实物 (申请一个具体的档案袋)</span>
+    <span class="c-type">Student</span> s1; 
+    
+    <span class="c-comment">// 3. 存取数据 (用“点”号 . 这把钥匙打开档案袋)</span>
+    s1.name = <span class="c-str">"Xiaoming"</span>; 
+    s1.id = <span class="c-num">1001</span>;
+    s1.score = <span class="c-num">99.5</span>;
+    
+    <span class="c-obj">cout</span> << s1.name << <span class="c-str">" 的分数是: "</span> << s1.score << <span class="c-obj">endl</span>;
+}
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part3">
+            <h2>三、结构体数组：存储全班同学的信息 📚</h2>
+            <p>既然 <code>Student</code> 已经是一个类型了（和 int 一样地位），那我们就可以创建 <code>Student</code> 类型的数组！</p>
+            <p>这就像是一本厚厚的<strong>“班级花名册”</strong>，每一页都是一个同学的完整档案。</p>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-type">Student</span> class1[<span class="c-num">50</span>]; <span class="c-comment">// 这是一个能存50个同学档案的数组</span>
+
+<span class="c-comment">// 访问第0个同学的名字和分数</span>
+class1[<span class="c-num">0</span>].name = <span class="c-str">"Zhang San"</span>;
+class1[<span class="c-num">0</span>].score = <span class="c-num">100</span>;
+
+<span class="c-comment">// 用循环输入全班同学的信息</span>
+<span class="c-kw">for</span>(<span class="c-kw">int</span> i=<span class="c-num">0</span>; i<<span class="c-num">50</span>; i++) {
+    <span class="c-obj">cin</span> >> class1[i].name >> class1[i].id >> class1[i].score;
+}
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part4">
+            <h2>四、结构体排序：按成绩排还是按身高排？(Sort cmp) ⚖️</h2>
+            <p>整数排序很简单，谁大谁排后面。但是结构体有名字、有分数、有学号，<strong>电脑怎么知道按哪个排呢？</strong> 🤔</p>
+            <p>这时候我们需要告诉 <code>sort</code> 函数一个规则，写一个 <code>cmp</code> (比较) 函数，就像请了一位**“排序裁判”**。</p>
+
+            <div class="visual-container">
+                <div class="visual-content">
+                    <div class="visual-label">⚖️ 裁判员 cmp 的工作原理</div>
+                    <svg width="450" height="180" viewBox="0 0 450 180">
+                        <path d="M225,140 L225,90" stroke="#795548" stroke-width="6" stroke-linecap="round"/>
+                        <path d="M60,90 L390,90" stroke="#795548" stroke-width="4" stroke-linecap="round"/>
+                        <circle cx="225" cy="90" r="8" fill="#795548"/>
+                        
+                        <g transform="translate(60, 90) rotate(10)">
+                            <line x1="0" y1="0" x2="0" y2="40" stroke="#795548" stroke-width="2"/>
+                            <rect x="-50" y="40" width="100" height="50" fill="#BBDEFB" stroke="#1976D2" stroke-width="2" rx="5"/>
+                            <text x="0" y="65" text-anchor="middle" font-weight="bold" fill="#0D47A1">同学A (a)</text>
+                            <text x="0" y="85" text-anchor="middle" font-size="14" fill="#E65100">⭐ 95分</text>
+                        </g>
+
+                        <g transform="translate(390, 90) rotate(10)">
+                            <line x1="0" y1="0" x2="0" y2="40" stroke="#795548" stroke-width="2"/>
+                            <rect x="-50" y="40" width="100" height="50" fill="#C8E6C9" stroke="#388E3C" stroke-width="2" rx="5"/>
+                            <text x="0" y="65" text-anchor="middle" font-weight="bold" fill="#1B5E20">同学B (b)</text>
+                            <text x="0" y="85" text-anchor="middle" font-size="14" fill="#E65100">88分</text>
+                        </g>
+
+                        <rect x="130" y="10" width="190" height="60" fill="#FFF3E0" stroke="#FF6F00" rx="10"/>
+                        <text x="225" y="35" text-anchor="middle" fill="#E65100" font-weight="bold">📜 裁判规则：</text>
+                        <text x="225" y="55" text-anchor="middle" font-size="12">分数高的排前面!</text>
+                        <text x="225" y="165" text-anchor="middle" font-size="14" font-family="monospace" fill="#D84315">cmp返回 true: a 排在 b 前面</text>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="teacher-note">
+                <strong>🧠 记忆口诀 (cmp函数返回值)：</strong><br>
+                想让 <code>a</code> 排在 <code>b</code> 前面，就返回 <code>true</code>。<br>
+                <code>return a.score > b.score;</code>  ➡️  分数高的在前（降序）<br>
+                <code>return a.id < b.id;</code>  ➡️  学号小的在前（升序）
+            </div>
+
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+<span class="c-comment">// 规则：按分数从高到低排。如果分数一样，按学号从小到大排。</span>
+<span class="c-kw">bool</span> <span class="c-fn">cmp</span>(<span class="c-type">Student</span> a, <span class="c-type">Student</span> b) {
+    <span class="c-kw">if</span> (a.score != b.score) {
+        <span class="c-comment">// 分数不同，分数高的(a)排在前面，返回 true</span>
+        <span class="c-kw">return</span> a.score > b.score; 
+    }
+    <span class="c-comment">// 分数相同，学号小的(a)排在前面，返回 true</span>
+    <span class="c-kw">return</span> a.id < b.id; 
+}
+
+<span class="c-comment">// 在主函数中使用 sort，带上裁判员 cmp</span>
+<span class="c-fn">sort</span>(class1, class1 + n, cmp);
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part5">
+            <h2>五、应用案例：学生成绩管理系统 🛠️</h2>
+            <p><strong>任务：</strong> 输入 n 个学生的信息（姓名、语文成绩、数学成绩），计算每个人的总分，并按总分从高到低排序输出。</p>
+            <div class="code-card">
+                <div class="code-editor">
+<pre>
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;algorithm&gt; // sort 需要这个头文件
+<span class="c-kw">using namespace std</span>;
+
+<span class="c-comment">// 1. 定义结构体</span>
+<span class="c-kw">struct</span> <span class="c-type">Stu</span> {
+    <span class="c-kw">string</span> name;
+    <span class="c-kw">int</span> ch, math, total;
+};
+
+<span class="c-comment">// 2. 定义排序规则(裁判)</span>
+<span class="c-kw">bool</span> <span class="c-fn">cmp</span>(<span class="c-type">Stu</span> a, <span class="c-type">Stu</span> b) {
+    <span class="c-kw">return</span> a.total > b.total; <span class="c-comment">// 总分高的排前面</span>
+}
+
+<span class="c-kw">int</span> main() {
+    <span class="c-kw">int</span> n;
+    <span class="c-type">Stu</span> a[<span class="c-num">105</span>]; <span class="c-comment">// 结构体数组</span>
+    <span class="c-obj">cin</span> >> n;
+    <span class="c-comment">// 3. 输入数据并计算总分</span>
+    <span class="c-kw">for</span>(<span class="c-kw">int</span> i=<span class="c-num">0</span>; i&lt;n; i++) {
+        <span class="c-obj">cin</span> >> a[i].name >> a[i].ch >> a[i].math;
+        a[i].total = a[i].ch + a[i].math; 
+    }
+    <span class="c-comment">// 4. 排序</span>
+    <span class="c-fn">sort</span>(a, a+n, cmp);
+    
+    <span class="c-comment">// 5. 输出结果</span>
+    <span class="c-obj">cout</span> << <span class="c-str">"--- 成绩单 (按总分排名) ---"</span> << <span class="c-obj">endl</span>;
+    <span class="c-kw">for</span>(<span class="c-kw">int</span> i=<span class="c-num">0</span>; i&lt;n; i++) {
+        <span class="c-obj">cout</span> << <span class="c-str">"姓名: "</span> << a[i].name << <span class="c-str">", 总分: "</span> << a[i].total << <span class="c-obj">endl</span>;
+    }
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="part6">
+            <h2>六、今日练习 —— 实战演练 🎯</h2>
+            <div class="challenge-box">
+                <h3 style="color: #3E2723; margin-top:0;">🚀 结构体挑战开启！</h3>
+                <p style="color: #5D4037;">结构体是以后写大型程序的基石，像建造大楼的预制件一样重要。一定要熟练掌握自定义 `cmp` 排序的写法哦！💪</p>
+                <div style="background: rgba(255,255,255,0.5); padding: 10px 20px; border-radius: 20px; display: inline-block; font-weight: bold; color: #E65100; border: 2px dashed #E65100;">
+                    oj.koudashijie.com
+                </div>
+            </div>
+
+            <ul class="challenge-list">
+                <li class="challenge-item">
+                    <span style="font-size: 1.5em; margin-right: 10px;">🏆</span>
+                    <a href="../oj/CSP-J3301.html">CSP-J3301 榜首之星 (寻找结构体数组中的最大值)</a>
+                </li>
+                <li class="challenge-item">
+                    <span style="font-size: 1.5em; margin-right: 10px;">🏆</span>
+                    <a href="../oj/CSP-J3302.html">CSP-J3302 榜单重排 (结构体排序基础练习)</a>
+                </li>
+                <li class="challenge-item">
+                    <span style="font-size: 1.5em; margin-right: 10px;">🏆</span>
+                    <a href="../oj/CSP-J3303.html">CSP-J3303 序号刻印 (排序后保留原始下标)</a>
+                </li>
+                <li class="challenge-item">
+                    <span style="font-size: 1.5em; margin-right: 10px;">🏆</span>
+                    <a href="../oj/CSP-J3305.html">CSP-J3305 三点封印 (平面坐标点结构体应用)</a>
+                </li>
+            </ul>
+        </section>
+
+        <footer style="text-align:center; margin-top:50px; color:#aaa; border-top: 1px solid #ddd; padding-top:20px;">
+            <p>🚀 扣哒世界教研团队 - 结构体让数据更有条理</p>
+        </footer>
+    </div>
+</div>
+
+</body>
+</html>
