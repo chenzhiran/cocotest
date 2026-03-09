@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔法课堂：牛塔摘书大挑战</title>
+    <style>
+        /* 全局可爱风格设置 - 牧场与图书馆主题 */
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: #f1f8e9; /* 淡淡的牧场浅绿色背景 */
+            color: #3e2723;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.8;
+            letter-spacing: 1px;
+            background-image: radial-gradient(#dcedc8 2px, transparent 2px);
+            background-size: 20px 20px; /* 草地上的小波点 */
+        }
+
+        /* 顶部语言切换按钮 */
+        .lang-switch {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .lang-btn {
+            background-color: #fff;
+            border: 3px solid #ccc;
+            border-radius: 20px;
+            padding: 10px 30px;
+            font-size: 1.2em;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .lang-btn.active.cpp-btn {
+            border-color: #0984e3;
+            background-color: #74b9ff;
+            color: white;
+        }
+        .lang-btn.active.py-btn {
+            border-color: #f39c12;
+            background-color: #ffeaa7;
+            color: #d35400;
+        }
+
+        /* A4纸张打印优化容器 */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff; /* 纯白内页 */
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 5px solid #8bc34a; /* 牧场绿边框 */
+        }
+
+        /* 标题样式 */
+        h1 {
+            color: #558b2f;
+            text-align: center;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 0px #c5e1a5;
+            margin-bottom: 20px;
+        }
+        
+        /* 魔法传送门做题按钮 */
+        .action-btn {
+            display: inline-block;
+            background-color: #8d6e63;
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 5px 0 #5d4037, 0 8px 15px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            margin: 20px 0;
+            border: 2px solid #fff;
+        }
+        .action-btn:hover {
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 #5d4037, 0 5px 10px rgba(0,0,0,0.1);
+        }
+        .action-btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+
+        h2 {
+            color: #689f38;
+            border-bottom: 3px dashed #aed581;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+
+        h3 {
+            color: #e65100;
+            margin-top: 25px;
+        }
+
+        /* 可爱的内容卡片 */
+        .card {
+            background-color: #fcfdfa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 8px solid #9ccc65;
+        }
+
+        .card.problem { border-color: #4fc3f7; background-color: #e1f5fe; }
+        .card.logic { border-color: #ffb74d; background-color: #fff8e1; }
+        .card.knowledge { border-color: #ba68c8; background-color: #f3e5f5; }
+        .card.code-box { border-color: #2d3436; background-color: #f5f6fa; }
+
+        /* 代码块样式 */
+        pre {
+            background-color: #2d3436;
+            color: #dfe6e9;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: Consolas, monospace;
+            overflow-x: auto;
+            font-size: 1.1em;
+            line-height: 1.5;
+        }
+        
+        /* 代码中的高亮颜色 */
+        .comment { color: #fdcb6e; font-style: italic; }
+        .keyword { color: #ff7675; font-weight: bold; }
+        .type { color: #74b9ff; }
+        .string { color: #55efc4; }
+
+        /* 图解小方块（牛塔叠罗汉示意图） */
+        .tower-visual {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            align-items: flex-end;
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border: 2px dashed #8bc34a;
+            border-radius: 15px;
+        }
+        .shelf {
+            width: 80px;
+            height: 200px;
+            background: linear-gradient(to right, #8d6e63, #795548);
+            border: 3px solid #5d4037;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .shelf::before {
+            content: "书架高度 B=40";
+            position: absolute;
+            top: -30px;
+            width: 150px;
+            text-align: center;
+            font-weight: bold;
+            color: #d35400;
+        }
+        .shelf-book {
+            background-color: #e74c3c;
+            width: 60px;
+            height: 20px;
+            margin-top: 10px;
+            border: 2px solid #c0392b;
+            border-radius: 2px;
+            color: white;
+            font-size: 10px;
+            text-align: center;
+            line-height: 16px;
+            font-weight: bold;
+        }
+        .cow-stack {
+            display: flex;
+            flex-direction: column-reverse; /* 从下往上叠 */
+            align-items: center;
+            gap: 2px;
+        }
+        .cow-box {
+            background-color: #fff;
+            border: 3px solid #2c3e50;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 2px 0px #ccc;
+        }
+        .cow-box.cow-19 { width: 100px; height: 70px; background-color: #ffcc80; }
+        .cow-box.cow-18 { width: 90px; height: 65px; background-color: #ffb74d; }
+        .cow-box.cow-13 { width: 80px; height: 50px; background-color: #ffa726; }
+        .cow-box::before {
+            content: "🐄";
+            margin-right: 5px;
+        }
+
+        /* 强调文字 */
+        .highlight {
+            background-color: #dcedc8;
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #33691e;
+        }
+
+        /* 底部版权 */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #9e9e9e;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        /* 打印设置 */
+        @media print {
+            body { background-color: white; background-image: none; }
+            .container { box-shadow: none; border: none; width: 100%; padding: 0; background-color: white; }
+            .lang-switch, .action-btn { display: none; } /* 打印时隐藏切换按钮和做题按钮 */
+            .card { break-inside: avoid; } /* 防止卡片被切断 */
+        }
+    </style>
+</head>
+<body>
+
+<div class="lang-switch">
+    <button class="lang-btn cpp-btn active" onclick="switchLang('cpp')">🖥️ C++ 魔法</button>
+    <button class="lang-btn py-btn" onclick="switchLang('python')">🐍 Python 魔法</button>
+</div>
+
+<div class="container">
+    <h1>📚 牛塔摘书大挑战 🐄</h1>
+    
+    <div style="text-align: center; font-size: 1.2em; color: #558b2f;">
+        👋 嗨，小小勇者！欢迎来到雪山图书馆！<br>
+        书架高得直入云端，奶牛们决定玩“叠罗汉”来拿书。快来用编程魔法帮她们选出最稳固的队伍吧！
+    </div>
+
+    <div style="text-align: center;">
+        <a href="https://oj.koudashijie.com/collection/33/type/course/problem/16" target="_blank" class="action-btn">
+            🚀 点击这里，开启图书馆传送门（前往做题）！
+        </a>
+    </div>
+
+    <div class="card problem">
+        <h2>📜 任务清单 (题目描述)</h2>
+        <p>有 <strong>N</strong> 头奶牛，每头奶牛都有自己的身高。为了把书放到高度为 <strong>B</strong> 的书架上，她们要像搭积木一样往上叠。</p>
+        
+        <div style="text-align: center;">
+            <img src="CSP-J5305.png" alt="牛塔摘书" style="max-width: 100%; height: auto; border-radius: 10px; margin: 10px 0; border: 3px solid #81d4fa;">
+        </div>
+
+        <p>⚠️ <strong>安全第一：</strong> 叠的奶牛越多，塔就越晃！所以只要总高度<strong>达到或超过</strong>书架高度 B，就立刻停止。</p>
+        <p><strong>你的任务：</strong> 算出<strong>最少</strong>需要几头奶牛才能拿到书！</p>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+            <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #b2bec3;">
+                <strong>📥 魔法输入阵：</strong><br>
+                <span style="color: #636e72; font-size: 0.9em;">(6头奶牛，书架高度是40)</span><br>
+                <span class="highlight">6 40</span><br>
+                <span style="color: #636e72; font-size: 0.9em;">(下面是这 6 头奶牛的身高：)</span><br>
+                6<br>18<br>11<br>13<br>19<br>11
+            </div>
+            <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #8bc34a;">
+                <strong>📤 奇迹输出阵：</strong><br>
+                <span style="color: #636e72; font-size: 0.9em;">(选出身高为19、18、13的三头牛，加起来是50，超过了40！只用3头最少)</span><br>
+                <span class="highlight">3</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card logic">
+        <h2>🧠 魔法道具箱 (核心思路：贪心魔法 + 降序排列)</h2>
+        
+        <p>如果想用<strong>最少</strong>的奶牛达到书架高度，我们要怎么办呢？</p>
+        <p>💡 <strong>贪心法则：</strong> 每次都挑<strong>个子最高</strong>的那头奶牛去叠罗汉！大个子顶好几个小个子，这样用掉的牛一定是数量最少的！这就是著名的“贪心算法”。</p>
+        
+        
+
+        <h3>✨ 施法步骤：</h3>
+        <ol>
+            <li><strong>量身高：</strong> 把所有奶牛的身高记下来。</li>
+            <li><strong>排大队：</strong> 用排序精灵把奶牛<strong>从高到矮 (降序)</strong> 排好队。</li>
+            <li><strong>叠罗汉：</strong> 从最高的那头开始，一头一头往上加。</li>
+            <li><strong>成功停下：</strong> 每加上一头牛，就算算总高度，一旦 $\ge B$，立刻喊停！数数用了几头牛。</li>
+        </ol>
+
+        <div class="tower-visual">
+            <div class="shelf">
+                <div class="shelf-book">魔法书</div>
+            </div>
+            <div class="cow-stack">
+                <div class="cow-box cow-19">高 19</div>
+                <div class="cow-box cow-18">高 18</div>
+                <div class="cow-box cow-13">高 13</div>
+            </div>
+            <div style="align-self: center; font-size: 1.2em; font-weight: bold; color: #d35400; background: white; padding: 10px; border-radius: 10px; border: 2px dashed #e67e22;">
+                高度：19 + 18 + 13 = 50 <br>
+                ✅ 50 >= 40 成功！<br>
+                🎉 只需要 3 头奶牛！
+            </div>
+        </div>
+    </div>
+
+    <div class="cpp-only">
+        <div class="card knowledge">
+            <h2>📘 C++ 魔法秘籍 (知识点)</h2>
+            <ul>
+                <li>🪄 <strong>降序排队咒语 <code>greater&lt;int&gt;()</code>：</strong> 以前我们用 <code>sort()</code> 默认是从小到大。加上这个超级配件，精灵就会把数字<strong>从大到小</strong>排好啦！（记得包含 <code>#include &lt;functional&gt;</code> 工具箱）。</li>
+                <li>🛡️ <strong>防爆保护罩 <code>long long</code>：</strong> 奶牛的总高度 B 可能高达二十亿 (2,000,000,007)。如果很多头奶牛加在一起，普通的 <code>int</code> 可能会撑爆！用 <code>long long</code> 存总和最安全。</li>
+            </ul>
+        </div>
+
+        <div class="card code-box">
+            <h2>💻 C++ 终极法术 (代码详解)</h2>
+<pre>
+<span class="keyword">#include</span> &lt;iostream&gt;
+<span class="keyword">#include</span> &lt;vector&gt;
+<span class="keyword">#include</span> &lt;algorithm&gt;
+<span class="keyword">#include</span> &lt;functional&gt; <span class="comment">// 🪄 为了使用 greater 咒语，必须带上这个！</span>
+<span class="keyword">using namespace std;</span>
+
+<span class="keyword">int</span> main() {
+    <span class="comment">// ⚡ 加速咒语，快速读入</span>
+    <span class="type">ios</span>::sync_with_stdio(<span class="keyword">false</span>);
+    <span class="type">cin</span>.tie(<span class="keyword">nullptr</span>);
+
+    <span class="type">int</span> N, B;
+    <span class="type">cin</span> >> N >> B; <span class="comment">// 🖥️ 电脑问：有几头牛？书架有多高？</span>
+
+    <span class="type">vector</span>&lt;<span class="type">int</span>&gt; h(N);
+    <span class="keyword">for</span> (<span class="type">int</span> i = 0; i < N; ++i) {
+        <span class="type">cin</span> >> h[i]; <span class="comment">// 记录每一头牛的身高</span>
+    }
+
+    <span class="comment">// 🪄 降序魔法：把奶牛的身高从大到小 (高到矮) 排序！</span>
+    sort(h.begin(), h.end(), greater&lt;<span class="type">int</span>&gt;());
+
+    <span class="type">long long</span> sum = 0; <span class="comment">// 📏 记录目前叠起来的总高度 (用 long long 防爆)</span>
+    <span class="type">int</span> cnt = 0;       <span class="comment">// 🐄 记录用到了几头奶牛</span>
+
+    <span class="comment">// 🪜 开始叠罗汉！从最高的那头开始！</span>
+    <span class="keyword">for</span> (<span class="type">int</span> i = 0; i < N; ++i) {
+        sum += h[i];   <span class="comment">// 加上这头牛的身高</span>
+        ++cnt;         <span class="comment">// 使用的奶牛数量 + 1</span>
+        
+        <span class="comment">// 💡 检查一下：够不够高了？</span>
+        <span class="keyword">if</span> (sum >= B) {
+            <span class="keyword">break</span>;     <span class="comment">// 够高了！马上停下来，后面的牛不用上啦！</span>
+        }
+    }
+
+    <span class="comment">// 🎉 大声宣布答案！</span>
+    <span class="type">cout</span> << cnt << <span class="string">'\n'</span>;
+
+    <span class="keyword">return</span> 0;
+}
+</pre>
+        </div>
+    </div>
+
+    <div class="py-only" style="display: none;">
+        <div class="card knowledge">
+            <h2>🐍 Python 魔法秘籍 (知识点)</h2>
+            <ul>
+                <li>🪄 <strong>反转排序咒语 <code>reverse=True</code>：</strong> Python 的列表排序 <code>.sort()</code> 默认是从矮到高。只要在括号里加上这句小咒语，它就会听话地把数字<strong>从高到矮</strong>排队啦！</li>
+                <li>🌪️ <strong>全能吸尘器：</strong> 因为奶牛的身高分散在好多行里，普通的输入很容易漏掉。使用 <code>sys.stdin.read().split()</code> 一次性把所有的数字吸进来，切成干净的小方块，最省事！</li>
+            </ul>
+        </div>
+
+        <div class="card code-box">
+            <h2>💻 Python 终极法术 (代码详解)</h2>
+<pre>
+<span class="keyword">import</span> sys <span class="comment"># 召唤高级工具箱！</span>
+
+<span class="keyword">def</span> <span class="type">main</span>():
+    <span class="comment"># 🌪️ 用超级吸尘器一口气吸入所有的数字</span>
+    data = sys.stdin.read().split()
+    <span class="keyword">if not</span> data:
+        <span class="keyword">return</span>
+
+    <span class="comment"># 📦 第1个是牛的数量N，第2个是书架高度B</span>
+    N = <span class="type">int</span>(data[0])
+    B = <span class="type">int</span>(data[1])
+
+    <span class="comment"># 📏 把剩下的数字全都变身成整数，装进 heights 列表里</span>
+    heights = <span class="type">list</span>(<span class="type">map</span>(<span class="type">int</span>, data[2:2+N]))
+
+    <span class="comment"># 🪄 降序魔法：加上 reverse=True，让奶牛从高到矮排好队！</span>
+    heights.sort(reverse=<span class="keyword">True</span>)
+
+    total = 0 <span class="comment"># 📏 记录目前叠起来的总高度</span>
+    count = 0 <span class="comment"># 🐄 记录用到了几头奶牛</span>
+
+    <span class="comment"># 🪜 开始叠罗汉！从最高的那头牛开始</span>
+    <span class="keyword">for</span> h <span class="keyword">in</span> heights:
+        total += h  <span class="comment"># 加上这头牛的身高</span>
+        count += 1  <span class="comment"># 使用的奶牛数量 + 1</span>
+        
+        <span class="comment"># 💡 检查一下：够不够高了？</span>
+        <span class="keyword">if</span> total >= B:
+            <span class="keyword">break</span>   <span class="comment"># 够高了！马上停下来，后面的牛休息！</span>
+
+    <span class="comment"># 🎉 大声喊出用了几头牛！</span>
+    <span class="type">print</span>(count)
+
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    main() <span class="comment"># 🚀 启动魔法！</span>
+</pre>
+        </div>
+    </div>
+
+    <div class="card logic" style="border-color: #8bc34a; background-color: #f1f8e9;">
+        <h2>🌟 重点复习小贴士</h2>
+        <ul>
+            <li>💡 <strong>为什么“贪心”一定对？</strong> 因为题目只要求“牛的数量最少”，所以个子越高的牛效率越大！这就是典型的“贪心算法”（Greedy Algorithm）——每次都拿眼前看起来最好的（最高个子），最后加起来的结果也是最好的（用牛最少）！</li>
+            <li>💡 <strong>及时刹车 <code>break</code>：</strong> 叠罗汉只要超过了书架高度 <code>B</code> 就立刻成功了。如果不写 <code>break</code>，哪怕够高了也会把所有牛都叠上去，塔可就塌啦！</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        🎉 祝你编程愉快！用贪心魔法帮奶牛们拿到魔法书吧！ —— 扣哒世界教研团队 🎉
+    </div>
+</div>
+
+<script>
+    // 简单的魔法切换法术 (JS 控制 Python 和 C++ 内容的显示)
+    function switchLang(lang) {
+        // 获取所有内容和按钮
+        const cppElements = document.querySelectorAll('.cpp-only');
+        const pyElements = document.querySelectorAll('.py-only');
+        const cppBtn = document.querySelector('.cpp-btn');
+        const pyBtn = document.querySelector('.py-btn');
+
+        if (lang === 'cpp') {
+            // 显示 C++，隐藏 Python
+            cppElements.forEach(el => el.style.display = 'block');
+            pyElements.forEach(el => el.style.display = 'none');
+            // 按钮样式变化
+            cppBtn.classList.add('active');
+            pyBtn.classList.remove('active');
+        } else {
+            // 显示 Python，隐藏 C++
+            cppElements.forEach(el => el.style.display = 'none');
+            pyElements.forEach(el => el.style.display = 'block');
+            // 按钮样式变化
+            pyBtn.classList.add('active');
+            cppBtn.classList.remove('active');
+        }
+    }
+</script>
+
+</body>
+</html>
