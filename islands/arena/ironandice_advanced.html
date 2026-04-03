@@ -17,6 +17,10 @@
             --font-stack: "幼圆", "YouYuan", "Microsoft YaHei", sans-serif;
         }
 
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: var(--font-stack) !important;
             background: #f0f8ff;
@@ -133,12 +137,26 @@
             font-size: 1.3rem;
             display: flex;
             align-items: center;
+            background: rgba(123, 31, 162, 0.05);
+            padding: 8px 15px;
+            border-radius: 8px;
         }
         
         .card h3::before {
             content: "✦";
             margin-right: 8px;
             color: #ba68c8;
+        }
+
+        .card ul {
+            margin-top: 10px;
+            margin-bottom: 20px;
+            padding-left: 30px;
+            color: #37474f;
+        }
+
+        .card li {
+            margin-bottom: 8px;
         }
 
         /* 🔑 程序语句高亮 (如 hero.x, hero.build 等) */
@@ -178,6 +196,7 @@
             margin: 20px 0;
             box-shadow: 0 8px 20px rgba(0,0,0,0.15);
             border: 1px solid #455a64;
+            width: 100%;
         }
 
         .tab-bar { 
@@ -198,12 +217,17 @@
         .code-content {
             padding: 25px; color: #eceff1; font-family: 'Consolas', monospace;
             display: none; white-space: pre-wrap; font-size: 1.05rem; line-height: 1.6;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .code-content.active { display: block; }
 
         /* 代码高亮色 */
-        .hl-k { color: #c678dd; } .hl-s { color: #98c379; } .hl-n { color: #d19a66; } .hl-c { color: #7f848e; font-style: italic; }
+        .hl-k { color: #c678dd; } /* 关键字 */
+        .hl-s { color: #98c379; } /* 字符串 */
+        .hl-n { color: #d19a66; } /* 数字 */
+        .hl-c { color: #7f848e; font-style: italic; } /* 注释 */
 
         /* 💡 提示框与详述段落 */
         .highlight-box {
@@ -212,7 +236,7 @@
             padding: 18px 20px; margin: 20px 0; border-radius: 8px;
             color: #424242; box-shadow: 0 4px 12px rgba(251, 192, 45, 0.1);
         }
-        
+
         .detail-text {
             font-size: 0.95rem;
             color: #546e7a;
@@ -227,6 +251,16 @@
             font-weight: bold; background: rgba(255,255,255,0.4); 
             margin-top: 40px; border-top: 2px dashed #b3e5fc;
         }
+
+        /* 移动端全面适配 */
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .card { padding: 25px 20px; border-left-width: 4px; }
+            .hero-title { font-size: 2rem; }
+            .tab-btn { font-size: 0.9rem; padding: 10px; }
+            .code-content { font-size: 0.9rem; padding: 15px; }
+            .card ul { padding-left: 20px; }
+        }
     </style>
 </head>
 <body>
@@ -235,324 +269,986 @@
         <a href="#section-hero">🧊 水晶属性</a>
         <a href="#section-mana">⚡ 法力资源</a>
         <a href="#section-build">🏗️ 建造升级</a>
-        <a href="#section-tower">🗼 防御塔</a>
+        <a href="#section-tower">🗼 防御塔查询</a>
+        <a href="#section-tower-props">⚙️ 防御塔属性</a>
         <a href="#section-skill">🌀 技能系统</a>
         <a href="#section-monster">👾 怪物情报</a>
-        <a href="#section-util">📏 工具与对手</a>
+        <a href="#section-enemy">🔴 对手信息</a>
+        <a href="#section-util">📏 通用工具</a>
     </nav>
 
     <header class="hero-section">
         <h1 class="hero-title">❄️ 冰锋竞速 · 强化篇</h1>
-        <div class="hero-subtitle">方法库完全指南：掌握全部战场指令，成为顶尖指挥官</div>
+        <div class="hero-subtitle">方法库（API 参考手册）完全指南</div>
+        <p style="margin-top: 15px; color: #546e7a;">以下是冰锋竞速战场中你可以使用的所有方法和属性。熟练掌握它们，是成为顶尖指挥官的必经之路。</p>
     </header>
 
     <div class="container">
 
         <div class="card" id="section-hero">
-            <h2>一、🧊 水晶属性 (Hero & Base)</h2>
+            <h2>一、🧊 水晶属性</h2>
             
-            <h3>基础坐标与队伍</h3>
-            <p><code>hero.x</code> / <code>hero.y</code>：水晶中心的坐标。当你在蓝队时 X 坐标会自动镜像，代码无需额外适配。</p>
-            <p class="detail-text">战术解读：基于水晶的坐标进行加减（如 <code>hero.x + 10</code>），可以构建出始终围绕基地周围的动态防御圈，防止敌人突破盲区。</p>
-            
-            <p><code>hero.color</code>：队伍颜色：<span class="type-code">"red"</span> 或 <span class="type-code">"blue"</span>。</p>
-            
+            <h3>hero.x</h3>
+            <p>你的水晶中心的 <strong>x（水平）坐标</strong>。当你被分配到蓝队时，坐标会自动镜像翻转，你不需要为此编写额外代码。</p>
             <div class="code-panel">
                 <div class="tab-bar">
-                    <button class="tab-btn active" onclick="switchTab(this, 'hero-py')">Python</button>
-                    <button class="tab-btn" onclick="switchTab(this, 'hero-cpp')">C++</button>
+                    <button class="tab-btn active" onclick="switchTab(this, 'hx-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hx-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hx-cpp')">C++</button>
                 </div>
-                <div id="hero-py" class="code-content active"><span class="hl-k">baseX</span> = <span class="hl-k">hero</span>.x
-<span class="hl-k">baseY</span> = <span class="hl-k">hero</span>.y
-<span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, baseX + <span class="hl-n">10</span>, baseY)
+                <div id="hx-py" class="code-content active">baseX = hero.x
+hero.build(<span class="hl-s">"archer"</span>, baseX + <span class="hl-n">10</span>, hero.y)</div>
+                <div id="hx-js" class="code-content"><span class="hl-k">var</span> baseX = hero.x;
+hero.build(<span class="hl-s">"archer"</span>, baseX + <span class="hl-n">10</span>, hero.y);</div>
+                <div id="hx-cpp" class="code-content"><span class="hl-k">auto</span> baseX = hero.x;
+hero.build(<span class="hl-s">"archer"</span>, baseX + <span class="hl-n">10</span>, hero.y);</div>
+            </div>
 
-<span class="hl-k">if</span> <span class="hl-k">hero</span>.color == <span class="hl-s">"red"</span>:
-    <span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>)</div>
-                <div id="hero-cpp" class="code-content"><span class="hl-k">auto</span> baseX = <span class="hl-k">hero</span>.x;
-<span class="hl-k">auto</span> baseY = <span class="hl-k">hero</span>.y;
-<span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, baseX + <span class="hl-n">10</span>, baseY);
+            <h3>hero.y</h3>
+            <p>你的水晶中心的 <strong>y（垂直）坐标</strong>。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'hy-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hy-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hy-cpp')">C++</button>
+                </div>
+                <div id="hy-py" class="code-content active">baseY = hero.y
+hero.build(<span class="hl-s">"cannon"</span>, hero.x + <span class="hl-n">5</span>, baseY)</div>
+                <div id="hy-js" class="code-content"><span class="hl-k">var</span> baseY = hero.y;
+hero.build(<span class="hl-s">"cannon"</span>, hero.x + <span class="hl-n">5</span>, baseY);</div>
+                <div id="hy-cpp" class="code-content"><span class="hl-k">auto</span> baseY = hero.y;
+hero.build(<span class="hl-s">"cannon"</span>, hero.x + <span class="hl-n">5</span>, baseY);</div>
+            </div>
 
-<span class="hl-k">if</span> (<span class="hl-k">hero</span>.color == <span class="hl-s">"red"</span>) {
-    <span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);
+            <h3>hero.color</h3>
+            <p>你所属的<strong>队伍颜色</strong>，值为 <span class="type-code">"red"</span>（红队）或 <span class="type-code">"blue"</span>（蓝队）。你可以用它来判断自己当前属于哪一方，但通常不需要根据颜色编写不同逻辑，因为坐标系统已经自动处理了镜像。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'hcolor-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hcolor-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hcolor-cpp')">C++</button>
+                </div>
+                <div id="hcolor-py" class="code-content active"><span class="hl-k">if</span> hero.color == <span class="hl-s">"red"</span>:
+    hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>)</div>
+                <div id="hcolor-js" class="code-content"><span class="hl-k">if</span> (hero.color === <span class="hl-s">"red"</span>) {
+    hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);
+}</div>
+                <div id="hcolor-cpp" class="code-content"><span class="hl-k">if</span> (hero.color == <span class="hl-s">"red"</span>) {
+    hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);
 }</div>
             </div>
 
-            <h3>时间与生命值</h3>
-            <p><code>hero.time</code>：战斗经过时间（秒），可用于时间轴策略。</p>
-            <p class="detail-text">战术解读：非常有用的全局计时器。你可以利用 <code>if hero.time > 60:</code> 在特定的游戏阶段（如后期高压波次）改变你的防守重点或更换塔的类型。</p>
-            
-            <p><code>hero.health</code> / <code>hero.maxHealth</code>：当前生命值与最大生命值。</p>
-            <p class="detail-text">战术解读：当 <code>hero.health</code> 较低时，可以触发“紧急避险”逻辑，例如无视冷却限制频繁释放 <code>burst</code>（爆炸）技能来保命。</p>
-            
-            <p><code>hero.type</code>：始终为 <span class="type-code">"base"</span>（本关卡中）。</p>
-
+            <h3>hero.time</h3>
+            <p>从战斗开始到现在<strong>实际经过的时间</strong>，单位为秒。你可以用它来制定基于时间的策略，比如在战斗进行到一定时间后切换建造策略。</p>
             <div class="code-panel">
                 <div class="tab-bar">
-                    <button class="tab-btn active" onclick="switchTab(this, 'time-py')">Python</button>
-                    <button class="tab-btn" onclick="switchTab(this, 'time-cpp')">C++</button>
+                    <button class="tab-btn active" onclick="switchTab(this, 'htime-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'htime-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'htime-cpp')">C++</button>
                 </div>
-                <div id="time-py" class="code-content active"><span class="hl-k">if</span> <span class="hl-k">hero</span>.time > <span class="hl-n">30</span>:
-    <span class="hl-k">hero</span>.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"B"</span>)
+                <div id="htime-py" class="code-content active"><span class="hl-k">if</span> hero.time > <span class="hl-n">30</span>:
+    hero.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"B"</span>)</div>
+                <div id="htime-js" class="code-content"><span class="hl-k">if</span> (hero.time > <span class="hl-n">30</span>) {
+    hero.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"B"</span>);
+}</div>
+                <div id="htime-cpp" class="code-content"><span class="hl-k">if</span> (hero.time > <span class="hl-n">30</span>) {
+    hero.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"B"</span>);
+}</div>
+            </div>
 
-<span class="hl-k">if</span> <span class="hl-k">hero</span>.health < <span class="hl-k">hero</span>.maxHealth * <span class="hl-n">0.3</span>:
-    <span class="hl-k">hero</span>.special(<span class="hl-s">"burst"</span>, <span class="hl-k">hero</span>.x + <span class="hl-n">5</span>, <span class="hl-k">hero</span>.y)</div>
-                <div id="time-cpp" class="code-content"><span class="hl-k">if</span> (<span class="hl-k">hero</span>.time > <span class="hl-n">30</span>) {
-    <span class="hl-k">hero</span>.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"B"</span>);
-}
+            <h3>hero.health</h3>
+            <p>你的水晶<strong>当前生命值</strong>，是一个数字。当生命值降到 0 时，你就输了。时刻关注它，在生命值告急时及时调整防御策略。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'hhp-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hhp-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hhp-cpp')">C++</button>
+                </div>
+                <div id="hhp-py" class="code-content active"><span class="hl-k">if</span> hero.health < hero.maxHealth * <span class="hl-n">0.3</span>:
+    <span class="hl-c"># 生命值低于30%，紧急释放爆炸技能保命</span>
+    hero.special(<span class="hl-s">"burst"</span>, hero.x + <span class="hl-n">5</span>, hero.y)</div>
+                <div id="hhp-js" class="code-content"><span class="hl-k">if</span> (hero.health < hero.maxHealth * <span class="hl-n">0.3</span>) {
+    <span class="hl-c">// 生命值低于30%，紧急释放爆炸技能保命</span>
+    hero.special(<span class="hl-s">"burst"</span>, hero.x + <span class="hl-n">5</span>, hero.y);
+}</div>
+                <div id="hhp-cpp" class="code-content"><span class="hl-k">if</span> (hero.health < hero.maxHealth * <span class="hl-n">0.3</span>) {
+    <span class="hl-c">// 生命值低于30%，紧急释放爆炸技能保命</span>
+    hero.special(<span class="hl-s">"burst"</span>, hero.x + <span class="hl-n">5</span>, hero.y);
+}</div>
+            </div>
 
-<span class="hl-k">if</span> (<span class="hl-k">hero</span>.health < <span class="hl-k">hero</span>.maxHealth * <span class="hl-n">0.3</span>) {
-    <span class="hl-k">hero</span>.special(<span class="hl-s">"burst"</span>, <span class="hl-k">hero</span>.x + <span class="hl-n">5</span>, <span class="hl-k">hero</span>.y);
+            <h3>hero.maxHealth</h3>
+            <p>你的水晶<strong>最大生命值</strong>，是一个数字。可以配合 <code>hero.health</code> 计算当前生命值百分比，用于触发紧急防御策略。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'hmax-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hmax-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hmax-cpp')">C++</button>
+                </div>
+                <div id="hmax-py" class="code-content active">healthPercent = hero.health / hero.maxHealth</div>
+                <div id="hmax-js" class="code-content"><span class="hl-k">var</span> healthPercent = hero.health / hero.maxHealth;</div>
+                <div id="hmax-cpp" class="code-content"><span class="hl-k">auto</span> healthPercent = hero.health / hero.maxHealth;</div>
+            </div>
+
+            <h3>hero.type</h3>
+            <p>英雄的类型。在本关卡中，它的值<strong>始终是</strong> <span class="type-code">"base"</span>，代表你的角色就是水晶本身。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'htype-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'htype-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'htype-cpp')">C++</button>
+                </div>
+                <div id="htype-py" class="code-content active"><span class="hl-k">if</span> hero.type == <span class="hl-s">"base"</span>:
+    hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>)</div>
+                <div id="htype-js" class="code-content"><span class="hl-k">if</span> (hero.type === <span class="hl-s">"base"</span>) {
+    hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);
+}</div>
+                <div id="htype-cpp" class="code-content"><span class="hl-k">if</span> (hero.type == <span class="hl-s">"base"</span>) {
+    hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);
 }</div>
             </div>
         </div>
 
         <div class="card" id="section-mana">
-            <h2>二、⚡ 法力值与资源 (Mana)</h2>
-            <p><code>hero.mana</code>：当前法力值，上限 100。建造/升级每次固定消耗 25 点。</p>
-            <p class="detail-text">战术解读：法力不会因为建造失败而扣除。建议在主循环开头时刻检查 <code>hero.mana >= 25</code>，一旦满足就立刻寻找合适的位置投资防御塔，切忌让法力溢出导致浪费。</p>
-            <ul>
-                <li>每秒自动恢复 + 击败怪物奖励</li>
-                <li>接近上限立刻使用，避免浪费</li>
-            </ul>
-
+            <h2>二、⚡ 法力值与资源</h2>
+            
+            <h3>hero.mana</h3>
+            <p>你当前拥有的<strong>法力值</strong>，是一个数字。建造和升级防御塔都需要消耗法力值（每次 25 点）。法力值上限为 100，注意不要让法力溢出浪费。</p>
             <div class="code-panel">
                 <div class="tab-bar">
-                    <button class="tab-btn active" onclick="switchTab(this, 'mana-py')">Python</button>
-                    <button class="tab-btn" onclick="switchTab(this, 'mana-cpp')">C++</button>
+                    <button class="tab-btn active" onclick="switchTab(this, 'hmana-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hmana-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'hmana-cpp')">C++</button>
                 </div>
-                <div id="mana-py" class="code-content active"><span class="hl-k">if</span> <span class="hl-k">hero</span>.mana >= <span class="hl-n">25</span>:
-    <span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>)</div>
-                <div id="mana-cpp" class="code-content"><span class="hl-k">if</span> (<span class="hl-k">hero</span>.mana >= <span class="hl-n">25</span>) {
-    <span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);
+                <div id="hmana-py" class="code-content active"><span class="hl-k">if</span> hero.mana >= <span class="hl-n">25</span>:
+    hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>)</div>
+                <div id="hmana-js" class="code-content"><span class="hl-k">if</span> (hero.mana >= <span class="hl-n">25</span>) {
+    hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);
+}</div>
+                <div id="hmana-cpp" class="code-content"><span class="hl-k">if</span> (hero.mana >= <span class="hl-n">25</span>) {
+    hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);
 }</div>
             </div>
         </div>
 
         <div class="card" id="section-build">
-            <h2>三、🏗️ 建造与升级 (Build & Upgrade)</h2>
+            <h2>三、🏗️ 建造与升级</h2>
             
-            <h3>建造指令</h3>
-            <p><code>hero.build(towerType, place)</code>：在预设点位 (<span class="type-code">"A"</span> 至 <span class="type-code">"I"</span>) 建造。同类型再次建造 = 升级。</p>
-            <p><code>hero.build(towerType, x, y)</code>：在指定坐标格子中心建造，执行成功后会**返回生成的塔对象**。</p>
-            <p class="detail-text">战术解读：将建造方法的返回值（塔对象）存入变量是一个极佳的习惯。这样你可以在建造完成的瞬间，立刻使用后续 API 对这座特定塔的行为进行微调（如更改它的瞄准目标）。如果法力不足或坐标非法，建造会被忽略且不消耗法力。</p>
+            <h3>hero.build(towerType, place)</h3>
+            <p>在<strong>预设点位</strong>上建造一座防御塔。点位名称从 <span class="type-code">"A"</span> 到 <span class="type-code">"I"</span>。你只能在己方颜色或紫色的格子上建造。</p>
+            <p>建造需要消耗法力值，<strong>如果法力不足，你的代码会自动暂停等待</strong>，直到法力值积累到足够为止。</p>
+            <p>如果该点位已被<strong>对手的塔</strong>占据，则无法在此建造。如果该点位已有**你自己的塔**，则会将该塔升级到下一级；如果传入的 towerType 与已有塔类型不同，则会替换塔的类型，同时等级在原有基础上提升。</p>
+            <p>可用的 towerType 包括：</p>
+            <ul>
+                <li><span class="type-code">"archer"</span>（弓箭塔）</li>
+                <li><span class="type-code">"mage"</span>（法师塔）</li>
+                <li><span class="type-code">"cannon"</span>（加农炮）</li>
+                <li><span class="type-code">"frost"</span>（寒霜塔）</li>
+            </ul>
+            <p>你也可以通过 <code>hero.availableTowerTypes</code> 属性在代码中获取完整列表。</p>
+            
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'bplace-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'bplace-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'bplace-cpp')">C++</button>
+                </div>
+                <div id="bplace-py" class="code-content active">hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>)
+hero.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"D"</span>)
+<span class="hl-c"># 在A点再次建造弓箭塔，会将A点的弓箭塔升级</span>
+hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>)</div>
+                <div id="bplace-js" class="code-content">hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);
+hero.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"D"</span>);
+<span class="hl-c">// 在A点再次建造弓箭塔，会将A点的弓箭塔升级</span>
+hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);</div>
+                <div id="bplace-cpp" class="code-content">hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);
+hero.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"D"</span>);
+<span class="hl-c">// 在A点再次建造弓箭塔，会将A点的弓箭塔升级</span>
+hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);</div>
+            </div>
+
+            <h3>hero.build(towerType, x, y)</h3>
+            <p>在包含坐标点 {x, y} 的<strong>格子中心</strong>建造一座防御塔。你只能在己方颜色或紫色的格子上建造。</p>
+            <p>建造需要消耗法力值，<strong>如果法力不足，你的代码会自动暂停等待</strong>，直到法力值积累到足够为止。</p>
+            <p>如果该格子已被<strong>对手的塔</strong>占据，则无法在此建造。如果该格子已有<strong>你自己的塔</strong>，则会将该塔升级到下一级；如果传入的 towerType 与已有塔类型不同，则会替换塔的类型，同时等级在原有基础上提升。</p>
+            <p>该函数<strong>返回所建造的塔对象</strong>，你可以保存它以便后续对该塔进行操作（如设置瞄准模式）。</p>
 
             <div class="code-panel">
                 <div class="tab-bar">
-                    <button class="tab-btn active" onclick="switchTab(this, 'build-py')">Python</button>
-                    <button class="tab-btn" onclick="switchTab(this, 'build-cpp')">C++</button>
+                    <button class="tab-btn active" onclick="switchTab(this, 'bxy-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'bxy-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'bxy-cpp')">C++</button>
                 </div>
-                <div id="build-py" class="code-content active"><span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>)
-<span class="hl-k">hero</span>.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"D"</span>)
-<span class="hl-c"># 再次建造同类型即可升级</span>
-<span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>)
+                <div id="bxy-py" class="code-content active">myTower = hero.build(<span class="hl-s">"mage"</span>, <span class="hl-n">15</span>, <span class="hl-n">40</span>)
+<span class="hl-c"># 返回塔对象，可以用于后续操作</span>
+hero.setTargeting(myTower, <span class="hl-s">"strong"</span>)</div>
+                <div id="bxy-js" class="code-content"><span class="hl-k">var</span> myTower = hero.build(<span class="hl-s">"mage"</span>, <span class="hl-n">15</span>, <span class="hl-n">40</span>);
+<span class="hl-c">// 返回塔对象，可以用于后续操作</span>
+hero.setTargeting(myTower, <span class="hl-s">"strong"</span>);</div>
+                <div id="bxy-cpp" class="code-content"><span class="hl-k">auto</span> myTower = hero.build(<span class="hl-s">"mage"</span>, <span class="hl-n">15</span>, <span class="hl-n">40</span>);
+<span class="hl-c">// 返回塔对象，可以用于后续操作</span>
+hero.setTargeting(myTower, <span class="hl-s">"strong"</span>);</div>
+            </div>
 
-<span class="hl-c"># 获取返回的塔对象并设置策略</span>
-<span class="hl-k">myTower</span> = <span class="hl-k">hero</span>.build(<span class="hl-s">"mage"</span>, <span class="hl-n">15</span>, <span class="hl-n">40</span>)
-<span class="hl-k">if</span> myTower:
-    <span class="hl-k">hero</span>.setTargeting(myTower, <span class="hl-s">"strong"</span>)</div>
-                <div id="build-cpp" class="code-content"><span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);
-<span class="hl-k">hero</span>.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"D"</span>);
-<span class="hl-c">// 再次建造同类型即可升级</span>
-<span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);
-
-<span class="hl-c">// 获取返回的塔对象并设置策略</span>
-<span class="hl-k">auto</span> myTower = <span class="hl-k">hero</span>.build(<span class="hl-s">"mage"</span>, <span class="hl-n">15</span>, <span class="hl-n">40</span>);
-<span class="hl-k">if</span> (myTower) {
-    <span class="hl-k">hero</span>.setTargeting(myTower, <span class="hl-s">"strong"</span>);
+            <h3>hero.canBuildAt(x, y)</h3>
+            <p>检查包含坐标 {x, y} 的格子<strong>是否可以建造</strong>防御塔。如果可以建造或可以升级已有的己方塔，则返回 <code>true</code>；否则返回 <code>false</code>。适合在代码中动态判断某个位置是否可用。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'canb-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'canb-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'canb-cpp')">C++</button>
+                </div>
+                <div id="canb-py" class="code-content active"><span class="hl-k">if</span> hero.canBuildAt(<span class="hl-n">15</span>, <span class="hl-n">40</span>):
+    hero.build(<span class="hl-s">"archer"</span>, <span class="hl-n">15</span>, <span class="hl-n">40</span>)</div>
+                <div id="canb-js" class="code-content"><span class="hl-k">if</span> (hero.canBuildAt(<span class="hl-n">15</span>, <span class="hl-n">40</span>)) {
+    hero.build(<span class="hl-s">"archer"</span>, <span class="hl-n">15</span>, <span class="hl-n">40</span>);
+}</div>
+                <div id="canb-cpp" class="code-content"><span class="hl-k">if</span> (hero.canBuildAt(<span class="hl-n">15</span>, <span class="hl-n">40</span>)) {
+    hero.build(<span class="hl-s">"archer"</span>, <span class="hl-n">15</span>, <span class="hl-n">40</span>);
 }</div>
             </div>
 
-            <h3>合法性检查 & 塔类型列表</h3>
-            <p><code>hero.canBuildAt(x, y)</code>：检查格子是否可建造。</p>
-            <p class="detail-text">战术解读：使用循环配合 <code>canBuildAt</code>，可以在你的领地上自动寻找空位“铺满”防御塔，而不用硬编码记住每一个坐标。</p>
-            
-            <p><code>hero.towerTypes</code>（或 <code>hero.availableTowerTypes</code>）：获取所有可用防御塔类型列表。</p>
-
+            <h3>hero.towerTypes</h3>
+            <p>返回一个列表，包含所有<strong>可用的防御塔类型</strong>名称。你可以用它来遍历所有塔类型，结合 <code>hero.getTowerParameters()</code> 进行策略分析。等同于 <code>hero.availableTowerTypes</code>。</p>
             <div class="code-panel">
                 <div class="tab-bar">
-                    <button class="tab-btn active" onclick="switchTab(this, 'valid-py')">Python</button>
-                    <button class="tab-btn" onclick="switchTab(this, 'valid-cpp')">C++</button>
+                    <button class="tab-btn active" onclick="switchTab(this, 'ttypes-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'ttypes-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'ttypes-cpp')">C++</button>
                 </div>
-                <div id="valid-py" class="code-content active"><span class="hl-k">if</span> <span class="hl-k">hero</span>.canBuildAt(<span class="hl-n">15</span>, <span class="hl-n">40</span>):
-    <span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, <span class="hl-n">15</span>, <span class="hl-n">40</span>)
-
-<span class="hl-k">types</span> = <span class="hl-k">hero</span>.towerTypes
+                <div id="ttypes-py" class="code-content active">types = hero.towerTypes
 <span class="hl-k">for</span> t <span class="hl-k">in</span> types:
-    <span class="hl-k">params</span> = <span class="hl-k">hero</span>.getTowerParameters(t)</div>
-                <div id="valid-cpp" class="code-content"><span class="hl-k">if</span> (<span class="hl-k">hero</span>.canBuildAt(<span class="hl-n">15</span>, <span class="hl-n">40</span>)) {
-    <span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, <span class="hl-n">15</span>, <span class="hl-n">40</span>);
-}
-
-<span class="hl-k">auto</span> types = <span class="hl-k">hero</span>.towerTypes;
-<span class="hl-k">for</span> (<span class="hl-k">auto</span> &t : types) {
-    <span class="hl-k">auto</span> params = <span class="hl-k">hero</span>.getTowerParameters(t);
+    params = hero.getTowerParameters(t)</div>
+                <div id="ttypes-js" class="code-content"><span class="hl-k">var</span> types = hero.towerTypes;
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < types.length; i++) {
+    <span class="hl-k">var</span> params = hero.getTowerParameters(types[i]);
+}</div>
+                <div id="ttypes-cpp" class="code-content"><span class="hl-k">auto</span> types = hero.towerTypes;
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < types.size(); i++) {
+    <span class="hl-k">auto</span> params = hero.getTowerParameters(types[i]);
 }</div>
             </div>
 
-            <h3>获取塔参数 & 设置瞄准策略</h3>
-            <p><code>hero.getTowerParameters(towerType, level=1)</code>：返回塔在指定等级的详细参数（attackDamage, attackRange, attackCooldown, cost 等）。</p>
-            <p><code>hero.setTargeting(tower, targetingType)</code>：设置塔的目标选择策略。</p>
-            <p class="detail-text">战术解读：支持的策略有 <span class="type-code">"close"</span>(优先打最近), <span class="type-code">"weak"</span>(优先打血少,适合弓箭塔补刀收割), <span class="type-code">"strong"</span>(优先打血多,适合集火高血量怪物), <span class="type-code">"left"</span>/<span class="type-code">"right"</span>(优先打偏左或偏右的敌人)。合理搭配这些策略，能让你的火力网不再产生“伤害溢出”。</p>
+            <h3>hero.getTowerParameters(towerType, level=1)</h3>
+            <p>返回指定 towerType 在指定等级（默认为 1 级）下的<strong>详细参数对象</strong>。用它可以在代码中动态获取防御塔的各项数据，帮助你做出更精准的建造决策。</p>
+            <p>返回的对象包含以下字段：</p>
+            <ul>
+                <li><code>type</code>（塔类型，字符串）</li>
+                <li><code>level</code>（等级，整数）</li>
+                <li><code>attackDamage</code>（攻击伤害，数字）</li>
+                <li><code>attackRange</code>（攻击范围，数字）</li>
+                <li><code>attackCooldown</code>（攻击冷却时间，数字）</li>
+                <li><code>cost</code>（建造费用，数字）</li>
+            </ul>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'tparams-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tparams-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tparams-cpp')">C++</button>
+                </div>
+                <div id="tparams-py" class="code-content active">archerInfo = hero.getTowerParameters(<span class="hl-s">"archer"</span>, <span class="hl-n">3</span>)
+<span class="hl-c"># archerInfo.attackDamage -- 3级弓箭塔的攻击伤害</span>
+<span class="hl-c"># archerInfo.attackRange  -- 3级弓箭塔的攻击范围</span>
+<span class="hl-c"># archerInfo.cost         -- 建造费用</span></div>
+                <div id="tparams-js" class="code-content"><span class="hl-k">var</span> archerInfo = hero.getTowerParameters(<span class="hl-s">"archer"</span>, <span class="hl-n">3</span>);
+<span class="hl-c">// archerInfo.attackDamage -- 3级弓箭塔的攻击伤害</span>
+<span class="hl-c">// archerInfo.attackRange  -- 3级弓箭塔的攻击范围</span>
+<span class="hl-c">// archerInfo.cost         -- 建造费用</span></div>
+                <div id="tparams-cpp" class="code-content"><span class="hl-k">auto</span> archerInfo = hero.getTowerParameters(<span class="hl-s">"archer"</span>, <span class="hl-n">3</span>);
+<span class="hl-c">// archerInfo.attackDamage -- 3级弓箭塔的攻击伤害</span>
+<span class="hl-c">// archerInfo.attackRange  -- 3级弓箭塔的攻击范围</span>
+<span class="hl-c">// archerInfo.cost         -- 建造费用</span></div>
+            </div>
+
+            <h3>hero.setTargeting(tower, targetingType)</h3>
+            <p>设置指定防御塔的<strong>目标选择策略</strong>，决定塔在多个怪物进入射程时优先攻击哪一个。不同的策略适用于不同的战术场景。</p>
+            <p>targetingType 参数可以是以下值之一：</p>
+            <ul>
+                <li><span class="type-code">"close"</span>（默认）—— 攻击距离最近的怪物</li>
+                <li><span class="type-code">"left"</span> —— 攻击 X 坐标上最靠近你水晶的怪物（即最危险的）</li>
+                <li><span class="type-code">"right"</span> —— 攻击 X 坐标上离你水晶最远的怪物（即最早出现的）</li>
+                <li><span class="type-code">"weak"</span> —— 攻击当前生命值最低的怪物（优先收割残血）</li>
+                <li><span class="type-code">"strong"</span> —— 攻击当前生命值最高的怪物（集火精英怪）</li>
+            </ul>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'tset-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tset-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tset-cpp')">C++</button>
+                </div>
+                <div id="tset-py" class="code-content active">myTower = hero.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"B"</span>)
+<span class="hl-c"># 让加农炮优先攻击生命值最低的怪物，快速收割残血</span>
+hero.setTargeting(myTower, <span class="hl-s">"weak"</span>)</div>
+                <div id="tset-js" class="code-content"><span class="hl-k">var</span> myTower = hero.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"B"</span>);
+<span class="hl-c">// 让加农炮优先攻击生命值最低的怪物，快速收割残血</span>
+hero.setTargeting(myTower, <span class="hl-s">"weak"</span>);</div>
+                <div id="tset-cpp" class="code-content"><span class="hl-k">auto</span> myTower = hero.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"B"</span>);
+<span class="hl-c">// 让加农炮优先攻击生命值最低的怪物，快速收割残血</span>
+hero.setTargeting(myTower, <span class="hl-s">"weak"</span>);</div>
+            </div>
         </div>
 
         <div class="card" id="section-tower">
-            <h2>四、🗼 防御塔查询与属性 (Towers Info)</h2>
+            <h2>四、🗼 防御塔查询</h2>
             
-            <h3>全局视野</h3>
-            <p><code>hero.findTowers()</code>：返回所有防御塔（己方 + 敌方）。</p>
-            <p><code>hero.findMyTowers()</code> / <code>hero.findEnemyTowers()</code>：分别返回己方和敌方塔列表。</p>
-            <p class="detail-text">战术解读：通过 <code>findEnemyTowers()</code> 分析对手最薄弱的防线方位，进而考虑用 <code>teleport</code> 传送技能把怪物集中扔到对方防御较弱的路线上。</p>
-
-            <h3>塔对象属性</h3>
-            <p>每个塔对象 <code>tower</code> 拥有以下属性：<br>
-            <code>tower.x</code>, <code>tower.y</code>, <code>tower.attackDamage</code>, <code>tower.attackCooldown</code>, <code>tower.attackRange</code>, <code>tower.level</code>, <code>tower.type</code></p>
-            <p class="detail-text">战术解读：你可以遍历自己的防御塔列表，根据 <code>tower.level</code> 动态决定是否要继续原地升级。例如“只要等级低于3级的弓箭塔才优先升级”，以此保证法力均匀分配，防止单一塔等级过高但边缘防线薄弱。</p>
-
+            <h3>hero.findTowers()</h3>
+            <p>返回一个列表，包含地图上<strong>所有防御塔</strong>（包括你的和对手的）。你可以用它来总览全局塔的分布情况。</p>
             <div class="code-panel">
                 <div class="tab-bar">
-                    <button class="tab-btn active" onclick="switchTab(this, 'findtower-py')">Python</button>
-                    <button class="tab-btn" onclick="switchTab(this, 'findtower-cpp')">C++</button>
+                    <button class="tab-btn active" onclick="switchTab(this, 'ft-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'ft-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'ft-cpp')">C++</button>
                 </div>
-                <div id="findtower-py" class="code-content active"><span class="hl-k">myTowers</span> = <span class="hl-k">hero</span>.findMyTowers()
+                <div id="ft-py" class="code-content active">allTowers = hero.findTowers()
+<span class="hl-k">for</span> t <span class="hl-k">in</span> allTowers:
+    <span class="hl-k">pass</span>  <span class="hl-c"># t.type, t.level, t.x, t.y</span></div>
+                <div id="ft-js" class="code-content"><span class="hl-k">var</span> allTowers = hero.findTowers();
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < allTowers.length; i++) {
+    <span class="hl-k">var</span> t = allTowers[i];
+    <span class="hl-c">// t.type, t.level, t.x, t.y</span>
+}</div>
+                <div id="ft-cpp" class="code-content"><span class="hl-k">auto</span> allTowers = hero.findTowers();
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < allTowers.size(); i++) {
+    <span class="hl-k">auto</span> t = allTowers[i];
+    <span class="hl-c">// t.type, t.level, t.x, t.y</span>
+}</div>
+            </div>
+
+            <h3>hero.findMyTowers()</h3>
+            <p>返回一个列表，包含地图上<strong>你自己的所有防御塔</strong>。你可以用它来检查自己的防御布局，决定哪些塔需要升级。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'fmt-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'fmt-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'fmt-cpp')">C++</button>
+                </div>
+                <div id="fmt-py" class="code-content active">myTowers = hero.findMyTowers()
 <span class="hl-k">for</span> t <span class="hl-k">in</span> myTowers:
-    <span class="hl-c"># 筛选出等级低于3级的弓箭塔进行投资</span>
     <span class="hl-k">if</span> t.type == <span class="hl-s">"archer"</span> <span class="hl-k">and</span> t.level < <span class="hl-n">3</span>:
-        <span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, t.x, t.y)  
-    <span class="hl-k">print</span>(f<span class="hl-s">"{t.type} Lv{t.level} 伤害{t.attackDamage}"</span>)</div>
-                <div id="findtower-cpp" class="code-content"><span class="hl-k">auto</span> myTowers = <span class="hl-k">hero</span>.findMyTowers();
-<span class="hl-k">for</span> (<span class="hl-k">auto</span> &t : myTowers) {
-    <span class="hl-c">// 筛选出等级低于3级的弓箭塔进行投资</span>
-    <span class="hl-k">if</span> (t.type == <span class="hl-s">"archer"</span> && t.level < <span class="hl-n">3</span>) {
-        <span class="hl-k">hero</span>.build(<span class="hl-s">"archer"</span>, t.x, t.y); 
+        <span class="hl-c"># 把低等级弓箭塔升级</span>
+        hero.build(<span class="hl-s">"archer"</span>, t.x, t.y)</div>
+                <div id="fmt-js" class="code-content"><span class="hl-k">var</span> myTowers = hero.findMyTowers();
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < myTowers.length; i++) {
+    <span class="hl-k">var</span> t = myTowers[i];
+    <span class="hl-k">if</span> (t.type === <span class="hl-s">"archer"</span> && t.level < <span class="hl-n">3</span>) {
+        <span class="hl-c">// 把低等级弓箭塔升级</span>
+        hero.build(<span class="hl-s">"archer"</span>, t.x, t.y);
     }
-    <span class="hl-k">printf</span>(<span class="hl-s">"%s Lv%d 伤害%.1f\n"</span>, t.type.c_str(), t.level, t.attackDamage);
+}</div>
+                <div id="fmt-cpp" class="code-content"><span class="hl-k">auto</span> myTowers = hero.findMyTowers();
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < myTowers.size(); i++) {
+    <span class="hl-k">auto</span> t = myTowers[i];
+    <span class="hl-k">if</span> (t.type == <span class="hl-s">"archer"</span> && t.level < <span class="hl-n">3</span>) {
+        <span class="hl-c">// 把低等级弓箭塔升级</span>
+        hero.build(<span class="hl-s">"archer"</span>, t.x, t.y);
+    }
+}</div>
+            </div>
+
+            <h3>hero.findEnemyTowers()</h3>
+            <p>返回一个列表，包含地图上<strong>对手的所有防御塔</strong>。你可以用它来分析对手的防御布局，制定针对性策略。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'fet-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'fet-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'fet-cpp')">C++</button>
+                </div>
+                <div id="fet-py" class="code-content active">enemyTowers = hero.findEnemyTowers()
+<span class="hl-c"># 查看对手有多少座塔</span>
+count = len(enemyTowers)</div>
+                <div id="fet-js" class="code-content"><span class="hl-k">var</span> enemyTowers = hero.findEnemyTowers();
+<span class="hl-c">// 查看对手有多少座塔</span>
+<span class="hl-k">var</span> count = enemyTowers.length;</div>
+                <div id="fet-cpp" class="code-content"><span class="hl-k">auto</span> enemyTowers = hero.findEnemyTowers();
+<span class="hl-c">// 查看对手有多少座塔</span>
+<span class="hl-k">auto</span> count = enemyTowers.size();</div>
+            </div>
+        </div>
+
+        <div class="card" id="section-tower-props" style="border-left-color: #26a69a;">
+            <h2>五、⚙️ 防御塔属性</h2>
+            <p style="margin-bottom: 25px; color: #546e7a;">以下属性可以通过防御塔对象访问（例如通过 <code>hero.build()</code> 的返回值，或通过 <code>hero.findMyTowers()</code> 列表中的元素）。</p>
+
+            <h3>tower.x</h3>
+            <p>该防御塔中心的 <strong>x（水平）坐标</strong>。当你被分配到蓝队时，坐标会自动镜像翻转。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'tx-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tx-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tx-cpp')">C++</button>
+                </div>
+                <div id="tx-py" class="code-content active">myTowers = hero.findMyTowers()
+firstTower = myTowers[<span class="hl-n">0</span>]
+towerX = firstTower.x</div>
+                <div id="tx-js" class="code-content"><span class="hl-k">var</span> myTowers = hero.findMyTowers();
+<span class="hl-k">var</span> firstTower = myTowers[<span class="hl-n">0</span>];
+<span class="hl-k">var</span> towerX = firstTower.x;</div>
+                <div id="tx-cpp" class="code-content"><span class="hl-k">auto</span> myTowers = hero.findMyTowers();
+<span class="hl-k">auto</span> firstTower = myTowers[<span class="hl-n">0</span>];
+<span class="hl-k">auto</span> towerX = firstTower.x;</div>
+            </div>
+
+            <h3>tower.y</h3>
+            <p>该防御塔中心的 <strong>y（垂直）坐标</strong>。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'ty-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'ty-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'ty-cpp')">C++</button>
+                </div>
+                <div id="ty-py" class="code-content active">myTowers = hero.findMyTowers()
+firstTower = myTowers[<span class="hl-n">0</span>]
+towerY = firstTower.y</div>
+                <div id="ty-js" class="code-content"><span class="hl-k">var</span> myTowers = hero.findMyTowers();
+<span class="hl-k">var</span> firstTower = myTowers[<span class="hl-n">0</span>];
+<span class="hl-k">var</span> towerY = firstTower.y;</div>
+                <div id="ty-cpp" class="code-content"><span class="hl-k">auto</span> myTowers = hero.findMyTowers();
+<span class="hl-k">auto</span> firstTower = myTowers[<span class="hl-n">0</span>];
+<span class="hl-k">auto</span> towerY = firstTower.y;</div>
+            </div>
+
+            <h3>tower.attackDamage</h3>
+            <p>该防御塔的<strong>攻击伤害值</strong>。这个值会随塔的等级提升而增长。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'tdmg-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tdmg-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tdmg-cpp')">C++</button>
+                </div>
+                <div id="tdmg-py" class="code-content active">myTowers = hero.findMyTowers()
+<span class="hl-k">for</span> t <span class="hl-k">in</span> myTowers:
+    dmg = t.attackDamage</div>
+                <div id="tdmg-js" class="code-content"><span class="hl-k">var</span> myTowers = hero.findMyTowers();
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < myTowers.length; i++) {
+    <span class="hl-k">var</span> dmg = myTowers[i].attackDamage;
+}</div>
+                <div id="tdmg-cpp" class="code-content"><span class="hl-k">auto</span> myTowers = hero.findMyTowers();
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < myTowers.size(); i++) {
+    <span class="hl-k">auto</span> dmg = myTowers[i].attackDamage;
+}</div>
+            </div>
+
+            <h3>tower.attackCooldown</h3>
+            <p>该防御塔两次攻击之间的<strong>冷却间隔</strong>，单位为秒。数值越小，攻击越频繁。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'tcd-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tcd-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tcd-cpp')">C++</button>
+                </div>
+                <div id="tcd-py" class="code-content active">myTowers = hero.findMyTowers()
+cd = myTowers[<span class="hl-n">0</span>].attackCooldown</div>
+                <div id="tcd-js" class="code-content"><span class="hl-k">var</span> myTowers = hero.findMyTowers();
+<span class="hl-k">var</span> cd = myTowers[<span class="hl-n">0</span>].attackCooldown;</div>
+                <div id="tcd-cpp" class="code-content"><span class="hl-k">auto</span> myTowers = hero.findMyTowers();
+<span class="hl-k">auto</span> cd = myTowers[<span class="hl-n">0</span>].attackCooldown;</div>
+            </div>
+
+            <h3>tower.attackRange</h3>
+            <p>该防御塔的<strong>最大攻击范围</strong>。只有进入这个范围内的怪物才会被该塔攻击。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'trange-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'trange-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'trange-cpp')">C++</button>
+                </div>
+                <div id="trange-py" class="code-content active">myTowers = hero.findMyTowers()
+range = myTowers[<span class="hl-n">0</span>].attackRange</div>
+                <div id="trange-js" class="code-content"><span class="hl-k">var</span> myTowers = hero.findMyTowers();
+<span class="hl-k">var</span> range = myTowers[<span class="hl-n">0</span>].attackRange;</div>
+                <div id="trange-cpp" class="code-content"><span class="hl-k">auto</span> myTowers = hero.findMyTowers();
+<span class="hl-k">auto</span> range = myTowers[<span class="hl-n">0</span>].attackRange;</div>
+            </div>
+
+            <h3>tower.level</h3>
+            <p>该防御塔的<strong>当前等级</strong>。每次在同一位置建造同类型塔，等级加 1。等级越高，伤害和部分属性越强。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'tlv-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tlv-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tlv-cpp')">C++</button>
+                </div>
+                <div id="tlv-py" class="code-content active">myTowers = hero.findMyTowers()
+<span class="hl-k">for</span> t <span class="hl-k">in</span> myTowers:
+    <span class="hl-k">if</span> t.level < <span class="hl-n">5</span>:
+        hero.build(t.type, t.x, t.y)</div>
+                <div id="tlv-js" class="code-content"><span class="hl-k">var</span> myTowers = hero.findMyTowers();
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < myTowers.length; i++) {
+    <span class="hl-k">if</span> (myTowers[i].level < <span class="hl-n">5</span>) {
+        hero.build(myTowers[i].type, myTowers[i].x, myTowers[i].y);
+    }
+}</div>
+                <div id="tlv-cpp" class="code-content"><span class="hl-k">auto</span> myTowers = hero.findMyTowers();
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < myTowers.size(); i++) {
+    <span class="hl-k">if</span> (myTowers[i].level < <span class="hl-n">5</span>) {
+        hero.build(myTowers[i].type, myTowers[i].x, myTowers[i].y);
+    }
+}</div>
+            </div>
+
+            <h3>tower.type</h3>
+            <p>该防御塔的<strong>类型名称</strong>，例如 <span class="type-code">"archer"</span>、<span class="type-code">"mage"</span>、<span class="type-code">"cannon"</span>、<span class="type-code">"frost"</span>。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'tt-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tt-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'tt-cpp')">C++</button>
+                </div>
+                <div id="tt-py" class="code-content active">myTowers = hero.findMyTowers()
+<span class="hl-k">for</span> t <span class="hl-k">in</span> myTowers:
+    <span class="hl-k">if</span> t.type == <span class="hl-s">"frost"</span>:
+        <span class="hl-k">pass</span>  <span class="hl-c"># 找到了寒霜塔</span></div>
+                <div id="tt-js" class="code-content"><span class="hl-k">var</span> myTowers = hero.findMyTowers();
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < myTowers.length; i++) {
+    <span class="hl-k">if</span> (myTowers[i].type === <span class="hl-s">"frost"</span>) {
+        <span class="hl-c">// 找到了寒霜塔</span>
+    }
+}</div>
+                <div id="tt-cpp" class="code-content"><span class="hl-k">auto</span> myTowers = hero.findMyTowers();
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < myTowers.size(); i++) {
+    <span class="hl-k">if</span> (myTowers[i].type == <span class="hl-s">"frost"</span>) {
+        <span class="hl-c">// 找到了寒霜塔</span>
+    }
 }</div>
             </div>
         </div>
 
         <div class="card" id="section-skill" style="border-left-color: #ab47bc;">
-            <h2>六、🌀 技能系统 (Special Abilities)</h2>
+            <h2>六、🌀 技能系统</h2>
             
-            <h3>释放技能 & 冷却检查</h3>
-            <p><code>hero.special(specialType, x, y)</code>：释放技能。可用字符串为 <span class="type-code">"pull"</span>, <span class="type-code">"push"</span>, <span class="type-code">"burst"</span>, <span class="type-code">"teleport"</span>。免费，不消耗法力。</p>
-            <p><code>hero.isReady(specialType)</code>：检查该技能是否已冷却完毕。</p>
-            <p class="detail-text">战术解读：这四个技能有相互独立的冷却时间（Cooldown），不要只用一个！要在不同怪物群中使用不同的技能形成组合技。</p>
-
+            <h3>hero.special(specialType, x, y)</h3>
+            <p>在坐标 {x, y} 处释放一个技能。技能<strong>不消耗法力值</strong>，但需要时间恢复（有冷却时间）。这是你的免费王牌武器，合理使用可以大幅提升生存能力。</p>
+            <p>可用的 specialType 有四种：</p>
+            <ul>
+                <li><span class="type-code">"pull"</span>（<strong>拉力</strong>）—— 生成引力场，将怪物吸向中心</li>
+                <li><span class="type-code">"push"</span>（<strong>推力</strong>）—— 生成斥力场，将怪物向外推开</li>
+                <li><span class="type-code">"burst"</span>（<strong>爆炸</strong>）—— 瞬间释放超强斥力，将怪物弹飞到极远处</li>
+                <li><span class="type-code">"teleport"</span>（<strong>传送</strong>）—— 将怪物传送到对手水晶方向</li>
+            </ul>
+            
             <div class="code-panel">
                 <div class="tab-bar">
                     <button class="tab-btn active" onclick="switchTab(this, 'special-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'special-js')">JavaScript</button>
                     <button class="tab-btn" onclick="switchTab(this, 'special-cpp')">C++</button>
                 </div>
-                <div id="special-py" class="code-content active"><span class="hl-k">if</span> <span class="hl-k">hero</span>.isReady(<span class="hl-s">"pull"</span>):
-    <span class="hl-k">hero</span>.special(<span class="hl-s">"pull"</span>, <span class="hl-n">30</span>, <span class="hl-n">40</span>)
-<span class="hl-k">elif</span> <span class="hl-k">hero</span>.isReady(<span class="hl-s">"burst"</span>):
-    <span class="hl-k">hero</span>.special(<span class="hl-s">"burst"</span>, <span class="hl-k">hero</span>.x + <span class="hl-n">5</span>, <span class="hl-k">hero</span>.y)</div>
-                <div id="special-cpp" class="code-content"><span class="hl-k">if</span> (<span class="hl-k">hero</span>.isReady(<span class="hl-s">"pull"</span>)) {
-    <span class="hl-k">hero</span>.special(<span class="hl-s">"pull"</span>, <span class="hl-n">30</span>, <span class="hl-n">40</span>);
-} <span class="hl-k">else if</span> (<span class="hl-k">hero</span>.isReady(<span class="hl-s">"burst"</span>)) {
-    <span class="hl-k">hero</span>.special(<span class="hl-s">"burst"</span>, <span class="hl-k">hero</span>.x + <span class="hl-n">5</span>, <span class="hl-k">hero</span>.y);
+                <div id="special-py" class="code-content active"><span class="hl-c"># 在坐标(30, 40)处释放拉力，将怪物吸聚到一起</span>
+hero.special(<span class="hl-s">"pull"</span>, <span class="hl-n">30</span>, <span class="hl-n">40</span>)
+<span class="hl-c"># 在水晶前方释放爆炸，紧急弹飞逼近的怪物</span>
+hero.special(<span class="hl-s">"burst"</span>, hero.x + <span class="hl-n">5</span>, hero.y)</div>
+                <div id="special-js" class="code-content"><span class="hl-c">// 在坐标(30, 40)处释放拉力，将怪物吸聚到一起</span>
+hero.special(<span class="hl-s">"pull"</span>, <span class="hl-n">30</span>, <span class="hl-n">40</span>);
+<span class="hl-c">// 在水晶前方释放爆炸，紧急弹飞逼近的怪物</span>
+hero.special(<span class="hl-s">"burst"</span>, hero.x + <span class="hl-n">5</span>, hero.y);</div>
+                <div id="special-cpp" class="code-content"><span class="hl-c">// 在坐标(30, 40)处释放拉力，将怪物吸聚到一起</span>
+hero.special(<span class="hl-s">"pull"</span>, <span class="hl-n">30</span>, <span class="hl-n">40</span>);
+<span class="hl-c">// 在水晶前方释放爆炸，紧急弹飞逼近的怪物</span>
+hero.special(<span class="hl-s">"burst"</span>, hero.x + <span class="hl-n">5</span>, hero.y);</div>
+            </div>
+
+            <h3>hero.isReady(specialType)</h3>
+            <p>检查指定的技能<strong>是否已经冷却完毕、可以使用</strong>。返回布尔值：<code>true</code> 表示可以释放，<code>false</code> 表示还在冷却中。在释放技能前先检查冷却状态，可以避免代码被不必要地阻塞。</p>
+            
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'sready-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'sready-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'sready-cpp')">C++</button>
+                </div>
+                <div id="sready-py" class="code-content active"><span class="hl-k">if</span> hero.isReady(<span class="hl-s">"pull"</span>):
+    hero.special(<span class="hl-s">"pull"</span>, <span class="hl-n">30</span>, <span class="hl-n">40</span>)
+<span class="hl-k">elif</span> hero.isReady(<span class="hl-s">"burst"</span>):
+    hero.special(<span class="hl-s">"burst"</span>, hero.x + <span class="hl-n">5</span>, hero.y)</div>
+                <div id="sready-js" class="code-content"><span class="hl-k">if</span> (hero.isReady(<span class="hl-s">"pull"</span>)) {
+    hero.special(<span class="hl-s">"pull"</span>, <span class="hl-n">30</span>, <span class="hl-n">40</span>);
+} <span class="hl-k">else if</span> (hero.isReady(<span class="hl-s">"burst"</span>)) {
+    hero.special(<span class="hl-s">"burst"</span>, hero.x + <span class="hl-n">5</span>, hero.y);
+}</div>
+                <div id="sready-cpp" class="code-content"><span class="hl-k">if</span> (hero.isReady(<span class="hl-s">"pull"</span>)) {
+    hero.special(<span class="hl-s">"pull"</span>, <span class="hl-n">30</span>, <span class="hl-n">40</span>);
+} <span class="hl-k">else if</span> (hero.isReady(<span class="hl-s">"burst"</span>)) {
+    hero.special(<span class="hl-s">"burst"</span>, hero.x + <span class="hl-n">5</span>, hero.y);
 }</div>
             </div>
 
-            <h3>查看活跃技能区域</h3>
-            <p><code>hero.findActiveAnomalies()</code>：返回当前所有活跃的技能区域对象。包含字段：<code>name</code>(技能名), <code>force</code>(推拉强度), <code>x</code>, <code>y</code>, <code>endX</code>, <code>endY</code>, <code>duration</code>(剩余持续时间)。</p>
-            <p class="detail-text">战术解读：进阶指挥官必修课。通过查询活跃的魔法异常区域，你可以知道哪里正在释放 <span class="type-code">"pull"</span> 吸收怪物，从而避免在同一个坐标重复释放其他冲突的技能浪费冷却时间，或者等该区域结束后再跟进下一个连招。</p>
+            <h3>hero.findActiveAnomalies()</h3>
+            <p>返回一个列表，包含当前战场上<strong>所有正在生效的技能区域</strong>的信息对象。你可以用它来追踪自己或对手已释放的技能状态，避免在同一位置重复释放，或根据对手的技能动态调整策略。</p>
+            <p>每个技能区域对象包含以下字段：</p>
+            <ul>
+                <li><span class="type-code">"force"</span>（力的强度，数字。正值表示向内吸引即拉力，负值表示向外推开即推力/爆炸）</li>
+                <li><span class="type-code">"x"</span>（技能释放点的 X 坐标）</li>
+                <li><span class="type-code">"y"</span>（技能释放点的 Y 坐标）</li>
+                <li><span class="type-code">"endX"</span>（传送技能出口的 X 坐标）</li>
+                <li><span class="type-code">"endY"</span>（传送技能出口的 Y 坐标）</li>
+                <li><span class="type-code">"name"</span>（创建该区域的技能名称，字符串）</li>
+                <li><span class="type-code">"duration"</span>（剩余持续时间，数字）</li>
+            </ul>
+            
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'sanom-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'sanom-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'sanom-cpp')">C++</button>
+                </div>
+                <div id="sanom-py" class="code-content active">anomalies = hero.findActiveAnomalies()
+<span class="hl-k">for</span> a <span class="hl-k">in</span> anomalies:
+    <span class="hl-k">pass</span>
+    <span class="hl-c"># a.name     -- 技能名称，如 "pull", "push", "burst", "teleport"</span>
+    <span class="hl-c"># a.force    -- 力的强度，正值=拉力，负值=推力</span>
+    <span class="hl-c"># a.x, a.y   -- 技能释放位置</span>
+    <span class="hl-c"># a.duration -- 剩余持续时间</span></div>
+                <div id="sanom-js" class="code-content"><span class="hl-k">var</span> anomalies = hero.findActiveAnomalies();
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < anomalies.length; i++) {
+    <span class="hl-k">var</span> a = anomalies[i];
+    <span class="hl-c">// a.name     -- 技能名称，如 "pull", "push", "burst", "teleport"</span>
+    <span class="hl-c">// a.force    -- 力的强度，正值=拉力，负值=推力</span>
+    <span class="hl-c">// a.x, a.y   -- 技能释放位置</span>
+    <span class="hl-c">// a.duration -- 剩余持续时间</span>
+}</div>
+                <div id="sanom-cpp" class="code-content"><span class="hl-k">auto</span> anomalies = hero.findActiveAnomalies();
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < anomalies.size(); i++) {
+    <span class="hl-k">auto</span> a = anomalies[i];
+    <span class="hl-c">// a.name     -- 技能名称，如 "pull", "push", "burst", "teleport"</span>
+    <span class="hl-c">// a.force    -- 力的强度，正值=拉力，负值=推力</span>
+    <span class="hl-c">// a.x, a.y   -- 技能释放位置</span>
+    <span class="hl-c">// a.duration -- 剩余持续时间</span>
+}</div>
+            </div>
         </div>
 
         <div class="card" id="section-monster" style="border-left-color: #ef5350;">
-            <h2>七、👾 怪物情报 (Monsters)</h2>
+            <h2>七、👾 怪物情报</h2>
             
-            <h3>类型与参数</h3>
-            <p><code>hero.monsterTypes</code>：所有怪物类型列表。</p>
-            <p><code>hero.getMonsterParameters(monsterType)</code>：返回怪物详细参数：<code>attackDamage</code>, <code>attackRange</code>, <code>maxSpeed</code>, <code>mana</code>, <code>flying</code>。</p>
-            <p class="detail-text">战术解读：特别注意 <code>mana</code> 这个参数，它代表你击杀这只怪物后会获得的奖励法力。当遇到高回报的“财神”怪物时，可以调整防线策略（比如放慢它的移速）优先吃掉它。</p>
-
-            <h3>波次信息与实时查找</h3>
-            <p><code>hero.getWaves()</code> / <code>hero.getWave(n)</code> / <code>hero.getWaveNumber()</code>：获取全部波次、第 n 波怪物列表、当前波次编号（0 起始）。</p>
-            <p><code>hero.getCurrentWave()</code> / <code>hero.getNextWave()</code>：实时获取当前波次与下一波怪物列表。</p>
-            <p class="detail-text">战术解读：通过 <code>hero.getNextWave()</code> 提前预判。如果你发现下一波里有大量带 <code>flying: true</code> 属性的怪，就可以提前预留法力，在怪群出现前将多座法师塔（防空主力）建造完毕，实现防守节奏的无缝衔接。</p>
-            
-            <p><code>hero.getBosses()</code>：返回 Boss 信息二维数组 <code>[名称, 出现时间]</code>。</p>
-            <p><code>hero.findMonsters()</code>：返回当前场上所有存活怪物对象。</p>
-
+            <h3>hero.monsterTypes</h3>
+            <p>返回一个列表，包含你在怪物波次中<strong>会遇到的所有怪物类型</strong>名称。你可以用它来提前了解战场上有哪些种类的怪物，配合 <code>hero.getMonsterParameters()</code> 查看各类型的详细数据。</p>
             <div class="code-panel">
                 <div class="tab-bar">
-                    <button class="tab-btn active" onclick="switchTab(this, 'monster-py')">Python</button>
-                    <button class="tab-btn" onclick="switchTab(this, 'monster-cpp')">C++</button>
+                    <button class="tab-btn active" onclick="switchTab(this, 'mtype-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mtype-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mtype-cpp')">C++</button>
                 </div>
-                <div id="monster-py" class="code-content active"><span class="hl-c"># 提前针对飞行怪物部署防空塔</span>
-<span class="hl-k">nextWave</span> = <span class="hl-k">hero</span>.getNextWave()
-<span class="hl-k">for</span> mtype <span class="hl-k">in</span> nextWave:
-    <span class="hl-k">if</span> <span class="hl-k">hero</span>.getMonsterParameters(mtype).flying:
-        <span class="hl-k">hero</span>.build(<span class="hl-s">"mage"</span>, <span class="hl-s">"C"</span>)
-        <span class="hl-k">break</span>
+                <div id="mtype-py" class="code-content active">types = hero.monsterTypes
+<span class="hl-k">for</span> t <span class="hl-k">in</span> types:
+    info = hero.getMonsterParameters(t)</div>
+                <div id="mtype-js" class="code-content"><span class="hl-k">var</span> types = hero.monsterTypes;
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < types.length; i++) {
+    <span class="hl-k">var</span> info = hero.getMonsterParameters(types[i]);
+}</div>
+                <div id="mtype-cpp" class="code-content"><span class="hl-k">auto</span> types = hero.monsterTypes;
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < types.size(); i++) {
+    <span class="hl-k">auto</span> info = hero.getMonsterParameters(types[i]);
+}</div>
+            </div>
 
-<span class="hl-k">monsters</span> = <span class="hl-k">hero</span>.findMonsters()
-<span class="hl-k">for</span> m <span class="hl-k">in</span> monsters:
-    <span class="hl-k">print</span>(m.type, <span class="hl-s">"位置:"</span>, m.x, m.y)</div>
-                <div id="monster-cpp" class="code-content"><span class="hl-c">// 提前针对飞行怪物部署防空塔</span>
-<span class="hl-k">auto</span> nextWave = <span class="hl-k">hero</span>.getNextWave();
-<span class="hl-k">for</span> (<span class="hl-k">auto</span> &mtype : nextWave) {
-    <span class="hl-k">if</span> (<span class="hl-k">hero</span>.getMonsterParameters(mtype).flying) {
-        <span class="hl-k">hero</span>.build(<span class="hl-s">"mage"</span>, <span class="hl-s">"C"</span>);
+            <h3>hero.getMonsterParameters(monsterType)</h3>
+            <p>返回指定类型怪物的<strong>详细参数对象</strong>。用它可以了解每种怪物的战斗能力，从而制定针对性的防御策略。</p>
+            <p>返回的对象包含以下字段：</p>
+            <ul>
+                <li><code>type</code>（怪物类型，字符串）</li>
+                <li><code>attackDamage</code>（攻击伤害，数字）</li>
+                <li><code>attackRange</code>（攻击范围，数字）</li>
+                <li><code>maxSpeed</code>（最大移动速度，数字）</li>
+                <li><code>mana</code>（击败后获得的法力值奖励，数字）</li>
+                <li><code>flying</code>（是否为飞行怪物，布尔值）</li>
+            </ul>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'mparam-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mparam-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mparam-cpp')">C++</button>
+                </div>
+                <div id="mparam-py" class="code-content active">ogreInfo = hero.getMonsterParameters(<span class="hl-s">"ogre"</span>)
+<span class="hl-c"># ogreInfo.attackDamage -- 攻击伤害</span>
+<span class="hl-c"># ogreInfo.flying       -- 是否飞行（True/False）</span>
+<span class="hl-c"># ogreInfo.mana         -- 击败后获得的法力值</span></div>
+                <div id="mparam-js" class="code-content"><span class="hl-k">var</span> ogreInfo = hero.getMonsterParameters(<span class="hl-s">"ogre"</span>);
+<span class="hl-c">// ogreInfo.attackDamage -- 攻击伤害</span>
+<span class="hl-c">// ogreInfo.flying       -- 是否飞行（true/false）</span>
+<span class="hl-c">// ogreInfo.mana         -- 击败后获得的法力值</span></div>
+                <div id="mparam-cpp" class="code-content"><span class="hl-k">auto</span> ogreInfo = hero.getMonsterParameters(<span class="hl-s">"ogre"</span>);
+<span class="hl-c">// ogreInfo.attackDamage -- 攻击伤害</span>
+<span class="hl-c">// ogreInfo.flying       -- 是否飞行（true/false）</span>
+<span class="hl-c">// ogreInfo.mana         -- 击败后获得的法力值</span></div>
+            </div>
+
+            <h3>hero.getWaves()</h3>
+            <p>返回一个<strong>二维数组</strong>，包含所有怪物波次的信息。外层数组的每个元素代表一波怪物，内层数组是该波中怪物类型的名称列表，按出场顺序排列。怪物会按照列表中的顺序循环出现。</p>
+            <p>例如返回值的结构如下：</p>
+            <div style="background: rgba(0,0,0,0.05); padding: 15px; border-radius: 8px; font-family: monospace; line-height: 1.5; margin-bottom: 15px; overflow-x: auto;">
+[<br>
+&nbsp;&nbsp;["munchkin"], &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// 第0波：只有小怪<br>
+&nbsp;&nbsp;["munchkin", "ogre"], &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// 第1波：一个小怪接一个食人魔，循环<br>
+&nbsp;&nbsp;["ogre", "thrower", "munchkin"], &nbsp;&nbsp;&nbsp;// 第2波：三种怪物按此顺序循环<br>
+&nbsp;&nbsp;...<br>
+]
+            </div>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'mwaves-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mwaves-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mwaves-cpp')">C++</button>
+                </div>
+                <div id="mwaves-py" class="code-content active">waves = hero.getWaves()
+<span class="hl-c"># waves -- 第0波的怪物类型列表</span>
+<span class="hl-c"># waves -- 第1波的怪物类型列表</span>
+<span class="hl-k">for</span> wave <span class="hl-k">in</span> waves:
+    <span class="hl-k">pass</span>  <span class="hl-c"># wave 是一个字符串列表，如 ["munchkin", "ogre"]</span></div>
+                <div id="mwaves-js" class="code-content"><span class="hl-k">var</span> waves = hero.getWaves();
+<span class="hl-c">// waves -- 第0波的怪物类型列表</span>
+<span class="hl-c">// waves -- 第1波的怪物类型列表</span>
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < waves.length; i++) {
+    <span class="hl-k">var</span> wave = waves[i];
+    <span class="hl-c">// wave 是一个字符串数组，如 ["munchkin", "ogre"]</span>
+}</div>
+                <div id="mwaves-cpp" class="code-content"><span class="hl-k">auto</span> waves = hero.getWaves();
+<span class="hl-c">// waves -- 第0波的怪物类型列表</span>
+<span class="hl-c">// waves -- 第1波的怪物类型列表</span>
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < waves.size(); i++) {
+    <span class="hl-k">auto</span> wave = waves[i];
+    <span class="hl-c">// wave 是一个字符串数组，如 ["munchkin", "ogre"]</span>
+}</div>
+            </div>
+
+            <h3>hero.getWave(waveNumber)</h3>
+            <p>返回指定波次的<strong>怪物类型列表</strong>（字符串数组）。<strong>第一波的编号是 0</strong>。你可以用它来查看任意一波的怪物组成，提前规划防御。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'mwave-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mwave-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mwave-cpp')">C++</button>
+                </div>
+                <div id="mwave-py" class="code-content active">firstWave = hero.getWave(<span class="hl-n">0</span>)
+<span class="hl-c"># firstWave 可能是 ["munchkin"]</span>
+secondWave = hero.getWave(<span class="hl-n">1</span>)
+<span class="hl-c"># secondWave 可能是 ["munchkin", "ogre"]</span></div>
+                <div id="mwave-js" class="code-content"><span class="hl-k">var</span> firstWave = hero.getWave(<span class="hl-n">0</span>);
+<span class="hl-c">// firstWave 可能是 ["munchkin"]</span>
+<span class="hl-k">var</span> secondWave = hero.getWave(<span class="hl-n">1</span>);
+<span class="hl-c">// secondWave 可能是 ["munchkin", "ogre"]</span></div>
+                <div id="mwave-cpp" class="code-content"><span class="hl-k">auto</span> firstWave = hero.getWave(<span class="hl-n">0</span>);
+<span class="hl-c">// firstWave 可能是 ["munchkin"]</span>
+<span class="hl-k">auto</span> secondWave = hero.getWave(<span class="hl-n">1</span>);
+<span class="hl-c">// secondWave 可能是 ["munchkin", "ogre"]</span></div>
+            </div>
+
+            <h3>hero.getWaveNumber()</h3>
+            <p>返回<strong>当前波次的编号</strong>（整数）。第一波的编号是 0。你可以用它来判断战斗进行到了哪个阶段，从而切换不同的建造和防御策略。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'mwavenum-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mwavenum-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mwavenum-cpp')">C++</button>
+                </div>
+                <div id="mwavenum-py" class="code-content active">currentWaveNum = hero.getWaveNumber()
+<span class="hl-k">if</span> currentWaveNum >= <span class="hl-n">5</span>:
+    <span class="hl-c"># 第5波之后，开始升级防御塔</span>
+    hero.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"B"</span>)</div>
+                <div id="mwavenum-js" class="code-content"><span class="hl-k">var</span> currentWaveNum = hero.getWaveNumber();
+<span class="hl-k">if</span> (currentWaveNum >= <span class="hl-n">5</span>) {
+    <span class="hl-c">// 第5波之后，开始升级防御塔</span>
+    hero.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"B"</span>);
+}</div>
+                <div id="mwavenum-cpp" class="code-content"><span class="hl-k">auto</span> currentWaveNum = hero.getWaveNumber();
+<span class="hl-k">if</span> (currentWaveNum >= <span class="hl-n">5</span>) {
+    <span class="hl-c">// 第5波之后，开始升级防御塔</span>
+    hero.build(<span class="hl-s">"cannon"</span>, <span class="hl-s">"B"</span>);
+}</div>
+            </div>
+
+            <h3>hero.getCurrentWave()</h3>
+            <p>返回<strong>当前正在进行的波次</strong>的怪物类型列表（字符串数组）。你可以用它来实时了解当前面对的是什么怪物，动态调整技能释放和建造策略。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'mcurrw-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mcurrw-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mcurrw-cpp')">C++</button>
+                </div>
+                <div id="mcurrw-py" class="code-content active">currentWave = hero.getCurrentWave()
+<span class="hl-c"># 检查当前波次是否有飞行怪物</span>
+<span class="hl-k">for</span> monsterType <span class="hl-k">in</span> currentWave:
+    info = hero.getMonsterParameters(monsterType)
+    <span class="hl-k">if</span> info.flying:
+        <span class="hl-c"># 当前波次有飞行怪物，确保有法师塔</span>
+        hero.build(<span class="hl-s">"mage"</span>, <span class="hl-s">"C"</span>)
+        <span class="hl-k">break</span></div>
+                <div id="mcurrw-js" class="code-content"><span class="hl-k">var</span> currentWave = hero.getCurrentWave();
+<span class="hl-c">// 检查当前波次是否有飞行怪物</span>
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < currentWave.length; i++) {
+    <span class="hl-k">var</span> info = hero.getMonsterParameters(currentWave[i]);
+    <span class="hl-k">if</span> (info.flying) {
+        <span class="hl-c">// 当前波次有飞行怪物，确保有法师塔</span>
+        hero.build(<span class="hl-s">"mage"</span>, <span class="hl-s">"C"</span>);
         <span class="hl-k">break</span>;
     }
-}
-
-<span class="hl-k">auto</span> monsters = <span class="hl-k">hero</span>.findMonsters();
-<span class="hl-k">for</span> (<span class="hl-k">auto</span> &m : monsters) {
-    <span class="hl-k">printf</span>(<span class="hl-s">"%s 位置: %.1f, %.1f\n"</span>, m.type.c_str(), m.x, m.y);
 }</div>
-            </div>
-        </div>
-
-        <div class="card" id="section-util" style="border-left-color: #8d6e63;">
-            <h2>八/九/十、📏 对手与工具方法</h2>
-            
-            <h3>🔴 洞察敌情 (Enemy Base)</h3>
-            <p><code>hero.getEnemyHero()</code>：获取对手水晶引用，可访问其 <code>x</code>, <code>y</code>, <code>health</code>, <code>maxHealth</code>。</p>
-
-            <h3>📏 距离计算 (Distance & Nearest)</h3>
-            <p><code>hero.distanceTo(target)</code>：返回你的水晶到指定目标（塔、怪物）的距离。</p>
-            <p><code>hero.findNearest(targets)</code>：从对象数组中，返回距离你水晶最近的那个目标。</p>
-            <p class="detail-text">战术解读：极为强大的筛选器。直接传入整个 <code>hero.findMonsters()</code> 数组，它会自动计算并返回离你老家最近的危险分子。利用这个返回值，你可以极其精准地将 <code>burst</code>（爆炸）或 <code>teleport</code>（传送）释放在威胁最大的目标头上。</p>
-
-            <h3>⏸️ 节奏控制 (Wait)</h3>
-            <p><code>hero.wait(t)</code>：等待 t 秒，期间不执行代码的后续逻辑。</p>
-            <p class="detail-text">战术解读：谨慎使用！在竞速赛中，挂起等待意味着你无法在这一段时间内建造或释放技能。建议使用基于 <code>hero.time</code> 的条件判断来代替长时的阻塞等待。</p>
-
-            <div class="code-panel">
-                <div class="tab-bar">
-                    <button class="tab-btn active" onclick="switchTab(this, 'util-py')">Python</button>
-                    <button class="tab-btn" onclick="switchTab(this, 'util-cpp')">C++</button>
-                </div>
-                <div id="util-py" class="code-content active"><span class="hl-c"># 找到离基地最近的怪，如果距离小于 15 则果断弹飞</span>
-<span class="hl-k">nearest</span> = <span class="hl-k">hero</span>.findNearest(<span class="hl-k">hero</span>.findMonsters())
-<span class="hl-k">if</span> nearest:
-    <span class="hl-k">if</span> <span class="hl-k">hero</span>.distanceTo(nearest) < <span class="hl-n">15</span>:
-        <span class="hl-k">hero</span>.special(<span class="hl-s">"burst"</span>, nearest.x, nearest.y)</div>
-                <div id="util-cpp" class="code-content"><span class="hl-c">// 找到离基地最近的怪，如果距离小于 15 则果断弹飞</span>
-<span class="hl-k">auto</span> nearest = <span class="hl-k">hero</span>.findNearest(<span class="hl-k">hero</span>.findMonsters());
-<span class="hl-k">if</span> (nearest) {
-    <span class="hl-k">if</span> (<span class="hl-k">hero</span>.distanceTo(nearest) < <span class="hl-n">15</span>) {
-        <span class="hl-k">hero</span>.special(<span class="hl-s">"burst"</span>, nearest.x, nearest.y);
+                <div id="mcurrw-cpp" class="code-content"><span class="hl-k">auto</span> currentWave = hero.getCurrentWave();
+<span class="hl-c">// 检查当前波次是否有飞行怪物</span>
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < currentWave.size(); i++) {
+    <span class="hl-k">auto</span> info = hero.getMonsterParameters(currentWave[i]);
+    <span class="hl-k">if</span> (info.flying) {
+        <span class="hl-c">// 当前波次有飞行怪物，确保有法师塔</span>
+        hero.build(<span class="hl-s">"mage"</span>, <span class="hl-s">"C"</span>);
+        <span class="hl-k">break</span>;
     }
 }</div>
             </div>
+
+            <h3>hero.getNextWave()</h3>
+            <p>返回<strong>下一波</strong>怪物的类型列表（字符串数组）。提前侦察下一波的怪物组成，可以让你在当前波次结束前就做好准备，占据先机。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'mnextw-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mnextw-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mnextw-cpp')">C++</button>
+                </div>
+                <div id="mnextw-py" class="code-content active">nextWave = hero.getNextWave()
+<span class="hl-k">for</span> monsterType <span class="hl-k">in</span> nextWave:
+    info = hero.getMonsterParameters(monsterType)
+    <span class="hl-k">if</span> info.flying:
+        <span class="hl-c"># 下一波有飞行怪物，提前建造法师塔</span>
+        hero.build(<span class="hl-s">"mage"</span>, <span class="hl-s">"E"</span>)
+        <span class="hl-k">break</span></div>
+                <div id="mnextw-js" class="code-content"><span class="hl-k">var</span> nextWave = hero.getNextWave();
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < nextWave.length; i++) {
+    <span class="hl-k">var</span> info = hero.getMonsterParameters(nextWave[i]);
+    <span class="hl-k">if</span> (info.flying) {
+        <span class="hl-c">// 下一波有飞行怪物，提前建造法师塔</span>
+        hero.build(<span class="hl-s">"mage"</span>, <span class="hl-s">"E"</span>);
+        <span class="hl-k">break</span>;
+    }
+}</div>
+                <div id="mnextw-cpp" class="code-content"><span class="hl-k">auto</span> nextWave = hero.getNextWave();
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < nextWave.size(); i++) {
+    <span class="hl-k">auto</span> info = hero.getMonsterParameters(nextWave[i]);
+    <span class="hl-k">if</span> (info.flying) {
+        <span class="hl-c">// 下一波有飞行怪物，提前建造法师塔</span>
+        hero.build(<span class="hl-s">"mage"</span>, <span class="hl-s">"E"</span>);
+        <span class="hl-k">break</span>;
+    }
+}</div>
+            </div>
+
+            <h3>hero.getBosses()</h3>
+            <p>返回一个<strong>二维数组</strong>，包含所有 Boss 的信息。每个元素是一个数组，其中第 0 项是 Boss 的名称（字符串），第 1 项是该 Boss 出现的时间（秒数）。你可以用它提前规划 Boss 战策略。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'mboss-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mboss-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'mboss-cpp')">C++</button>
+                </div>
+                <div id="mboss-py" class="code-content active">bosses = hero.getBosses()
+<span class="hl-k">for</span> boss <span class="hl-k">in</span> bosses:
+    bossName = boss[<span class="hl-n">0</span>]   <span class="hl-c"># Boss 名称</span>
+    spawnTime = boss[<span class="hl-n">1</span>]  <span class="hl-c"># 出现时间（秒）</span></div>
+                <div id="mboss-js" class="code-content"><span class="hl-k">var</span> bosses = hero.getBosses();
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < bosses.length; i++) {
+    <span class="hl-k">var</span> bossName = bosses[i][<span class="hl-n">0</span>];  <span class="hl-c">// Boss 名称</span>
+    <span class="hl-k">var</span> spawnTime = bosses[i][<span class="hl-n">1</span>]; <span class="hl-c">// 出现时间（秒）</span>
+}</div>
+                <div id="mboss-cpp" class="code-content"><span class="hl-k">auto</span> bosses = hero.getBosses();
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < bosses.size(); i++) {
+    <span class="hl-k">auto</span> bossName = bosses[i][<span class="hl-n">0</span>];  <span class="hl-c">// Boss 名称</span>
+    <span class="hl-k">auto</span> spawnTime = bosses[i][<span class="hl-n">1</span>]; <span class="hl-c">// 出现时间（秒）</span>
+}</div>
+            </div>
+
+            <h3>hero.findMonsters()</h3>
+            <p>返回一个列表，包含当前地图上<strong>所有存活的怪物</strong>。你可以用它来分析战场态势，找到最危险的怪物并决定技能释放位置。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'fmons-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'fmons-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'fmons-cpp')">C++</button>
+                </div>
+                <div id="fmons-py" class="code-content active">monsters = hero.findMonsters()
+<span class="hl-k">for</span> m <span class="hl-k">in</span> monsters:
+    <span class="hl-k">pass</span>  <span class="hl-c"># m.x, m.y -- 怪物位置; m.type -- 怪物类型</span></div>
+                <div id="fmons-js" class="code-content"><span class="hl-k">var</span> monsters = hero.findMonsters();
+<span class="hl-k">for</span> (<span class="hl-k">var</span> i = <span class="hl-n">0</span>; i < monsters.length; i++) {
+    <span class="hl-k">var</span> m = monsters[i];
+    <span class="hl-c">// m.x, m.y -- 怪物位置</span>
+    <span class="hl-c">// m.type   -- 怪物类型</span>
+}</div>
+                <div id="fmons-cpp" class="code-content"><span class="hl-k">auto</span> monsters = hero.findMonsters();
+<span class="hl-k">for</span> (<span class="hl-k">int</span> i = <span class="hl-n">0</span>; i < monsters.size(); i++) {
+    <span class="hl-k">auto</span> m = monsters[i];
+    <span class="hl-c">// m.x, m.y -- 怪物位置</span>
+    <span class="hl-c">// m.type   -- 怪物类型</span>
+}</div>
+            </div>
         </div>
 
-        <div class="card" style="background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%); border: none; box-shadow: 0 10px 30px rgba(63, 81, 181, 0.2);">
-            <h2 style="border-bottom: none; justify-content: center; color: #1a237e;">🎯 强化篇核心要点</h2>
-            <ul style="font-size: 1.1rem; color: #283593;">
-                <li>利用 <code>hero.time</code> 和 <code>hero.mana</code> 建立基于全局战局和经济的安全建造循环。</li>
-                <li>掌握四种技能及冷却管理，善用 <code>hero.findActiveAnomalies()</code> 观察并避开重复重叠的魔法区域。</li>
-                <li>深度挖掘怪物情报 API，根据 <code>hero.getNextWave()</code> 提前预判波次，灵活应对飞行防空压力。</li>
-                <li>熟练组合距离计算 <code>distanceTo</code> 和 <code>findNearest</code>，实现自动化的高精度技能锁定。</li>
-                <li>利用全局查询实时评估 <code>hero.findTowers()</code> 中的塔位质量，随时利用返回值进行微调。</li>
-            </ul>
-            <p style="text-align: center; font-weight: bold; font-size: 1.3rem; color: #311b92; margin-top: 25px;">
-                熟练掌握这些 API 的底层机制，成为冰锋竞速的真正大师！
-            </p>
+        <div class="card" id="section-enemy" style="border-left-color: #8d6e63;">
+            <h2>八、🔴 对手信息</h2>
+            
+            <h3>hero.getEnemyHero()</h3>
+            <p>返回<strong>对手英雄（水晶）的引用</strong>。你可以通过它访问对手的坐标、生命值等信息，用于分析对手的状态或计算传送技能的方向。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'ehero-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'ehero-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'ehero-cpp')">C++</button>
+                </div>
+                <div id="ehero-py" class="code-content active">enemy = hero.getEnemyHero()
+<span class="hl-c"># enemy.x, enemy.y -- 对手水晶坐标</span>
+<span class="hl-c"># enemy.health     -- 对手当前生命值</span>
+<span class="hl-c"># enemy.maxHealth  -- 对手最大生命值</span></div>
+                <div id="ehero-js" class="code-content"><span class="hl-k">var</span> enemy = hero.getEnemyHero();
+<span class="hl-c">// enemy.x, enemy.y -- 对手水晶坐标</span>
+<span class="hl-c">// enemy.health     -- 对手当前生命值</span>
+<span class="hl-c">// enemy.maxHealth  -- 对手最大生命值</span></div>
+                <div id="ehero-cpp" class="code-content"><span class="hl-k">auto</span> enemy = hero.getEnemyHero();
+<span class="hl-c">// enemy.x, enemy.y -- 对手水晶坐标</span>
+<span class="hl-c">// enemy.health     -- 对手当前生命值</span>
+<span class="hl-c">// enemy.maxHealth  -- 对手最大生命值</span></div>
+            </div>
+
+            <h3>hero.findNearest(targets)</h3>
+            <p>从一个目标数组中，返回<strong>距离你的水晶最近的那个目标</strong>。如果数组为空，则返回 <code>null</code>。这是快速定位最近威胁的便捷方法。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'fnear-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'fnear-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'fnear-cpp')">C++</button>
+                </div>
+                <div id="fnear-py" class="code-content active">monsters = hero.findMonsters()
+nearest = hero.findNearest(monsters)
+<span class="hl-k">if</span> nearest:
+    hero.special(<span class="hl-s">"pull"</span>, nearest.x, nearest.y)</div>
+                <div id="fnear-js" class="code-content"><span class="hl-k">var</span> monsters = hero.findMonsters();
+<span class="hl-k">var</span> nearest = hero.findNearest(monsters);
+<span class="hl-k">if</span> (nearest) {
+    hero.special(<span class="hl-s">"pull"</span>, nearest.x, nearest.y);
+}</div>
+                <div id="fnear-cpp" class="code-content"><span class="hl-k">auto</span> monsters = hero.findMonsters();
+<span class="hl-k">auto</span> nearest = hero.findNearest(monsters);
+<span class="hl-k">if</span> (nearest) {
+    hero.special(<span class="hl-s">"pull"</span>, nearest.x, nearest.y);
+}</div>
+            </div>
+        </div>
+
+        <div class="card" id="section-util" style="border-left-color: #607d8b;">
+            <h2>十、📏 通用工具</h2>
+            
+            <h3>hero.wait(t)</h3>
+            <p>让英雄<strong>等待 t 秒</strong>，期间不执行任何操作。适合在不需要建造或释放技能时让代码暂停，避免空转消耗性能。</p>
+            <div class="code-panel">
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab(this, 'wait-py')">Python</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'wait-js')">JavaScript</button>
+                    <button class="tab-btn" onclick="switchTab(this, 'wait-cpp')">C++</button>
+                </div>
+                <div id="wait-py" class="code-content active"><span class="hl-c"># 等待2秒再执行下一步操作</span>
+hero.wait(<span class="hl-n">2</span>)
+hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>)</div>
+                <div id="wait-js" class="code-content"><span class="hl-c">// 等待2秒再执行下一步操作</span>
+hero.wait(<span class="hl-n">2</span>);
+hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);</div>
+                <div id="wait-cpp" class="code-content"><span class="hl-c">// 等待2秒再执行下一步操作</span>
+hero.wait(<span class="hl-n">2</span>);
+hero.build(<span class="hl-s">"archer"</span>, <span class="hl-s">"A"</span>);</div>
+            </div>
         </div>
 
     </div>
