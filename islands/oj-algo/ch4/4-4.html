@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4.4 排列枚举 - C++ 魔法课堂</title>
+    <style>
+        /* ================= 核心配色 (保持风格一致) ================= */
+        :root {
+            --primary: #FF7043;      /* 橙色：代表搜索与活力 */
+            --primary-dark: #E64A19;
+            --secondary: #4DB6AC;    /* 青绿色：代表逻辑与稳定 */
+            --accent: #5C6BC0;       /* 靛蓝色：代表深度思考 */
+            --bg-color: #FFF8E1;     /* 暖黄底色 */
+            --text-main: #3E2723;
+            --code-bg: #282c34;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#FFD54F 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            border: 4px solid #FFE082;
+        }
+
+        /* ================= 标题样式 ================= */
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #FFCC80;
+        }
+
+        h2 {
+            background: linear-gradient(90deg, var(--primary), #FFAB91);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            font-size: 1.6em;
+        }
+
+        h3 {
+            color: var(--accent);
+            border-bottom: 3px dashed var(--accent);
+            padding-bottom: 8px;
+            margin-top: 30px;
+        }
+
+        /* ================= 强调样式 ================= */
+        .highlight {
+            color: #D84315;
+            font-weight: bold;
+            background: #FFE082;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .note-box {
+            background-color: #E0F2F1;
+            border-left: 8px solid var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .danger-box {
+            background-color: #FFEBEE;
+            border: 2px solid #EF9A9A;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration {
+            text-align: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px dashed #FFB74D;
+            overflow-x: auto;
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        th { background: var(--accent); color: white; padding: 12px; }
+        td { border: 1px solid #E0E0E0; padding: 12px; text-align: center; }
+        tr:nth-child(even) { background-color: #F5F5F5; }
+
+        /* ================= 代码块 ================= */
+        .code-container {
+            border: 3px solid #81C784;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: var(--code-bg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-header { display: flex; background: #37474f; }
+
+        .tab-btn {
+            padding: 12px 25px;
+            color: #cfd8dc;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-weight: bold;
+            flex: 1;
+            transition: 0.3s;
+            font-size: 1em;
+        }
+
+        .tab-btn.active {
+            background: var(--code-bg);
+            color: #81C784;
+            border-top: 4px solid #81C784;
+        }
+
+        .code-content {
+            display: none;
+            padding: 20px;
+            color: #abb2bf;
+            font-family: "Consolas", "Courier New", monospace;
+            white-space: pre;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+        .code-content.active { display: block; }
+
+        /* 高亮 */
+        .kw { color: #c678dd; } 
+        .com { color: #5c6370; font-style: italic; }
+        .str { color: #98c379; }
+        .num { color: #d19a66; }
+        .func { color: #61afef; }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: var(--primary);
+            color: white;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 2.2em; }
+            .tab-btn { padding: 10px 15px; font-size: 0.9em; }
+            table { font-size: 0.9em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>4.4 排列枚举</h1>
+
+    <div class="note-box">
+        <p>👋 <strong>魔法师语录：</strong></p>
+        <p>给定 n 个不同的元素，把它们按照所有的顺序重新排队，就是排列枚举。总共有 <strong>n! (n的阶乘)</strong> 种排法。<br>
+        竞赛中常用于解决<strong>顺序相关</strong>的组合问题，比如密码破译、旅行商路线(TSP)、八皇后排布等。</p>
+    </div>
+
+    <div class="danger-box">
+        <h4 style="margin-top:0; color:#C62828;">⚠️ 复杂度警示：阶乘爆炸！</h4>
+        <p>排列数的增长速度极其可怕：</p>
+        <ul>
+            <li>3! = 6</li>
+            <li>8! = 40,320</li>
+            <li>10! = 3,628,800</li>
+            <li>12! ≈ 4.79 × 10<sup>8</sup> <span style="color:#D84315; font-weight:bold;">(即将超时！)</span></li>
+        </ul>
+        <p><strong>竞赛建议：</strong><br> 
+        ✔️ n &le; 10，放心大胆枚举。<br>
+        ⚠️ n = 11 或 12，卡着时间线，需谨慎优化。<br>
+        ❌ n &ge; 13，绝对不能纯暴力全排列，必须换思路！</p>
+    </div>
+
+
+    <h2>4.4.1 使用自带魔法（库函数法）</h2>
+
+    <div class="illustration" style="border-color: #4DB6AC;">
+        <h4 style="color: #00796B; margin-top: 0;">🪄 字典序魔法</h4>
+        <svg width="400" height="150" viewBox="0 0 400 150" style="max-width: 100%; height: auto;">
+            <rect x="50" y="20" width="40" height="40" rx="5" fill="#FFE082" stroke="#FFB74D" stroke-width="2"/>
+            <text x="70" y="45" text-anchor="middle" font-size="18">1</text>
+            <rect x="100" y="20" width="40" height="40" rx="5" fill="#FFE082" stroke="#FFB74D" stroke-width="2"/>
+            <text x="120" y="45" text-anchor="middle" font-size="18">2</text>
+            <rect x="150" y="20" width="40" height="40" rx="5" fill="#FFE082" stroke="#FFB74D" stroke-width="2"/>
+            <text x="170" y="45" text-anchor="middle" font-size="18">3</text>
+
+            <path d="M 120 70 L 120 100" stroke="#5C6BC0" stroke-width="3" stroke-dasharray="5"/>
+            <polygon points="115,100 125,100 120,110" fill="#5C6BC0"/>
+            <text x="210" y="95" font-size="14" fill="#3F51B5">next_permutation()</text>
+
+            <rect x="50" y="110" width="40" height="40" rx="5" fill="#C8E6C9" stroke="#81C784" stroke-width="2"/>
+            <text x="70" y="135" text-anchor="middle" font-size="18">1</text>
+            <rect x="100" y="110" width="40" height="40" rx="5" fill="#C8E6C9" stroke="#81C784" stroke-width="2"/>
+            <text x="120" y="135" text-anchor="middle" font-size="18">3</text>
+            <rect x="150" y="110" width="40" height="40" rx="5" fill="#C8E6C9" stroke="#81C784" stroke-width="2"/>
+            <text x="170" y="135" text-anchor="middle" font-size="18">2</text>
+        </svg>
+    </div>
+
+    <h3>知识点讲解</h3>
+    <ul>
+        <li><strong>C++ 魔法：</strong> <code>std::next_permutation</code> 定义在 <code>&lt;algorithm&gt;</code> 中，它将当前序列变成<span class="highlight">字典序的下一个排列</span>。</li>
+        <li><strong>Python 魔法：</strong> 标准库 <code>itertools.permutations</code> 提供迭代器，直接生成所有排列。</li>
+        <li><strong>⚠️ 致命前提（针对C++）：</strong> 使用前<span class="highlight">必须先升序排序</span>！否则你只能得到从当前顺序往后的排列，前面的就漏掉了。</li>
+    </ul>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-1', 'group-1')">C++ 模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-1', 'group-1')">Python 模板</button>
+        </div>
+        <div id="cpp-1" class="code-content group-1 active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;algorithm&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    vector&lt;<span class="kw">int</span>&gt; v = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};
+    <span class="func">sort</span>(v.begin(), v.end());  <span class="com">// ⚠️ 必须先排序！</span>
+    
+    <span class="kw">do</span> {
+        <span class="kw">for</span> (<span class="kw">int</span> x : v) <span class="kw">cout</span> << x << <span class="str">" "</span>;
+        <span class="kw">cout</span> << endl;
+    } <span class="kw">while</span> (<span class="func">next_permutation</span>(v.begin(), v.end()));
+    
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-1" class="code-content group-1">
+<span class="kw">from</span> itertools <span class="kw">import</span> permutations
+
+v = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+
+<span class="com"># 自动按元素位置生成所有全排列，无需提前排序即可得到所有组合</span>
+<span class="com"># 但如果要严格按照数值字典序输出，建议先对 v 排序</span>
+<span class="kw">for</span> perm <span class="kw">in</span> <span class="func">permutations</span>(v):
+    <span class="func">print</span>(<span class="str">' '</span>.<span class="func">join</span>(<span class="func">map</span>(<span class="func">str</span>, perm)))</div>
+    </div>
+
+
+    <h2>4.4.2 手写全排列（DFS 回溯）</h2>
+
+    <div class="illustration" style="border-color: #FFB74D;">
+        <h4 style="color: #E64A19; margin-top: 0;">🌳 图解：排列的递归填坑</h4>
+        <svg width="450" height="200" viewBox="0 0 450 200" style="max-width: 100%; height: auto;">
+            <rect x="50" y="20" width="50" height="50" fill="none" stroke="#757575" stroke-dasharray="4"/>
+            <rect x="110" y="20" width="50" height="50" fill="none" stroke="#757575" stroke-dasharray="4"/>
+            <rect x="170" y="20" width="50" height="50" fill="none" stroke="#757575" stroke-dasharray="4"/>
+            <text x="135" y="90" font-size="14" fill="#E64A19">3个空位等待填充</text>
+
+            <circle cx="280" cy="45" r="15" fill="#4DB6AC"/>
+            <text x="280" y="50" text-anchor="middle" font-size="14" fill="#FFF">1</text>
+            <circle cx="330" cy="45" r="15" fill="#4DB6AC"/>
+            <text x="330" y="50" text-anchor="middle" font-size="14" fill="#FFF">2</text>
+            <circle cx="380" cy="45" r="15" fill="#4DB6AC"/>
+            <text x="380" y="50" text-anchor="middle" font-size="14" fill="#FFF">3</text>
+            <text x="330" y="90" text-anchor="middle" font-size="14" fill="#00796B">used数组记录状态</text>
+
+            <path d="M 280 30 Q 160 -20 75 20" fill="none" stroke="#FF7043" stroke-width="2" marker-end="url(#arrow)"/>
+            <circle cx="75" cy="45" r="15" fill="#FFCCBC" stroke="#E64A19"/>
+            <text x="75" y="50" text-anchor="middle" font-size="14" fill="#E64A19">1</text>
+            <text x="50" y="130" font-size="12" fill="#5C6BC0">1. 放数字</text>
+            <text x="50" y="150" font-size="12" fill="#5C6BC0">2. 标记已用</text>
+            <text x="50" y="170" font-size="12" fill="#5C6BC0">3. 递归下一坑</text>
+            <text x="50" y="190" font-size="12" fill="#E64A19; font-weight:bold">4. 拔出数字(回溯)</text>
+
+            <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#FF7043" />
+                </marker>
+            </defs>
+        </svg>
+    </div>
+
+    <h3>知识点讲解</h3>
+    <p><strong>为什么放着魔法库函数不用，非要手写递归？</strong></p>
+    <ul>
+        <li>很多难题需要在排列刚生成一半时就判断不行，从而<span class="highlight">提前剪枝</span>（比如八皇后）。库函数没法中途停手，会跑死电脑。</li>
+        <li>手写递归是理解<strong>回溯算法(Backtracking)</strong>的基石。</li>
+    </ul>
+    
+    <p><strong>核心步骤：</strong></p>
+    <ol>
+        <li>准备一个数组 <code>a</code> 存放当前填好的排列，准备一个布尔数组 <code>used</code> 标记数字是否已经被用过。</li>
+        <li>递归函数 <code>dfs(k)</code> 表示当前正在填第 <i>k</i> 个坑位。</li>
+        <li>枚举所有数字：如果没用过，就填入坑位，标记为已用，然后 <code>dfs(k+1)</code> 去填下一个坑。</li>
+        <li><strong>最关键一步：</strong> 从 <code>dfs(k+1)</code> 回来后，必须把刚填的数字“拔出来”，标记恢复为未使用（这叫回溯），给后面的数字腾出机会尝试。</li>
+    </ol>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-2', 'group-2')">C++ 模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-2', 'group-2')">Python 模板</button>
+        </div>
+        <div id="cpp-2" class="code-content group-2 active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> n = <span class="num">3</span>;
+<span class="kw">int</span> a[<span class="num">20</span>];
+<span class="kw">bool</span> used[<span class="num">20</span>] = {<span class="kw">false</span>};
+
+<span class="kw">void</span> <span class="func">dfs</span>(<span class="kw">int</span> k) {
+    <span class="kw">if</span> (k == n) {
+        <span class="com">// 坑填满了，输出当前排列</span>
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i < n; ++i) <span class="kw">cout</span> << a[i] << <span class="str">" "</span>;
+        <span class="kw">cout</span> << endl;
+        <span class="kw">return</span>;
+    }
+    
+    <span class="com">// 尝试所有的候选项 1 到 n</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i <= n; ++i) {
+        <span class="kw">if</span> (!used[i]) {
+            used[i] = <span class="kw">true</span>;         <span class="com">// 标记占位</span>
+            a[k] = i;               <span class="com">// 填入坑位</span>
+            
+            <span class="func">dfs</span>(k + <span class="num">1</span>);             <span class="com">// 去填下一个坑</span>
+            
+            used[i] = <span class="kw">false</span>;        <span class="com">// ⚠️ 回溯：拔出数字，恢复未用状态</span>
+        }
+    }
+}
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="func">dfs</span>(<span class="num">0</span>);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-2" class="code-content group-2">
+n = <span class="num">3</span>
+a = [<span class="num">0</span>] * n
+used = [<span class="kw">False</span>] * (n + <span class="num">1</span>)    <span class="com"># 数字从1开始，大小设为 n+1</span>
+
+<span class="kw">def</span> <span class="func">dfs</span>(k):
+    <span class="kw">if</span> k == n:
+        <span class="func">print</span>(<span class="str">' '</span>.<span class="func">join</span>(<span class="func">map</span>(<span class="func">str</span>, a)))
+        <span class="kw">return</span>
+        
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span>, n + <span class="num">1</span>):
+        <span class="kw">if not</span> used[i]:
+            used[i] = <span class="kw">True</span>
+            a[k] = i
+            
+            <span class="func">dfs</span>(k + <span class="num">1</span>)
+            
+            used[i] = <span class="kw">False</span>   <span class="com"># ⚠️ 回溯：拔出数字，恢复原状</span>
+
+<span class="func">dfs</span>(<span class="num">0</span>)</div>
+    </div>
+
+
+    <div class="note-box" style="background:#FFF3E0; border-color:#FF9800;">
+        <h3 style="color:#E65100; margin-top:0;">🚀 进阶实战：带剪枝的排列 —— 八皇后问题</h3>
+        <p><strong>问题：</strong> 在 8×8 棋盘上放 8 个皇后，互相不能打架（同行、同列、对角线都不行）。</p>
+        <p><strong>怎么转化为排列问题？</strong><br>
+        肯定不能把两个皇后放同一行。所以每行放一个，用 <code>pos[r]</code> 表示第 <code>r</code> 行的皇后放在了第几列。因为同列也不能放，所以 <code>pos</code> 数组就是 1~8 的一个<strong>全排列</strong>！</p>
+        <p><strong>剪枝条件：</strong> 摆放的过程中，随时检查对角线。如果对角线冲突了，当前分支直接咔嚓✂️，不往下摆了！</p>
+        <p><em>(对角线神奇规律：左下到右上，行+列的和固定；左上到右下，行-列的差固定)</em></p>
+    </div>
+
+    <h2>4.4.3 两种方法大比拼</h2>
+    <table>
+        <tr>
+            <th>方法</th>
+            <th>优点</th>
+            <th>缺点</th>
+            <th>适用场景</th>
+        </tr>
+        <tr>
+            <td><strong>库函数<br>(next_permutation)</strong></td>
+            <td>代码极简，一行搞定，不易出错。</td>
+            <td>无法在中途“踩刹车”剪枝。</td>
+            <td>小数据量、单纯要求输出全排列的题目。</td>
+        </tr>
+        <tr>
+            <td><strong>DFS 回溯</strong></td>
+            <td>极其灵活，可以随时剪枝，搜得更快。</td>
+            <td>代码较长，新手容易忘记写“回溯恢复”。</td>
+            <td>八皇后、复杂约束的旅行商问题、求最优解。</td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <p>✅ <strong>核心思想：</strong>顺位填坑，记录状态，不忘回溯。</p>
+        <hr style="border-color: rgba(255,255,255,0.3); margin: 15px 0;">
+        <p>✏️ <strong>课后练习挑战：</strong><br>
+        1. 使用两种方法输出 1~4 的全排列，观察它们输出顺序的区别。<br>
+        2. 去洛谷尝试 AC 这道经典搜索题：<strong>P1219 [USACO1.5] 八皇后 Checker Challenge</strong>。<br>
+        3. (挑战) 如果提供的数字是，如何修改你的手写 DFS 才能输出不重复的全排列？</p>
+    </div>
+
+</div>
+
+<script>
+function openTab(evt, tabId, groupClass) {
+    var i, content, links;
+    content = document.getElementsByClassName(groupClass);
+    for (i = 0; i < content.length; i++) {
+        if(content[i].classList.contains("code-content")) {
+            content[i].style.display = "none";
+            content[i].classList.remove("active");
+        }
+    }
+    links = evt.currentTarget.parentElement.getElementsByClassName("tab-btn");
+    for (i = 0; i < links.length; i++) {
+        links[i].className = links[i].className.replace(" active", "");
+    }
+    document.getElementById(tabId).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+</script>
+
+</body>
+</html>

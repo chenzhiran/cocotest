@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4.3 子集枚举 - C++ 魔法课堂</title>
+    <style>
+        /* ================= 核心配色 (保持风格一致) ================= */
+        :root {
+            --primary: #FF7043;      /* 橙色：代表搜索与活力 */
+            --primary-dark: #E64A19;
+            --secondary: #4DB6AC;    /* 青绿色：代表逻辑与稳定 */
+            --accent: #5C6BC0;       /* 靛蓝色：代表深度思考 */
+            --bg-color: #FFF8E1;     /* 暖黄底色 */
+            --text-main: #3E2723;
+            --code-bg: #282c34;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#FFD54F 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            border: 4px solid #FFE082;
+        }
+
+        /* ================= 标题样式 ================= */
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #FFCC80;
+        }
+
+        h2 {
+            background: linear-gradient(90deg, var(--primary), #FFAB91);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            font-size: 1.6em;
+        }
+
+        h3 {
+            color: var(--accent);
+            border-bottom: 3px dashed var(--accent);
+            padding-bottom: 8px;
+            margin-top: 30px;
+        }
+
+        /* ================= 强调样式 ================= */
+        .highlight {
+            color: #D84315;
+            font-weight: bold;
+            background: #FFE082;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .note-box {
+            background-color: #E0F2F1;
+            border-left: 8px solid var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .danger-box {
+            background-color: #FFEBEE;
+            border: 2px solid #EF9A9A;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration {
+            text-align: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px dashed #FFB74D;
+            overflow-x: auto; /* 适配移动端滑动 */
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        th { background: var(--accent); color: white; padding: 12px; }
+        td { border: 1px solid #E0E0E0; padding: 12px; text-align: center; }
+        tr:nth-child(even) { background-color: #F5F5F5; }
+
+        /* ================= 代码块 ================= */
+        .code-container {
+            border: 3px solid #81C784;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: var(--code-bg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-header { display: flex; background: #37474f; }
+
+        .tab-btn {
+            padding: 12px 25px;
+            color: #cfd8dc;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-weight: bold;
+            flex: 1;
+            transition: 0.3s;
+            font-size: 1em;
+        }
+
+        .tab-btn.active {
+            background: var(--code-bg);
+            color: #81C784;
+            border-top: 4px solid #81C784;
+        }
+
+        .code-content {
+            display: none;
+            padding: 20px;
+            color: #abb2bf;
+            font-family: "Consolas", "Courier New", monospace;
+            white-space: pre;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto; /* 移动端代码滚动 */
+        }
+        .code-content.active { display: block; }
+
+        /* 高亮 */
+        .kw { color: #c678dd; } 
+        .com { color: #5c6370; font-style: italic; }
+        .str { color: #98c379; }
+        .num { color: #d19a66; }
+        .func { color: #61afef; }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: var(--primary);
+            color: white;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 2.2em; }
+            .tab-btn { padding: 10px 15px; font-size: 0.9em; }
+            table { font-size: 0.9em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>4.3 子集枚举</h1>
+
+    <div class="note-box">
+        <p>👋 <strong>魔法师语录：</strong></p>
+        <p>给定一个包含 <i>n</i> 个元素的集合，枚举其所有子集（包括空集和全集），共计 <strong>2<sup><i>n</i></sup></strong> 个。<br>
+        <strong>核心思想：</strong> 每个元素在子集中只有两种状态：<span class="highlight">选</span> 或 <span class="highlight">不选</span>。我们就像在做一系列的“单选题”，从而组合出所有的可能性。</p>
+    </div>
+
+    <h2>4.3.1 二进制枚举（状态压缩）</h2>
+    
+    <div class="illustration" style="border-color: #4DB6AC;">
+        <h4 style="color: #00796B; margin-top: 0;">🖼️ 图解：二进制与子集的完美映射</h4>
+        <svg width="400" height="200" viewBox="0 0 400 200" style="max-width: 100%; height: auto;">
+            <rect x="50" y="20" width="80" height="40" rx="5" fill="#E1F5FE" stroke="#0288D1" stroke-width="2"/>
+            <text x="90" y="45" text-anchor="middle" font-size="18" font-weight="bold" fill="#0277BD">nums</text>
+            
+            <rect x="160" y="20" width="80" height="40" rx="5" fill="#E1F5FE" stroke="#0288D1" stroke-width="2"/>
+            <text x="200" y="45" text-anchor="middle" font-size="18" font-weight="bold" fill="#0277BD">nums</text>
+            
+            <rect x="270" y="20" width="80" height="40" rx="5" fill="#E1F5FE" stroke="#0288D1" stroke-width="2"/>
+            <text x="310" y="45" text-anchor="middle" font-size="18" font-weight="bold" fill="#0277BD">nums</text>
+
+            <line x1="90" y1="60" x2="90" y2="90" stroke="#757575" stroke-width="2" stroke-dasharray="4"/>
+            <line x1="200" y1="60" x2="200" y2="90" stroke="#757575" stroke-width="2" stroke-dasharray="4"/>
+            <line x1="310" y1="60" x2="310" y2="90" stroke="#757575" stroke-width="2" stroke-dasharray="4"/>
+
+            <rect x="50" y="90" width="80" height="40" rx="5" fill="#A5D6A7" stroke="#388E3C" stroke-width="2"/>
+            <text x="90" y="115" text-anchor="middle" font-size="22" font-weight="bold" fill="#1B5E20">1</text>
+            
+            <rect x="160" y="90" width="80" height="40" rx="5" fill="#FFCCBC" stroke="#D84315" stroke-width="2"/>
+            <text x="200" y="115" text-anchor="middle" font-size="22" font-weight="bold" fill="#BF360C">0</text>
+            
+            <rect x="270" y="90" width="80" height="40" rx="5" fill="#A5D6A7" stroke="#388E3C" stroke-width="2"/>
+            <text x="310" y="115" text-anchor="middle" font-size="22" font-weight="bold" fill="#1B5E20">1</text>
+
+            <path d="M 50 145 Q 200 160 350 145" fill="none" stroke="#5C6BC0" stroke-width="3"/>
+            <text x="200" y="180" text-anchor="middle" font-size="16" font-weight="bold" fill="#3F51B5">
+                二进制 101 (十进制 5) 代表子集 { nums, nums }
+            </text>
+        </svg>
+    </div>
+
+    <h3>知识点讲解</h3>
+    <ul>
+        <li><strong>核心技巧：</strong> 使用一个整数 <code>mask</code> 表示当前子集的选择情况。<code>mask</code> 的二进制表示中，第 <i>i</i> 位（最低位为第 0 位）为 1 表示选中第 <i>i</i> 个元素，为 0 表示不选。</li>
+        <li><strong>枚举范围：</strong> <code>mask</code> 从 <code>0</code> 到 <code>(1 &lt;&lt; n) - 1</code>。例如 <i>n</i> = 3 时，范围是 000 到 111（二进制）。</li>
+        <li><strong>常用位运算：</strong>
+            <ul>
+                <li>判断第 <i>i</i> 位是否为 1：<code>if (mask & (1 &lt;&lt; i))</code></li>
+                <li>获取子集大小：<code>__builtin_popcount(mask)</code>（C++） 或 <code>bin(mask).count('1')</code>（Python）</li>
+            </ul>
+        </li>
+        <li><strong>复杂度：</strong> <i>O</i>(2<sup><i>n</i></sup> &times; <i>n</i>)，适用于 <i>n</i> &le; 20 的情况。</li>
+    </ul>
+
+    <h3>例题 3：输出集合的所有子集</h3>
+    <p>给定集合 <code>nums = {1, 2, 3}</code>，输出其所有子集。</p>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-1', 'group-1')">C++ 模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-1', 'group-1')">Python 模板</button>
+        </div>
+        <div id="cpp-1" class="code-content group-1 active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    vector&lt;<span class="kw">int</span>&gt; nums = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};
+    <span class="kw">int</span> n = nums.size();
+    
+    <span class="com">// 枚举所有 mask：0 ~ 2^n - 1</span>
+    <span class="kw">for</span> (<span class="kw">int</span> mask = <span class="num">0</span>; mask < (<span class="num">1</span> << n); ++mask) {
+        <span class="kw">cout</span> << <span class="str">"{ "</span>;
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i < n; ++i) {
+            <span class="kw">if</span> (mask & (<span class="num">1</span> << i)) {        <span class="com">// 如果第 i 位为 1</span>
+                <span class="kw">cout</span> << nums[i] << <span class="str">" "</span>;
+            }
+        }
+        <span class="kw">cout</span> << <span class="str">"}"</span> << endl;
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-1" class="code-content group-1">
+nums = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+n = <span class="func">len</span>(nums)
+
+<span class="kw">for</span> mask <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span> << n):          <span class="com"># 0 到 2^n - 1</span>
+    subset = []
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(n):
+        <span class="kw">if</span> mask & (<span class="num">1</span> << i):         <span class="com"># 如果第 i 位为 1</span>
+            subset.append(nums[i])
+            
+    <span class="func">print</span>(<span class="str">"{"</span>, *subset, <span class="str">"}"</span>)</div>
+    </div>
+    <p><em>运行结果：<code>{ }</code>, <code>{ 1 }</code>, <code>{ 2 }</code>, <code>{ 1 2 }</code>, <code>{ 3 }</code>, <code>{ 1 3 }</code>, <code>{ 2 3 }</code>, <code>{ 1 2 3 }</code></em></p>
+
+    <h3>例题 4：砝码称重</h3>
+    <p>给定 <i>n</i> 个砝码，每个可以使用一次或不使用。求能称出的不同重量的个数（不计 0 重量）。<br>
+    <strong>思路：</strong>枚举所有使用方案，用 <code>set</code>（集合）自动去重。</p>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-2', 'group-2')">C++ 模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-2', 'group-2')">Python 模板</button>
+        </div>
+        <div id="cpp-2" class="code-content group-2 active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;set&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> w[<span class="num">25</span>];
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="kw">int</span> n;
+    <span class="kw">cin</span> >> n;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i < n; ++i) <span class="kw">cin</span> >> w[i];
+        
+    set&lt;<span class="kw">int</span>&gt; weights;
+    <span class="kw">for</span> (<span class="kw">int</span> mask = <span class="num">0</span>; mask < (<span class="num">1</span> << n); ++mask) {
+        <span class="kw">int</span> sum = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i < n; ++i) {
+            <span class="kw">if</span> (mask & (<span class="num">1</span> << i)) {
+                sum += w[i];
+            }
+        }
+        weights.insert(sum);
+    }
+        
+    <span class="com">// 输出非零重量的个数（空集重量为 0，需减去 1）</span>
+    <span class="kw">cout</span> << weights.size() - <span class="num">1</span> << endl;
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-2" class="code-content group-2">
+n = <span class="func">int</span>(<span class="func">input</span>())
+w = <span class="func">list</span>(<span class="func">map</span>(<span class="func">int</span>, <span class="func">input</span>().split()))
+weights = <span class="func">set</span>()
+
+<span class="kw">for</span> mask <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span> << n):
+    total = <span class="num">0</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(n):
+        <span class="kw">if</span> mask & (<span class="num">1</span> << i):
+            total += w[i]
+    weights.add(total)
+
+<span class="com"># 去除 0 重量的情况</span>
+weights.discard(<span class="num">0</span>)
+<span class="func">print</span>(<span class="func">len</span>(weights))</div>
+    </div>
+
+
+    <h2>4.3.2 递归枚举子集</h2>
+
+    <div class="illustration" style="border-color: #FFB74D;">
+        <h4 style="color: #E64A19; margin-top: 0;">🌳 图解：递归搜索树 (DFS Tree)</h4>
+        <svg width="400" height="220" viewBox="0 0 400 220" style="max-width: 100%; height: auto;">
+            <circle cx="200" cy="30" r="15" fill="#FFF59D" stroke="#FBC02D" stroke-width="2"/>
+            <text x="200" y="35" text-anchor="middle" font-size="12">Start</text>
+
+            <line x1="200" y1="45" x2="100" y2="90" stroke="#B0BEC5" stroke-width="2"/>
+            <line x1="200" y1="45" x2="300" y2="90" stroke="#81C784" stroke-width="2"/>
+            <text x="140" y="60" text-anchor="middle" font-size="12" fill="#757575">不选 1</text>
+            <text x="260" y="60" text-anchor="middle" font-size="12" fill="#2E7D32">选 1</text>
+            
+            <circle cx="100" cy="100" r="15" fill="#FFF59D" stroke="#FBC02D" stroke-width="2"/>
+            <circle cx="300" cy="100" r="15" fill="#A5D6A7" stroke="#388E3C" stroke-width="2"/>
+            <text x="300" y="105" text-anchor="middle" font-size="12">{1}</text>
+            <text x="100" y="105" text-anchor="middle" font-size="12">{}</text>
+
+            <line x1="100" y1="115" x2="50" y2="160" stroke="#B0BEC5" stroke-width="2"/>
+            <line x1="100" y1="115" x2="150" y2="160" stroke="#81C784" stroke-width="2"/>
+            <text x="65" y="135" text-anchor="middle" font-size="10" fill="#757575">不选 2</text>
+            <text x="135" y="135" text-anchor="middle" font-size="10" fill="#2E7D32">选 2</text>
+
+            <circle cx="50" cy="170" r="15" fill="#FFF59D" stroke="#FBC02D" stroke-width="2"/>
+            <text x="50" y="175" text-anchor="middle" font-size="12">{}</text>
+            <circle cx="150" cy="170" r="15" fill="#A5D6A7" stroke="#388E3C" stroke-width="2"/>
+            <text x="150" y="175" text-anchor="middle" font-size="12">{2}</text>
+
+            <line x1="300" y1="115" x2="250" y2="160" stroke="#B0BEC5" stroke-width="2"/>
+            <line x1="300" y1="115" x2="350" y2="160" stroke="#81C784" stroke-width="2"/>
+            <circle cx="250" cy="170" r="15" fill="#A5D6A7" stroke="#388E3C" stroke-width="2"/>
+            <text x="250" y="175" text-anchor="middle" font-size="12">{1}</text>
+            <circle cx="350" cy="170" r="15" fill="#A5D6A7" stroke="#388E3C" stroke-width="2"/>
+            <text x="350" y="175" text-anchor="middle" font-size="12">{1,2}</text>
+
+            <text x="200" y="210" text-anchor="middle" font-size="14" font-weight="bold" fill="#E64A19">每一层决定一个元素的去留</text>
+        </svg>
+    </div>
+
+    <h3>知识点讲解</h3>
+    <ul>
+        <li><strong>适用场景：</strong> 当枚举过程中需要携带额外信息、进行复杂<span class="highlight">剪枝</span>，或题目要求按特定顺序输出子集时。</li>
+        <li><strong>递归思想：</strong> 依次考虑每个元素“选”或“不选”。每层递归处理一个元素，递归深度为 <i>n</i>。</li>
+        <li><strong>回溯：</strong> 选择某个元素后，在递归返回时需要<span class="highlight">撤销选择 (pop)</span>，以便尝试不选的另一条分支。</li>
+        <li><strong>复杂度：</strong> 同样为 <i>O</i>(2<sup><i>n</i></sup>)，但常数因子略大。优势在于极其灵活！</li>
+    </ul>
+
+    <h3>递归模板：输出集合的所有子集</h3>
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-3', 'group-3')">C++ 模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-3', 'group-3')">Python 模板</button>
+        </div>
+        <div id="cpp-3" class="code-content group-3 active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="kw">using namespace</span> std;
+
+vector&lt;<span class="kw">int</span>&gt; subset;
+<span class="kw">int</span> n = <span class="num">3</span>;
+<span class="kw">int</span> a[] = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};
+
+<span class="kw">void</span> <span class="func">dfs</span>(<span class="kw">int</span> k) {
+    <span class="kw">if</span> (k == n) {
+        <span class="com">// 抵达叶子节点，输出当前子集</span>
+        <span class="kw">cout</span> << <span class="str">"{ "</span>;
+        <span class="kw">for</span> (<span class="kw">int</span> x : subset) <span class="kw">cout</span> << x << <span class="str">" "</span>;
+        <span class="kw">cout</span> << <span class="str">"}"</span> << endl;
+        <span class="kw">return</span>;
+    }
+    
+    <span class="com">// 分支 1：不选第 k 个元素</span>
+    <span class="func">dfs</span>(k + <span class="num">1</span>);
+        
+    <span class="com">// 分支 2：选第 k 个元素</span>
+    subset.push_back(a[k]);
+    <span class="func">dfs</span>(k + <span class="num">1</span>);
+    subset.pop_back();   <span class="com">// ⚠️ 回溯：恢复原状</span>
+}
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="func">dfs</span>(<span class="num">0</span>);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-3" class="code-content group-3">
+subset = []
+a = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+n = <span class="func">len</span>(a)
+
+<span class="kw">def</span> <span class="func">dfs</span>(k):
+    <span class="kw">if</span> k == n:
+        <span class="func">print</span>(<span class="str">"{"</span>, *subset, <span class="str">"}"</span>)
+        <span class="kw">return</span>
+        
+    <span class="com"># 分支 1：不选第 k 个元素</span>
+    <span class="func">dfs</span>(k + <span class="num">1</span>)
+    
+    <span class="com"># 分支 2：选第 k 个元素</span>
+    subset.append(a[k])
+    <span class="func">dfs</span>(k + <span class="num">1</span>)
+    subset.pop()    <span class="com"># ⚠️ 回溯：恢复原状</span>
+
+<span class="func">dfs</span>(<span class="num">0</span>)</div>
+    </div>
+
+    <div class="danger-box" style="background:#E1F5FE; border-color:#81D4FA;">
+        <p><strong>✨ 递归模板进阶：自带剪枝的小规模背包问题</strong></p>
+        <p>给定物品重量和价值，背包容量有限，求最大价值。用递归枚举的绝妙之处在于：<strong>超重了可以直接回头（剪枝）</strong>，不用傻傻地搜到底！</p>
+        <pre style="background: var(--code-bg); color: #abb2bf; padding: 15px; border-radius: 10px; font-family: monospace; overflow-x: auto;">
+weights =
+values =
+capacity = 5
+n = len(weights)
+max_value = 0
+
+def dfs(k, cur_weight, cur_value):
+    global max_value
+    <span class="str">if cur_weight > capacity:</span>   # ✂️ 剪枝：一旦超重，立刻停止当前分支！
+        <span class="str">return</span>
+        
+    if k == n:
+        max_value = max(max_value, cur_value)
+        return
+        
+    dfs(k + 1, cur_weight, cur_value)                          # 不选
+    dfs(k + 1, cur_weight + weights[k], cur_value + values[k]) # 选
+
+dfs(0, 0, 0)
+print(max_value)
+        </pre>
+    </div>
+
+    <h2>4.3.3 二进制枚举 vs 递归枚举 对比</h2>
+    <table>
+        <tr>
+            <th>方法</th>
+            <th>优点</th>
+            <th>缺点</th>
+            <th>适用数据规模</th>
+        </tr>
+        <tr>
+            <td><strong>二进制枚举</strong></td>
+            <td>代码极简，位运算常数小，执行速度快。</td>
+            <td>不易添加复杂的剪枝逻辑，不方便记录路径状态。</td>
+            <td><i>n</i> &le; 20</td>
+        </tr>
+        <tr>
+            <td><strong>递归枚举</strong></td>
+            <td>易于扩展，极其方便添加剪枝和传递额外参数。</td>
+            <td>代码稍长，递归调用有额外的函数开销。</td>
+            <td><i>n</i> &le; 25 <br><span style="font-size:0.8em; color:#757575;">(配合强力剪枝)</span></td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <p>✅ <strong>本节要点：</strong>每个元素选或不选，构成 2<sup><i>n</i></sup> 种可能。二进制巧用 <code>&</code> 运算，递归妙在 <code>回溯与剪枝</code>。</p>
+        <hr style="border-color: rgba(255,255,255,0.3); margin: 15px 0;">
+        <p>✏️ <strong>课后练习：</strong><br>
+        1. 给定一个数组，求所有子集元素之和的集合（即砝码称重问题的一般化）。<br>
+        2. 挑战解决“和为 K 的子集”问题（判断是否存在子集和等于 K）。试试用两种方法分别写一遍！</p>
+    </div>
+
+</div>
+
+<script>
+function openTab(evt, tabId, groupClass) {
+    var i, content, links;
+    content = document.getElementsByClassName(groupClass);
+    for (i = 0; i < content.length; i++) {
+        if(content[i].classList.contains("code-content")) {
+            content[i].style.display = "none";
+            content[i].classList.remove("active");
+        }
+    }
+    links = evt.currentTarget.parentElement.getElementsByClassName("tab-btn");
+    for (i = 0; i < links.length; i++) {
+        links[i].className = links[i].className.replace(" active", "");
+    }
+    document.getElementById(tabId).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4.2 循环枚举 - C++ 魔法课堂</title>
+    <style>
+        /* ================= 核心配色 (保持风格一致) ================= */
+        :root {
+            --primary: #FF7043;      /* 橙色：代表搜索与活力 */
+            --primary-dark: #E64A19;
+            --secondary: #4DB6AC;    /* 青绿色：代表逻辑与稳定 */
+            --accent: #5C6BC0;       /* 靛蓝色：代表深度思考 */
+            --bg-color: #FFF8E1;     /* 暖黄底色 */
+            --text-main: #3E2723;
+            --code-bg: #282c34;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#FFD54F 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            border: 4px solid #FFE082;
+        }
+
+        /* ================= 标题样式 ================= */
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #FFCC80;
+        }
+
+        h2 {
+            background: linear-gradient(90deg, var(--primary), #FFAB91);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            font-size: 1.6em;
+        }
+
+        h3 {
+            color: var(--accent);
+            border-bottom: 3px dashed var(--accent);
+            padding-bottom: 8px;
+            margin-top: 30px;
+        }
+
+        /* ================= 强调样式 ================= */
+        .highlight {
+            color: #D84315;
+            font-weight: bold;
+            background: #FFE082;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .note-box {
+            background-color: #E0F2F1;
+            border-left: 8px solid var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .danger-box {
+            background-color: #FFEBEE;
+            border: 2px solid #EF9A9A;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration {
+            text-align: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px dashed #FFB74D;
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th { background: var(--accent); color: white; padding: 12px; }
+        td { border: 1px solid #E0E0E0; padding: 12px; text-align: center; }
+        tr:nth-child(even) { background-color: #F5F5F5; }
+
+        /* ================= 代码块 ================= */
+        .code-container {
+            border: 3px solid #81C784;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: var(--code-bg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-header { display: flex; background: #37474f; }
+
+        .tab-btn {
+            padding: 12px 25px;
+            color: #cfd8dc;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-weight: bold;
+            flex: 1;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--code-bg);
+            color: #81C784;
+            border-top: 4px solid #81C784;
+        }
+
+        .code-content {
+            display: none;
+            padding: 20px;
+            color: #abb2bf;
+            font-family: "Consolas", "Courier New", monospace;
+            white-space: pre;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+        .code-content.active { display: block; }
+
+        /* 高亮 */
+        .kw { color: #c678dd; } 
+        .com { color: #5c6370; font-style: italic; }
+        .str { color: #98c379; }
+        .num { color: #d19a66; }
+        .func { color: #61afef; }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: var(--primary);
+            color: white;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="illustration" style="border:none;">
+        <svg width="300" height="150" viewBox="0 0 300 150">
+            <path d="M 50 100 A 40 40 0 1 1 130 100" fill="none" stroke="#FF7043" stroke-width="6" stroke-dasharray="10 5">
+                <animateTransform attributeName="transform" type="rotate" from="0 90 100" to="360 90 100" dur="5s" repeatCount="indefinite" />
+            </path>
+            <text x="90" y="140" text-anchor="middle" font-weight="bold" fill="#E64A19">单层循环</text>
+
+            <path d="M 200 100 A 40 40 0 1 1 280 100" fill="none" stroke="#4DB6AC" stroke-width="6" stroke-dasharray="8 4">
+                <animateTransform attributeName="transform" type="rotate" from="360 240 100" to="0 240 100" dur="4s" repeatCount="indefinite" />
+            </path>
+            <path d="M 220 100 A 20 20 0 1 1 260 100" fill="none" stroke="#5C6BC0" stroke-width="4" stroke-dasharray="4 2">
+                <animateTransform attributeName="transform" type="rotate" from="0 240 100" to="360 240 100" dur="2s" repeatCount="indefinite" />
+            </path>
+            <text x="240" y="140" text-anchor="middle" font-weight="bold" fill="#2E7D32">嵌套循环</text>
+        </svg>
+    </div>
+
+    <h1>4.2 循环枚举</h1>
+
+    <div class="note-box">
+        <p>循环枚举是最基础的枚举形式，通过 <span class="highlight">for</span> 循环遍历变量的所有可能取值。在编程竞赛中，几乎所有的枚举问题都始于一个或多个嵌套的循环。</p>
+    </div>
+
+    <h2>4.2.1 单层循环枚举</h2>
+    <h3>知识点讲解</h3>
+    <ul>
+        <li><strong>适用场景：</strong> 解空间由一个变量完全确定，且该变量取值范围连续、规模可控。</li>
+        <li><strong>核心步骤：</strong>
+            <ol>
+                <li>确定变量的合理范围（下界与上界）。</li>
+                <li>用 <span class="highlight">for</span> 循环遍历该范围内的每一个值。</li>
+                <li>在循环体内判断该值是否满足题目条件。</li>
+            </ol>
+        </li>
+        <li><strong>复杂度：</strong> 若循环次数为 N，则复杂度为 O(N)。</li>
+    </ul>
+
+    <h3>例题 1：水仙花数</h3>
+    <p>求三位数中，各位数字立方和等于该数本身的数。</p>
+    
+    <div class="danger-box" style="background:#FFF3E0; border-color:#FFB74D;">
+        <p><strong>💡 思路分析：</strong></p>
+        <ul>
+            <li><strong>确定范围：</strong> 三位数为 100 ~ 999。</li>
+            <li><strong>提取各位数字：</strong> 个位 <code>num % 10</code>，十位 <code>(num / 10) % 10</code>，百位 <code>num / 100</code>。</li>
+            <li><strong>检验条件：</strong> 百位³ + 十位³ + 个位³ == 原数。</li>
+        </ul>
+    </div>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-1', 'group-1')">C++ 模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-1', 'group-1')">Python 模板</button>
+        </div>
+        <div id="cpp-1" class="code-content group-1 active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="kw">for</span> (<span class="kw">int</span> num = <span class="num">100</span>; num <= <span class="num">999</span>; ++num) {
+        <span class="kw">int</span> a = num / <span class="num">100</span>;          <span class="com">// 百位</span>
+        <span class="kw">int</span> b = (num / <span class="num">10</span>) % <span class="num">10</span>;    <span class="com">// 十位</span>
+        <span class="kw">int</span> c = num % <span class="num">10</span>;           <span class="com">// 个位</span>
+        
+        <span class="kw">if</span> (a*a*a + b*b*b + c*c*c == num) {
+            <span class="kw">cout</span> << num << endl;
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-1" class="code-content group-1">
+<span class="kw">for</span> num <span class="kw">in</span> <span class="func">range</span>(<span class="num">100</span>, <span class="num">1000</span>):
+    a = num // <span class="num">100</span>          <span class="com"># 百位</span>
+    b = (num // <span class="num">10</span>) % <span class="num">10</span>    <span class="com"># 十位</span>
+    c = num % <span class="num">10</span>            <span class="com"># 个位</span>
+        
+    <span class="kw">if</span> a**<span class="num">3</span> + b**<span class="num">3</span> + c**<span class="num">3</span> == num:
+        <span class="func">print</span>(num)</div>
+    </div>
+    <p><em>运行结果：153、370、371、407</em></p>
+
+
+    <h2>4.2.2 多层循环枚举</h2>
+    <p>当问题的解由多个相互关联的变量决定时，需要使用嵌套循环遍历所有可能的变量组合。</p>
+
+    <h3>知识点讲解</h3>
+    <ul>
+        <li><strong>嵌套层数：</strong> 通常与变量的个数相同。</li>
+        <li><strong>循环顺序：</strong> 最外层循环对应取值范围最小的变量（有利于后续优化）。</li>
+        <li><strong>复杂度计算：</strong> 各层循环次数相乘。例如三重循环各 100 次，则总次数为 100<sup>3</sup> = 10<sup>6</sup>。</li>
+        <li><strong><span style="color:#D84315">优化原则：</span>能算出来的就不要枚举！</strong> 若变量之间存在线性关系，应通过等式减少一层循环。</li>
+    </ul>
+
+    <h3>例题 2：百钱百鸡</h3>
+    <p>公鸡 5 钱一只，母鸡 3 钱一只，小鸡 1 钱三只。用 100 钱买 100 只鸡，问公鸡、母鸡、小鸡各多少？</p>
+
+    <div class="danger-box" style="background:#E1F5FE; border-color:#81D4FA;">
+        <p><strong>🧠 思路分析：</strong></p>
+        <p><strong>朴素三重循环：</strong> 循环次数 101<sup>3</sup> ≈ 10<sup>6</sup>，虽然可过，但不够优雅。</p>
+        <p><strong>优化分析：</strong></p>
+        <ul>
+            <li>公鸡最多 100 / 5 = 20 只，母鸡最多 100 / 3 ≈ 33 只。</li>
+            <li>一旦确定了公鸡 x 和母鸡 y，小鸡 z = 100 - x - y 就被<strong>唯一确定</strong>。</li>
+            <li>只需检查金额条件，并确保 z 是 3 的倍数。</li>
+        </ul>
+        <p><strong>优化后复杂度：</strong> 21 × 34 ≈ 714 次，效率提升数千倍！</p>
+    </div>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-2', 'group-2')">C++ 模板 (优化版)</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-2', 'group-2')">Python 模板 (优化版)</button>
+        </div>
+        <div id="cpp-2" class="code-content group-2 active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="kw">for</span> (<span class="kw">int</span> x = <span class="num">0</span>; x <= <span class="num">20</span>; ++x) {          <span class="com">// 公鸡数</span>
+        <span class="kw">for</span> (<span class="kw">int</span> y = <span class="num">0</span>; y <= <span class="num">33</span>; ++y) {      <span class="com">// 母鸡数</span>
+            <span class="kw">int</span> z = <span class="num">100</span> - x - y;             <span class="com">// 小鸡数</span>
+            
+            <span class="com">// 检查金额是否等于100，且小鸡数为3的倍数</span>
+            <span class="kw">if</span> (z % <span class="num">3</span> == <span class="num">0</span> && <span class="num">5</span>*x + <span class="num">3</span>*y + z/<span class="num">3</span> == <span class="num">100</span>) {
+                <span class="kw">cout</span> << <span class="str">"公鸡："</span> << x << <span class="str">" 母鸡："</span> << y << <span class="str">" 小鸡："</span> << z << endl;
+            }
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-2" class="code-content group-2">
+<span class="kw">for</span> x <span class="kw">in</span> <span class="func">range</span>(<span class="num">0</span>, <span class="num">21</span>):          <span class="com"># 公鸡最多20只</span>
+    <span class="kw">for</span> y <span class="kw">in</span> <span class="func">range</span>(<span class="num">0</span>, <span class="num">34</span>):      <span class="com"># 母鸡最多33只</span>
+        z = <span class="num">100</span> - x - y         <span class="com"># 小鸡数唯一确定</span>
+        
+        <span class="kw">if</span> z % <span class="num">3</span> == <span class="num">0</span> <span class="kw">and</span> <span class="num">5</span>*x + <span class="num">3</span>*y + z//<span class="num">3</span> == <span class="num">100</span>:
+            <span class="func">print</span>(<span class="str">f"公鸡：{x} 母鸡：{y} 小鸡：{z}"</span>)</div>
+    </div>
+    <p><em>运行结果：<br>公鸡：0 母鸡：25 小鸡：75<br>公鸡：4 母鸡：18 小鸡：78<br>公鸡：8 母鸡：11 小鸡：81<br>公鸡：12 母鸡：4 小鸡：84</em></p>
+
+    <h3>拓展例题：勾股数问题</h3>
+    <p>找出 1 ~ N 内所有满足 a<sup>2</sup> + b<sup>2</sup> = c<sup>2</sup> 且 a &lt; b &lt; c 的整数解。</p>
+
+    <div class="danger-box" style="background:#F3E5F5; border-color:#CE93D8;">
+        <p><strong>✨ 思路分析：</strong></p>
+        <ul>
+            <li><strong>解空间：</strong> 三个变量 a, b, c 均不超过 N。</li>
+            <li><strong>有序约束：</strong> a &lt; b &lt; c，可利用该性质减少循环次数。外层枚举 a，内层枚举 b（从 a + 1 开始）。</li>
+            <li><strong>优化掉一层：</strong> c 通过公式 c = √(a<sup>2</sup> + b<sup>2</sup>) 计算，然后检查是否为整数且不超过 N。</li>
+            <li><strong>复杂度：</strong> 约 O(N<sup>2</sup>)，当 N = 1000 时约 5 × 10<sup>5</sup> 次，完全可接受。</li>
+        </ul>
+    </div>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-3', 'group-3')">C++ 模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-3', 'group-3')">Python 模板</button>
+        </div>
+        <div id="cpp-3" class="code-content group-3 active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;cmath&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="kw">int</span> N;
+    <span class="kw">cin</span> >> N;
+    <span class="kw">for</span> (<span class="kw">int</span> a = <span class="num">1</span>; a <= N; ++a) {
+        <span class="kw">for</span> (<span class="kw">int</span> b = a + <span class="num">1</span>; b <= N; ++b) {
+            <span class="kw">int</span> c2 = a*a + b*b;
+            <span class="kw">int</span> c = (<span class="kw">int</span>)<span class="func">sqrt</span>(c2);
+            
+            <span class="com">// 检验 c 是否为整数，且不超过 N</span>
+            <span class="kw">if</span> (c <= N && c*c == c2) {
+                <span class="kw">cout</span> << a << <span class="str">" "</span> << b << <span class="str">" "</span> << c << endl;
+            }
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-3" class="code-content group-3">
+<span class="kw">import</span> math
+
+N = <span class="func">int</span>(<span class="func">input</span>())
+<span class="kw">for</span> a <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span>, N + <span class="num">1</span>):
+    <span class="kw">for</span> b <span class="kw">in</span> <span class="func">range</span>(a + <span class="num">1</span>, N + <span class="num">1</span>):
+        c2 = a*a + b*b
+        c = math.<span class="func">isqrt</span>(c2)  <span class="com"># Python 3.8+ 推荐使用 math.isqrt</span>
+        
+        <span class="kw">if</span> c <= N <span class="kw">and</span> c * c == c2:
+            <span class="func">print</span>(a, b, c)</div>
+    </div>
+
+    <h2>本节总结</h2>
+    <table>
+        <tr>
+            <th>类型</th>
+            <th>关键技巧</th>
+            <th>复杂度</th>
+            <th>典型题目</th>
+        </tr>
+        <tr>
+            <td>单层循环</td>
+            <td>精确确定上下界</td>
+            <td>O(N)</td>
+            <td>水仙花数、素数判定</td>
+        </tr>
+        <tr>
+            <td>多层循环</td>
+            <td>利用等式减少循环层数</td>
+            <td>O(N<sup>2</sup>) 或更低</td>
+            <td>百钱百鸡、勾股数</td>
+        </tr>
+        <tr>
+            <td><strong>优化思想</strong></td>
+            <td><strong>能算的不枚举，能剪枝的早排除</strong></td>
+            <td>大幅降低常数</td>
+            <td>所有枚举题通用</td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        ✏️ 课堂练习：将勾股数问题改为只输出互质的勾股数组（即 gcd(a, b, c) = 1），并观察解的数量变化。<br>
+        开启思考模式，动手试一试吧！
+    </div>
+
+</div>
+
+<script>
+// 针对每组独立切换 Tab 的逻辑
+function openTab(evt, tabId, groupClass) {
+    var i, content, links;
+    
+    // 隐藏同一组的所有内容
+    content = document.getElementsByClassName(groupClass);
+    for (i = 0; i < content.length; i++) {
+        if(content[i].classList.contains("code-content")) {
+            content[i].style.display = "none";
+            content[i].classList.remove("active");
+        }
+    }
+    
+    // 移除当前按钮所在父节点内的所有 active 状态
+    links = evt.currentTarget.parentElement.getElementsByClassName("tab-btn");
+    for (i = 0; i < links.length; i++) {
+        links[i].className = links[i].className.replace(" active", "");
+    }
+    
+    // 显示当前选中的 Tab
+    document.getElementById(tabId).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+</script>
+
+</body>
+</html>

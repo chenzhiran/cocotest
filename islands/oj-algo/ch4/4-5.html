@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4.5 枚举的优化策略 - C++ 魔法课堂</title>
+    <style>
+        /* ================= 核心配色 ================= */
+        :root {
+            --primary: #FF7043;      
+            --primary-dark: #E64A19;
+            --secondary: #4DB6AC;    
+            --accent: #5C6BC0;       
+            --bg-color: #FFF8E1;     
+            --text-main: #3E2723;
+            --code-bg: #282c34;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#FFD54F 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            border: 4px solid #FFE082;
+        }
+
+        /* ================= 标题样式 ================= */
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #FFCC80;
+        }
+
+        h2 {
+            background: linear-gradient(90deg, var(--primary), #FFAB91);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            font-size: 1.6em;
+        }
+
+        h3 {
+            color: var(--accent);
+            border-bottom: 3px dashed var(--accent);
+            padding-bottom: 8px;
+            margin-top: 30px;
+        }
+
+        /* ================= 强调样式 ================= */
+        .highlight {
+            color: #D84315;
+            font-weight: bold;
+            background: #FFE082;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .note-box {
+            background-color: #E0F2F1;
+            border-left: 8px solid var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .danger-box {
+            background-color: #FFEBEE;
+            border: 2px solid #EF9A9A;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration {
+            text-align: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px dashed #FFB74D;
+            overflow-x: auto;
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        th { background: var(--accent); color: white; padding: 12px; }
+        td { border: 1px solid #E0E0E0; padding: 12px; text-align: center; }
+        tr:nth-child(even) { background-color: #F5F5F5; }
+
+        /* ================= 代码块 ================= */
+        .code-container {
+            border: 3px solid #81C784;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: var(--code-bg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-header { display: flex; background: #37474f; }
+
+        .tab-btn {
+            padding: 12px 25px;
+            color: #cfd8dc;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-weight: bold;
+            flex: 1;
+            transition: 0.3s;
+            font-size: 1em;
+        }
+
+        .tab-btn.active {
+            background: var(--code-bg);
+            color: #81C784;
+            border-top: 4px solid #81C784;
+        }
+
+        .code-content {
+            display: none;
+            padding: 20px;
+            color: #abb2bf;
+            font-family: "Consolas", "Courier New", monospace;
+            white-space: pre;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+        .code-content.active { display: block; }
+
+        .kw { color: #c678dd; } 
+        .com { color: #5c6370; font-style: italic; }
+        .str { color: #98c379; }
+        .num { color: #d19a66; }
+        .func { color: #61afef; }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: var(--primary);
+            color: white;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 2.2em; }
+            .tab-btn { padding: 10px 15px; font-size: 0.9em; }
+            table { font-size: 0.9em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>4.5 枚举的优化策略</h1>
+
+    <div class="note-box">
+        <p>👋 <strong>魔法师语录：</strong></p>
+        <p>暴力枚举虽然直接，但在数据规模稍大时极其容易超时（TLE）。本节将传授给你三大核心“减负”魔法：<span class="highlight">缩小范围</span>、<span class="highlight">剪枝</span> 和 <span class="highlight">改变对象</span>。<br>
+        掌握这些技巧，能让不可行的枚举变为可行，把“暴力分”拿得稳稳的！</p>
+    </div>
+
+    <h2>4.5.1 减少枚举范围（数学分析）</h2>
+    
+    <div class="illustration" style="border-color: #4DB6AC;">
+        <h4 style="color: #00796B; margin-top: 0;">🌪️ 图解：用数学等式给循环“瘦身”</h4>
+        <svg width="400" height="180" viewBox="0 0 400 180" style="max-width: 100%; height: auto;">
+            <polygon points="50,20 350,20 250,150 150,150" fill="#E1F5FE" stroke="#0288D1" stroke-width="2"/>
+            <text x="200" y="50" text-anchor="middle" font-size="16" font-weight="bold" fill="#0277BD">朴素三重循环：x, y, z 全枚举</text>
+            <text x="200" y="75" text-anchor="middle" font-size="14" fill="#0277BD">100 万次运算 (101³)</text>
+            
+            <line x1="80" y1="100" x2="320" y2="100" stroke="#FF7043" stroke-width="4" stroke-dasharray="8 4"/>
+            <text x="280" y="95" text-anchor="middle" font-size="12" fill="#D84315" font-weight="bold">魔法：z = 100 - x - y</text>
+
+            <rect x="150" y="120" width="100" height="30" rx="5" fill="#A5D6A7" stroke="#388E3C" stroke-width="2"/>
+            <text x="200" y="140" text-anchor="middle" font-size="14" font-weight="bold" fill="#1B5E20">两重循环: 5151 次</text>
+        </svg>
+    </div>
+
+    <h3>思想核心</h3>
+    <p>通过数学分析确定各变量的实际上限，或利用等式关系<span class="highlight">用计算代替循环</span>，从而将多层循环的层数或范围大幅度缩小。</p>
+
+    <div class="danger-box" style="background:#FFF3E0; border-color:#FFB74D;">
+        <p><strong>示例：求 x + y + z = 100 的非负整数解个数</strong></p>
+        <ul>
+            <li><strong>朴素做法：</strong> 三重循环，复杂度 101<sup>3</sup> &approx; 1.03 &times; 10<sup>6</sup>。对于 100 尚可，但若 N = 10000，则 10<sup>12</sup> 必定超时！</li>
+            <li><strong>优化思路：</strong> 既然和是固定的，只要枚举出 x 和 y，那么 <code>z = N - x - y</code>。我们连 z 的循环都不需要写了，只需判断算出来的 z 是否 &ge; 0 即可。</li>
+            <li><strong>进一步缩小上限：</strong> y 的最大值不可能超过 <code>N - x</code>。</li>
+            <li><strong>复杂度：</strong> 降维打击，变为两重循环 O(N<sup>2</sup>)。</li>
+        </ul>
+    </div>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-1', 'group-1')">C++ 模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-1', 'group-1')">Python 模板</button>
+        </div>
+        <div id="cpp-1" class="code-content group-1 active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="kw">int</span> N = <span class="num">100</span>;
+    <span class="kw">int</span> cnt = <span class="num">0</span>;
+    
+    <span class="com">// 优化1：只需枚举 x 和 y</span>
+    <span class="kw">for</span> (<span class="kw">int</span> x = <span class="num">0</span>; x <= N; ++x) {
+        <span class="com">// 优化2：y 的上限受 x 限制，最大不能超过 N - x</span>
+        <span class="kw">for</span> (<span class="kw">int</span> y = <span class="num">0</span>; y <= N - x; ++y) {   
+            <span class="kw">int</span> z = N - x - y;
+            <span class="kw">if</span> (z >= <span class="num">0</span>) cnt++;
+        }
+    }
+    
+    <span class="kw">cout</span> << <span class="str">"解的个数："</span> << cnt << endl;  <span class="com">// 5151</span>
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-1" class="code-content group-1">
+N = <span class="num">100</span>
+cnt = <span class="num">0</span>
+
+<span class="kw">for</span> x <span class="kw">in</span> <span class="func">range</span>(N + <span class="num">1</span>):
+    <span class="kw">for</span> y <span class="kw">in</span> <span class="func">range</span>(N - x + <span class="num">1</span>):    <span class="com"># 优化：y 上限受 x 限制</span>
+        z = N - x - y
+        <span class="kw">if</span> z >= <span class="num">0</span>:
+            cnt += <span class="num">1</span>
+
+<span class="func">print</span>(<span class="str">"解的个数:"</span>, cnt)  <span class="com"># 5151</span></div>
+    </div>
+
+    <div class="note-box">
+        <p>📣 <strong>实战口诀：能算出来的，就不要枚举。</strong> 找出变量间的等式或不等式关系，用数学推导缩小循环范围。</p>
+    </div>
+
+
+    <h2>4.5.2 剪枝 (Pruning)</h2>
+
+    <div class="illustration" style="border-color: #FFB74D;">
+        <h4 style="color: #E64A19; margin-top: 0;">✂️ 图解：果断剪掉无用的分支</h4>
+        <svg width="400" height="180" viewBox="0 0 400 180" style="max-width: 100%; height: auto;">
+            <circle cx="200" cy="20" r="15" fill="#C8E6C9" stroke="#388E3C" stroke-width="2"/>
+            
+            <line x1="200" y1="35" x2="100" y2="90" stroke="#81C784" stroke-width="3"/>
+            <line x1="200" y1="35" x2="300" y2="90" stroke="#81C784" stroke-width="3"/>
+            
+            <circle cx="100" cy="100" r="15" fill="#C8E6C9" stroke="#388E3C" stroke-width="2"/>
+            <text x="100" y="105" text-anchor="middle" font-size="12">i=3</text>
+            <circle cx="300" cy="100" r="15" fill="#FFCCBC" stroke="#D84315" stroke-width="2"/>
+            <text x="300" y="105" text-anchor="middle" font-size="12">i=4</text>
+
+            <line x1="100" y1="115" x2="70" y2="150" stroke="#81C784" stroke-width="2"/>
+            <line x1="100" y1="115" x2="130" y2="150" stroke="#81C784" stroke-width="2"/>
+            <circle cx="70" cy="160" r="10" fill="#C8E6C9"/>
+            <circle cx="130" cy="160" r="10" fill="#C8E6C9"/>
+            
+            <line x1="300" y1="115" x2="270" y2="150" stroke="#B0BEC5" stroke-width="2" stroke-dasharray="4"/>
+            <line x1="300" y1="115" x2="330" y2="150" stroke="#B0BEC5" stroke-width="2" stroke-dasharray="4"/>
+            
+            <path d="M 280 120 L 320 120" stroke="#E64A19" stroke-width="4"/>
+            <text x="300" y="145" text-anchor="middle" font-size="12" fill="#D84315" font-weight="bold">不是素数，直接跳过！</text>
+            <text x="300" y="160" text-anchor="middle" font-size="10" fill="#757575">(无需检查另一半)</text>
+        </svg>
+    </div>
+
+    <h3>思想核心</h3>
+    <p>在枚举过程中，若发现当前状态<strong>已经不可能产生有效解</strong>，立即放弃该分支，不再继续深入（跳过循环或退出递归）。</p>
+
+    <div class="danger-box" style="background:#E1F5FE; border-color:#81D4FA;">
+        <p><strong>示例：哥德巴赫猜想验证（偶数 = 素数 + 素数）</strong></p>
+        <p>给定一个偶数 n，找出所有 n = p + q 且 p, q 均为素数的拆分。</p>
+        <ul>
+            <li><strong>朴素做法：</strong> 枚举 i 从 2 到 n/2，判断 i 和 (n - i) 是否都是素数。但判断素数很耗时。</li>
+            <li><strong>剪枝优化：</strong> 如果 <code>i</code> 本身就不是素数，那么 <code>n - i</code> 根本就不需要检查了！直接 <code>continue</code> 跳入下一轮。</li>
+        </ul>
+    </div>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-2', 'group-2')">C++ 模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-2', 'group-2')">Python 模板</button>
+        </div>
+        <div id="cpp-2" class="code-content group-2 active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;cmath&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">bool</span> <span class="func">isPrime</span>(<span class="kw">int</span> n) {
+    <span class="kw">if</span> (n < <span class="num">2</span>) <span class="kw">return false</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">2</span>; i * i <= n; ++i)
+        <span class="kw">if</span> (n % i == <span class="num">0</span>) <span class="kw">return false</span>;
+    <span class="kw">return true</span>;
+}
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="kw">int</span> n = <span class="num">100</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">2</span>; i <= n / <span class="num">2</span>; ++i) {
+        <span class="kw">if</span> (!<span class="func">isPrime</span>(i)) <span class="kw">continue</span>;     <span class="com">// ✂️ 剪枝：i 不是素数则直接跳过</span>
+        
+        <span class="kw">int</span> j = n - i;
+        <span class="kw">if</span> (<span class="func">isPrime</span>(j)) {
+            <span class="kw">cout</span> << n << <span class="str">" = "</span> << i << <span class="str">" + "</span> << j << endl;
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-2" class="code-content group-2">
+<span class="kw">import</span> math
+
+<span class="kw">def</span> <span class="func">is_prime</span>(n):
+    <span class="kw">if</span> n < <span class="num">2</span>:
+        <span class="kw">return False</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>, <span class="func">int</span>(math.sqrt(n)) + <span class="num">1</span>):
+        <span class="kw">if</span> n % i == <span class="num">0</span>:
+            <span class="kw">return False</span>
+    <span class="kw">return True</span>
+
+n = <span class="num">100</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>, n // <span class="num">2</span> + <span class="num">1</span>):
+    <span class="kw">if not</span> <span class="func">is_prime</span>(i):
+        <span class="kw">continue</span>    <span class="com"># ✂️ 剪枝：跳过非素数 i</span>
+        
+    j = n - i
+    <span class="kw">if</span> <span class="func">is_prime</span>(j):
+        <span class="func">print</span>(<span class="str">f"{n} = {i} + {j}"</span>)</div>
+    </div>
+
+    <h3>✂️ 剪枝的常见形式</h3>
+    <table>
+        <tr>
+            <th>类型</th>
+            <th>说明</th>
+            <th>示例</th>
+        </tr>
+        <tr>
+            <td><strong>可行性剪枝</strong></td>
+            <td>当前状态已违反约束条件，不可能达到目标。</td>
+            <td>背包搜一半已超重；八皇后放下去发现已经冲突。</td>
+        </tr>
+        <tr>
+            <td><strong>最优性剪枝</strong></td>
+            <td>当前状态即使跑到底，结果也不可能比目前已知最好的解更优。</td>
+            <td>找最短路时，当前走的距离已经超过了已知的一条路。</td>
+        </tr>
+        <tr>
+            <td><strong>对称性剪枝</strong></td>
+            <td>利用图形或数据的对称性，避免做重复的搜索。</td>
+            <td>排列组合中人为规定 a<sub>1</sub> &lt; a<sub>2</sub> 来去重。</td>
+        </tr>
+    </table>
+
+
+    <h2>4.5.3 改变枚举对象（改变搜索维度）</h2>
+
+    <div class="illustration" style="border-color: #5C6BC0;">
+        <h4 style="color: #3F51B5; margin-top: 0;">💡 图解：熄灯问题的“顺藤摸瓜”递推法</h4>
+        <svg width="400" height="200" viewBox="0 0 400 200" style="max-width: 100%; height: auto;">
+            <rect x="50" y="20" width="30" height="30" fill="#FFD54F" stroke="#FBC02D"/>
+            <rect x="90" y="20" width="30" height="30" fill="#424242" stroke="#212121"/>
+            <rect x="130" y="20" width="30" height="30" fill="#FFD54F" stroke="#FBC02D"/>
+            <text x="200" y="40" font-size="14" font-weight="bold" fill="#000">第一行（共 6 盏灯）</text>
+            <text x="200" y="60" font-size="12" fill="#E64A19">只需枚举这行的按法 (2⁶ = 64种)</text>
+
+            <path d="M 65 55 L 65 80" stroke="#3F51B5" stroke-width="3" marker-end="url(#arrowBlue)"/>
+            <path d="M 145 55 L 145 80" stroke="#3F51B5" stroke-width="3" marker-end="url(#arrowBlue)"/>
+            
+            <rect x="50" y="90" width="30" height="30" fill="#9FA8DA" stroke="#5C6BC0"/>
+            <rect x="90" y="90" width="30" height="30" fill="#ECEFF1" stroke="#CFD8DC"/>
+            <rect x="130" y="90" width="30" height="30" fill="#9FA8DA" stroke="#5C6BC0"/>
+            <text x="200" y="110" font-size="14" fill="#3F51B5">第二行的按法被第一行</text>
+            <text x="200" y="130" font-size="14" font-weight="bold" fill="#E64A19">唯一确定！(顺藤摸瓜)</text>
+
+            <defs>
+                <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#3F51B5" />
+                </marker>
+            </defs>
+        </svg>
+    </div>
+
+    <h3>思想核心</h3>
+    <p>当直接枚举所有可能状态会导致指数爆炸时，尝试**只枚举一部分关键状态**，剩下的部分通过规则**递推或计算**唯一确定得出。这是解决“连带效应”问题的核心技巧。</p>
+
+    <div class="danger-box" style="background:#F3E5F5; border-color:#CE93D8;">
+        <p><strong>经典示例：熄灯问题 (POJ 2811)</strong></p>
+        <p>一个 5 &times; 6 的灯阵，按下按钮会改变自己及上下左右 5 盏灯的状态。求熄灭所有灯的按法。</p>
+        <ul>
+            <li><strong>直接枚举：</strong> 30 个按钮按或不按，2<sup>30</sup> &approx; 10<sup>9</sup> 种，必然超时。</li>
+            <li><strong>关键观察：</strong> 如果第一行的按法确定了，那么第一行那些还亮着的灯，**必须且只能通过按第二行对应的按钮来熄灭**！因为不能再去动第一行了。</li>
+            <li><strong>连锁反应：</strong> 同理，第二行定死后，第三行的按法也被唯一确定……一直递推到第五行。最后只需检查第五行是否全灭。</li>
+            <li><strong>优化结果：</strong> 从枚举 30 个格子降维到**仅枚举第一行的 6 个格子** (2<sup>6</sup> = 64 种)。瞬间完成！</li>
+        </ul>
+    </div>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-3', 'group-3')">C++ 模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-3', 'group-3')">Python 模板</button>
+        </div>
+        <div id="cpp-3" class="code-content group-3 active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;cstring&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> light[<span class="num">5</span>][<span class="num">6</span>];      <span class="com">// 初始灯状态</span>
+<span class="kw">int</span> press[<span class="num">5</span>][<span class="num">6</span>];      <span class="com">// 按钮按法</span>
+
+<span class="com">// 顺藤摸瓜：根据第一行，递推其余行</span>
+<span class="kw">bool</span> <span class="func">guess</span>() {
+    <span class="kw">for</span> (<span class="kw">int</span> r = <span class="num">1</span>; r < <span class="num">5</span>; ++r) {
+        <span class="kw">for</span> (<span class="kw">int</span> c = <span class="num">0</span>; c < <span class="num">6</span>; ++c) {
+            <span class="com">// 计算上方灯受到的所有影响总和</span>
+            <span class="kw">int</span> state = light[r-<span class="num">1</span>][c] + press[r-<span class="num">1</span>][c];
+            <span class="kw">if</span> (r-<span class="num">2</span> >= <span class="num">0</span>) state += press[r-<span class="num">2</span>][c];
+            <span class="kw">if</span> (c-<span class="num">1</span> >= <span class="num">0</span>) state += press[r-<span class="num">1</span>][c-<span class="num">1</span>];
+            <span class="kw">if</span> (c+<span class="num">1</span> < <span class="num">6</span>)  state += press[r-<span class="num">1</span>][c+<span class="num">1</span>];
+            
+            <span class="com">// 如果上方灯仍是奇数(亮)，这一行必须按</span>
+            press[r][c] = (state % <span class="num">2</span>);   
+        }
+    }
+    
+    <span class="com">// 检查最后一行是否全灭</span>
+    <span class="kw">for</span> (<span class="kw">int</span> c = <span class="num">0</span>; c < <span class="num">6</span>; ++c) {
+        <span class="kw">int</span> state = light[<span class="num">4</span>][c] + press[<span class="num">4</span>][c] + press[<span class="num">3</span>][c];
+        <span class="kw">if</span> (c-<span class="num">1</span> >= <span class="num">0</span>) state += press[<span class="num">4</span>][c-<span class="num">1</span>];
+        <span class="kw">if</span> (c+<span class="num">1</span> < <span class="num">6</span>)  state += press[<span class="num">4</span>][c+<span class="num">1</span>];
+        <span class="kw">if</span> (state % <span class="num">2</span> != <span class="num">0</span>) <span class="kw">return false</span>; <span class="com">// 还有灯亮着，此方案失败</span>
+    }
+    <span class="kw">return true</span>;
+}
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="com">// (此处省略读入初始 light 数组的代码)</span>
+    
+    <span class="com">// 仅枚举第一行的 64 种按法 (状态压缩)</span>
+    <span class="kw">for</span> (<span class="kw">int</span> mask = <span class="num">0</span>; mask < (<span class="num">1</span> << <span class="num">6</span>); ++mask) {
+        <span class="func">memset</span>(press, <span class="num">0</span>, <span class="kw">sizeof</span>(press));
+        <span class="kw">for</span> (<span class="kw">int</span> c = <span class="num">0</span>; c < <span class="num">6</span>; ++c)
+            press[<span class="num">0</span>][c] = (mask >> c) & <span class="num">1</span>;
+                
+        <span class="kw">if</span> (<span class="func">guess</span>()) {
+            <span class="kw">cout</span> << <span class="str">"Solution found!"</span> << endl;
+            <span class="kw">break</span>;
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-3" class="code-content group-3">
+<span class="com"># 初始化(此处假设数据已输入)</span>
+light = [[<span class="num">0</span>]*<span class="num">6</span> <span class="kw">for</span> _ <span class="kw">in</span> <span class="func">range</span>(<span class="num">5</span>)]  
+press = [[<span class="num">0</span>]*<span class="num">6</span> <span class="kw">for</span> _ <span class="kw">in</span> <span class="func">range</span>(<span class="num">5</span>)]
+
+<span class="kw">def</span> <span class="func">guess</span>():
+    <span class="com"># 递推第2~5行的按法</span>
+    <span class="kw">for</span> r <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span>, <span class="num">5</span>):
+        <span class="kw">for</span> c <span class="kw">in</span> <span class="func">range</span>(<span class="num">6</span>):
+            state = light[r-<span class="num">1</span>][c] + press[r-<span class="num">1</span>][c]
+            <span class="kw">if</span> r-<span class="num">2</span> >= <span class="num">0</span>: state += press[r-<span class="num">2</span>][c]
+            <span class="kw">if</span> c-<span class="num">1</span> >= <span class="num">0</span>: state += press[r-<span class="num">1</span>][c-<span class="num">1</span>]
+            <span class="kw">if</span> c+<span class="num">1</span> < <span class="num">6</span>:  state += press[r-<span class="num">1</span>][c+<span class="num">1</span>]
+            press[r][c] = state % <span class="num">2</span>
+            
+    <span class="com"># 检查最后一行</span>
+    <span class="kw">for</span> c <span class="kw">in</span> <span class="func">range</span>(<span class="num">6</span>):
+        state = light[<span class="num">4</span>][c] + press[<span class="num">4</span>][c] + press[<span class="num">3</span>][c]
+        <span class="kw">if</span> c-<span class="num">1</span> >= <span class="num">0</span>: state += press[<span class="num">4</span>][c-<span class="num">1</span>]
+        <span class="kw">if</span> c+<span class="num">1</span> < <span class="num">6</span>:  state += press[<span class="num">4</span>][c+<span class="num">1</span>]
+        <span class="kw">if</span> state % <span class="num">2</span> != <span class="num">0</span>:
+            <span class="kw">return False</span>
+    <span class="kw">return True</span>
+
+<span class="com"># 仅枚举第一行的 64 种状态</span>
+<span class="kw">for</span> mask <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span> << <span class="num">6</span>):
+    <span class="kw">for</span> r <span class="kw">in</span> <span class="func">range</span>(<span class="num">5</span>):
+        <span class="kw">for</span> c <span class="kw">in</span> <span class="func">range</span>(<span class="num">6</span>):
+            press[r][c] = <span class="num">0</span>
+            
+    <span class="kw">for</span> c <span class="kw">in</span> <span class="func">range</span>(<span class="num">6</span>):
+        press[<span class="num">0</span>][c] = (mask >> c) & <span class="num">1</span>
+        
+    <span class="kw">if</span> <span class="func">guess</span>():
+        <span class="func">print</span>(<span class="str">"Solution found!"</span>)
+        <span class="kw">break</span></div>
+    </div>
+
+    <h2>本节总结</h2>
+    <table>
+        <tr>
+            <th>优化策略</th>
+            <th>核心思想</th>
+            <th>典型应用</th>
+        </tr>
+        <tr>
+            <td><strong>减少枚举范围</strong></td>
+            <td>数学分析，利用等式用计算代替循环</td>
+            <td>百钱百鸡、方程整数解</td>
+        </tr>
+        <tr>
+            <td><strong>剪枝 (Pruning)</strong></td>
+            <td>提前判断，发现不可能的分支立刻退出</td>
+            <td>素数拆分验证、搜索与背包问题</td>
+        </tr>
+        <tr>
+            <td><strong>改变枚举对象</strong></td>
+            <td>只枚举关键的局部，其余由规则递推得出</td>
+            <td>熄灯问题、部分复杂的棋盘覆盖问题</td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <p>✅ <strong>掌握核心：</strong>不一味地用死力气，寻找规律才是算法的魅力所在。</p>
+        <hr style="border-color: rgba(255,255,255,0.3); margin: 15px 0;">
+        <p>✏️ <strong>课后练习：</strong><br>
+        1. 修改“方程整数解”代码，求解 x + y + z = 100 且 x, y, z 均为<strong>正整数</strong>的解个数。<br>
+        2. 用剪枝思想找茬：找出 1~100 内所有<strong>不能</strong>表示为两个素数之和的偶数。<br>
+        3. (挑战) 尝试将熄灯问题的代码扩展到任意 M &times; N 的网格！</p>
+    </div>
+
+</div>
+
+<script>
+function openTab(evt, tabId, groupClass) {
+    var i, content, links;
+    content = document.getElementsByClassName(groupClass);
+    for (i = 0; i < content.length; i++) {
+        if(content[i].classList.contains("code-content")) {
+            content[i].style.display = "none";
+            content[i].classList.remove("active");
+        }
+    }
+    links = evt.currentTarget.parentElement.getElementsByClassName("tab-btn");
+    for (i = 0; i < links.length; i++) {
+        links[i].className = links[i].className.replace(" active", "");
+    }
+    document.getElementById(tabId).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+</script>
+
+</body>
+</html>

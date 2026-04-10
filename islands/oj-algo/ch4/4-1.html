@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4.1 枚举法的基本思想 - C++ 魔法课堂</title>
+    <style>
+        /* ================= 核心配色 (保持风格一致) ================= */
+        :root {
+            --primary: #FF7043;      /* 橙色：代表搜索与活力 */
+            --primary-dark: #E64A19;
+            --secondary: #4DB6AC;    /* 青绿色：代表逻辑与稳定 */
+            --accent: #5C6BC0;       /* 靛蓝色：代表深度思考 */
+            --bg-color: #FFF8E1;     /* 暖黄底色 */
+            --text-main: #3E2723;
+            --code-bg: #282c34;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#FFD54F 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            border: 4px solid #FFE082;
+        }
+
+        /* ================= 标题样式 ================= */
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #FFCC80;
+        }
+
+        h2 {
+            background: linear-gradient(90deg, var(--primary), #FFAB91);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            font-size: 1.6em;
+        }
+
+        h3 {
+            color: var(--accent);
+            border-bottom: 3px dashed var(--accent);
+            padding-bottom: 8px;
+            margin-top: 30px;
+        }
+
+        /* ================= 强调样式 ================= */
+        .highlight {
+            color: #D84315;
+            font-weight: bold;
+            background: #FFE082;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .note-box {
+            background-color: #E0F2F1;
+            border-left: 8px solid var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .danger-box {
+            background-color: #FFEBEE;
+            border: 2px solid #EF9A9A;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration {
+            text-align: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px dashed #FFB74D;
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th { background: var(--accent); color: white; padding: 12px; }
+        td { border: 1px solid #E0E0E0; padding: 12px; text-align: center; }
+
+        /* ================= 代码块 ================= */
+        .code-container {
+            border: 3px solid #81C784;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: var(--code-bg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-header { display: flex; background: #37474f; }
+
+        .tab-btn {
+            padding: 12px 25px;
+            color: #cfd8dc;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-weight: bold;
+            flex: 1;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--code-bg);
+            color: #81C784;
+            border-top: 4px solid #81C784;
+        }
+
+        .code-content {
+            display: none;
+            padding: 20px;
+            color: #abb2bf;
+            font-family: "Consolas", "Courier New", monospace;
+            white-space: pre;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+        .code-content.active { display: block; }
+
+        /* 高亮 */
+        .kw { color: #c678dd; } 
+        .com { color: #5c6370; font-style: italic; }
+        .str { color: #98c379; }
+        .num { color: #d19a66; }
+        .func { color: #61afef; }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: var(--primary);
+            color: white;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="illustration" style="border:none;">
+        <svg width="240" height="120" viewBox="0 0 240 120">
+            <rect x="20" y="20" width="40" height="40" rx="5" fill="#FFE082" stroke="#FFB74D" stroke-width="2"/>
+            <text x="40" y="47" text-anchor="middle" font-size="16" fill="#E64A19" font-weight="bold">1</text>
+            <rect x="70" y="20" width="40" height="40" rx="5" fill="#FFE082" stroke="#FFB74D" stroke-width="2"/>
+            <text x="90" y="47" text-anchor="middle" font-size="16" fill="#E64A19" font-weight="bold">2</text>
+            <rect x="120" y="20" width="40" height="40" rx="5" fill="#A5D6A7" stroke="#4CAF50" stroke-width="3"/>
+            <text x="140" y="47" text-anchor="middle" font-size="16" fill="#2E7D32" font-weight="bold">✔</text>
+            <rect x="170" y="20" width="40" height="40" rx="5" fill="#FFE082" stroke="#FFB74D" stroke-width="2"/>
+            <text x="190" y="47" text-anchor="middle" font-size="16" fill="#E64A19" font-weight="bold">4</text>
+            
+            <circle cx="140" cy="40" r="35" fill="none" stroke="#5C6BC0" stroke-width="4">
+                <animate attributeName="cx" values="40;90;140;190;140" dur="4s" repeatCount="indefinite" />
+            </circle>
+            <line x1="165" y1="65" x2="190" y2="90" stroke="#5C6BC0" stroke-width="8" stroke-linecap="round">
+                <animate attributeName="x1" values="65;115;165;215;165" dur="4s" repeatCount="indefinite" />
+                <animate attributeName="x2" values="90;140;190;240;190" dur="4s" repeatCount="indefinite" />
+            </line>
+            <text x="120" y="110" text-anchor="middle" font-size="14" fill="#5C6BC0">逐一列举中...</text>
+        </svg>
+    </div>
+
+    <h1>4.1 枚举法的基本思想</h1>
+
+    <div class="note-box">
+        <p>👋 <strong>魔法师语录：</strong></p>
+        <p>枚举法（Enumeration），俗称“暴力破解”。它的精髓不在于技巧，而在于<strong>“不放过任何一个嫌疑人”</strong>！只要你能把所有答案列出来并一个一个检查，就没有解决不了的难题。</p>
+    </div>
+
+    <h2>一、定义与核心公式</h2>
+    <h3>1. 什么是枚举？</h3>
+    <p>从可能解的集合中一一列举各个元素，用题目给定的条件判断哪些是有效的。能够通过考验的，就是我们要找的真理！</p>
+
+    <h3>2. 核心公式</h3>
+    <div class="note-box" style="background:#FFF3E0; border-color:#FFB74D;">
+        <p style="text-align:center; font-size:1.2em; font-weight:bold;">枚举算法 = 确定解空间 + 逐一列举 + 逐一检验</p>
+    </div>
+    <ul>
+        <li><strong>解空间：</strong> 所有可能答案的“大池子”。（比如1~100）</li>
+        <li><strong>逐一列举：</strong> 用循环或递归，一个不漏地把池子里的东西捞上来。</li>
+        <li><strong>逐一检验：</strong> 用 <span class="highlight">if</span> 看看捞上来的东西对不对。</li>
+    </ul>
+
+    <h2>二、竞赛定位：得分的关键</h2>
+    <table>
+        <tr>
+            <th>级别</th>
+            <th>作用</th>
+        </tr>
+        <tr>
+            <td><strong>CSP-J (入门)</strong></td>
+            <td>前2题的常客，确保“基础分”到手的生存技能。</td>
+        </tr>
+        <tr>
+            <td><strong>CSP-S (提高)</strong></td>
+            <td>骗分（暴力分）神器，也是学习高级算法的敲门砖。</td>
+        </tr>
+    </table>
+    <p>💡 <strong>教练提醒：</strong> 写一个暴力枚举来“对拍”（验证更高级算法的结果）是顶尖选手的必修课。</p>
+
+    <h2>三、复杂度估算：生存避坑指南</h2>
+    <p>在动手之前，必须学会“掐指一算”，否则 <span class="highlight" style="background:#FFEBEE; color:#C62828;">TLE (超时)</span> 会找上门！</p>
+    
+    <div class="danger-box">
+        <p><strong>⏱️ 1秒钟内能跑多少次？</strong></p>
+        <ul>
+            <li><strong>C++：</strong> 约 <span class="highlight">10<sup>8</sup></span> 次简单运算。</li>
+            <li><strong>Python：</strong> 约 <span class="highlight">10<sup>7</sup></span> 次循环（效率较低）。</li>
+        </ul>
+        <p><strong>⚖️ 判断法则：</strong></p>
+        <ul>
+            <li>≤ 10<sup>6</sup>：<strong>绝对安全</strong>，随便写！</li>
+            <li>10<sup>7</sup> ~ 10<sup>8</sup>：<strong>卡线边缘</strong>，小心优化。</li>
+            <li>≥ 10<sup>9</sup>：<strong>必然超时</strong>，必须换思路！</li>
+        </ul>
+    </div>
+
+    <h2>四、代码模板：水仙花数</h2>
+    <p>题目：找出所有三位数，满足：<span class="highlight">各位数字立方和 = 该数本身</span>。 (例：153 = 1³ + 5³ + 3³)</p>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-code')">C++ 实现</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-code')">Python 实现</button>
+        </div>
+
+        <div id="cpp-code" class="code-content active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="com">// 1. 确定解空间：100 到 999</span>
+    <span class="kw">for</span> (<span class="kw">int</span> num = <span class="num">100</span>; num <= <span class="num">999</span>; ++num) {
+        <span class="com">// 2. 逐一列举：提取各位数字</span>
+        <span class="kw">int</span> a = num / <span class="num">100</span>;          <span class="com">// 百位</span>
+        <span class="kw">int</span> b = (num / <span class="num">10</span>) % <span class="num">10</span>;    <span class="com">// 十位</span>
+        <span class="kw">int</span> c = num % <span class="num">10</span>;           <span class="com">// 个位</span>
+        
+        <span class="com">// 3. 逐一检验</span>
+        <span class="kw">if</span> (a*a*a + b*b*b + c*c*c == num) {
+            <span class="kw">cout</span> << num << endl;
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+
+        <div id="py-code" class="code-content">
+<span class="com"># 方法一：经典数学拆分</span>
+<span class="kw">for</span> num <span class="kw">in</span> <span class="func">range</span>(<span class="num">100</span>, <span class="num">1000</span>):
+    a = num // <span class="num">100</span>          <span class="com"># 百位</span>
+    b = (num // <span class="num">10</span>) % <span class="num">10</span>    <span class="com"># 十位</span>
+    c = num % <span class="num">10</span>            <span class="com"># 个位</span>
+    <span class="kw">if</span> a**<span class="num">3</span> + b**<span class="num">3</span> + c**<span class="num">3</span> == num:
+        <span class="func">print</span>(num)
+
+<span class="com"># 方法二：Python 魔法（字符串法）</span>
+<span class="kw">for</span> num <span class="kw">in</span> <span class="func">range</span>(<span class="num">100</span>, <span class="num">1000</span>):
+    a, b, c = <span class="func">map</span>(<span class="func">int</span>, <span class="func">str</span>(num))
+    <span class="kw">if</span> a**<span class="num">3</span> + b**<span class="num">3</span> + c**<span class="num">3</span> == num:
+        <span class="func">print</span>(num)</div>
+    </div>
+
+    <h2>五、本节小结</h2>
+    <div class="note-box" style="border-left-color: var(--primary);">
+        <p>✅ <strong>核心思想：</strong> 列出所有可能 → 逐一检查。</p>
+        <p>✅ <strong>生存意识：</strong> 算好复杂度，别让电脑“累死”。</p>
+        <p>✅ <strong>适用场景：</strong> 数据规模小、逻辑直接的问题。</p>
+    </div>
+
+    <div class="footer">
+        ✏️ 课后小练习：尝试修改代码，找出所有的“四位玫瑰花数”吧！<br>
+        (提示：玫瑰花数是指各位数字的四次方之和等于本身)
+    </div>
+
+</div>
+
+<script>
+function openTab(evt, tabName) {
+    var i, content, links;
+    content = document.getElementsByClassName("code-content");
+    for (i = 0; i < content.length; i++) {
+        content[i].style.display = "none";
+        content[i].classList.remove("active");
+    }
+    links = document.getElementsByClassName("tab-btn");
+    for (i = 0; i < links.length; i++) {
+        links[i].className = links[i].className.replace(" active", "");
+    }
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+</script>
+
+</body>
+</html>
