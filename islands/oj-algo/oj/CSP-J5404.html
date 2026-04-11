@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>魔法课堂：雪峰点票大挑战</title>
+    <title>魔法课堂：火指加阶</title>
     <style>
         /* 全局可爱风格设置 */
         body {
             font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
-            background-color: #e0f7fa; /* 冰雪主题的淡蓝色背景 */
+            background-color: #e0f7fa;
             color: #444;
             margin: 0;
             padding: 20px;
@@ -53,7 +53,7 @@
             padding: 40px;
             border-radius: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            border: 5px solid #81ecec; /* 薄荷绿边框，契合冰雪主题 */
+            border: 5px solid #81ecec;
         }
 
         /* 标题样式 */
@@ -132,37 +132,58 @@
         .keyword { color: #ff7675; font-weight: bold; }
         .type { color: #74b9ff; }
         .string { color: #55efc4; }
+        .number { color: #fab1a0; }
 
-        /* 图解小方块（桶排序示意图） */
-        .bucket-visual {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin: 20px 0;
-            flex-wrap: wrap;
+        /* 行内代码及变量强调（背景色变色，无反引号） */
+        .code-inline {
+            background-color: #f1f2f6;
+            color: #e84118;
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-family: Consolas, monospace;
+            font-weight: bold;
         }
-        .bucket-box {
-            border: 3px solid #6c5ce7;
-            border-radius: 10px 10px 25px 25px; /* 像个小桶 */
-            width: 80px;
+
+        /* 图解小方块 */
+        .perm-visual {
             background: #fff;
-            text-align: center;
-            box-shadow: 3px 3px 0px #a29bfe;
-            position: relative;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed #0984e3;
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
         }
-        .bucket-header {
-            background: #6c5ce7;
+        .perm-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2d3436;
+        }
+        .finger-box {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #74b9ff;
             color: white;
-            padding: 5px;
-            font-weight: bold;
-            border-radius: 5px 5px 0 0;
-            font-size: 0.9em;
+            border-radius: 8px;
+            font-size: 1.2em;
+            box-shadow: 2px 2px 0px #0984e3;
+            transition: all 0.3s;
         }
-        .bucket-body {
-            padding: 15px 5px;
+        .finger-box.highlight-pivot { background: #fdcb6e; box-shadow: 2px 2px 0px #e17055; color: #d35400;}
+        .finger-box.highlight-swap { background: #55efc4; box-shadow: 2px 2px 0px #00b894; color: #000; }
+        
+        .arrow-down {
+            color: #d63031;
             font-size: 1.5em;
-            color: #ff7675;
-            font-weight: bold;
+            margin: 5px 0;
         }
 
         /* 强调文字 */
@@ -183,12 +204,11 @@
             font-weight: bold;
         }
 
-        /* 打印设置 */
         @media print {
             body { background-color: white; }
             .container { box-shadow: none; border: none; width: 100%; padding: 0; }
-            .lang-switch, .action-btn { display: none; } /* 打印时隐藏切换按钮和做题按钮 */
-            .card { break-inside: avoid; } /* 防止卡片被切断 */
+            .lang-switch, .action-btn { display: none; }
+            .card { break-inside: avoid; }
         }
     </style>
 </head>
@@ -200,90 +220,99 @@
 </div>
 
 <div class="container">
-    <h1>🏔️ 雪峰点票大挑战 🏔️</h1>
+    <h1>🏔️ 火指加阶 🏔️</h1>
     
     <div style="text-align: center; font-size: 1.2em; color: #0984e3;">
-        👋 嗨，小小勇者！我是你的编程魔法师！<br>
-        大选日到了，你能帮雪民们铺成一条“雪序之路”，开启通往宝库的冰门吗？
+        👋 嗨，星际探险家！欢迎来到寒冷的火星冰原！<br>
+        火星人正在用手指排队形来表示超大数字。你能帮他们算出前进 M 步后的新队形吗？
     </div>
 
     <div style="text-align: center;">
-        <a href="https://oj.koudashijie.com/collection/33/type/course/problem/12" target="_blank" class="action-btn">
+        <a href="https://oj.koudashijie.com/collection/33/type/course/problem/25" target="_blank" class="action-btn">
             🚀 点击这里，开启魔法传送门（前往做题）！
         </a>
     </div>
 
     <div class="card problem">
         <h2>📜 任务清单 (题目描述)</h2>
-        <p>在雪山之巅的雪峰议会，有 <strong>n</strong> 位守护者（编号从 1 到 n）。今天是大选日，雪民们投下了 <strong>m</strong> 张会发光的“雪票”。</p>
-        <div style="text-align: center;">
-            <img src="CSP-J5301.png" alt="雪峰点票" style="max-width: 100%; height: auto; border-radius: 10px; margin: 10px 0;">
-        </div>
-        <p><strong>你的终极任务：</strong> 把这茫茫多（最多 2,000,000 张！）的雪票，按照上面的编号 <strong>从小到大</strong> 排好队。数字整齐闪耀，冰门就会“咔哒”一声打开哦！🗝️</p>
+        <p>火星人把从 1 到 N 的数字排成一个序列。把所有可能的序列按照从小到大的“字典序”排好排名。</p>
+        <p><strong>你的终极任务：</strong> 科学家给了一个很小的数字 <span class="code-inline">M</span>。你要把火星人现在的队伍当成一个“排名编号”，然后让这个编号<strong>前进 M 步</strong>，最后输出前进后的新队伍顺序！</p>
 
         <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
             <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #b2bec3;">
                 <strong>📥 魔法输入阵 (输入样例)：</strong><br>
-                <span style="color: #636e72; font-size: 0.9em;">(5个候选人，10张选票)</span><br>
-                <span class="highlight">5 10</span><br>
-                <span style="color: #636e72; font-size: 0.9em;">(乱糟糟的10张雪票)</span><br>
-                2 5 2 2 5 2 2 2 1 2
+                <span style="color: #636e72; font-size: 0.9em;">(5根手指，前进3步)</span><br>
+                <span class="highlight">5</span><br>
+                <span class="highlight">3</span><br>
+                <span style="color: #636e72; font-size: 0.9em;">(当前队形)</span><br>
+                1 2 3 4 5
             </div>
             <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #00cec9;">
                 <strong>📤 奇迹输出阵 (输出样例)：</strong><br>
-                <span style="color: #636e72; font-size: 0.9em;">(从小到大铺好的雪序之路！)</span><br>
-                <span class="highlight">1 2 2 2 2 2 2 2 5 5</span>
+                <span style="color: #636e72; font-size: 0.9em;">(前进3步后的新队形)</span><br>
+                <span class="highlight">1 2 4 5 3</span>
             </div>
         </div>
     </div>
 
     <div class="card logic">
-        <h2>🧠 魔法道具箱 (核心思路：桶排序/计数排序)</h2>
+        <h2>🧠 魔法道具箱 (核心思路：字典序的下一个排列)</h2>
         
-        <p>因为雪票的数量超级多（200万张！），如果用普通的排队魔法（比如冒泡排序），电脑会累趴下的！🥵</p>
-        <p>但是我们发现了一个秘密：<strong>守护者的编号很小（最大才999）！</strong> 所以我们可以使用超级魔法——<strong>“魔法分类桶 (计数排序)”</strong>！🪣</p>
+        <p>如果我们要老老实实把所有排列排出来，N 最大到 10000，计算机算到明天也算不完！好在 <span class="code-inline">M</span> 非常小（最大才 100），我们只需要连续做 <span class="code-inline">M</span> 次“寻找下一个排列”的法术就可以了。</p>
 
-        <h3>✨ 施法步骤：</h3>
+        <h3>✨ “下一个排列”的三步法术：</h3>
         <ol>
-            <li><strong>准备空桶：</strong> 守护者有 n 个，我们就准备 n 个魔法桶，每个桶上写着守护者的编号（从 1 到 n）。一开始里面都是空的（0）。</li>
-            <li><strong>扔进雪票：</strong> 拿起一张雪票，看到上面写着几号，就往几号桶里扔进一颗发光星星 🌟。</li>
-            <li><strong>依次倒出：</strong> 从 1 号桶走到 n 号桶，桶里有几颗星星，我们就把这个编号喊几次！排队完成！</li>
+            <li><strong>寻找转折点 (轴)：</strong> 从队伍的<strong>最右边往左找</strong>，找到第一对左边比右边小的数字 <span class="code-inline">a[i] < a[i+1]</span>。这个 <span class="code-inline">a[i]</span> 就是我们需要替换的“轴”。</li>
+            <li><strong>寻找替换者并交换：</strong> 再次从队伍的<strong>最右边往左找</strong>，找到第一个比刚刚的轴 <span class="code-inline">a[i]</span> 大的数字 <span class="code-inline">a[j]</span>，把这两个人互换位置。</li>
+            <li><strong>尾部倒序：</strong> 因为刚才换了一个稍大的数字到前面，为了让这支队伍尽可能“小”（即刚好是下一个排名），我们需要把轴后面的所有数字<strong>全部反转（首尾对调）</strong>。</li>
         </ol>
 
-        <div class="bucket-visual">
-            <div style="align-self: center; font-size: 1.2em; font-weight: bold;">例如输入 <br>1 2 2 2 5</div>
-            <div style="align-self: center; font-size: 2em;">👉</div>
-            <div class="bucket-box">
-                <div class="bucket-header">🪣 1号桶</div>
-                <div class="bucket-body">🌟</div>
-                <div style="font-size: 0.8em; color: #888;">记为 1</div>
+        <div class="perm-visual">
+            <div style="color: #636e72; font-size: 0.9em;">👇 魔法演示：以 1 2 3 5 4 为例，寻找它的下一个队形 👇</div>
+            
+            <div class="perm-row">
+                <span style="font-size: 0.8em; color: #999;">当前：</span>
+                <div class="finger-box">1</div>
+                <div class="finger-box">2</div>
+                <div class="finger-box highlight-pivot">3</div>
+                <div class="finger-box">5</div>
+                <div class="finger-box highlight-swap">4</div>
             </div>
-            <div class="bucket-box">
-                <div class="bucket-header">🪣 2号桶</div>
-                <div class="bucket-body">🌟🌟🌟</div>
-                <div style="font-size: 0.8em; color: #888;">记为 3</div>
+            <div style="font-size: 0.85em; color: #d35400;">轴是 3 (因为 3 < 5)。右边第一个比 3 大的是 4，交换它们！</div>
+            
+            <div class="arrow-down">⬇️</div>
+
+            <div class="perm-row">
+                <span style="font-size: 0.8em; color: #999;">交换后：</span>
+                <div class="finger-box">1</div>
+                <div class="finger-box">2</div>
+                <div class="finger-box highlight-swap">4</div>
+                <div class="finger-box">5</div>
+                <div class="finger-box highlight-pivot">3</div>
             </div>
-            <div class="bucket-box" style="opacity: 0.6;">
-                <div class="bucket-header">🪣 3号桶</div>
-                <div class="bucket-body">空</div>
-                <div style="font-size: 0.8em; color: #888;">记为 0</div>
+            <div style="font-size: 0.85em; color: #00b894;">现在轴的后面是 5 和 3，把它们倒过来 (反转) 变成 3 和 5！</div>
+
+            <div class="arrow-down">⬇️</div>
+
+            <div class="perm-row">
+                <span style="font-size: 0.8em; color: #999;">最终结果：</span>
+                <div class="finger-box">1</div>
+                <div class="finger-box">2</div>
+                <div class="finger-box">4</div>
+                <div class="finger-box">3</div>
+                <div class="finger-box">5</div>
             </div>
-            <div style="align-self: center;">...</div>
-            <div class="bucket-box">
-                <div class="bucket-header">🪣 5号桶</div>
-                <div class="bucket-body">🌟</div>
-                <div style="font-size: 0.8em; color: #888;">记为 1</div>
-            </div>
+            <div style="font-weight: bold; color: #0984e3;">就这样成功前进了一步！连续做 M 次就行啦！🎉</div>
         </div>
-        <p style="text-align: center; color: #e17055;"><b>最后按顺序倒出来就是：1，2，2，2，5！是不是超级快？🚀</b></p>
     </div>
 
     <div class="cpp-only">
         <div class="card knowledge">
             <h2>📘 C++ 魔法秘籍 (知识点)</h2>
             <ul>
-                <li>🎒 <strong>超级魔法口袋 <code>vector</code>：</strong> 以前我们用普通的数组 <code>a[1000]</code>，现在我们可以用 <code>vector&lt;int&gt; cnt(n+1, 0)</code>，这就像是一个能自动帮你把里面全都变成 0 的超级口袋！</li>
-                <li>⚡ <strong>光速念咒 <code>ios::sync_with_stdio(false);</code>：</strong> 当要读入 200万 个数字时，普通的 <code>cin</code> 就像乌龟爬。加上这两句神秘咒语，你的 <code>cin</code> 就会踩上风火轮，瞬间读完所有数据！</li>
+                <li>🪄 <strong>现成的魔法书 <span class="code-inline">next_permutation</span>：</strong> C++ 最让人喜爱的地方就是它自带了这套三步法术！只要召唤了 <span class="code-inline">#include &lt;algorithm&gt;</span>，就可以直接使用 <span class="code-inline">next_permutation(开始位置, 结束位置)</span>，它会自动把数组变成下一个队伍！</li>
+                <li>🔄 <strong>M 次循环：</strong> 使用一个简单的 <span class="code-inline">for (int i = 0; i < M; ++i)</span>，让上面这句咒语连续触发 M 次。</li>
+                <li>🧹 <strong>完美的空格控制：</strong> 输出要求数字之间只有 1 个空格。我们可以用一个绝妙的判断：<span class="code-inline">if (i > 0) cout << " ";</span> 然后输出数字，这样行末就不会有多余空格啦！</li>
             </ul>
         </div>
 
@@ -291,43 +320,33 @@
             <h2>💻 C++ 终极法术 (代码详解)</h2>
 <pre>
 <span class="keyword">#include</span> &lt;iostream&gt;
+<span class="keyword">#include</span> &lt;algorithm&gt; <span class="comment">// 召唤自带魔法 next_permutation！</span>
 <span class="keyword">#include</span> &lt;vector&gt;
 <span class="keyword">using namespace std;</span>
 
 <span class="keyword">int</span> main() {
-    <span class="comment">// ⚡ 念动加速咒语，让读入速度飞起来！(必背哦)</span>
-    <span class="type">ios</span>::sync_with_stdio(<span class="keyword">false</span>);
-    <span class="type">cin</span>.tie(<span class="keyword">nullptr</span>);
-
-    <span class="type">int</span> n, m;
-    <span class="type">cin</span> >> n >> m; <span class="comment">// 🖥️ 电脑问：有几个候选人？几张雪票？</span>
-
-    <span class="comment">// 🎒 准备 n+1 个带编号的魔法桶，一开始里面都是0！</span>
-    <span class="comment">// 为什么是 n+1 呢？因为编号是从 1 到 n，我们需要第 n 号桶！</span>
-    <span class="type">vector</span>&lt;<span class="type">int</span>&gt; cnt(n + 1, 0);
-
-    <span class="comment">// 🌪️ 开启循环，把 m 张雪票一张张读进来</span>
-    <span class="keyword">for</span> (<span class="type">int</span> i = 0; i < m; ++i) {
-        <span class="type">int</span> a;
-        <span class="type">cin</span> >> a;     <span class="comment">// 读到一张雪票上面的编号 a</span>
-        ++cnt[a];     <span class="comment">// 往 a 号桶里扔进一颗星星 (计数+1)</span>
+    <span class="type">int</span> N, M;
+    <span class="type">cin</span> >> N >> M;
+    
+    <span class="comment">// 🗺️ 读取当前的火星人队伍</span>
+    <span class="type">vector</span>&lt;<span class="type">int</span>&gt; fingers(N);
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i < N; ++i) {
+        <span class="type">cin</span> >> fingers[i];
     }
-
-    <span class="comment">// 🚶‍♂️ 准备倒出桶里的星星啦！</span>
-    <span class="type">bool</span> first = <span class="keyword">true</span>; <span class="comment">// 这是一个小旗子，标记是不是第一个输出的数字</span>
-
-    <span class="keyword">for</span> (<span class="type">int</span> i = 1; i <= n; ++i) {     <span class="comment">// 从 1号桶 走到 n号桶</span>
-        <span class="keyword">for</span> (<span class="type">int</span> j = 0; j < cnt[i]; ++j) { <span class="comment">// 桶里有几颗星，就输出几次</span>
-            <span class="keyword">if</span> (!first) {
-                <span class="type">cout</span> << <span class="string">' '</span>; <span class="comment">// 如果不是第一个数字，就在前面加个空格</span>
-            }
-            <span class="type">cout</span> << i;       <span class="comment">// 喊出这个数字！</span>
-            first = <span class="keyword">false</span>;   <span class="comment">// 小旗子倒下，后面的数字都不是第一个啦</span>
-        }
+    
+    <span class="comment">// 🔄 连续施展 M 次下一个排列的法术</span>
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i < M; ++i) {
+        <span class="type">next_permutation</span>(fingers.begin(), fingers.end());
     }
-    <span class="type">cout</span> << <span class="string">'\n'</span>; <span class="comment">// ✨ 华丽地换个行，冰门开启！</span>
-
-    <span class="keyword">return</span> 0; <span class="comment">// 任务圆满完成！</span>
+    
+    <span class="comment">// 📢 输出结果，注意空格控制</span>
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i < N; ++i) {
+        <span class="keyword">if</span> (i > <span class="number">0</span>) <span class="type">cout</span> << <span class="string">" "</span>; <span class="comment">// 不是第一个数字就在前面加空格</span>
+        <span class="type">cout</span> << fingers[i];
+    }
+    <span class="type">cout</span> << <span class="type">endl</span>;
+    
+    <span class="keyword">return</span> <span class="number">0</span>;
 }
 </pre>
         </div>
@@ -335,8 +354,7 @@
         <div class="card logic" style="border-color: #0984e3; background-color: #e3f2fd;">
             <h2>🌟 C++ 重点复习小贴士</h2>
             <ul>
-                <li>💡 <strong>为什么不用 sort？</strong> 因为 `m` 实在太大了，普通排序会超时。当数字的范围很小（比如这里的 n 最大才 999），<strong>计数排序（桶排序）</strong> 永远是你的神兵利器！</li>
-                <li>💡 <strong>注意空格控制：</strong> 题目要求数字之间有空格，但最后一个数字后面最好不要有多余的空格，所以我们用了一个小布尔旗帜 `first` 来完美解决！</li>
+                <li>💡 <strong>时间复杂度极低：</strong> 虽然 <span class="code-inline">N</span> 有 10000 那么大，但是 <span class="code-inline">next_permutation</span> 在最坏情况下的单次操作也仅仅是跑一趟数组而已。加上 <span class="code-inline">M</span> 最大只有 100，所以总共最多运行一百万次级别，计算机 0.01 秒就能算完！</li>
             </ul>
         </div>
     </div>
@@ -345,66 +363,73 @@
         <div class="card knowledge">
             <h2>🐍 Python 魔法秘籍 (知识点)</h2>
             <ul>
-                <li>🌪️ <strong>超级吸尘器 <code>sys.stdin.buffer.read()</code>：</strong> 面对多达 200万 个数字，如果用普通的 `input()` 一行行读会很慢。这个咒语能一口气把所有的字都吸到程序里！</li>
-                <li>🎒 <strong>瞬间造桶 <code>[0] * (n + 1)</code>：</strong> 在 Python 里，想造出 1000 个里面装着 0 的小桶，只要用乘法咒语 `*` 就可以一秒生成！</li>
-                <li>🔗 <strong>神奇胶水 <code>' '.join()</code>：</strong> 把一堆文字用空格像串糖葫芦一样串起来，一起输出，速度飞快！</li>
+                <li>🛠️ <strong>亲手打造轮子：</strong> Python 虽然没有直接修改原数组的 <span class="code-inline">next_permutation</span>，但我们可以自己把那“三步法术”写出来。这就叫做算法的魅力！</li>
+                <li>🔀 <strong>极简交换法 <span class="code-inline">a, b = b, a</span>：</strong> 在 Python 里想要交换两个变量，不需要借助第三个临时杯子，直接用逗号隔开赋值，就能瞬间完成乾坤大挪移。</li>
+                <li>🔗 <strong>输出胶水 <span class="code-inline">' '.join()</span>：</strong> 面对一个全是数字的列表，先用 <span class="code-inline">map(str, fingers)</span> 把它们全都变成字符串类型，然后用空格胶水粘起来，输出格式直接满分！</li>
             </ul>
         </div>
 
         <div class="card code-box">
             <h2>💻 Python 终极法术 (代码详解)</h2>
 <pre>
-<span class="keyword">import</span> sys <span class="comment"># 召唤高级工具箱！</span>
+<span class="keyword">def</span> <span class="type">next_permutation</span>(arr):
+    <span class="comment"># 🪄 魔法第一步：从右往左，寻找第一个下降的点 (轴)</span>
+    i = <span class="type">len</span>(arr) - <span class="number">2</span>
+    <span class="keyword">while</span> i >= <span class="number">0</span> <span class="keyword">and</span> arr[i] >= arr[i + <span class="number">1</span>]:
+        i -= <span class="number">1</span>
+        
+    <span class="comment"># 如果 i 跑到最前面都没找到，说明这已经是最大的降序排列了</span>
+    <span class="keyword">if</span> i < <span class="number">0</span>:
+        <span class="keyword">return False</span>
+        
+    <span class="comment"># 🪄 魔法第二步：再从右往左，寻找第一个比轴大的数字</span>
+    j = <span class="type">len</span>(arr) - <span class="number">1</span>
+    <span class="keyword">while</span> arr[j] <= arr[i]:
+        j -= <span class="number">1</span>
+        
+    <span class="comment"># 交换它们！Python 特色极简交换</span>
+    arr[i], arr[j] = arr[j], arr[i]
+    
+    <span class="comment"># 🪄 魔法第三步：把轴后面的所有数字倒反天罡 (反转)</span>
+    left, right = i + <span class="number">1</span>, <span class="type">len</span>(arr) - <span class="number">1</span>
+    <span class="keyword">while</span> left < right:
+        arr[left], arr[right] = arr[right], arr[left]
+        left += <span class="number">1</span>
+        right -= <span class="number">1</span>
+        
+    <span class="keyword">return True</span>
 
 <span class="keyword">def</span> <span class="type">main</span>():
-    <span class="comment"># 🌪️ 开启超级吸尘器，一口气吸入所有的数字，并按空格或回车切成小块！</span>
-    data = sys.stdin.buffer.read().split()
-    <span class="keyword">if not</span> data:
-        <span class="keyword">return</span>
-
-    <span class="comment"># 📦 前面两个包裹分别是 n(候选人数) 和 m(选票数)</span>
-    n = <span class="type">int</span>(data[0])
-    m = <span class="type">int</span>(data[1])
-
-    <span class="comment"># 🎫 剩下的全部都是雪票上的编号啦，把它们都变成整数装进列表</span>
-    nums = <span class="type">list</span>(<span class="type">map</span>(<span class="type">int</span>, data[2 : 2+m]))
-
-    <span class="comment"># 🎒 准备好 n+1 个魔法桶，里面一开始都是 0 颗星星！</span>
-    <span class="comment"># 下标从 1 开始对应守护者编号，所以长度要 n+1 哦</span>
-    cnt = [<span class="type">0</span>] * (n + 1)
-
-    <span class="comment"># 🏃‍♂️ 跑过每一张雪票，扔进对应的桶里</span>
-    <span class="keyword">for</span> a <span class="keyword">in</span> nums:
-        cnt[a] += <span class="type">1</span> <span class="comment"># 编号为 a 的桶里，星星数量 +1</span>
-
-    <span class="comment"># 📝 准备一张白纸，用来写最后排好队的数字</span>
-    out = []
-
-    <span class="comment"># 🚶‍♂️ 从 1 号桶依次走到 n 号桶</span>
-    <span class="keyword">for</span> i <span class="keyword">in range</span>(1, n + 1):
-        <span class="keyword">if</span> cnt[i]: <span class="comment"># 如果桶里有星星 (数量不为0)</span>
-            <span class="comment"># 桶里有几个，就把这个数字变成字符串，复制几次贴到白纸上！</span>
-            out.extend([<span class="type">str</span>(i)] * cnt[i])
-
-    <span class="comment"># 🪄 用空格作为胶水，把白纸上的数字串联起来，一次性大声喊出来！</span>
-    sys.stdout.write(<span class="string">' '</span>.join(out))
+    <span class="comment"># 🗺️ 读取 N 和 M</span>
+    N = <span class="type">int</span>(<span class="type">input</span>())
+    M = <span class="type">int</span>(<span class="type">input</span>())
+    
+    <span class="comment"># 读入队伍并变成整数列表</span>
+    fingers = <span class="type">list</span>(<span class="type">map</span>(<span class="type">int</span>, <span class="type">input</span>().split()))
+    
+    <span class="comment"># 🔄 用下划线表示不用关心的循环变量，连续施法 M 次</span>
+    <span class="keyword">for</span> _ <span class="keyword">in range</span>(M):
+        next_permutation(fingers)
+        
+    <span class="comment"># 📢 用空格胶水把整个队伍粘合输出</span>
+    <span class="type">print</span>(<span class="string">' '</span>.join(<span class="type">map</span>(<span class="type">str</span>, fingers)))
 
 <span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
-    main() <span class="comment"># 🚀 启动魔法！</span>
+    main()
 </pre>
         </div>
 
         <div class="card logic" style="border-color: #f39c12; background-color: #fff9e6;">
             <h2>🌟 Python 重点复习小贴士</h2>
             <ul>
-                <li>💡 <strong>大象装冰箱分几步？</strong> 读入速度是这题的生死线！切记使用 `sys.stdin.buffer.read().split()`。</li>
-                <li>💡 <strong>为什么不用 `out.append` 而是 `out.extend` 呀？</strong> `append` 是一次塞一个东西进去，`extend` 可以把一大堆东西（一个列表）直接倒进主列表里。因为我们要把同个编号重复好多次，`[str(i)] * cnt[i]` 生成了一个小列表，用 `extend` 倒进去效率最高！</li>
+                <li>💡 <strong>为什么不用自带的排列法？</strong> Python 的 <span class="code-inline">itertools.permutations</span> 是生成所有排列，没办法原地修改现在的数组，如果我们用它查排名再往后数，内存会直接爆炸。所以学会这套原地的三步法术是非常有价值的！</li>
+                <li>💡 <strong>双指针反转：</strong> 在最后反转区间的步骤中，我们使用了一个在左 <span class="code-inline">left</span>，一个在右 <span class="code-inline">right</span> 的双指针，一边向中间走一边交换，这就是最经典的列表原地反转法。</li>
             </ul>
         </div>
     </div>
 
     <div class="footer">
-        🎉 祝你编程愉快！在雪峰上闪耀你的智慧吧！加油！ —— 扣哒世界教研团队 🎉
+        扣哒世界教研团队
     </div>
 </div>
 
