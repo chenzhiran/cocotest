@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5.2 一维线性递推及其经典模型 - C++ 魔法课堂</title>
+    <style>
+        /* ================= 核心配色 (推理深蓝与逻辑青色) ================= */
+        :root {
+            --primary: #5C6BC0;      
+            --primary-dark: #283593;
+            --secondary: #26A69A;    
+            --accent: #AB47BC;       
+            --bg-color: #E8EAF6;     
+            --text-main: #3E2723;
+            --code-bg: #282c34;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#C5CAE9 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 15px 30px rgba(40, 53, 147, 0.15);
+            border: 4px solid #C5CAE9;
+        }
+
+        /* ================= 标题样式 ================= */
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #E8EAF6;
+        }
+
+        h2 {
+            background: linear-gradient(90deg, var(--primary), #7986CB);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            font-size: 1.6em;
+        }
+
+        h3 {
+            color: var(--accent);
+            border-bottom: 3px dashed var(--accent);
+            padding-bottom: 8px;
+            margin-top: 30px;
+            font-size: 1.3em;
+        }
+
+        /* ================= 强调样式 ================= */
+        .highlight {
+            color: #1A237E;
+            font-weight: bold;
+            background: #C5CAE9;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+        
+        .formula {
+            display: block;
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #D84315;
+            background-color: #FFF3E0;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px dashed #FFB74D;
+            margin: 15px 0;
+            font-family: "Consolas", monospace;
+        }
+
+        .text-orange { color: #E65100; font-weight: bold; }
+        .text-purple { color: #6A1B9A; font-weight: bold; }
+        .text-blue { color: #283593; font-weight: bold; }
+        .text-teal { color: #00695C; font-weight: bold; }
+
+        .note-box {
+            background-color: #E0F2F1;
+            border-left: 8px solid var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .danger-box {
+            background-color: #FCE4EC;
+            border: 2px solid #F06292;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .step-box {
+            background-color: #FFF8E1;
+            border: 2px dashed #FFCA28;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 15px 0;
+            color: #5D4037;
+        }
+
+        /* ================= 插图与图解区域 ================= */
+        .illustration {
+            text-align: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px dashed #9FA8DA;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+        }
+
+        .img-container {
+            text-align: center;
+            margin: 15px 0;
+        }
+        .img-container img {
+            max-width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 1px solid #C5CAE9;
+        }
+
+        /* ================= 代码块 ================= */
+        .code-container {
+            border: 3px solid #7986CB;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: var(--code-bg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-header { display: flex; background: #37474f; }
+
+        .tab-btn {
+            padding: 12px 25px;
+            color: #cfd8dc;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-weight: bold;
+            flex: 1;
+            transition: 0.3s;
+            font-size: 1.1em;
+        }
+
+        .tab-btn.active {
+            background: var(--code-bg);
+            color: #80CBC4;
+            border-top: 4px solid #80CBC4;
+        }
+
+        .code-content {
+            display: none;
+            padding: 20px;
+            color: #abb2bf;
+            font-family: "Consolas", "Courier New", monospace;
+            white-space: pre;
+            font-size: 15px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        .code-content.active { display: block; }
+
+        .kw { color: #c678dd; } 
+        .com { color: #5c6370; font-style: italic; }
+        .str { color: #98c379; }
+        .num { color: #d19a66; }
+        .func { color: #61afef; }
+
+        /* ================= 底部签名 ================= */
+        .signature {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px dashed #C5CAE9;
+            color: #5C6BC0;
+            font-weight: bold;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>5.2 一维线性递推及其经典模型</h1>
+
+    <div class="note-box">
+        <p>🕵️‍♂️ <strong>名侦探语录：</strong></p>
+        <p>“线索往往连成一条单行道，顺着它，你可以直接走到真相的大门前。” 在一维数组的世界里，递推关系就像是串联起来的多米诺骨牌，掌握了前几块骨牌的倒向规律，就能精准预测整个未来的走向！</p>
+    </div>
+
+    <h2>一、核心案例：斐波那契数列的深度剖析</h2>
+
+    <p>斐波那契数列（Fibonacci Sequence）是一维递推中最古老也是最经典的代表。它的核心规则极为简单，却蕴含着无尽的奥秘：<span class="highlight">每一个状态都由它前面的两个状态叠加而成。</span></p>
+
+    <div class="formula">
+        F(n) = F(n-1) + F(n-2)
+    </div>
+
+    <ul>
+        <li><strong>自然界中的神秘映射：</strong>
+            <ul>
+                <li><span class="text-teal">向日葵的螺旋：</span> 当你俯瞰向日葵的花盘，会发现种子排列成了一圈圈的螺旋。神奇的是，顺时针和逆时针的螺旋数目，往往正好是相邻的两个斐波那契数（比如 13 和 21）！这能让种子最紧密地利用空间。
+                    <div class="img-container"><img src="1.png" alt="向日葵螺旋结构图解"></div>
+                </li>
+                <li><span class="text-purple">黄金分割比率：</span> 随着数字越来越大，斐波那契数列中相邻两项的比值（例如 34 除以 55），会无限趋近于著名的黄金分割率 <strong>0.618</strong>。从帕特农神庙的建筑比例到蒙娜丽莎的微笑，再到鹦鹉螺的完美曲线，都暗藏着这个密码。
+                    <div class="img-container"><img src="2.png" alt="黄金分割比例图解"></div>
+                </li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>二、万变不离其宗的“一维变种题”</h2>
+    <p>在信奥赛中，出题人特别喜欢给斐波那契数列穿上各种“马甲”。无论题目描述有多花哨，只要扒下它们的外衣，你会发现底层逻辑全都是那个神奇的公式：<strong>当前项 = 前一项 + 前两项</strong>！</p>
+
+    <h3>变种一：楼梯台阶问题</h3>
+    <p><strong>题目大意：</strong> 你要爬一段有 n 级台阶的楼梯。你的腿长有限，每次只能选择跨 1 级，或者跨 2 级。请问到达最高点一共有多少种不同的走法？</p>
+    <div class="img-container"><img src="3.png" alt="爬楼梯问题示意图"></div>
+
+    <div class="illustration">
+        <svg width="750" height="280" viewBox="0 0 750 280">
+            <rect x="50" y="220" width="120" height="40" fill="#B2DFDB" stroke="#00897B" stroke-width="2"/>
+            <text x="110" y="245" text-anchor="middle" font-weight="bold" fill="#004D40" font-size="14">第 n-2 级</text>
+            
+            <rect x="190" y="160" width="120" height="100" fill="#80CBC4" stroke="#00897B" stroke-width="2"/>
+            <text x="250" y="215" text-anchor="middle" font-weight="bold" fill="#004D40" font-size="14">第 n-1 级</text>
+
+            <rect x="330" y="80" width="120" height="180" fill="#4DB6AC" stroke="#00897B" stroke-width="2"/>
+            <text x="390" y="150" text-anchor="middle" font-weight="bold" fill="#FFF" font-size="16">目标: 第 n 级</text>
+
+            <path d="M 250 150 Q 290 100 330 100" fill="none" stroke="#E65100" stroke-width="4" stroke-dasharray="5,5" marker-end="url(#arrow-orange)"/>
+            <text x="270" y="90" text-anchor="middle" font-weight="bold" fill="#E65100" font-size="13">最后跨 1 步</text>
+
+            <path d="M 110 210 Q 220 30 330 85" fill="none" stroke="#6A1B9A" stroke-width="4" stroke-dasharray="5,5" marker-end="url(#arrow-purple)"/>
+            <text x="160" y="60" text-anchor="middle" font-weight="bold" fill="#6A1B9A" font-size="13">最后跨 2 步</text>
+
+            <rect x="470" y="90" width="260" height="110" rx="15" fill="#F3E5F5" stroke="#AB47BC" stroke-width="2"/>
+            <text x="600" y="125" text-anchor="middle" font-size="16" font-weight="bold" fill="#4A148C">到达第 n 级的方法数</text>
+            <text x="600" y="155" text-anchor="middle" font-size="14" fill="#6A1B9A">= f(n-1) [从前一级跨1步]</text>
+            <text x="600" y="180" text-anchor="middle" font-size="14" fill="#6A1B9A">+ f(n-2) [从前两级跨2步]</text>
+
+            <defs>
+                <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#E65100" />
+                </marker>
+                <marker id="arrow-purple" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#6A1B9A" />
+                </marker>
+            </defs>
+        </svg>
+    </div>
+    
+    <div class="step-box">
+        <strong>💡 大白话解析：</strong><br>
+        想象一下你现在就站在最高点（第 n 级）。你是怎么上来的？因为你每次只能跨 1 步或 2 步，所以你<strong>只能</strong>从“第 n-1 级”或者“第 n-2 级”跳上来，绝对没有第三种可能！<br>
+        所以，到达终点的总方案数，自然就等于到达 <code>n-1</code> 级的方案数，加上到达 <code>n-2</code> 级的方案数。这不就是原汁原味的斐波那契吗！
+    </div>
+
+
+    <h3>变种二：兔子繁殖问题</h3>
+    <p><strong>题目大意：</strong> 有一对刚出生的小兔子，它们需要长 2 个月才能成年。从第 3 个月开始，这对成年兔子每个月都能生出一对新的小兔子（假设兔子永远不死）。求第 n 个月时，一共有多少对兔子？</p>
+    <div class="img-container"><img src="4.png" alt="兔子繁殖家族树图解"></div>
+
+    <div class="step-box" style="border-color: #AB47BC; background-color: #F3E5F5;">
+        <strong>💡 大白话解析：</strong><br>
+        第 n 个月时，兔子的总数是怎么来的？首先，上个月（n-1月）的所有兔子都还活着，直接加进来。其次，这个月会有新生宝宝诞生！谁能生宝宝呢？只有那些在 <strong>前两个月（n-2月）</strong> 就已经存在的兔子，到现在才正好成年具备生育能力。<br>
+        所以：<code>第 n 月总数 = (n-1)月的存活量 + (n-2)月老兔子生的新宝宝量</code>。
+    </div>
+
+
+    <h3>变种三：骨牌铺法问题</h3>
+    <p><strong>题目大意：</strong> 你有一大堆尺寸为 1×2 的多米诺骨牌。现在要用它们铺满一个高度为 2、长度为 n 的长方形地板（即 2×n 的网格），请问有多少种铺法？</p>
+    <div class="img-container"><img src="5.png" alt="2xn骨牌铺满方案图解"></div>
+
+    <div class="step-box" style="border-color: #26A69A; background-color: #E0F2F1;">
+        <strong>💡 大白话解析：</strong><br>
+        铺设地板时，我们直接盯住最右边的末尾处。你只有两种收尾方式：<br>
+        1. <strong>竖着放 1 块：</strong> 它占据了 1 列，那么剩下的 <code>n-1</code> 列不管怎么铺，方案数都是 <code>f(n-1)</code>。<br>
+        2. <strong>横着放 2 块：</strong> 为什么是两块？因为高度是 2，横着放一块的话，它下面或上面必定空出 1×2 的格子，只能再塞一块横着的。这一下就占据了 2 列，剩下的 <code>n-2</code> 列的方案数就是 <code>f(n-2)</code>。<br>
+        把这两种情况加起来，又是经典的 <code>f(n) = f(n-1) + f(n-2)</code>！
+    </div>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-fib', 'fib-content')">C++ 一维递推通用模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-fib', 'fib-content')">Python 一维递推通用模板</button>
+        </div>
+        <div id="cpp-fib" class="code-content fib-content active">
+<span class="com">// 无论是楼梯、兔子还是骨牌，核心代码全部长这样！</span>
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="type">long long</span> <span class="func">solve_1D_DP</span>(<span class="type">int</span> n) {
+    <span class="kw">if</span> (n <= <span class="num">2</span>) <span class="kw">return</span> n; <span class="com">// 针对台阶和骨牌的边界</span>
+    
+    <span class="type">long long</span> dp[<span class="num">100</span>];
+    dp[<span class="num">1</span>] = <span class="num">1</span>; 
+    dp[<span class="num">2</span>] = <span class="num">2</span>; 
+    
+    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">3</span>; i <= n; i++) {
+        dp[i] = dp[i-<span class="num">1</span>] + dp[i-<span class="num">2</span>]; <span class="com">// 神奇的递推公式</span>
+    }
+    <span class="kw">return</span> dp[n];
+}</div>
+        <div id="py-fib" class="code-content fib-content">
+<span class="com"># 无论是楼梯、兔子还是骨牌，核心代码全部长这样！</span>
+<span class="kw">def</span> <span class="func">solve_1D_DP</span>(n):
+    <span class="kw">if</span> n <= <span class="num">2</span>:
+        <span class="kw">return</span> n  <span class="com"># 针对台阶和骨牌的边界</span>
+    
+    dp = [<span class="num">0</span>] * (n + <span class="num">1</span>)
+    dp[<span class="num">1</span>] = <span class="num">1</span>
+    dp[<span class="num">2</span>] = <span class="num">2</span>
+    
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(<span class="num">3</span>, n + <span class="num">1</span>):
+        dp[i] = dp[i-<span class="num">1</span>] + dp[i-<span class="num">2</span>]  <span class="com"># 神奇的递推公式</span>
+        
+    <span class="kw">return</span> dp[n]</div>
+    </div>
+
+
+    <h2>三、高阶一维递推：错排问题 (Derangement)</h2>
+    <p><strong>问题描述：</strong> 假设有 n 个元素，要求这 n 个元素<span class="highlight">每一个都不能出现在它原来的位置上</span>。最经典的例子就是：有 n 封信和 n 个对应的信封，粗心的邮递员把<strong>所有信全部装错了信封</strong>，求一共有多少种装法？</p>
+
+    <div class="illustration">
+        <svg width="700" height="230" viewBox="0 0 700 230">
+            <text x="350" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#283593">第 n 封信是个捣蛋鬼，它硬挤进了“信封 k”里：</text>
+            
+            <rect x="50" y="60" width="80" height="50" rx="5" fill="#E8EAF6" stroke="#5C6BC0" stroke-width="2"/>
+            <text x="90" y="90" text-anchor="middle" font-weight="bold" fill="#283593">信封 n</text>
+            
+            <rect x="570" y="60" width="80" height="50" rx="5" fill="#FFF3E0" stroke="#E65100" stroke-width="2"/>
+            <text x="610" y="90" text-anchor="middle" font-weight="bold" fill="#E65100">信封 k</text>
+
+            <rect x="250" y="150" width="60" height="40" fill="#5C6BC0" rx="3"/>
+            <text x="280" y="175" text-anchor="middle" font-weight="bold" fill="#FFF">信 n</text>
+
+            <rect x="390" y="150" width="60" height="40" fill="#E65100" rx="3"/>
+            <text x="420" y="175" text-anchor="middle" font-weight="bold" fill="#FFF">信 k</text>
+
+            <path d="M 280 150 Q 425 60 570 75" fill="none" stroke="#5C6BC0" stroke-width="3" stroke-dasharray="5,5" marker-end="url(#arrow-blue)"/>
+            
+            <rect x="200" y="55" width="300" height="70" rx="10" fill="#E0F2F1" stroke="#26A69A" stroke-width="2"/>
+            <text x="350" y="75" text-anchor="middle" font-weight="bold" fill="#004D40" font-size="14">现在轮到无家可归的【信 k】做决定了：</text>
+            <text x="350" y="95" text-anchor="middle" fill="#00695C" font-size="12">情况A: 报复回去！直接霸占信封n (剩下 n-2 个互换)</text>
+            <text x="350" y="115" text-anchor="middle" fill="#00695C" font-size="12">情况B: 嫌弃信封n，去别的地方 (等价于 n-1 个互换)</text>
+
+            <defs>
+                <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#5C6BC0" />
+                </marker>
+            </defs>
+        </svg>
+    </div>
+
+    <div class="step-box" style="border-color: #AB47BC; background-color: #F3E5F5;">
+        <strong>🧠 烧脑公式大白话推导：</strong><br>
+        1. 对于第 n 封信，因为不能装进自己的信封，所以它有 <code>n-1</code> 个错误的目标可以选择（假设它偏偏去了位置 k）。<br>
+        2. 此时，原本属于位置 k 的那封“信 k”无家可归了。它面临两种抉择：<br>
+        &nbsp;&nbsp;&nbsp;👉 <strong>情况A：</strong> 信 k 说：“你占了我的家，那我就去占你的家！” 于是信 k 去了信封 n。两人完美互换，剩下的事情交给了其余 <code>n-2</code> 封信去互相错排，方法数为 <code>D<sub>n-2</sub></code>。<br>
+        &nbsp;&nbsp;&nbsp;👉 <strong>情况B：</strong> 信 k <strong>偏不去</strong> 信封 n，它去了别的信封。因为信 k 绝不进信封 n，我们干脆把信封 n 视作信 k 的“新本命家”（反正规则是不能去本命家）。这就直接变成了一个规模缩小了的 <code>n-1</code> 封信的错排问题，方法数为 <code>D<sub>n-1</sub></code>。<br>
+        
+        最后别忘了，第 n 封信最初有 <code>n-1</code> 种选择，根据乘法原理，我们得出了绝妙的错排公式：<br>
+        <div class="formula" style="margin-top: 10px;">D<sub>n</sub> = (n-1) × (D<sub>n-1</sub> + D<sub>n-2</sub>)</div>
+    </div>
+
+    <h3>代码进阶：空间复杂度优化至 O(1) 的“滚动数组”</h3>
+    <p>仔细观察错排公式，你会发现求解当前的 <code>D<sub>n</sub></code>，仅仅依赖前两项（<code>D<sub>n-1</sub></code> 和 <code>D<sub>n-2</sub></code>），再往前很久的历史数据全都没用了！<br>
+    既然如此，我们何必开辟一个巨大的数组呢？只需设置三个变量，在循环中不断“轮流接力替换”，就能将空间复杂度直接从 O(n) 降维打击到 <strong>O(1)</strong>，这就是大名鼎鼎的<span class="highlight">滚动数组优化思想</span>。</p>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-derange', 'derange-content')">C++ 错排与空间优化</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-derange', 'derange-content')">Python 错排与空间优化</button>
+        </div>
+        <div id="cpp-derange" class="code-content derange-content active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="type">long long</span> <span class="func">derangement</span>(<span class="type">int</span> n) {
+    <span class="kw">if</span> (n == <span class="num">1</span>) <span class="kw">return</span> <span class="num">0</span>; <span class="com">// 1封信不可能错排</span>
+    <span class="kw">if</span> (n == <span class="num">2</span>) <span class="kw">return</span> <span class="num">1</span>; <span class="com">// 2封信互相换只有1种可能</span>
+
+    <span class="type">long long</span> a = <span class="num">0</span>; <span class="com">// 扮演 D(n-2) 的角色</span>
+    <span class="type">long long</span> b = <span class="num">1</span>; <span class="com">// 扮演 D(n-1) 的角色</span>
+    <span class="type">long long</span> c = <span class="num">0</span>; <span class="com">// 扮演当前的 D(n)</span>
+
+    <span class="com">// O(1) 空间复杂度的滚动数组</span>
+    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">3</span>; i <= n; ++i) {
+        c = (i - <span class="num">1</span>) * (a + b); <span class="com">// 代入错排核心递推公式</span>
+        a = b;                 <span class="com">// 把 b 的值移交给 a (历史数据往前滚)</span>
+        b = c;                 <span class="com">// 把 c 的值移交给 b (准备下一次循环)</span>
+    }
+    <span class="kw">return</span> b;
+}</div>
+        <div id="py-derange" class="code-content derange-content">
+<span class="kw">def</span> <span class="func">derangement</span>(n):
+    <span class="kw">if</span> n == <span class="num">1</span>:
+        <span class="kw">return</span> <span class="num">0</span>  <span class="com"># 1封信不可能错排</span>
+    <span class="kw">if</span> n == <span class="num">2</span>:
+        <span class="kw">return</span> <span class="num">1</span>  <span class="com"># 2封信互相换只有1种可能</span>
+
+    a = <span class="num">0</span>  <span class="com"># 扮演 D(n-2) 的角色</span>
+    b = <span class="num">1</span>  <span class="com"># 扮演 D(n-1) 的角色</span>
+
+    <span class="com"># Python 支持优雅的多重赋值，连变量 c 都不需要额外声明</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(<span class="num">3</span>, n + <span class="num">1</span>):
+        <span class="com"># a变成原来的b，b变成公式计算出的新值。一行代码完成滚动！</span>
+        a, b = b, (i - <span class="num">1</span>) * (a + b)  
+        
+    <span class="kw">return</span> b</div>
+    </div>
+
+    <div class="danger-box" style="border-color: #E65100; background-color: #FFF3E0;">
+        <h3 style="margin-top: 0; color: #E65100; border-bottom-color: #E65100;">🏆 竞赛实战防爆零小贴士</h3>
+        <ul>
+            <li><strong>数据类型必看：</strong> 斐波那契数列和错排问题的增长速度呈指数级爆炸！通常当 <code>n > 46</code> 时，普通 <code>int</code> 就会溢出变成负数。请务必使用 <code>long long</code> (C++) 存储结果！</li>
+            <li><strong>取模陷阱：</strong> 在真题中，由于答案过大，题目通常会要求“答案对 10<sup>9</sup>+7 取模”。切记，要在循环内的<strong>每一次加法或乘法之后</strong>立刻取模，不要等算完最终结果再取模，那时早就溢出了。</li>
+            <li><strong>边界初始化：</strong> 不要死记 <code>dp[1]</code> 和 <code>dp[2]</code>，要结合题目给的实际场景推导最初的两项。比如有些题目的起步台阶是 <code>dp = 1</code>。</li>
+        </ul>
+    </div>
+
+    <div class="signature">
+        —— 扣哒世界教研团队 ——
+    </div>
+
+</div>
+
+<script>
+// 用于处理多个独立代码框的选项卡切换逻辑
+function openTab(evt, tabName, contentClass) {
+    var contents = document.getElementsByClassName(contentClass);
+    for (var i = 0; i < contents.length; i++) {
+        contents[i].style.display = "none";
+        contents[i].classList.remove("active");
+    }
+    var links = evt.currentTarget.parentElement.getElementsByClassName("tab-btn");
+    for (var i = 0; i < links.length; i++) {
+        links[i].classList.remove("active");
+    }
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.classList.add("active");
+}
+</script>
+
+</body>
+</html>

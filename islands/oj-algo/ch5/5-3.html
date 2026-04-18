@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5.3 二维递推与组合计数 - C++ 魔法课堂</title>
+    <style>
+        /* ================= 核心配色 (推理深蓝与逻辑青色) ================= */
+        :root {
+            --primary: #5C6BC0;      
+            --primary-dark: #283593;
+            --secondary: #26A69A;    
+            --accent: #AB47BC;       
+            --bg-color: #E8EAF6;     
+            --text-main: #3E2723;
+            --code-bg: #282c34;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#C5CAE9 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 15px 30px rgba(40, 53, 147, 0.15);
+            border: 4px solid #C5CAE9;
+        }
+
+        /* ================= 标题样式 ================= */
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #E8EAF6;
+        }
+
+        h2 {
+            background: linear-gradient(90deg, var(--primary), #7986CB);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            font-size: 1.6em;
+        }
+
+        h3 {
+            color: var(--accent);
+            border-bottom: 3px dashed var(--accent);
+            padding-bottom: 8px;
+            margin-top: 30px;
+            font-size: 1.3em;
+        }
+
+        /* ================= 强调样式 ================= */
+        .highlight {
+            color: #1A237E;
+            font-weight: bold;
+            background: #C5CAE9;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+        
+        /* 新增：代码与变量高亮样式 */
+        .var-hl {
+            font-family: "Consolas", "Courier New", monospace;
+            background-color: #FCE4EC;
+            color: #C2185B;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.95em;
+            margin: 0 2px;
+            box-shadow: 0 1px 2px rgba(194, 24, 91, 0.2);
+        }
+
+        /* 新增：数学公式与运算高亮样式 */
+        .math-hl {
+            font-family: "Consolas", "Courier New", monospace;
+            background-color: #E0F7FA;
+            color: #00796B;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.95em;
+            margin: 0 2px;
+            box-shadow: 0 1px 2px rgba(0, 121, 107, 0.2);
+        }
+
+        .formula {
+            display: block;
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #D84315;
+            background-color: #FFF3E0;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px dashed #FFB74D;
+            margin: 15px 0;
+            font-family: "Consolas", monospace;
+        }
+
+        .text-orange { color: #E65100; font-weight: bold; }
+        .text-purple { color: #6A1B9A; font-weight: bold; }
+        .text-blue { color: #283593; font-weight: bold; }
+        .text-teal { color: #00695C; font-weight: bold; }
+
+        .note-box {
+            background-color: #E0F2F1;
+            border-left: 8px solid var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .danger-box {
+            background-color: #FCE4EC;
+            border: 2px solid #F06292;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .step-box {
+            background-color: #FFF8E1;
+            border: 2px dashed #FFCA28;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #5D4037;
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration {
+            text-align: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px dashed #9FA8DA;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        th { background: var(--accent); color: white; padding: 12px; }
+        td { border: 1px solid #E0E0E0; padding: 12px; text-align: center; }
+
+        /* ================= 代码块 ================= */
+        .code-container {
+            border: 3px solid #7986CB;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: var(--code-bg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-header { display: flex; background: #37474f; }
+
+        .tab-btn {
+            padding: 12px 25px;
+            color: #cfd8dc;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-weight: bold;
+            flex: 1;
+            transition: 0.3s;
+            font-size: 1.1em;
+        }
+
+        .tab-btn.active {
+            background: var(--code-bg);
+            color: #80CBC4;
+            border-top: 4px solid #80CBC4;
+        }
+
+        .code-content {
+            display: none;
+            padding: 20px;
+            color: #abb2bf;
+            font-family: "Consolas", "Courier New", monospace;
+            white-space: pre;
+            font-size: 15px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        .code-content.active { display: block; }
+
+        /* 代码高亮 */
+        .kw { color: #c678dd; } 
+        .com { color: #5c6370; font-style: italic; }
+        .str { color: #98c379; }
+        .num { color: #d19a66; }
+        .func { color: #61afef; }
+
+        /* ================= 底部签名 ================= */
+        .signature {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px dashed #C5CAE9;
+            color: #5C6BC0;
+            font-weight: bold;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>5.3 二维递推与组合计数</h1>
+
+    <div class="note-box">
+        <p>🕵️‍♂️ <strong>名侦探语录：</strong></p>
+        <p>“当线索错综复杂，一条单行道走不通时，我们需要一张网！” 从一维升级到二维、甚至三维递推，意味着我们的状态不再仅仅由一个变量决定，而是需要考虑多个维度的制约。准备好迎接更烧脑的多维推导了吗？</p>
+    </div>
+
+    <h2>一、探索多维世界：解题思路与方法论</h2>
+    <p>在上一节中，我们遇到的大多是像“爬楼梯”或“斐波那契”这样的一维问题。一维问题就像是在一条直线上走路，你唯一需要关心的状态变量就是“当前走到了第几级”。</p>
+    <p>但在真正的竞赛和复杂问题中，状态往往由多个条件共同决定。比如：“你在一个迷宫里（需要坐标 <span class="math-hl">x</span> 和 <span class="math-hl">y</span>）”，“你挑了几个物品，且总重量不能超过 W（需要物品数 <span class="math-hl">i</span> 和重量 <span class="math-hl">j</span>）”。这就需要引入<span class="highlight">多维递推</span>的思想！</p>
+
+    <div class="illustration">
+        <svg width="700" height="200" viewBox="0 0 700 200">
+            <text x="120" y="30" text-anchor="middle" font-weight="bold" fill="#00695C">一维: dp[i]</text>
+            <rect x="40" y="50" width="30" height="30" fill="#E0F2F1" stroke="#26A69A"/>
+            <rect x="75" y="50" width="30" height="30" fill="#E0F2F1" stroke="#26A69A"/>
+            <rect x="110" y="50" width="30" height="30" fill="#B2DFDB" stroke="#26A69A" stroke-width="2"/>
+            <rect x="145" y="50" width="30" height="30" fill="#E0F2F1" stroke="#26A69A"/>
+            <rect x="180" y="50" width="30" height="30" fill="#E0F2F1" stroke="#26A69A"/>
+            <text x="120" y="110" text-anchor="middle" font-size="12" fill="#004D40">单线线索：只关心长度/位置</text>
+
+            <path d="M 230 65 L 260 65" fill="none" stroke="#9FA8DA" stroke-width="3" marker-end="url(#arrow)"/>
+
+            <text x="350" y="30" text-anchor="middle" font-weight="bold" fill="#283593">二维: dp[i][j]</text>
+            <g transform="translate(290, 50)">
+                <rect x="0" y="0" width="20" height="20" fill="#E8EAF6" stroke="#5C6BC0"/>
+                <rect x="25" y="0" width="20" height="20" fill="#E8EAF6" stroke="#5C6BC0"/>
+                <rect x="50" y="0" width="20" height="20" fill="#E8EAF6" stroke="#5C6BC0"/>
+                <rect x="75" y="0" width="20" height="20" fill="#E8EAF6" stroke="#5C6BC0"/>
+                <rect x="0" y="25" width="20" height="20" fill="#E8EAF6" stroke="#5C6BC0"/>
+                <rect x="25" y="25" width="20" height="20" fill="#E8EAF6" stroke="#5C6BC0"/>
+                <rect x="50" y="25" width="20" height="20" fill="#9FA8DA" stroke="#5C6BC0" stroke-width="2"/>
+                <rect x="75" y="25" width="20" height="20" fill="#E8EAF6" stroke="#5C6BC0"/>
+                <rect x="0" y="50" width="20" height="20" fill="#E8EAF6" stroke="#5C6BC0"/>
+                <rect x="25" y="50" width="20" height="20" fill="#E8EAF6" stroke="#5C6BC0"/>
+                <rect x="50" y="50" width="20" height="20" fill="#E8EAF6" stroke="#5C6BC0"/>
+                <rect x="75" y="50" width="20" height="20" fill="#E8EAF6" stroke="#5C6BC0"/>
+            </g>
+            <text x="350" y="140" text-anchor="middle" font-size="12" fill="#1A237E">平面网格：受两重条件制约</text>
+
+            <path d="M 460 65 L 490 65" fill="none" stroke="#9FA8DA" stroke-width="3" marker-end="url(#arrow)"/>
+
+            <text x="580" y="30" text-anchor="middle" font-weight="bold" fill="#6A1B9A">三维: dp[i][j][k]</text>
+            <g transform="translate(530, 45)">
+                <line x1="20" y1="80" x2="80" y2="80" stroke="#AB47BC" stroke-width="3" marker-end="url(#arrow-purple)"/>
+                <line x1="20" y1="80" x2="20" y2="20" stroke="#AB47BC" stroke-width="3" marker-end="url(#arrow-purple)"/>
+                <line x1="20" y1="80" x2="60" y2="50" stroke="#AB47BC" stroke-width="3" marker-end="url(#arrow-purple)"/>
+                <rect x="35" y="45" width="20" height="20" fill="#E1BEE7" stroke="#8E24AA" stroke-width="2"/>
+                <polygon points="35,45 45,35 65,35 55,45" fill="#F3E5F5" stroke="#8E24AA" stroke-width="2"/>
+                <polygon points="55,45 65,35 65,55 55,65" fill="#CE93D8" stroke="#8E24AA" stroke-width="2"/>
+            </g>
+            <text x="580" y="160" text-anchor="middle" font-size="12" fill="#4A148C">立体空间：错综复杂的三重关系</text>
+
+            <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#9FA8DA" />
+                </marker>
+                <marker id="arrow-purple" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#AB47BC" />
+                </marker>
+            </defs>
+        </svg>
+    </div>
+
+    <div class="step-box" style="border-color: #AB47BC; background-color: #F3E5F5;">
+        <strong>🧠 破解多维递推的“降维打击”三步曲：</strong><br><br>
+        <strong>1. 找准维度（状态定义）：</strong> 仔细读题，问自己：“我需要同时知道哪些信息，才能完整描述当前的局面？” 每多一个必需的信息，数组就多加一维。比如：<span class="var-hl">dp[数量][限制条件A][限制条件B]</span>。<br>
+        <strong>2. 确立原点（边界初始化）：</strong> 找到最微小、最简单、甚至“什么都不做”时的状态，把它作为推导的起点，比如 <span class="var-hl">dp = 1</span> 或 <span class="var-hl">dp[1][1][1] = 1</span>。<br>
+        <strong>3. 剥离最后一步（降维推导）：</strong> 不要去想第一步怎么走，而是假设现在已经是一个复杂状态了，思考<strong>“我的上一步（或最后一个加入的元素）是从哪个方向过来的？”</strong> 只要理清这“最后一下”的操作，就能写出完美的状态转移方程。
+    </div>
+
+
+    <h2>二、几何递推：平面分割问题</h2>
+
+    <p><strong>题目大意：</strong> 假设平面上有 <span class="math-hl">n</span> 条封闭曲线（比如圆或椭圆）。如果保证每两条曲线恰好相交于两点，并且没有三条曲线相交在同一个点。请问，这 <span class="math-hl">n</span> 条封闭曲线一共能把平面分成多少个区域？</p>
+
+    <div class="illustration">
+        <svg width="700" height="240" viewBox="0 0 700 240">
+            <circle cx="120" cy="80" r="40" fill="#E0F2F1" stroke="#26A69A" stroke-width="3"/>
+            <text x="120" y="85" text-anchor="middle" font-weight="bold" fill="#004D40">1 (内)</text>
+            <text x="120" y="30" text-anchor="middle" font-weight="bold" fill="#004D40">2 (外)</text>
+            <text x="120" y="160" text-anchor="middle" font-weight="bold" fill="#00695C" font-size="16">n = 1</text>
+            <text x="120" y="185" text-anchor="middle" fill="#00695C">总区域数: 2块</text>
+            <text x="120" y="205" text-anchor="middle" fill="#BF360C" font-size="12">基础状态</text>
+
+            <path d="M 200 80 L 240 80" fill="none" stroke="#9FA8DA" stroke-width="3" marker-end="url(#arrow)"/>
+
+            <circle cx="330" cy="80" r="40" fill="none" stroke="#26A69A" stroke-width="3"/>
+            <circle cx="370" cy="80" r="40" fill="none" stroke="#AB47BC" stroke-width="3"/>
+            <circle cx="330" cy="80" r="40" fill="#E0F2F1" opacity="0.5"/>
+            <circle cx="370" cy="80" r="40" fill="#F3E5F5" opacity="0.5"/>
+            
+            <circle cx="350" cy="45" r="4" fill="#E65100"/>
+            <circle cx="350" cy="115" r="4" fill="#E65100"/>
+            
+            <text x="350" y="160" text-anchor="middle" font-weight="bold" fill="#6A1B9A" font-size="16">n = 2</text>
+            <text x="350" y="185" text-anchor="middle" fill="#6A1B9A">总区域数: 4块</text>
+            <text x="350" y="205" text-anchor="middle" fill="#BF360C" font-size="12">新增 2 块 (2个交点)</text>
+
+            <path d="M 460 80 L 500 80" fill="none" stroke="#9FA8DA" stroke-width="3" marker-end="url(#arrow)"/>
+
+            <circle cx="580" cy="65" r="40" fill="none" stroke="#26A69A" stroke-width="3"/>
+            <circle cx="610" cy="95" r="40" fill="none" stroke="#AB47BC" stroke-width="3"/>
+            <circle cx="550" cy="95" r="40" fill="none" stroke="#5C6BC0" stroke-width="3"/>
+            
+            <text x="580" y="160" text-anchor="middle" font-weight="bold" fill="#283593" font-size="16">n = 3</text>
+            <text x="580" y="185" text-anchor="middle" fill="#283593">总区域数: 8块</text>
+            <text x="580" y="205" text-anchor="middle" fill="#BF360C" font-size="12">新增 4 块 (4个交点)</text>
+        </svg>
+    </div>
+
+    <div class="step-box">
+        <strong>💡 大白话推导过程（发现几何规律）：</strong><br>
+        1. <strong>起点：</strong> 只有 1 条封闭曲线时，平面被分为“里面”和“外面”共 <span class="text-teal">2块</span> 区域 (<span class="math-hl">a<sub>1</sub> = 2</span>)。<br>
+        2. <strong>加入第 2 条曲线：</strong> 它与第 1 条曲线必定交于 2 个点。这 2 个交点把新曲线分成了 2 段，每 1 段都会把一个旧区域“一分为二”。所以新增了 2 块区域，总共 <span class="text-purple">2 + 2 = 4块</span> (<span class="math-hl">a<sub>2</sub> = 4</span>)。<br>
+        3. <strong>加入第 n 条曲线：</strong> 它与前面已有的 <span class="math-hl">n-1</span> 条曲线两两相交，所以会产生 <span class="math-hl">2 &times; (n-1)</span> 个交点。这 <span class="math-hl">2 &times; (n-1)</span> 个交点把第 n 条曲线切成了 <span class="math-hl">2 &times; (n-1)</span> 段。每一段都会“割裂”一个旧区域，从而诞生一个新区域！<br>
+        <strong>结论：</strong> 新增的区域数，永远等于新产生的交点数。
+    </div>
+
+    <div class="formula">
+        a<sub>n</sub> = a<sub>n-1</sub> + 2 &times; (n - 1)
+    </div>
+
+    <table>
+        <tr>
+            <th>曲线数量 (n)</th>
+            <th>总区域数 (a<sub>n</sub>)</th>
+            <th>推导过程 (新增区域 = 交点数)</th>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td>2</td>
+            <td>基础状态</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>4</td>
+            <td>a<sub>1</sub> + 2 &times; 1 = <span class="math-hl">2 + 2 = 4</span></td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>8</td>
+            <td>a<sub>2</sub> + 2 &times; 2 = <span class="math-hl">4 + 4 = 8</span></td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>14</td>
+            <td>a<sub>3</sub> + 2 &times; 3 = <span class="math-hl">8 + 6 = 14</span></td>
+        </tr>
+    </table>
+
+
+    <h2>三、三维递推应用：光之法阵（排列组合进阶）</h2>
+    <p><strong>问题背景：</strong> 在魔法学院里，年轻的魔导师们正在设计一个光之阵法。有 <span class="math-hl">n</span> 根高度互不相同（高度分别为 1 到 n）的水晶柱排成一排。如果从最左边看，能看到 <span class="math-hl">L</span> 根柱子；从最右边看，能看到 <span class="math-hl">R</span> 根柱子（矮的柱子会被高的挡住）。请问，有多少种不同的排列方案？</p>
+
+    <div class="illustration">
+        <svg width="700" height="260" viewBox="0 0 700 260">
+            <text x="350" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#283593">核心突破口：逆向思考，把“最矮的柱子” (高度为1) 最后插入！</text>
+            
+            <rect x="250" y="80" width="200" height="80" fill="#E8EAF6" stroke="#9FA8DA" stroke-width="2" stroke-dasharray="4,4"/>
+            <text x="350" y="115" text-anchor="middle" fill="#5C6BC0" font-weight="bold">前 i-1 根较高的柱子</text>
+            <text x="350" y="140" text-anchor="middle" fill="#7986CB" font-size="12">内部已有 i-2 个空隙可以插入</text>
+
+            <rect x="210" y="120" width="20" height="40" fill="#4DB6AC" stroke="#00695C" stroke-width="2"/>
+            <text x="120" y="115" text-anchor="middle" font-weight="bold" fill="#00695C">插在最左侧</text>
+            <text x="120" y="140" text-anchor="middle" font-size="12" fill="#004D40">肯定能被左边看到</text>
+            <path d="M 120 150 Q 150 180 220 160" fill="none" stroke="#00695C" stroke-width="2" marker-end="url(#arrow-teal)"/>
+
+            <rect x="470" y="120" width="20" height="40" fill="#FFB74D" stroke="#E65100" stroke-width="2"/>
+            <text x="580" y="115" text-anchor="middle" font-weight="bold" fill="#E65100">插在最右侧</text>
+            <text x="580" y="140" text-anchor="middle" font-size="12" fill="#BF360C">肯定能被右边看到</text>
+            <path d="M 580 150 Q 550 180 480 160" fill="none" stroke="#E65100" stroke-width="2" marker-end="url(#arrow-orange2)"/>
+
+            <circle cx="300" cy="160" r="10" fill="#AB47BC" opacity="0.6"/>
+            <circle cx="350" cy="160" r="10" fill="#AB47BC" opacity="0.6"/>
+            <circle cx="400" cy="160" r="10" fill="#AB47BC" opacity="0.6"/>
+            <text x="350" y="210" text-anchor="middle" font-weight="bold" fill="#6A1B9A">插在中间的 i-2 个缝隙中</text>
+            <text x="350" y="235" text-anchor="middle" font-size="12" fill="#4A148C">被两边高柱子挡住，两边都看不见！</text>
+
+            <defs>
+                <marker id="arrow-teal" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#00695C" />
+                </marker>
+                <marker id="arrow-orange2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#E65100" />
+                </marker>
+            </defs>
+        </svg>
+    </div>
+
+    <div class="step-box" style="border-color: #AB47BC; background-color: #F3E5F5;">
+        <strong>🧠 状态设计与推导：</strong><br>
+        我们需要设计一个三维状态 <span class="var-hl">dp[i][j][k]</span>，表示<strong>当前一共排了 <span class="math-hl">i</span> 根柱子，从左边看能见到 <span class="math-hl">j</span> 根，从右边看能见到 <span class="math-hl">k</span> 根</strong>的方案数。<br><br>
+        <strong>巧妙的思维转换：</strong>排列组合如果从小排到大，高个子遮挡矮个子，非常难以计算！相反，假设我们先排好了 <span class="math-hl">i-1</span> 根高的，现在把<strong>最矮的柱子（高度1）</strong>插进去。因为它是最矮的，插进去绝对不会挡住任何人，只会影响它自己能不能被看见。<br>
+        👉 <strong>选择 1：插在最左端。</strong> 它是最左边的，所以左侧视野 <span class="math-hl">j</span> 增加了 1，右侧视野不变。这部分方案数来源于之前的状态 <span class="var-hl">dp[i-1][j-1][k]</span>。<br>
+        👉 <strong>选择 2：插在最右端。</strong> 它是最右边的，所以右侧视野 <span class="math-hl">k</span> 增加了 1，左侧视野不变。这部分方案数来源于之前的状态 <span class="var-hl">dp[i-1][j][k-1]</span>。<br>
+        👉 <strong>选择 3：插在中间缝隙。</strong> 前面有 <span class="math-hl">i-1</span> 根柱子，中间共有 <span class="math-hl">i-2</span> 个缝隙。插在中间被高个子彻底挡死，左右视野都不变！所以有 <span class="math-hl">i-2</span> 种插法，方案数为 <span class="var-hl">dp[i-1][j][k] &times; (i-2)</span>。<br>
+    </div>
+
+    <div class="formula">
+        dp[i][j][k] = dp[i-1][j-1][k] + dp[i-1][j][k-1] + dp[i-1][j][k] &times; (i - 2)
+    </div>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-light', 'light-content')">C++ 光之法阵代码实现</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-light', 'light-content')">Python 光之法阵代码实现</button>
+        </div>
+        <div id="cpp-light" class="code-content light-content active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;vector&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="type">long long</span> dp[<span class="num">50</span>][<span class="num">50</span>][<span class="num">50</span>];
+
+<span class="type">void</span> <span class="func">init_dp</span>(<span class="type">int</span> max_n) {
+    <span class="com">// 1. 确立原点（边界条件）：1根柱子，左看右看都是1根，只有1种方案</span>
+    dp[<span class="num">1</span>][<span class="num">1</span>][<span class="num">1</span>] = <span class="num">1</span>; 
+
+    <span class="com">// 2. 三重循环降维打击：</span>
+    <span class="com">// 遍历柱子总数 i</span>
+    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">2</span>; i <= max_n; i++) {
+        <span class="com">// 遍历左侧可见数 j</span>
+        <span class="kw">for</span> (<span class="type">int</span> j = <span class="num">1</span>; j <= i; j++) {
+            <span class="com">// 遍历右侧可见数 k</span>
+            <span class="kw">for</span> (<span class="type">int</span> k = <span class="num">1</span>; k <= i; k++) {
+                <span class="com">// 3. 剥离最后一步（递推转移方程）</span>
+                dp[i][j][k] = dp[i-<span class="num">1</span>][j-<span class="num">1</span>][k]            <span class="com">// 最矮柱子放最左</span>
+                            + dp[i-<span class="num">1</span>][j][k-<span class="num">1</span>]            <span class="com">// 最矮柱子放最右</span>
+                            + dp[i-<span class="num">1</span>][j][k] * (i - <span class="num">2</span>);   <span class="com">// 最矮柱子放中间的(i-2)个位置</span>
+            }
+        }
+    }
+}
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="func">init_dp</span>(<span class="num">20</span>); <span class="com">// 预处理出所有的状态</span>
+    <span class="type">int</span> n = <span class="num">5</span>, L = <span class="num">2</span>, R = <span class="num">4</span>; <span class="com">// 例如：5根柱子，左看2，右看4</span>
+    <span class="kw">cout</span> << dp[n][L][R] << endl; <span class="com">// 直接 O(1) 查询</span>
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-light" class="code-content light-content">
+<span class="com"># 初始化三维数组 dp[50][50][50] 为 0</span>
+dp = [[[<span class="num">0</span>] * <span class="num">50</span> <span class="kw">for</span> _ <span class="kw">in</span> <span class="func">range</span>(<span class="num">50</span>)] <span class="kw">for</span> _ <span class="kw">in</span> <span class="func">range</span>(<span class="num">50</span>)]
+
+<span class="kw">def</span> <span class="func">init_dp</span>(max_n):
+    <span class="com"># 1. 确立原点（边界条件）：1根柱子，左看右看都是1根</span>
+    dp[<span class="num">1</span>][<span class="num">1</span>][<span class="num">1</span>] = <span class="num">1</span>
+    
+    <span class="com"># 2. 三重循环降维打击：</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>, max_n + <span class="num">1</span>):
+        <span class="kw">for</span> j <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span>, i + <span class="num">1</span>):
+            <span class="kw">for</span> k <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span>, i + <span class="num">1</span>):
+                <span class="com"># 3. 剥离最后一步（递推转移方程）</span>
+                dp[i][j][k] = (dp[i-<span class="num">1</span>][j-<span class="num">1</span>][k] +            <span class="com"># 放最左</span>
+                               dp[i-<span class="num">1</span>][j][k-<span class="num">1</span>] +            <span class="com"># 放最右</span>
+                               dp[i-<span class="num">1</span>][j][k] * (i - <span class="num">2</span>))     <span class="com"># 放中间隙</span>
+
+<span class="com"># 预处理出所有的状态</span>
+<span class="func">init_dp</span>(<span class="num">20</span>)
+
+<span class="com"># 查询指定状态</span>
+n, L, R = <span class="num">5</span>, <span class="num">2</span>, <span class="num">4</span>
+<span class="func">print</span>(dp[n][L][R])</div>
+    </div>
+
+    <div class="danger-box" style="border-color: #E65100; background-color: #FFF3E0;">
+        <h3 style="margin-top: 0; color: #E65100; border-bottom-color: #E65100;">🏆 竞赛实战防爆零小贴士</h3>
+        <ul>
+            <li><strong>多维数组的空间开销：</strong> 遇到二维或三维的 DP 递推题时，一定要先估算一下内存！例如 <span class="var-hl">long long dp[1000][1000]</span> 会消耗近 8MB 内存。如果维度太高，尝试使用“滚动数组”将第一维的空间优化掉（就像我们在 5.2 节中做的那样）。</li>
+            <li><strong>逆向思维的美妙：</strong> 像“光之法阵”这种排列组合题，如果是按照高度从小到大去排，高个子会遮挡矮个子，导致状态转移非常复杂甚至无法推导。遇到这种情况，<span class="highlight">务必尝试逆向思维：把“最小/最矮”的元素单独拿出来最后插入！</span> 往往会有奇效，因为它的插入绝对不会破坏原有的相对遮挡状态。</li>
+        </ul>
+    </div>
+
+    <div class="signature">
+        —— 扣哒世界教研团队 ——
+    </div>
+
+</div>
+
+<script>
+// 用于处理多个独立代码框的选项卡切换逻辑
+function openTab(evt, tabName, contentClass) {
+    var contents = document.getElementsByClassName(contentClass);
+    for (var i = 0; i < contents.length; i++) {
+        contents[i].style.display = "none";
+        contents[i].classList.remove("active");
+    }
+    var links = evt.currentTarget.parentElement.getElementsByClassName("tab-btn");
+    for (var i = 0; i < links.length; i++) {
+        links[i].classList.remove("active");
+    }
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.classList.add("active");
+}
+</script>
+
+</body>
+</html>

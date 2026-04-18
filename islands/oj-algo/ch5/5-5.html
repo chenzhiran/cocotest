@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5.5 高阶递推专题：卡特兰数 - C++ 魔法课堂</title>
+    <style>
+        /* ================= 核心配色 (推理深蓝与逻辑青色) ================= */
+        :root {
+            --primary: #5C6BC0;      
+            --primary-dark: #283593;
+            --secondary: #26A69A;    
+            --accent: #AB47BC;       
+            --bg-color: #E8EAF6;     
+            --text-main: #3E2723;
+            --code-bg: #282c34;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#C5CAE9 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 15px 30px rgba(40, 53, 147, 0.15);
+            border: 4px solid #C5CAE9;
+        }
+
+        /* ================= 标题样式 ================= */
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #E8EAF6;
+        }
+
+        h2 {
+            background: linear-gradient(90deg, var(--primary), #7986CB);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            font-size: 1.6em;
+        }
+
+        h3 {
+            color: var(--accent);
+            border-bottom: 3px dashed var(--accent);
+            padding-bottom: 8px;
+            margin-top: 30px;
+            font-size: 1.3em;
+        }
+
+        /* ================= 强调样式 ================= */
+        .highlight {
+            color: #1A237E;
+            font-weight: bold;
+            background: #C5CAE9;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .var-hl {
+            font-family: "Consolas", "Courier New", monospace;
+            background-color: #FCE4EC;
+            color: #C2185B;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.95em;
+            margin: 0 2px;
+            box-shadow: 0 1px 2px rgba(194, 24, 91, 0.2);
+        }
+
+        .math-hl {
+            font-family: "Consolas", "Courier New", monospace;
+            background-color: #E0F7FA;
+            color: #00796B;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.95em;
+            margin: 0 2px;
+            box-shadow: 0 1px 2px rgba(0, 121, 107, 0.2);
+        }
+
+        .formula {
+            display: block;
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #D84315;
+            background-color: #FFF3E0;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px dashed #FFB74D;
+            margin: 15px 0;
+            font-family: "Consolas", monospace;
+        }
+
+        .text-orange { color: #E65100; font-weight: bold; }
+        .text-purple { color: #6A1B9A; font-weight: bold; }
+        .text-blue { color: #283593; font-weight: bold; }
+        .text-teal { color: #00695C; font-weight: bold; }
+
+        .note-box {
+            background-color: #E0F2F1;
+            border-left: 8px solid var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .danger-box {
+            background-color: #FCE4EC;
+            border: 2px solid #F06292;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .step-box {
+            background-color: #FFF8E1;
+            border: 2px dashed #FFCA28;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 15px 0;
+            color: #5D4037;
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration {
+            text-align: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px dashed #9FA8DA;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+        }
+
+        /* ================= 代码块 ================= */
+        .code-container {
+            border: 3px solid #7986CB;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: var(--code-bg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-header { display: flex; background: #37474f; }
+
+        .tab-btn {
+            padding: 12px 25px;
+            color: #cfd8dc;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-weight: bold;
+            flex: 1;
+            transition: 0.3s;
+            font-size: 1.1em;
+        }
+
+        .tab-btn.active {
+            background: var(--code-bg);
+            color: #80CBC4;
+            border-top: 4px solid #80CBC4;
+        }
+
+        .code-content {
+            display: none;
+            padding: 20px;
+            color: #abb2bf;
+            font-family: "Consolas", "Courier New", monospace;
+            white-space: pre;
+            font-size: 15px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        .code-content.active { display: block; }
+
+        .kw { color: #c678dd; } 
+        .com { color: #5c6370; font-style: italic; }
+        .str { color: #98c379; }
+        .num { color: #d19a66; }
+        .func { color: #61afef; }
+
+        /* ================= 底部签名 ================= */
+        .signature {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px dashed #C5CAE9;
+            color: #5C6BC0;
+            font-weight: bold;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>5.5 高阶递推：卡特兰数 (Catalan)</h1>
+
+    <div class="note-box">
+        <p>🕵️‍♂️ <strong>名侦探语录：</strong></p>
+        <p>“在侦探界，有些看似毫不相干的离奇案件，背后往往隐藏着同一个‘幕后黑手’！” <br>在组合数学和算法竞赛中，<strong>卡特兰数</strong>就是这样一个极其神秘的“幕后黑手”。它穿上了无数件马甲，出没于多边形、二叉树、路径规划和数据结构等各个领域。今天，我们就要撕下它的伪装，直击核心！</p>
+    </div>
+
+    <h2>一、卡特兰数的真面目：定义与公式</h2>
+
+    <p>卡特兰数 <span class="var-hl">C<sub>n</sub></span> 是一串极其特殊的整数序列。它的前几项是：<span class="math-hl">1, 1, 2, 5, 14, 42, 132, 429...</span>（记住这几个数字，竞赛中一旦手算出了前几项是它们，直接盲猜卡特兰数准没错！）</p>
+
+    <div class="step-box" style="border-color: #AB47BC; background-color: #F3E5F5;">
+        <strong>🧠 卡特兰数的三大核心武器（公式）：</strong><br><br>
+        <strong>1. 核心递推式（最常用于理解本质）：</strong><br>
+        将一个规模为 <span class="math-hl">n</span> 的大问题，拆分成两部分：一部分分配 <span class="math-hl">i</span> 个元素，另一部分分配剩下的 <span class="math-hl">n-1-i</span> 个元素。然后将两部分的方案数相乘，最后把所有可能的分配情况累加起来。<br>
+        <span class="var-hl">C<sub>n</sub> = C<sub>0</sub>&times;C<sub>n-1</sub> + C<sub>1</sub>&times;C<sub>n-2</sub> + ... + C<sub>n-1</sub>&times;C<sub>0</sub></span>  (边界 <span class="var-hl">C<sub>0</sub> = 1</span>)<br><br>
+
+        <strong>2. 线性推导式（最常用于写代码 <i>O(n)</i> 优化）：</strong><br>
+        通过数学化简，我们可以直接用前一项算出后一项，无需循环累加，速度极快！<br>
+        <span class="var-hl">h(n) = h(n-1) &times; (4n - 2) / (n + 1)</span><br><br>
+
+        <strong>3. 组合数公式（最常用于排列组合推导）：</strong><br>
+        <span class="var-hl">C<sub>n</sub> = 1 / (n + 1) &times; C(2n, n)</span> &nbsp;&nbsp;(其中 C 是数学中的组合数)
+    </div>
+
+
+    <h2>二、撕下伪装：五大经典应用场景精讲</h2>
+
+    <p>为什么说卡特兰数是“幕后黑手”？因为以下这五个经典问题，虽然描述天差地别，但它们的答案<strong>全都是卡特兰数！</strong> 我们以 <span class="math-hl">n = 3</span> (答案为 <span class="math-hl">5</span>) 为例，通过图解来看看它们惊人的同构性：</p>
+
+    <div class="illustration" style="padding: 30px 10px;">
+        <svg width="800" height="380" viewBox="0 0 800 380">
+            <text x="120" y="30" text-anchor="middle" font-weight="bold" fill="#00695C" font-size="16">1. 凸多边形三角划分</text>
+            <text x="400" y="30" text-anchor="middle" font-weight="bold" fill="#283593" font-size="16">2. 二叉树的形态结构</text>
+            <text x="680" y="30" text-anchor="middle" font-weight="bold" fill="#6A1B9A" font-size="16">3. 合法括号匹配</text>
+
+            <text x="120" y="55" text-anchor="middle" fill="#004D40" font-size="13">将凸5边形划分为3个三角形</text>
+            <text x="400" y="55" text-anchor="middle" fill="#1A237E" font-size="13">3个节点组成的二叉树形状</text>
+            <text x="680" y="55" text-anchor="middle" fill="#4A148C" font-size="13">3对括号的合法嵌套组合</text>
+
+            <line x1="250" y1="20" x2="250" y2="350" stroke="#C5CAE9" stroke-width="2" stroke-dasharray="5,5"/>
+            <line x1="530" y1="20" x2="530" y2="350" stroke="#C5CAE9" stroke-width="2" stroke-dasharray="5,5"/>
+
+            <g transform="translate(120, 110)">
+                <polygon points="0,-25 24,-8 15,20 -15,20 -24,-8" fill="#E0F2F1" stroke="#26A69A" stroke-width="2"/>
+                <line x1="-24" y1="-8" x2="15" y2="20" stroke="#00695C" stroke-width="2"/>
+                <line x1="0" y1="-25" x2="15" y2="20" stroke="#00695C" stroke-width="2"/>
+                
+                <g transform="translate(-60, 80)">
+                    <polygon points="0,-25 24,-8 15,20 -15,20 -24,-8" fill="#E0F2F1" stroke="#26A69A" stroke-width="2"/>
+                    <line x1="-24" y1="-8" x2="24" y2="-8" stroke="#00695C" stroke-width="2"/>
+                    <line x1="-24" y1="-8" x2="15" y2="20" stroke="#00695C" stroke-width="2"/>
+                </g>
+                <g transform="translate(60, 80)">
+                    <polygon points="0,-25 24,-8 15,20 -15,20 -24,-8" fill="#E0F2F1" stroke="#26A69A" stroke-width="2"/>
+                    <line x1="0" y1="-25" x2="15" y2="20" stroke="#00695C" stroke-width="2"/>
+                    <line x1="0" y1="-25" x2="-15" y2="20" stroke="#00695C" stroke-width="2"/>
+                </g>
+                <g transform="translate(-60, 160)">
+                    <polygon points="0,-25 24,-8 15,20 -15,20 -24,-8" fill="#E0F2F1" stroke="#26A69A" stroke-width="2"/>
+                    <line x1="-15" y1="20" x2="24" y2="-8" stroke="#00695C" stroke-width="2"/>
+                    <line x1="-24" y1="-8" x2="24" y2="-8" stroke="#00695C" stroke-width="2"/>
+                </g>
+                <g transform="translate(60, 160)">
+                    <polygon points="0,-25 24,-8 15,20 -15,20 -24,-8" fill="#E0F2F1" stroke="#26A69A" stroke-width="2"/>
+                    <line x1="0" y1="-25" x2="-15" y2="20" stroke="#00695C" stroke-width="2"/>
+                    <line x1="24" y1="-8" x2="-15" y2="20" stroke="#00695C" stroke-width="2"/>
+                </g>
+            </g>
+
+            <g transform="translate(340, 90)">
+                <line x1="0" y1="0" x2="-15" y2="20" stroke="#5C6BC0" stroke-width="2"/><line x1="-15" y1="20" x2="-30" y2="40" stroke="#5C6BC0" stroke-width="2"/>
+                <circle cx="0" cy="0" r="6" fill="#9FA8DA"/><circle cx="-15" cy="20" r="6" fill="#9FA8DA"/><circle cx="-30" cy="40" r="6" fill="#9FA8DA"/>
+            </g>
+            <g transform="translate(460, 90)">
+                <line x1="0" y1="0" x2="-15" y2="20" stroke="#5C6BC0" stroke-width="2"/><line x1="-15" y1="20" x2="0" y2="40" stroke="#5C6BC0" stroke-width="2"/>
+                <circle cx="0" cy="0" r="6" fill="#9FA8DA"/><circle cx="-15" cy="20" r="6" fill="#9FA8DA"/><circle cx="0" cy="40" r="6" fill="#9FA8DA"/>
+            </g>
+            <g transform="translate(340, 170)">
+                <line x1="0" y1="0" x2="15" y2="20" stroke="#5C6BC0" stroke-width="2"/><line x1="15" y1="20" x2="30" y2="40" stroke="#5C6BC0" stroke-width="2"/>
+                <circle cx="0" cy="0" r="6" fill="#9FA8DA"/><circle cx="15" cy="20" r="6" fill="#9FA8DA"/><circle cx="30" cy="40" r="6" fill="#9FA8DA"/>
+            </g>
+            <g transform="translate(460, 170)">
+                <line x1="0" y1="0" x2="15" y2="20" stroke="#5C6BC0" stroke-width="2"/><line x1="15" y1="20" x2="0" y2="40" stroke="#5C6BC0" stroke-width="2"/>
+                <circle cx="0" cy="0" r="6" fill="#9FA8DA"/><circle cx="15" cy="20" r="6" fill="#9FA8DA"/><circle cx="0" cy="40" r="6" fill="#9FA8DA"/>
+            </g>
+            <g transform="translate(400, 250)">
+                <line x1="0" y1="0" x2="-15" y2="20" stroke="#5C6BC0" stroke-width="2"/><line x1="0" y1="0" x2="15" y2="20" stroke="#5C6BC0" stroke-width="2"/>
+                <circle cx="0" cy="0" r="6" fill="#9FA8DA"/><circle cx="-15" cy="20" r="6" fill="#9FA8DA"/><circle cx="15" cy="20" r="6" fill="#9FA8DA"/>
+            </g>
+
+            <text x="680" y="110" text-anchor="middle" font-size="20" font-weight="bold" fill="#AB47BC" font-family="monospace">((()))</text>
+            <text x="680" y="160" text-anchor="middle" font-size="20" font-weight="bold" fill="#AB47BC" font-family="monospace">(()())</text>
+            <text x="680" y="210" text-anchor="middle" font-size="20" font-weight="bold" fill="#AB47BC" font-family="monospace">(())()</text>
+            <text x="680" y="260" text-anchor="middle" font-size="20" font-weight="bold" fill="#AB47BC" font-family="monospace">()(())</text>
+            <text x="680" y="310" text-anchor="middle" font-size="20" font-weight="bold" fill="#AB47BC" font-family="monospace">()()()</text>
+        </svg>
+    </div>
+
+    <div class="step-box" style="border-color: #26A69A; background-color: #E0F2F1;">
+        <strong>💡 为什么这五个场景都是同一个“幕后黑手”？（大白话解析）</strong><br><br>
+        👉 <strong>1. 凸多边形三角划分：</strong> 一个 <span class="var-hl">n+2</span> 边形，固定一条底边，再随便挑一个顶点连成三角形，这个三角形就会把原多边形劈成<strong>“左边一个小多边形”</strong>和<strong>“右边一个小多边形”</strong>。这不就是 <code>C(左) &times; C(右)</code> 吗？<br>
+        👉 <strong>2. 二叉树形态计数 (NOIP真题)：</strong> 给定 <span class="math-hl">n</span> 个节点，拔出一个当“根节点”，剩下的 <span class="math-hl">n-1</span> 个节点必须分给左子树和右子树。这不也是把问题劈成两半 <code>C(左子树) &times; C(右子树)</code> 吗？<br>
+        👉 <strong>3. 合法括号匹配：</strong> 一堆括号中，找到最左边的 <code>(</code>，再找到跟它匹配的那个 <code>)</code>。这对括号把整个字符串劈成了<strong>“括号包住的内部”</strong>和<strong>“这对括号的右边”</strong>两部分。依然是 <code>C(内) &times; C(右)</code>！<br>
+        👉 <strong>4. 堆栈出栈序列：</strong> 1到n进栈，第 1 个进栈的元素在第 <span class="math-hl">i</span> 个出栈。这就把序列劈成了“在它之前出栈的”和“在它之后出栈的”。<br>
+        👉 <strong>5. 路径计数问题：</strong> 在网格中从左下角走到右上角且不越过对角线。找到路径“第一次”碰到对角线的点，路径也被切成了两段！
+    </div>
+
+    <p><strong>🔥 NOIP 2015 提高组真题验证：</strong><br>
+    题目问：结点数为 5 的不同形态的二叉树一共有多少种？<br>
+    我们直接代入卡特兰数线性递推公式：<span class="math-hl">h(n) = h(n-1) &times; (4n - 2) / (n + 1)</span><br>
+    已知 <span class="math-hl">h(1) = 1</span>, <span class="math-hl">h(2) = 2</span>, <span class="math-hl">h(3) = 5</span>。<br>
+    当 <span class="math-hl">n = 4</span>：<span class="math-hl">h(4) = 5 &times; (16 - 2) / 5 = 14</span><br>
+    当 <span class="math-hl">n = 5</span>：<span class="math-hl">h(5) = 14 &times; (20 - 2) / 6 = 14 &times; 18 / 6 = 42</span> 种！秒杀真题！</p>
+
+
+    <h2>三、核心程序模板与实战拆解</h2>
+
+    <p>为了应对不同规模的数据，我们必须掌握 <span class="math-hl">O(n<sup>2</sup>)</span> 的循环累加法，以及 <span class="math-hl">O(n)</span> 的极速推导法。</p>
+
+    <h3>模板一：O(n) 极速推导（强烈推荐，竞赛首选）</h3>
+    <p>直接利用递推公式 <code>h[i] = h[i-1] &times; (4i - 2) / (i + 1)</code>。速度极快，只需要一重循环！</p>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-fast', 'fast-content')">C++ 极速 O(n) 模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-fast', 'fast-content')">Python 极速 O(n) 模板</button>
+        </div>
+        <div id="cpp-fast" class="code-content fast-content active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="type">long long</span> <span class="func">catalan_fast</span>(<span class="type">int</span> n) {
+    <span class="kw">if</span> (n == <span class="num">0</span> || n == <span class="num">1</span>) <span class="kw">return</span> <span class="num">1</span>;
+    
+    <span class="type">long long</span> h[<span class="num">100</span>];
+    h[<span class="num">0</span>] = <span class="num">1</span>;
+    h[<span class="num">1</span>] = <span class="num">1</span>;
+    
+    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">2</span>; i <= n; i++) {
+        <span class="com">// 核心优化公式，一定要先乘再除，防止除不尽丢失精度！</span>
+        h[i] = h[i-<span class="num">1</span>] * (<span class="num">4</span> * i - <span class="num">2</span>) / (i + <span class="num">1</span>);
+    }
+    <span class="kw">return</span> h[n];
+}
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="kw">cout</span> << <span class="func">catalan_fast</span>(<span class="num">5</span>) << endl; <span class="com">// 输出 42，真题答案</span>
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-fast" class="code-content fast-content">
+<span class="kw">def</span> <span class="func">catalan_fast</span>(n):
+    <span class="kw">if</span> n == <span class="num">0</span> <span class="kw">or</span> n == <span class="num">1</span>:
+        <span class="kw">return</span> <span class="num">1</span>
+        
+    h = [<span class="num">0</span>] * (n + <span class="num">1</span>)
+    h[<span class="num">0</span>] = <span class="num">1</span>
+    h[<span class="num">1</span>] = <span class="num">1</span>
+    
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>, n + <span class="num">1</span>):
+        <span class="com"># Python 中使用 // 确保进行整数除法</span>
+        h[i] = h[i-<span class="num">1</span>] * (<span class="num">4</span> * i - <span class="num">2</span>) // (i + <span class="num">1</span>)
+        
+    <span class="kw">return</span> h[n]
+
+<span class="func">print</span>(<span class="func">catalan_fast</span>(<span class="num">5</span>))  <span class="com"># 输出 42，真题答案</span></div>
+    </div>
+
+
+    <h3>模板二：O(n²) 循环累加法（原汁原味的定义）</h3>
+    <p>完美再现了“将问题劈成两半，左半边乘以右半边，最后把所有切分点的方案相加”的原始逻辑。</p>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-slow', 'slow-content')">C++ 定义 O(n²) 模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-slow', 'slow-content')">Python 定义 O(n²) 模板</button>
+        </div>
+        <div id="cpp-slow" class="code-content slow-content active">
+<span class="type">long long</span> <span class="func">catalan_sum</span>(<span class="type">int</span> n) {
+    <span class="type">long long</span> c[<span class="num">100</span>] = {<span class="num">0</span>};
+    c[<span class="num">0</span>] = <span class="num">1</span>; <span class="com">// 边界条件很重要</span>
+    c[<span class="num">1</span>] = <span class="num">1</span>;
+    
+    <span class="com">// 外层循环算第 i 个卡特兰数</span>
+    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">2</span>; i <= n; i++) {
+        <span class="com">// 内层循环模拟一个一个的“切分点” j</span>
+        <span class="kw">for</span> (<span class="type">int</span> j = <span class="num">0</span>; j < i; j++) {
+            <span class="com">// 核心递推：累加 (左边部分 * 右边部分)</span>
+            c[i] += c[j] * c[i - <span class="num">1</span> - j]; 
+        }
+    }
+    <span class="kw">return</span> c[n];
+}</div>
+        <div id="py-slow" class="code-content slow-content">
+<span class="kw">def</span> <span class="func">catalan_sum</span>(n):
+    c = [<span class="num">0</span>] * (n + <span class="num">1</span>)
+    c[<span class="num">0</span>] = <span class="num">1</span>  <span class="com"># 边界条件很重要</span>
+    <span class="kw">if</span> n >= <span class="num">1</span>:
+        c[<span class="num">1</span>] = <span class="num">1</span>
+        
+    <span class="com"># 外层循环算第 i 个卡特兰数</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>, n + <span class="num">1</span>):
+        <span class="com"># 内层循环模拟一个一个的“切分点” j</span>
+        <span class="kw">for</span> j <span class="kw">in</span> <span class="func">range</span>(i):
+            <span class="com"># 核心递推：累加 (左边部分 * 右边部分)</span>
+            c[i] += c[j] * c[i - <span class="num">1</span> - j]
+            
+    <span class="kw">return</span> c[n]</div>
+    </div>
+
+
+    <div class="danger-box" style="border-color: #E65100; background-color: #FFF3E0;">
+        <h3 style="margin-top: 0; color: #E65100; border-bottom-color: #E65100;">🏆 竞赛实战防爆零小贴士</h3>
+        <ul>
+            <li><strong>数据爆炸极其恐怖：</strong> 卡特兰数的增长速度快得令人发指！当 <code>n = 20</code> 时，结果高达 6,564,120,420，普通的 <code>int</code> 早就爆掉了。因此，写卡特兰数<strong>必须无脑使用 <code>long long</code></strong>（C++ 选手牢记）。</li>
+            <li><strong>O(n) 线性推导的“除法”陷阱：</strong> 在使用 <code>h[i] = h[i-1] * (4*i - 2) / (i + 1)</code> 时，<span class="highlight">必须先做乘法，再做除法！</span> 如果先除，会导致严重的小数截断丢失精度（因为 <code>(4i-2)</code> 往往无法整除 <code>(i+1)</code>，但乘上 <code>h[i-1]</code> 之后就一定能整除）。</li>
+            <li><strong>取模防坑：</strong> 很多题目会要求对 10<sup>9</sup>+7 取模。如果使用 O(n) 的带除法的公式，<strong>千万不能直接在除法上取模！</strong> 必须使用“乘法逆元”（费马小定理）来处理除法取模。如果还没学过逆元，老老实实用 O(n²) 的累加法加法取模最安全。</li>
+        </ul>
+    </div>
+
+    <div class="signature">
+        —— 扣哒世界教研团队 ——
+    </div>
+
+</div>
+
+<script>
+function openTab(evt, tabName, contentClass) {
+    var contents = document.getElementsByClassName(contentClass);
+    for (var i = 0; i < contents.length; i++) {
+        contents[i].style.display = "none";
+        contents[i].classList.remove("active");
+    }
+    var links = evt.currentTarget.parentElement.getElementsByClassName("tab-btn");
+    for (var i = 0; i < links.length; i++) {
+        links[i].classList.remove("active");
+    }
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.classList.add("active");
+}
+</script>
+
+</body>
+</html>

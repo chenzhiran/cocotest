@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5.4 递推算法的时空优化技术 - C++ 魔法课堂</title>
+    <style>
+        /* ================= 核心配色 (推理深蓝与逻辑青色) ================= */
+        :root {
+            --primary: #5C6BC0;      
+            --primary-dark: #283593;
+            --secondary: #26A69A;    
+            --accent: #AB47BC;       
+            --bg-color: #E8EAF6;     
+            --text-main: #3E2723;
+            --code-bg: #282c34;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#C5CAE9 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 15px 30px rgba(40, 53, 147, 0.15);
+            border: 4px solid #C5CAE9;
+        }
+
+        /* ================= 标题样式 ================= */
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #E8EAF6;
+        }
+
+        h2 {
+            background: linear-gradient(90deg, var(--primary), #7986CB);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            font-size: 1.6em;
+        }
+
+        h3 {
+            color: var(--accent);
+            border-bottom: 3px dashed var(--accent);
+            padding-bottom: 8px;
+            margin-top: 30px;
+            font-size: 1.3em;
+        }
+
+        /* ================= 强调样式 ================= */
+        .highlight {
+            color: #1A237E;
+            font-weight: bold;
+            background: #C5CAE9;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .var-hl {
+            font-family: "Consolas", "Courier New", monospace;
+            background-color: #FCE4EC;
+            color: #C2185B;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.95em;
+            margin: 0 2px;
+            box-shadow: 0 1px 2px rgba(194, 24, 91, 0.2);
+        }
+
+        .math-hl {
+            font-family: "Consolas", "Courier New", monospace;
+            background-color: #E0F7FA;
+            color: #00796B;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.95em;
+            margin: 0 2px;
+            box-shadow: 0 1px 2px rgba(0, 121, 107, 0.2);
+        }
+
+        .formula {
+            display: block;
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #D84315;
+            background-color: #FFF3E0;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px dashed #FFB74D;
+            margin: 15px 0;
+            font-family: "Consolas", monospace;
+        }
+
+        .text-orange { color: #E65100; font-weight: bold; }
+        .text-purple { color: #6A1B9A; font-weight: bold; }
+        .text-blue { color: #283593; font-weight: bold; }
+        .text-teal { color: #00695C; font-weight: bold; }
+
+        .note-box {
+            background-color: #E0F2F1;
+            border-left: 8px solid var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .danger-box {
+            background-color: #FCE4EC;
+            border: 2px solid #F06292;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .step-box {
+            background-color: #FFF8E1;
+            border: 2px dashed #FFCA28;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 15px 0;
+            color: #5D4037;
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration {
+            text-align: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px dashed #9FA8DA;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+        }
+
+        /* ================= 代码块 ================= */
+        .code-container {
+            border: 3px solid #7986CB;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: var(--code-bg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-header { display: flex; background: #37474f; }
+
+        .tab-btn {
+            padding: 12px 25px;
+            color: #cfd8dc;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-weight: bold;
+            flex: 1;
+            transition: 0.3s;
+            font-size: 1.1em;
+        }
+
+        .tab-btn.active {
+            background: var(--code-bg);
+            color: #80CBC4;
+            border-top: 4px solid #80CBC4;
+        }
+
+        .code-content {
+            display: none;
+            padding: 20px;
+            color: #abb2bf;
+            font-family: "Consolas", "Courier New", monospace;
+            white-space: pre;
+            font-size: 15px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        .code-content.active { display: block; }
+
+        .kw { color: #c678dd; } 
+        .com { color: #5c6370; font-style: italic; }
+        .str { color: #98c379; }
+        .num { color: #d19a66; }
+        .func { color: #61afef; }
+
+        /* ================= 底部签名 ================= */
+        .signature {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px dashed #C5CAE9;
+            color: #5C6BC0;
+            font-weight: bold;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>5.4 递推算法的时空优化技术</h1>
+
+    <div class="note-box">
+        <p>🕵️‍♂️ <strong>名侦探语录：</strong></p>
+        <p>“找出真相不仅要准确，还要<strong>快、准、狠</strong>！优秀的侦探绝不会把时间浪费在无用的线索上，也不会把大脑塞满已经过期的记忆。” <br>当问题规模急剧膨胀，普通递推会面临“内存撑爆”或“超时计算”的死局。时空优化，就是我们突破性能瓶颈、斩获满分的终极黑魔法！</p>
+    </div>
+
+    <h2>一、空间优化：滚动数组与内存复用</h2>
+
+    <p>在竞赛中，有时候题目会要求你计算到第 10 万项甚至 100 万项。如果你老老实实地去开辟一个 <code>int dp</code> 的数组，很容易就会触发 <span class="highlight">MLE (Memory Limit Exceeded，内存超限)</span>。</p>
+    <p>但我们仔细观察斐波那契数列或错排问题的递推公式：</p>
+    <div class="formula">
+        F(n) = F(n-1) + F(n-2)
+    </div>
+
+    <div class="step-box" style="border-color: #26A69A; background-color: #E0F2F1;">
+        <strong>🧠 详细原理解析：</strong><br>
+        想象你在过河，踩着水面上的石头往前走。为了踏出下一步（求解 <span class="math-hl">F(n)</span>），你只需要知道你<strong>现在踩着的石头</strong>（<span class="math-hl">F(n-1)</span>）和<strong>刚才踩过的石头</strong>（<span class="math-hl">F(n-2)</span>）在哪里。<br><br>
+        至于你几分钟前踩过的石头（<span class="math-hl">F(n-3)</span>, <span class="math-hl">F(n-4)</span>...），它们对你迈出下一步毫无帮助！留在内存里纯属浪费。<br>
+        <strong>优化绝招：</strong> 我们只需要设定 3 个变量，在循环中不断地把“新数据”覆盖到“旧数据”上，让这几个变量像车轮一样<strong>滚动更新</strong>，就能将空间复杂度从庞大的 <span class="math-hl">O(n)</span> 极致压缩到几乎不占内存的 <span class="math-hl">O(1)</span>。
+    </div>
+
+    <div class="illustration">
+        <svg width="700" height="200" viewBox="0 0 700 200">
+            <text x="150" y="30" text-anchor="middle" font-weight="bold" fill="#00695C">第 i-1 步时的内存</text>
+            <rect x="70" y="50" width="50" height="50" rx="8" fill="#E0F2F1" stroke="#26A69A" stroke-width="2"/>
+            <text x="95" y="80" text-anchor="middle" fill="#004D40" font-weight="bold">a</text>
+            <text x="95" y="125" text-anchor="middle" fill="#00695C" font-size="12">代表前两项</text>
+
+            <rect x="150" y="50" width="50" height="50" rx="8" fill="#B2DFDB" stroke="#00897B" stroke-width="2"/>
+            <text x="175" y="80" text-anchor="middle" fill="#004D40" font-weight="bold">b</text>
+            <text x="175" y="125" text-anchor="middle" fill="#00695C" font-size="12">代表前一项</text>
+
+            <rect x="230" y="50" width="50" height="50" rx="8" fill="#FCE4EC" stroke="#C2185B" stroke-width="2" stroke-dasharray="4,4"/>
+            <text x="255" y="80" text-anchor="middle" fill="#C2185B" font-weight="bold">c</text>
+            <text x="255" y="125" text-anchor="middle" fill="#C2185B" font-size="12">算出的新项</text>
+
+            <path d="M 310 75 L 390 75" fill="none" stroke="#9FA8DA" stroke-width="4" marker-end="url(#arrow)"/>
+            <text x="350" y="65" text-anchor="middle" font-weight="bold" fill="#5C6BC0">滚动覆盖</text>
+            <text x="350" y="95" text-anchor="middle" font-size="12" fill="#7986CB">a = b, b = c</text>
+
+            <text x="550" y="30" text-anchor="middle" font-weight="bold" fill="#6A1B9A">第 i 步时的内存 (数据更新，不占新空间)</text>
+            <rect x="470" y="50" width="50" height="50" rx="8" fill="#E0F2F1" stroke="#26A69A" stroke-width="2"/>
+            <text x="495" y="80" text-anchor="middle" fill="#004D40" font-weight="bold">a</text>
+            <text x="495" y="125" text-anchor="middle" fill="#00695C" font-size="12">接收了原b的值</text>
+
+            <rect x="550" y="50" width="50" height="50" rx="8" fill="#B2DFDB" stroke="#00897B" stroke-width="2"/>
+            <text x="575" y="80" text-anchor="middle" fill="#004D40" font-weight="bold">b</text>
+            <text x="575" y="125" text-anchor="middle" fill="#00695C" font-size="12">接收了原c的值</text>
+
+            <rect x="630" y="50" width="50" height="50" rx="8" fill="#FCE4EC" stroke="#C2185B" stroke-width="2" stroke-dasharray="4,4"/>
+            <text x="655" y="80" text-anchor="middle" fill="#C2185B" font-weight="bold">c</text>
+            <text x="655" y="125" text-anchor="middle" fill="#C2185B" font-size="12">等待下一次计算</text>
+
+            <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#9FA8DA" />
+                </marker>
+            </defs>
+        </svg>
+    </div>
+
+    <p><strong>应用示例：</strong> 求解斐波那契数列的第 1,000,000 项对 1000000007 取模的结果。使用普通数组会导致内存占用，而滚动数组轻松搞定。</p>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-roll', 'roll-content')">C++ 滚动数组模板</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-roll', 'roll-content')">Python 滚动数组模板</button>
+        </div>
+        <div id="cpp-roll" class="code-content roll-content active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="type">long long</span> <span class="func">fib_optimized</span>(<span class="type">int</span> n) {
+    <span class="kw">if</span> (n == <span class="num">0</span>) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">if</span> (n == <span class="num">1</span>) <span class="kw">return</span> <span class="num">1</span>;
+    
+    <span class="type">long long</span> a = <span class="num">0</span>; <span class="com">// 相当于 F(n-2)</span>
+    <span class="type">long long</span> b = <span class="num">1</span>; <span class="com">// 相当于 F(n-1)</span>
+    <span class="type">long long</span> c = <span class="num">0</span>; <span class="com">// 用于存储新计算出的 F(n)</span>
+    
+    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">2</span>; i <= n; i++) {
+        c = (a + b) % <span class="num">1000000007</span>; <span class="com">// 1. 计算出新项</span>
+        a = b;                    <span class="com">// 2. 旧数据滚动：a接替b</span>
+        b = c;                    <span class="com">// 3. 旧数据滚动：b接替c，为下一轮做准备</span>
+    }
+    <span class="kw">return</span> c;
+}</div>
+        <div id="py-roll" class="code-content roll-content">
+<span class="kw">def</span> <span class="func">fib_optimized</span>(n):
+    <span class="kw">if</span> n == <span class="num">0</span>: <span class="kw">return</span> <span class="num">0</span>
+    <span class="kw">if</span> n == <span class="num">1</span>: <span class="kw">return</span> <span class="num">1</span>
+    
+    a = <span class="num">0</span>  <span class="com"># 相当于 F(n-2)</span>
+    b = <span class="num">1</span>  <span class="com"># 相当于 F(n-1)</span>
+    
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>, n + <span class="num">1</span>):
+        <span class="com"># Python 支持一行内同时进行计算和赋值更替！</span>
+        <span class="com"># 此时的 a 变成了旧的 b，而 b 变成了两者的和 (即新的项)</span>
+        a, b = b, (a + b) % <span class="num">1000000007</span>
+        
+    <span class="kw">return</span> b</div>
+    </div>
+
+
+    <h2>二、多阶段决策递推：从三柱到四柱汉诺塔</h2>
+
+    <h3>1. 前置复习：经典的三柱汉诺塔</h3>
+    <p>传统的汉诺塔只有 3 根柱子（A, B, C），要求把 <span class="math-hl">i</span> 个盘子从小到大移到目标柱。它的底层逻辑非常纯粹：大盘子绝不能压在小盘子上。</p>
+    <div class="step-box" style="border-color: #FFB74D; background-color: #FFF3E0;">
+        <strong>🧠 三柱推导过程：</strong><br>
+        要想把最底下那个最大的盘子移到终点 C 柱，它上面的 <span class="math-hl">i-1</span> 个小盘子必须全部乖乖地让开路，并且堆放在备用的 B 柱上。<br>
+        1. 把顶上 <span class="math-hl">i-1</span> 个盘子从 A 柱移到 B 柱，耗时 <span class="var-hl">h3(i-1)</span> 步。<br>
+        2. 把最底下的 1 个最大的盘子直接从 A 柱移到 C 柱，耗时 <strong>1</strong> 步。<br>
+        3. 再把 B 柱上的 <span class="math-hl">i-1</span> 个盘子移回 C 柱盖在大盘子上，耗时 <span class="var-hl">h3(i-1)</span> 步。<br>
+        由此得出经典公式：<span class="math-hl">h3(i) = 2 &times; h3(i-1) + 1</span>
+    </div>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-h3', 'h3-content')">C++ 三柱汉诺塔推导</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-h3', 'h3-content')">Python 三柱汉诺塔推导</button>
+        </div>
+        <div id="cpp-h3" class="code-content h3-content active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="type">long long</span> <span class="func">solve_h3</span>(<span class="type">int</span> n) {
+    <span class="type">long long</span> h3[<span class="num">100</span>];
+    h3[<span class="num">1</span>] = <span class="num">1</span>; <span class="com">// 1个盘子只需直接移动1步</span>
+    
+    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">2</span>; i <= n; i++) {
+        h3[i] = <span class="num">2</span> * h3[i-<span class="num">1</span>] + <span class="num">1</span>;
+    }
+    <span class="kw">return</span> h3[n];
+}</div>
+        <div id="py-h3" class="code-content h3-content">
+<span class="kw">def</span> <span class="func">solve_h3</span>(n):
+    h3 = [<span class="num">0</span>] * (n + <span class="num">1</span>)
+    h3[<span class="num">1</span>] = <span class="num">1</span>  <span class="com"># 1个盘子只需直接移动1步</span>
+    
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>, n + <span class="num">1</span>):
+        h3[i] = <span class="num">2</span> * h3[i-<span class="num">1</span>] + <span class="num">1</span>
+        
+    <span class="kw">return</span> h3[n]</div>
+    </div>
+
+
+    <h3>2. 进阶挑战：四柱汉诺塔 (Frame-Stewart 算法)</h3>
+    <p><strong>应用场景：</strong> 如果现在给你<strong> 4 根柱子（A, B, C, D）</strong>，把 20 个盘子从 A 移到 D，最少需要多少步？因为多了一根柱子可以做中转，步数将大幅减少！</p>
+
+    <div class="illustration">
+        <svg width="700" height="260" viewBox="0 0 700 260">
+            <rect x="80" y="180" width="540" height="10" fill="#7986CB"/>
+            <rect x="135" y="60" width="10" height="120" fill="#9FA8DA" rx="3"/>
+            <rect x="275" y="60" width="10" height="120" fill="#9FA8DA" rx="3"/>
+            <rect x="415" y="60" width="10" height="120" fill="#9FA8DA" rx="3"/>
+            <rect x="555" y="60" width="10" height="120" fill="#9FA8DA" rx="3"/>
+            
+            <text x="140" y="210" text-anchor="middle" font-weight="bold" fill="#283593">A 柱 (起点)</text>
+            <text x="280" y="210" text-anchor="middle" font-weight="bold" fill="#283593">B 柱 (缓冲)</text>
+            <text x="420" y="210" text-anchor="middle" font-weight="bold" fill="#283593">C 柱 (中转)</text>
+            <text x="560" y="210" text-anchor="middle" font-weight="bold" fill="#283593">D 柱 (终点)</text>
+
+            <rect x="250" y="150" width="60" height="12" fill="#FFCA28" rx="4"/>
+            <rect x="255" y="135" width="50" height="12" fill="#FFCA28" rx="4"/>
+            <rect x="260" y="120" width="40" height="12" fill="#FFCA28" rx="4"/>
+            <text x="280" y="105" text-anchor="middle" fill="#E65100" font-weight="bold" font-size="14">顶层 j 个小盘</text>
+
+            <rect x="510" y="165" width="100" height="15" fill="#4DB6AC" rx="5"/>
+            <rect x="520" y="145" width="80" height="15" fill="#4DB6AC" rx="5"/>
+            <text x="560" y="130" text-anchor="middle" fill="#004D40" font-weight="bold" font-size="14">底层 i-j 个大盘</text>
+
+            <path d="M 170 120 Q 210 80 250 120" fill="none" stroke="#E65100" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arrow-orange)"/>
+            <path d="M 170 170 Q 340 50 510 170" fill="none" stroke="#00695C" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arrow-teal)"/>
+
+            <defs>
+                <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#E65100" />
+                </marker>
+                <marker id="arrow-teal" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#00695C" />
+                </marker>
+            </defs>
+        </svg>
+    </div>
+
+    <div class="step-box" style="border-color: #AB47BC; background-color: #F3E5F5;">
+        <strong>🧠 化四为三的奇妙降维推导：</strong><br>
+        既然有 4 根柱子，我们可以把所有的 <span class="math-hl">i</span> 个盘子强行分成两拨：上面较小的 <span class="math-hl">j</span> 个，和底下较大的 <span class="math-hl">i-j</span> 个。<br><br>
+        <strong>阶段一：</strong> 我们利用全部 4 根柱子，把顶上那 <span class="math-hl">j</span> 个小盘子安全转移到 B 柱上。这耗费了 <span class="var-hl">h4(j)</span> 步。<br>
+        <strong>阶段二：</strong> 重点来了！此时 B 柱上铺满了小盘子。对于剩下的 <span class="math-hl">i-j</span> 个大盘子来说，它们绝对不能放到 B 柱上去（大不能压小）。所以在它们眼中，B 柱相当于“报废”了。它们只能利用剩下的 A、C、D <strong>三根柱子</strong>，痛苦地转移到终点 D 柱。这耗费了 <span class="var-hl">h3(i-j)</span> 步。<br>
+        <strong>阶段三：</strong> 大盘子落位后，我们再利用全部 4 根柱子，把 B 柱上的那 <span class="math-hl">j</span> 个小盘子重新搬回 D 柱即可。又耗费了 <span class="var-hl">h4(j)</span> 步。<br><br>
+        <strong>终极难点：</strong> 我们到底该取多少个盘子作为上面的 <span class="math-hl">j</span> 呢？答案是不知道！所以我们要写一个 <code>for</code> 循环，遍历所有可能的 <span class="math-hl">j</span> (从 1 到 i-1)，把它们产生的结果做对比，取<strong>步数最小</strong>的那一个！
+    </div>
+
+    <div class="formula">
+        h4(i) = min { 2 &times; h4(j) + h3(i-j) }  <span style="font-size:0.6em; color:#555;">(其中 1 &le; j < i)</span>
+    </div>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-h4', 'h4-content')">C++ 四柱汉诺塔(n=20)</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-h4', 'h4-content')">Python 四柱汉诺塔(n=20)</button>
+        </div>
+        <div id="cpp-h4" class="code-content h4-content active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">#include</span> <span class="str">&lt;algorithm&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="type">long long</span> h3[<span class="num">25</span>], h4[<span class="num">25</span>];
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="com">// 1. 必须先预处理出所有 3 柱汉诺塔的答案，作为素材备用</span>
+    h3[<span class="num">1</span>] = <span class="num">1</span>; 
+    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">2</span>; i <= <span class="num">20</span>; ++i) {
+        h3[i] = <span class="num">2</span> * h3[i-<span class="num">1</span>] + <span class="num">1</span>;
+    }
+
+    <span class="com">// 2. 计算 4 柱汉诺塔的最优解</span>
+    h4[<span class="num">1</span>] = <span class="num">1</span>; <span class="com">// 边界：1个盘子还是1步</span>
+    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">2</span>; i <= <span class="num">20</span>; ++i) {
+        h4[i] = <span class="num">999999999</span>; <span class="com">// 初始化为一个极大值，准备打擂台找最小值</span>
+        
+        <span class="com">// 核心：遍历所有的切分点 j，寻找让总步数最小的切分方案</span>
+        <span class="kw">for</span> (<span class="type">int</span> j = <span class="num">1</span>; j < i; ++j) {
+            h4[i] = <span class="func">min</span>(h4[i], <span class="num">2</span> * h4[j] + h3[i-j]); 
+        }
+    }
+    
+    <span class="kw">cout</span> << h4[<span class="num">20</span>] << endl; <span class="com">// 输出 n=20 时的答案：297</span>
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-h4" class="code-content h4-content">
+h3 = [<span class="num">0</span>] * <span class="num">25</span>
+h4 = [<span class="num">0</span>] * <span class="num">25</span>
+
+<span class="com"># 1. 必须先预处理出所有 3 柱汉诺塔的答案，作为素材备用</span>
+h3[<span class="num">1</span>] = <span class="num">1</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>, <span class="num">21</span>):
+    h3[i] = <span class="num">2</span> * h3[i-<span class="num">1</span>] + <span class="num">1</span>
+
+<span class="com"># 2. 计算 4 柱汉诺塔的最优解</span>
+h4[<span class="num">1</span>] = <span class="num">1</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>, <span class="num">21</span>):
+    h4[i] = <span class="num">float</span>(<span class="str">'inf'</span>)  <span class="com"># 初始化为无穷大</span>
+    
+    <span class="com"># 核心：遍历所有的切分点 j，寻找让总步数最小的切分方案</span>
+    <span class="kw">for</span> j <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span>, i):
+        h4[i] = <span class="func">min</span>(h4[i], <span class="num">2</span> * h4[j] + h3[i-j])
+
+<span class="func">print</span>(h4[<span class="num">20</span>])  <span class="com"># 输出 n=20 时的答案：297</span></div>
+    </div>
+
+
+    <h2>三、时间优化的终极黑魔法：矩阵快速幂简介</h2>
+    <p>普通的一维递推就算用了滚动数组，跑完一次 <code>for</code> 循环也需要经历 <span class="math-hl">n</span> 步。当竞赛题目的数据规模丧心病狂地给到了 <span class="math-hl">n &le; 10<sup>18</sup></span> 时，线性 <code>for</code> 循环将直接超时 (TLE) 崩溃。</p>
+    
+    <div class="step-box" style="border-color: #AB47BC; background-color: #F3E5F5;">
+        <strong>🧠 时间压缩原理解析：</strong><br>
+        假设你在玩一个游戏，原本升到 16 级需要每次打一只怪（+1级），一共打 16 次。但如果你拿到了一件神奇道具，可以<strong>直接让你的等级翻倍</strong>呢？<br>
+        你只需要：1级 &rarr; 翻倍变 2级 &rarr; 翻倍变 4级 &rarr; 翻倍变 8级 &rarr; 翻倍变 16级！原本需要 16 步的操作，现在只需要 <strong>4 步</strong>！这就是传说中的“快速幂”思想。<br><br>
+        对于斐波那契数列，我们可以把它的加法关系打包成一个<strong>矩阵乘法</strong>：<br>
+        <span class="math-hl">[F(n), F(n-1)] = [F(n-1), F(n-2)] &times; 矩阵基底</span> <br>
+        通过不断对“矩阵基底”执行这种“翻倍”操作（矩阵快速幂），我们能以乘方的速度跨越时间，将令人绝望的 <span class="math-hl">O(n)</span> 时间复杂度瞬间压缩到闪电般的 <span class="math-hl">O(log n)</span>！
+    </div>
+
+    <div class="illustration">
+        <svg width="700" height="240" viewBox="0 0 700 240">
+            <rect x="50" y="80" width="120" height="60" rx="10" fill="#E8EAF6" stroke="#5C6BC0" stroke-width="2"/>
+            <text x="110" y="115" text-anchor="middle" font-weight="bold" fill="#283593">[Fn, Fn-1]</text>
+            <text x="110" y="160" text-anchor="middle" font-size="12" fill="#5C6BC0">当前状态向量</text>
+
+            <text x="195" y="115" font-size="24" fill="#5C6BC0">=</text>
+
+            <rect x="230" y="80" width="120" height="60" rx="10" fill="#E0F2F1" stroke="#26A69A" stroke-width="2"/>
+            <text x="290" y="115" text-anchor="middle" font-weight="bold" fill="#00695C">[Fn-1, Fn-2]</text>
+            <text x="290" y="160" text-anchor="middle" font-size="12" fill="#26A69A">前一状态向量</text>
+
+            <text x="375" y="115" font-size="24" fill="#5C6BC0">&times;</text>
+
+            <rect x="410" y="60" width="100" height="100" rx="5" fill="#F3E5F5" stroke="#AB47BC" stroke-width="3"/>
+            <text x="460" y="105" text-anchor="middle" font-weight="bold" fill="#4A148C" font-family="monospace">1  1</text>
+            <text x="460" y="130" text-anchor="middle" font-weight="bold" fill="#4A148C" font-family="monospace">1  0</text>
+            <text x="460" y="180" text-anchor="middle" font-size="12" fill="#6A1B9A">转移矩阵 M</text>
+
+            <path d="M 520 110 L 580 110" fill="none" stroke="#AB47BC" stroke-width="3" marker-end="url(#arrow-matrix)"/>
+            <text x="630" y="90" text-anchor="middle" font-weight="bold" fill="#C2185B" font-size="14">M ^ n</text>
+            <text x="630" y="115" text-anchor="middle" font-size="11" fill="#4A148C">多次迭代</text>
+            <text x="630" y="135" text-anchor="middle" font-size="11" fill="#4A148C">倍增合成</text>
+
+            <defs>
+                <marker id="arrow-matrix" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#AB47BC" />
+                </marker>
+            </defs>
+        </svg>
+    </div>
+
+    <p><strong>应用场景：</strong> 解决 <span class="math-hl">n=10<sup>18</sup></span> 级别的斐波那契数列求值。</p>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-matrix', 'matrix-content')">C++ 矩阵快速幂求斐波那契</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-matrix', 'matrix-content')">Python 矩阵快速幂求斐波那契</button>
+        </div>
+        <div id="cpp-matrix" class="code-content matrix-content active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="type">const int</span> MOD = <span class="num">1000000007</span>;
+
+<span class="com">// 定义 2x2 的矩阵结构体</span>
+<span class="kw">struct</span> Matrix {
+    <span class="type">long long</span> mat[<span class="num">2</span>][<span class="num">2</span>];
+};
+
+<span class="com">// 矩阵乘法函数：将矩阵 a 和 b 相乘</span>
+Matrix <span class="func">multiply</span>(Matrix a, Matrix b) {
+    Matrix res;
+    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">0</span>; i < <span class="num">2</span>; i++) {
+        <span class="kw">for</span> (<span class="type">int</span> j = <span class="num">0</span>; j < <span class="num">2</span>; j++) {
+            res.mat[i][j] = <span class="num">0</span>;
+            <span class="kw">for</span> (<span class="type">int</span> k = <span class="num">0</span>; k < <span class="num">2</span>; k++) {
+                res.mat[i][j] = (res.mat[i][j] + a.mat[i][k] * b.mat[k][j]) % MOD;
+            }
+        }
+    }
+    <span class="kw">return</span> res;
+}
+
+<span class="com">// 矩阵快速幂：求矩阵 a 的 n 次方</span>
+Matrix <span class="func">power</span>(Matrix a, <span class="type">long long</span> n) {
+    Matrix res;
+    <span class="com">// 构造单位矩阵（类似于普通数字里的 1）</span>
+    res.mat[<span class="num">0</span>][<span class="num">0</span>] = <span class="num">1</span>; res.mat[<span class="num">0</span>][<span class="num">1</span>] = <span class="num">0</span>;
+    res.mat[<span class="num">1</span>][<span class="num">0</span>] = <span class="num">0</span>; res.mat[<span class="num">1</span>][<span class="num">1</span>] = <span class="num">1</span>;
+    
+    <span class="kw">while</span> (n > <span class="num">0</span>) {
+        <span class="kw">if</span> (n % <span class="num">2</span> == <span class="num">1</span>) res = <span class="func">multiply</span>(res, a); 
+        a = <span class="func">multiply</span>(a, a);                     
+        n /= <span class="num">2</span>;                                 
+    }
+    <span class="kw">return</span> res;
+}
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="type">long long</span> n = <span class="num">1000000000000000000LL</span>;
+    Matrix base;
+    base.mat[<span class="num">0</span>][<span class="num">0</span>] = <span class="num">1</span>; base.mat[<span class="num">0</span>][<span class="num">1</span>] = <span class="num">1</span>;
+    base.mat[<span class="num">1</span>][<span class="num">0</span>] = <span class="num">1</span>; base.mat[<span class="num">1</span>][<span class="num">1</span>] = <span class="num">0</span>;
+    
+    Matrix result = <span class="func">power</span>(base, n - <span class="num">1</span>);
+    <span class="kw">cout</span> << result.mat[<span class="num">0</span>][<span class="num">0</span>] << endl; <span class="com">// 光速得出答案！</span>
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-matrix" class="code-content matrix-content">
+MOD = <span class="num">1000000007</span>
+
+<span class="com"># 矩阵乘法函数</span>
+<span class="kw">def</span> <span class="func">multiply</span>(A, B):
+    res = [[<span class="num">0</span>, <span class="num">0</span>], [<span class="num">0</span>, <span class="num">0</span>]]
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>):
+        <span class="kw">for</span> j <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>):
+            <span class="kw">for</span> k <span class="kw">in</span> <span class="func">range</span>(<span class="num">2</span>):
+                res[i][j] = (res[i][j] + A[i][k] * B[k][j]) % MOD
+    <span class="kw">return</span> res
+
+<span class="com"># 矩阵快速幂函数</span>
+<span class="kw">def</span> <span class="func">power</span>(A, n):
+    res = [[<span class="num">1</span>, <span class="num">0</span>], [<span class="num">0</span>, <span class="num">1</span>]]  <span class="com"># 单位矩阵</span>
+    <span class="kw">while</span> n > <span class="num">0</span>:
+        <span class="kw">if</span> n % <span class="num">2</span> == <span class="num">1</span>:
+            res = <span class="func">multiply</span>(res, A)
+        A = <span class="func">multiply</span>(A, A)
+        n //= <span class="num">2</span>
+    <span class="kw">return</span> res
+
+<span class="com"># 求解第 10^18 项</span>
+n = <span class="num">1000000000000000000</span>
+base = [[<span class="num">1</span>, <span class="num">1</span>], [<span class="num">1</span>, <span class="num">0</span>]]
+result = <span class="func">power</span>(base, n - <span class="num">1</span>)
+<span class="func">print</span>(result[<span class="num">0</span>][<span class="num">0</span>])  <span class="com"># 光速得出答案！</span></div>
+    </div>
+
+
+    <div class="note-box" style="border-left-color: #E65100; background-color: #FFF3E0; margin-top: 50px;">
+        <h3 style="margin-top: 0; color: #E65100; border-bottom-color: #E65100;">🏁 侦探结案陈词：递推优化大盘点</h3>
+        <p>递推算法并不只是写个循环那么简单，它是关于<strong>“如何优雅地处理数据”</strong>的艺术：</p>
+        <ul style="line-height: 2;">
+            <li><span class="text-teal">【空间优化：滚动数组】</span> —— 只要递推式只和前几项有关，立刻扔掉历史包袱！空间复杂度从 <span class="math-hl">O(n)</span> 变 <span class="math-hl">O(1)</span>。</li>
+            <li><span class="text-purple">【模型优化：多阶段拆解】</span> —— 遇到四柱汉诺塔这种复杂决策，学会用循环遍历“切分点”，寻找最优组合。</li>
+            <li><span class="text-blue">【时间优化：矩阵快速幂】</span> —— 当 <span class="math-hl">n</span> 超过千万级甚至达到 10<sup>18</sup>，必须祭出“倍增”神技，将线性时间压缩到对数级别。</li>
+        </ul>
+        <p>💡 <strong>竞赛秘籍：</strong> 在写任何递推前，先看一眼数据范围。<strong>10<sup>7</sup></strong> 用循环，<strong>10<sup>18</sup></strong> 必用矩阵，<strong>内存限制 64MB</strong> 必须滚动！</p>
+    </div>
+
+    <div class="signature">
+        —— 扣哒世界教研团队 ——
+    </div>
+
+</div>
+
+<script>
+function openTab(evt, tabName, contentClass) {
+    var contents = document.getElementsByClassName(contentClass);
+    for (var i = 0; i < contents.length; i++) {
+        contents[i].style.display = "none";
+        contents[i].classList.remove("active");
+    }
+    var links = evt.currentTarget.parentElement.getElementsByClassName("tab-btn");
+    for (var i = 0; i < links.length; i++) {
+        links[i].classList.remove("active");
+    }
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.classList.add("active");
+}
+</script>
+
+</body>
+</html>

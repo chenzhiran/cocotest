@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5.6 递推与动态规划的衔接及综合实战 - C++ 魔法课堂</title>
+    <style>
+        /* ================= 核心配色 (推理深蓝与逻辑青色) ================= */
+        :root {
+            --primary: #5C6BC0;      
+            --primary-dark: #283593;
+            --secondary: #26A69A;    
+            --accent: #AB47BC;       
+            --bg-color: #E8EAF6;     
+            --text-main: #3E2723;
+            --code-bg: #282c34;
+        }
+
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#C5CAE9 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 15px 30px rgba(40, 53, 147, 0.15);
+            border: 4px solid #C5CAE9;
+        }
+
+        /* ================= 标题样式 ================= */
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 2.6em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #E8EAF6;
+        }
+
+        h2 {
+            background: linear-gradient(90deg, var(--primary), #7986CB);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+            font-size: 1.6em;
+        }
+
+        h3 {
+            color: var(--accent);
+            border-bottom: 3px dashed var(--accent);
+            padding-bottom: 8px;
+            margin-top: 30px;
+            font-size: 1.3em;
+        }
+
+        /* ================= 强调样式 ================= */
+        .highlight {
+            color: #1A237E;
+            font-weight: bold;
+            background: #C5CAE9;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .var-hl {
+            font-family: "Consolas", "Courier New", monospace;
+            background-color: #FCE4EC;
+            color: #C2185B;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.95em;
+            margin: 0 2px;
+            box-shadow: 0 1px 2px rgba(194, 24, 91, 0.2);
+        }
+
+        .math-hl {
+            font-family: "Consolas", "Courier New", monospace;
+            background-color: #E0F7FA;
+            color: #00796B;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.95em;
+            margin: 0 2px;
+            box-shadow: 0 1px 2px rgba(0, 121, 107, 0.2);
+        }
+
+        .formula {
+            display: block;
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #D84315;
+            background-color: #FFF3E0;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px dashed #FFB74D;
+            margin: 15px 0;
+            font-family: "Consolas", monospace;
+        }
+
+        .text-orange { color: #E65100; font-weight: bold; }
+        .text-purple { color: #6A1B9A; font-weight: bold; }
+        .text-teal { color: #00695C; font-weight: bold; }
+
+        .note-box {
+            background-color: #E0F2F1;
+            border-left: 8px solid var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .danger-box {
+            background-color: #FCE4EC;
+            border: 2px solid #F06292;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .step-box {
+            background-color: #FFF8E1;
+            border: 2px dashed #FFCA28;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 15px 0;
+            color: #5D4037;
+        }
+
+        /* ================= 图解区域 ================= */
+        .illustration {
+            text-align: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px dashed #9FA8DA;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+        }
+
+        /* ================= 代码块 ================= */
+        .code-container {
+            border: 3px solid #7986CB;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: var(--code-bg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tab-header { display: flex; background: #37474f; }
+
+        .tab-btn {
+            padding: 12px 25px;
+            color: #cfd8dc;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-weight: bold;
+            flex: 1;
+            transition: 0.3s;
+            font-size: 1.1em;
+        }
+
+        .tab-btn.active {
+            background: var(--code-bg);
+            color: #80CBC4;
+            border-top: 4px solid #80CBC4;
+        }
+
+        .code-content {
+            display: none;
+            padding: 20px;
+            color: #abb2bf;
+            font-family: "Consolas", "Courier New", monospace;
+            white-space: pre;
+            font-size: 15px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        .code-content.active { display: block; }
+
+        .kw { color: #c678dd; } 
+        .com { color: #5c6370; font-style: italic; }
+        .str { color: #98c379; }
+        .num { color: #d19a66; }
+
+        /* ================= 底部签名 ================= */
+        .signature {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px dashed #C5CAE9;
+            color: #5C6BC0;
+            font-weight: bold;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>5.6 递推与动态规划的衔接及综合实战</h1>
+
+    <div class="note-box">
+        <p>🕵️‍♂️ <strong>名侦探语录：</strong></p>
+        <p>“最顶级的推理，不仅要算出有多少种可能，还要在无数可能中找出最完美的那条路！” <br>当单纯的规律难以捕捉，或者面临多重选择时，我们将经典的递推思想升级为<strong>动态规划（DP）</strong>。今天，我们将揭开这座桥梁的秘密，并挑战两个高难度实战案件！</p>
+    </div>
+
+    <h2>一、从递推走向动态规划：进阶之路</h2>
+    
+    <p>在前面的章节中，无论是斐波那契数列、上楼梯还是卡特兰数，我们解决的都是<strong>“计数问题”</strong>（有多少种方案）。在纯递推的世界里，不管你怎么走，条条大路通罗马，我们只需要把所有的可能性<strong>加起来</strong>（+）。</p>
+
+    <p>但如果你在冒险中遇到了<strong>“选择”</strong>呢？比如：面前有两条路，走左边可以捡到 100 金币，走右边只有 50 金币，问走到终点时最多能有多少金币？这就需要我们在递推的基础上，引入<span class="highlight">最优化决策（找最大值或最小值）</span>。这就正式跨入了<strong>动态规划（Dynamic Programming, 简称 DP）</strong>的领地！</p>
+
+    <div class="illustration">
+        <svg width="700" height="240" viewBox="0 0 700 240">
+            <rect x="50" y="40" width="280" height="160" rx="10" fill="#E0F2F1" stroke="#26A69A" stroke-width="2"/>
+            <text x="190" y="70" text-anchor="middle" font-weight="bold" fill="#00695C" font-size="16">纯递推 (如：求方案数)</text>
+            <circle cx="100" cy="130" r="15" fill="#4DB6AC"/>
+            <circle cx="190" cy="100" r="15" fill="#80CBC4"/>
+            <circle cx="190" cy="160" r="15" fill="#80CBC4"/>
+            <circle cx="280" cy="130" r="15" fill="#26A69A"/>
+            
+            <path d="M 115 125 L 175 105" fill="none" stroke="#00897B" stroke-width="2" marker-end="url(#arrow)"/>
+            <path d="M 115 135 L 175 155" fill="none" stroke="#00897B" stroke-width="2" marker-end="url(#arrow)"/>
+            <path d="M 205 105 L 265 125" fill="none" stroke="#00897B" stroke-width="2" marker-end="url(#arrow)"/>
+            <path d="M 205 155 L 265 135" fill="none" stroke="#00897B" stroke-width="2" marker-end="url(#arrow)"/>
+            <text x="190" y="220" text-anchor="middle" fill="#004D40" font-weight="bold" font-size="15">汇聚所有路径：f(n) = a + b</text>
+
+            <rect x="370" y="40" width="280" height="160" rx="10" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+            <text x="510" y="70" text-anchor="middle" font-weight="bold" fill="#E65100" font-size="16">动态规划 (如：求最大收益)</text>
+            <circle cx="420" cy="130" r="15" fill="#FFB74D"/>
+            <circle cx="510" cy="100" r="15" fill="#FFCC80"/>
+            <text x="510" y="95" text-anchor="middle" fill="#E65100" font-size="12" font-weight="bold">收益: 100</text>
+            <circle cx="510" cy="160" r="15" fill="#FFCC80"/>
+            <text x="510" y="185" text-anchor="middle" fill="#E65100" font-size="12" font-weight="bold">收益: 50</text>
+            <circle cx="600" cy="130" r="15" fill="#F57C00"/>
+
+            <path d="M 435 125 L 495 105" fill="none" stroke="#E65100" stroke-width="3" marker-end="url(#arrow-dp)"/>
+            <path d="M 525 105 L 585 125" fill="none" stroke="#E65100" stroke-width="3" marker-end="url(#arrow-dp)"/>
+            
+            <path d="M 435 135 L 495 155" fill="none" stroke="#FFA726" stroke-width="2" stroke-dasharray="4,4"/>
+            <path d="M 525 155 L 585 135" fill="none" stroke="#FFA726" stroke-width="2" stroke-dasharray="4,4"/>
+            
+            <text x="510" y="220" text-anchor="middle" fill="#BF360C" font-weight="bold" font-size="15">择优选取：f(n) = max(a, b)</text>
+
+            <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#00897B" />
+                </marker>
+                <marker id="arrow-dp" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#E65100" />
+                </marker>
+            </defs>
+        </svg>
+    </div>
+
+    <div class="step-box" style="border-color: #AB47BC; background-color: #F3E5F5;">
+        <strong>💡 大白话总结两者的关系：</strong><br>
+        动态规划（DP）的本质其实就是<strong>“带有记忆化和最优决策的递推”</strong>。<br>
+        • 当状态转移方程里只有加法 <code>+</code> 时，你多半在做纯粹的递推计算。<br>
+        • 当状态转移方程里出现了 <code>max()</code> 或 <code>min()</code> 时，说明你开始让程序做选择了，这就是动态规划。接下来，让我们通过两个高阶案件，彻底打通这两者的界限！
+    </div>
+
+
+    <h2>二、递推视角下的复杂状态设计：骑士赛马</h2>
+
+    <p><strong>案件背景：</strong> 在一个奇幻大陆上，有 <span class="math-hl">n</span> 组骑士参加赛马比赛。比赛不仅分出胜负，还<strong>允许并列名次</strong>（比如 3 个人并列第一名）。请问最终名次的排列组合一共可能有多少种？结果需要对 10056 取模。</p>
+
+    <div class="illustration">
+        <svg width="700" height="240" viewBox="0 0 700 240">
+            <rect x="50" y="30" width="160" height="120" rx="10" fill="#E8EAF6" stroke="#9FA8DA" stroke-width="2"/>
+            <text x="130" y="60" text-anchor="middle" font-weight="bold" fill="#283593">全体 n 名骑士</text>
+            <circle cx="90" cy="90" r="12" fill="#5C6BC0"/><circle cx="130" cy="90" r="12" fill="#5C6BC0"/><circle cx="170" cy="90" r="12" fill="#5C6BC0"/>
+            <circle cx="110" cy="120" r="12" fill="#5C6BC0"/><circle cx="150" cy="120" r="12" fill="#5C6BC0"/>
+
+            <path d="M 220 90 L 260 90" fill="none" stroke="#AB47BC" stroke-width="3" marker-end="url(#arrow-purple)"/>
+            <text x="240" y="80" text-anchor="middle" fill="#6A1B9A" font-weight="bold" font-size="12">选出</text>
+
+            <rect x="290" y="30" width="140" height="60" rx="10" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+            <text x="360" y="55" text-anchor="middle" font-weight="bold" fill="#E65100">挑 m 人并列第 1</text>
+            <circle cx="340" cy="75" r="12" fill="#FFB74D"/><circle cx="380" cy="75" r="12" fill="#FFB74D"/>
+            <text x="470" y="60" text-anchor="start" fill="#BF360C" font-size="14">方案数: C(n, m)</text>
+
+            <rect x="290" y="120" width="140" height="90" rx="10" fill="#E0F2F1" stroke="#26A69A" stroke-width="2"/>
+            <text x="360" y="145" text-anchor="middle" font-weight="bold" fill="#00695C">剩下 n-m 人</text>
+            <circle cx="340" cy="170" r="12" fill="#4DB6AC"/><circle cx="380" cy="170" r="12" fill="#4DB6AC"/><circle cx="360" cy="195" r="12" fill="#4DB6AC"/>
+            <text x="470" y="165" text-anchor="start" fill="#004D40" font-size="14">继续内部排序: f(n-m)</text>
+
+            <defs>
+                <marker id="arrow-purple" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#AB47BC" />
+                </marker>
+            </defs>
+        </svg>
+    </div>
+
+    <div class="step-box" style="border-color: #AB47BC; background-color: #F3E5F5;">
+        <strong>🧠 “名次剥离法”原理解析：</strong><br>
+        如果比赛没有并列，那答案很简单，就是 <span class="math-hl">n!</span>（全排列）。但现在允许并列，这其实是第二类斯特林数的经典变种！怎么递推呢？<br><br>
+        <strong>降维打击：我们直接把“第一名”剥离出来！</strong><br>
+        假设有 <span class="math-hl">m</span> 个人同时并列第一名，我们要从 <span class="math-hl">n</span> 个人里挑出这 <span class="math-hl">m</span> 个人，方案数就是组合数 <span class="var-hl">C(n, m)</span>。<br>
+        第一名选完后，剩下的 <span class="math-hl">n-m</span> 个人该怎么排？这完全变成了一个规模缩小了的相同的子问题，方案数就是 <span class="var-hl">f(n-m)</span>。<br><br>
+        因为并列第一名的人数 <span class="math-hl">m</span> 可以是 1 个，2 个，甚至是所有人（n 个），所以我们把所有可能的 <span class="math-hl">m</span> 累加起来，就得到了终极递推公式：
+    </div>
+
+    <div class="formula">
+        f(n) = &Sigma; [ C(n, m) &times; f(n - m) ] &nbsp;&nbsp;&nbsp;<span style="font-size:0.6em; color:#555;">(其中 m 从 1 遍历到 n)</span>
+    </div>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-knight', 'knight-content')">C++ 骑士赛马求解</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-knight', 'knight-content')">Python 骑士赛马求解</button>
+        </div>
+        <div id="cpp-knight" class="code-content knight-content active">
+<span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="type">const int</span> MOD = <span class="num">10056</span>;
+<span class="type">long long</span> C[<span class="num">1005</span>][<span class="num">1005</span>]; <span class="com">// 用于存储组合数</span>
+<span class="type">long long</span> f[<span class="num">1005</span>];       <span class="com">// 存储最终的排列方案数</span>
+
+<span class="type">void</span> <span class="func">init</span>(<span class="type">int</span> max_n) {
+    <span class="com">// 1. 预处理出所有的组合数 C(n, m)</span>
+    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">0</span>; i <= max_n; i++) {
+        C[i][<span class="num">0</span>] = <span class="num">1</span>;
+        <span class="kw">for</span> (<span class="type">int</span> j = <span class="num">1</span>; j <= i; j++) {
+            <span class="com">// 利用杨辉三角递推组合数</span>
+            C[i][j] = (C[i-<span class="num">1</span>][j-<span class="num">1</span>] + C[i-<span class="num">1</span>][j]) % MOD;
+        }
+    }
+
+    <span class="com">// 2. 剥离法核心递推</span>
+    f[<span class="num">0</span>] = <span class="num">1</span>; <span class="com">// 0个人的排列只有1种(什么都不排)</span>
+    <span class="kw">for</span> (<span class="type">int</span> n = <span class="num">1</span>; n <= max_n; n++) {
+        f[n] = <span class="num">0</span>;
+        <span class="com">// 枚举并列第一名的人数 m</span>
+        <span class="kw">for</span> (<span class="type">int</span> m = <span class="num">1</span>; m <= n; m++) {
+            <span class="type">long long</span> temp = (C[n][m] * f[n - m]) % MOD;
+            f[n] = (f[n] + temp) % MOD;
+        }
+    }
+}
+
+<span class="kw">int</span> <span class="func">main</span>() {
+    <span class="func">init</span>(<span class="num">1000</span>);
+    <span class="kw">cout</span> << f[<span class="num">3</span>] << endl; <span class="com">// 3个骑士，答案为 13</span>
+    <span class="kw">return</span> <span class="num">0</span>;
+}</div>
+        <div id="py-knight" class="code-content knight-content">
+MOD = <span class="num">10056</span>
+max_n = <span class="num">1000</span>
+
+<span class="com"># 1. 预处理组合数 C(n, m)</span>
+C = [[<span class="num">0</span>] * (max_n + <span class="num">1</span>) <span class="kw">for</span> _ <span class="kw">in</span> <span class="func">range</span>(max_n + <span class="num">1</span>)]
+<span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(max_n + <span class="num">1</span>):
+    C[i][<span class="num">0</span>] = <span class="num">1</span>
+    <span class="kw">for</span> j <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span>, i + <span class="num">1</span>):
+        C[i][j] = (C[i-<span class="num">1</span>][j-<span class="num">1</span>] + C[i-<span class="num">1</span>][j]) % MOD
+
+<span class="com"># 2. 剥离法核心递推</span>
+f = [<span class="num">0</span>] * (max_n + <span class="num">1</span>)
+f[<span class="num">0</span>] = <span class="num">1</span>  <span class="com"># 0个人的排列只有1种</span>
+
+<span class="kw">for</span> n <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span>, max_n + <span class="num">1</span>):
+    <span class="com"># 枚举并列第一名的人数 m</span>
+    <span class="kw">for</span> m <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span>, n + <span class="num">1</span>):
+        f[n] = (f[n] + C[n][m] * f[n - m]) % MOD
+
+<span class="func">print</span>(f[<span class="num">3</span>])  <span class="com"># 3个骑士，答案为 13</span></div>
+    </div>
+
+
+    <h2>三、奖励关卡：逆推法与期望 DP 入门</h2>
+
+    <p><strong>案件背景：</strong> 系统将抛出 <span class="math-hl">k</span> 次宝物，宝物共有 <span class="math-hl">n</span> 种且每次抛出概率均等。每次你可以选择“吃”或“不吃”。每个宝物都有不同的分数，但有些宝物必须在吃到某些特定宝物后才能吃（即：有前提集合的限制）。如果你采取最优策略，求平均情况下的最大期望得分？</p>
+
+    <div class="illustration">
+        <svg width="700" height="240" viewBox="0 0 700 240">
+            <text x="350" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#283593">顺推的死局 VS 倒推的上帝视角</text>
+
+            <rect x="50" y="50" width="260" height="60" rx="10" fill="#FFEBEE" stroke="#C2185B" stroke-width="2"/>
+            <text x="180" y="75" text-anchor="middle" font-weight="bold" fill="#C2185B">正向推导 (顺推)</text>
+            <text x="180" y="95" text-anchor="middle" font-size="12" fill="#880E4F">不知道未来会掉什么，概率分支爆炸！</text>
+            <path d="M 60 80 Q 150 130 290 80" fill="none" stroke="#C2185B" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arrow-red)"/>
+
+            <text x="350" y="120" font-size="20" fill="#E65100" font-weight="bold">⇄</text>
+
+            <rect x="390" y="50" width="260" height="60" rx="10" fill="#E0F2F1" stroke="#00897B" stroke-width="2"/>
+            <text x="520" y="75" text-anchor="middle" font-weight="bold" fill="#00695C">逆推法 (时光倒流)</text>
+            <text x="520" y="95" text-anchor="middle" font-size="12" fill="#004D40">从最后一轮 (必定为0分) 往回推！</text>
+            <path d="M 640 80 Q 550 130 400 80" fill="none" stroke="#00897B" stroke-width="3" marker-end="url(#arrow-green)"/>
+
+            <rect x="150" y="150" width="400" height="70" rx="10" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+            <text x="350" y="175" text-anchor="middle" font-weight="bold" fill="#E65100">第 i 轮掉落了宝物 l，DP的最优决策：</text>
+            <text x="350" y="200" text-anchor="middle" fill="#BF360C" font-size="14">Max( 不吃 [保留原期望], 吃掉 [产生新状态 + l的分数] )</text>
+
+            <defs>
+                <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#C2185B" />
+                </marker>
+                <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#00897B" />
+                </marker>
+            </defs>
+        </svg>
+    </div>
+
+    <div class="step-box" style="border-color: #26A69A; background-color: #E0F2F1;">
+        <strong>🧠 逆推法核心逻辑：</strong><br>
+        如果从第 1 轮开始顺着推，因为后续会掉落什么宝物全看运气，你当前吃的决策会严重干扰后续的概率计算。这叫“前置宝物依赖的不确定性”。<br><br>
+        但如果我们使用<span class="highlight">倒推法（逆推法）</span>：假设时光已经来到了游戏结束后的第 <span class="math-hl">k+1</span> 轮，此时不管什么状态，因为游戏已经结束，期望得分绝对是 0！<br>
+        我们定义 <span class="var-hl">F[i][j]</span> 表示：当前在第 <span class="math-hl">i</span> 轮，且你包里已经收集到的宝物状态为 <span class="math-hl">j</span>（用二进制“状态压缩”表示集合），从此时算起，到游戏结束你能获得的<strong>最大期望得分</strong>。<br>
+        当我们在第 <span class="math-hl">i</span> 轮面临第 <span class="math-hl">l</span> 种宝物掉落时：<br>
+        👉 <strong>如果不吃：</strong> 你的状态没变，期望等于下一步的期望 <span class="var-hl">F[i+1][j]</span>。<br>
+        👉 <strong>如果吃（且满足前提）：</strong> 你的包里多了一个宝物，状态变成了 <code>j | (1&lt;&lt;(l-1))</code>，期望变成了 <span class="var-hl">F[i+1][新状态] + V[l]</span>。<br>
+        因为你是绝顶聪明的，你一定会取这两种选择中的 <strong>Max 最大值</strong>！
+    </div>
+
+    <div class="formula">
+        F[i][j] += Max( F[i+1][j] , F[i+1][j | (1&lt;&lt;l)] + V[l] ) / n
+    </div>
+
+    <div class="code-container">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="openTab(event, 'cpp-bonus', 'bonus-content')">C++ 奖励关卡(期望DP)核心</button>
+            <button class="tab-btn" onclick="openTab(event, 'py-bonus', 'bonus-content')">Python 奖励关卡(期望DP)核心</button>
+        </div>
+        <div id="cpp-bonus" class="code-content bonus-content active">
+<span class="com">// k轮，n种宝物。sc数组为分数，need数组存前提条件的二进制集合</span>
+<span class="com">// F[105] 存储期望值</span>
+
+<span class="kw">for</span> (<span class="type">int</span> i = k; i >= <span class="num">1</span>; i--) {            <span class="com">// 1. 时间倒流：从第 k 轮倒推至第 1 轮</span>
+    <span class="kw">for</span> (<span class="type">int</span> j = <span class="num">0</span>; j < (<span class="num">1</span> << n); j++) {  <span class="com">// 2. 枚举当前拥有的宝物集合 j (状态压缩)</span>
+        F[i][j] = <span class="num">0</span>;
+        <span class="com">// 3. 因为抛出 n 种宝物的概率是均等的，所以累加后除以 n</span>
+        <span class="kw">for</span> (<span class="type">int</span> l = <span class="num">1</span>; l <= n; l++) { 
+            <span class="com">// 位运算检查：如果 j 中已经包含了 need[l] 需求集合的所有 1</span>
+            <span class="kw">if</span> ((j & need[l]) == need[l]) { 
+                <span class="com">// DP的最优化决策：比较“不吃”和“吃掉”取最大值</span>
+                F[i][j] += <span class="func">max</span>(F[i+<span class="num">1</span>][j], F[i+<span class="num">1</span>][j | (<span class="num">1</span> << (l-<span class="num">1</span>))] + sc[l]);
+            } <span class="kw">else</span> {
+                <span class="com">// 条件不满足，被迫浪费机会，只能不吃</span>
+                F[i][j] += F[i+<span class="num">1</span>][j];
+            }
+        }
+        F[i][j] /= n; <span class="com">// 计算期望均值</span>
+    }
+}
+<span class="kw">cout</span> << F[<span class="num">1</span>][<span class="num">0</span>] << endl; <span class="com">// 游戏刚开始时（第1轮），什么宝物都没有（状态0）的最大期望</span></div>
+        <div id="py-bonus" class="code-content bonus-content">
+<span class="com"># k轮，n种宝物。sc列表为分数，need列表存前提条件的二进制集合</span>
+<span class="com"># F 矩阵存储期望值</span>
+
+<span class="kw">for</span> i <span class="kw">in</span> <span class="func">range</span>(k, <span class="num">0</span>, -<span class="num">1</span>):                 <span class="com"># 1. 时间倒流：从第 k 轮倒推至第 1 轮</span>
+    <span class="kw">for</span> j <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span> << n):               <span class="com"># 2. 枚举当前拥有的宝物集合 j (状态压缩)</span>
+        F[i][j] = <span class="num">0</span>
+        <span class="com"># 3. 抛出 n 种宝物概率均等，累加后除以 n</span>
+        <span class="kw">for</span> l <span class="kw">in</span> <span class="func">range</span>(<span class="num">1</span>, n + <span class="num">1</span>):
+            <span class="com"># 位运算检查：如果 j 中已经包含了 need[l] 需求的所有 1</span>
+            <span class="kw">if</span> (j & need[l]) == need[l]:
+                <span class="com"># DP的最优化决策：比较“不吃”和“吃掉”取最大值</span>
+                F[i][j] += <span class="func">max</span>(F[i+<span class="num">1</span>][j], F[i+<span class="num">1</span>][j | (<span class="num">1</span> << (l-<span class="num">1</span>))] + sc[l])
+            <span class="kw">else</span>:
+                <span class="com"># 条件不满足，被迫不吃</span>
+                F[i][j] += F[i+<span class="num">1</span>][j]
+                
+        F[i][j] /= n  <span class="com"># 计算期望均值</span>
+
+<span class="func">print</span>(F[<span class="num">1</span>][<span class="num">0</span>])  <span class="com"># 游戏刚开始时（第1轮），状态为0的最大期望</span></div>
+    </div>
+
+
+    <div class="note-box" style="border-left-color: #E65100; background-color: #FFF3E0; margin-top: 50px;">
+        <h3 style="margin-top: 0; color: #E65100; border-bottom-color: #E65100;">🏁 结课大盘点：寻找递推公式的终极方法论</h3>
+        <p>递推与动态规划是信奥赛中最能拉开分数差距的核心板块。在面对千奇百怪的题目时，请死死记住以下“解题三步法”：</p>
+        <ul style="line-height: 2;">
+            <li><span class="text-teal">【第一步：看数据范围猜维数】</span> —— <span class="math-hl">n &le; 10<sup>5</sup></span> 通常是一维；<span class="math-hl">n &le; 1000</span> 是二维（如背包、棋盘）；如果 <span class="math-hl">n &le; 20</span>，大概率是<strong>状态压缩 DP</strong>（把集合变成二进制整数）。</li>
+            <li><span class="text-purple">【第二步：找准起点（基准条件）】</span> —— 没有初始值，公式就是无本之木。先手动推导规模为 0, 1, 2 时的边界值。特别注意某些概率期望题，终点才是确定的基准值（比如结束时得分为 0），此时必须<strong>倒推</strong>！</li>
+            <li><span class="text-blue">【第三步：狠抓“最后一步”（定关系）】</span> —— 不要想整个过程多复杂，只去想：<strong>“当前这个局面，是由上一秒的哪几种动作演变而来的？”</strong> 比如上楼梯的最后一步跨几级、汉诺塔最后一堆怎么移、赛马怎么剥离出第一名。理清最后一步，引入 <code>max/min</code> 进行抉择，状态转移方程就迎刃而解！</li>
+        </ul>
+    </div>
+
+    <div class="signature">
+        —— 扣哒世界教研团队 ——
+    </div>
+
+</div>
+
+<script>
+function openTab(evt, tabName, contentClass) {
+    var contents = document.getElementsByClassName(contentClass);
+    for (var i = 0; i < contents.length; i++) {
+        contents[i].style.display = "none";
+        contents[i].classList.remove("active");
+    }
+    var links = evt.currentTarget.parentElement.getElementsByClassName("tab-btn");
+    for (var i = 0; i < links.length; i++) {
+        links[i].classList.remove("active");
+    }
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.classList.add("active");
+}
+</script>
+
+</body>
+</html>
