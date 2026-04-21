@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 基础挑战：函数的返回值</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 恢复为原来的紫/灰清新配色 */
+            --primary-color: #6C5CE7; 
+            --secondary-color: #A29BFE;
+            --bg-color: #DFE6E9;     
+            --card-bg: #FFFFFF;
+            --text-color: #2D3436;   
+            --correct-color: #00b894;
+            --wrong-color: #d63031;  
+            --accent-yellow: #fdcb6e;
+            
+            /* 代码高亮 */
+            --code-bg: #2d2d2d;
+            --code-text: #ccc;
+            --code-kw: #cc99cd;
+            --code-fn: #6196cc;
+            --code-num: #f08d49;
+            --code-str: #7ec699;
+            --code-cmt: #999;
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#b2bec3 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 900px; /* 【修改点】加宽容器以防止选项换行 */
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--secondary-color);
+            overflow: hidden;
+        }
+
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            box-shadow: 0 4px 0 #e1b12c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .question-area {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        
+        .question-area h2 {
+            color: var(--text-color);
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', monospace;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            text-align: left;
+            font-size: 1.05rem; /* 稍微调大代码字体 */
+            border-left: 5px solid var(--secondary-color);
+        }
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            .options-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .option-btn {
+            background: white;
+            border: 3px solid #ecf0f1;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1.05rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: left;
+            position: relative;
+            box-shadow: 0 5px 0 #bdc3c7;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--secondary-color);
+            transform: translateY(-3px);
+        }
+
+        .option-btn:active:not([disabled]) {
+            top: 5px;
+            box-shadow: 0 0 0 #bdc3c7;
+        }
+        
+        .option-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+            box-shadow: 0 5px 0 #00965e;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+            box-shadow: 0 5px 0 #c0392b;
+        }
+
+        .feedback-section {
+            display: none;
+            text-align: left;
+            background: #f1f2f6;
+            padding: 25px;
+            border-radius: 18px;
+            margin-top: 30px;
+            border-left: 6px solid;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+
+        .next-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            float: right;
+            box-shadow: 0 5px 0 #5649c0;
+        }
+
+        .end-screen {
+            display: none;
+            padding: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 10</span>
+                <div class="score-box">⭐ <span id="score">0</span></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div style="font-weight: 600; font-size: 1.2rem; margin-bottom: 10px;" id="feedback-title"></div>
+                <div style="color: #636e72; line-height: 1.7;" id="explanation-text"></div>
+                <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+            </div>
+        </div>
+
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                q: "什么是函数的“返回值”(Return Value)？",
+                options: ["A. 英雄的移动速度", "B. 函数执行完任务后带回来的结果", "C. 程序的错误代码", "D. 一种特殊的变量类型"],
+                correct: 1,
+                desc: "返回值就是函数执行完任务后，带回来的结果。就像猫头鹰去商店买冰淇淋，飞回来时爪子里抓着的冰淇淋。"
+            },
+            {
+                q: "在 C++ 中，把结果打包并发送回调用位置（像快递动作一样）的关键字是？",
+                options: ["A. auto", "B. if", "C. void", "D. return"],
+                correct: 3,
+                desc: "return 关键字就是把结果打包快递回来的动作！"
+            },
+            {
+                q: "当函数执行到 return 语句时，会发生什么？",
+                options: ["A. 暂停 1 秒钟", "B. 重新从头开始执行", "C. 函数立即结束，后面的代码不再执行", "D. 程序崩溃报错"],
+                correct: 2,
+                desc: "Return 是终点，一旦执行 return，函数就会立即结束下班，后面的代码都不会执行。"
+            },
+            {
+                q: "观察以下包含多个 return 分支的代码，如果传入的数字 x 是 10，函数会返回什么结果？",
+                code: "auto checkNumber(int x) {\n    if (x > 5) {\n        return true;\n    }\n    return false;\n}",
+                options: ["A. true", "B. false", "C. 10", "D. 5"],
+                correct: 0, /* 【修改点】考察函数内部多条件分支和提前return机制 */
+                desc: "因为传入的 x 是 10，满足参数大于 5 的判断条件，因此进入分支执行 return true; 随后函数立即结束返回。"
+            },
+            {
+                q: "如果想把 nearestEnemyDistance() 函数带回来的距离结果保存到一个变量里，正确的写法是？",
+                code: "// 获取并保存距离",
+                options: ["A. auto dist = nearestEnemyDistance();", "B. nearestEnemyDistance() = dist;", "C. return nearestEnemyDistance();", "D. dist == nearestEnemyDistance();"],
+                correct: 0,
+                desc: "我们需要把函数执行后的返回值，赋值（使用单等号 =）给左边新创建的变量 dist。"
+            },
+            {
+                q: "在判断敌人是否在攻击范围内时，返回 true 或 false 的 inAttackRange(enemy) 函数通常放在哪里使用？",
+                options: ["A. 放在 main 函数的最开头", "B. 作为 if 语句的判断条件", "C. 放在 return 0; 之后", "D. 只能单独写一行"],
+                correct: 1,
+                desc: "返回布尔值（true/false）的函数，非常适合直接放在 if 的括号里作为判断条件，例如 if (inAttackRange(enemy))。"
+            },
+            {
+                q: "isCoinClose 函数设定如果金币距离小于 20 米就返回 true。如果当前金币距离是 25 米，它会返回什么？",
+                options: ["A. true", "B. false", "C. 20", "D. 25"],
+                correct: 1,
+                desc: "因为 25 不小于 20，小于 20 的条件不成立，所以程序会跳过 true 的分支，最终返回 false。"
+            },
+            {
+                q: "关于函数的返回值概念，以下哪种说法是正确的？",
+                options: ["A. 一个函数里面只能写一个 return 语句", "B. 函数可以通过 return 返回不同类型的数据（如距离或布尔值等）", "C. return 后面必须跟着一个数字", "D. 函数执行完后，不需要 return 也能自动带回正确结果"],
+                correct: 1, /* 【修改点】考察对于函数返回值类型的通用理解 */
+                desc: "函数可以返回坐标距离（浮点数）或者判断结果（布尔值）。而且配合 if 判断，一个函数内部可以根据不同情况有多个 return 分支。"
+            },
+            {
+                q: "如果一个本该返回结果的函数里，忘记写 return 语句，通常会导致什么结果？",
+                options: ["A. 自动返回 true", "B. 自动返回 0", "C. 默认返回 void(无) 或产生不可预测的垃圾值", "D. 电脑死机"],
+                correct: 2,
+                desc: "大魔法师总结过：如果没写 return，函数默认会返回 void (无) 或内存中的垃圾值，这会导致程序出错。"
+            },
+            {
+                q: "阅读以下代码，如果英雄距离敌人为 2 米，这个函数会返回什么？",
+                code: "auto checkTarget(auto enemy) {\n    if (hero.distanceTo(enemy) < 5) {\n        return true;\n    }\n    return false;\n}",
+                options: ["A. true", "B. false", "C. 2", "D. 5"],
+                correct: 0,
+                desc: "因为 2 小于 5，进入 if 条件内部并遇到了 return true;，函数立即返回结果并结束。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        function loadQuestion() {
+            answered = false;
+            document.getElementById('feedback-area').style.display = 'none';
+            const data = quizData[currentQuestion];
+            document.getElementById('level-indicator').innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            document.getElementById('progress-bar').style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            document.getElementById('score').innerText = score;
+
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                let codeHtml = escapeHtml(data.code)
+                    .replace(/\b(int|return|void|auto|if|else|while|float|true|false)\b/g, '<span class="kw">$1</span>')
+                    .replace(/\b(hero|enemy|target|dist|x)\b/g, '<span class="str">$1</span>')
+                    .replace(/\b(\d+)\b/g, '<span class="num">$1</span>')
+                    .replace(/(&quot;.*?&quot;)/g, '<span class="str">$1</span>')
+                    .replace(/(\/\/.*)/g, '<span class="cmt">$1</span>');
+                html += `<div class="code-block">${codeHtml}</div>`;
+            }
+            document.getElementById('question-container').innerHTML = html;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+            } else {
+                btnElement.classList.add('wrong');
+                allBtns[data.correct].classList.add('correct');
+            }
+            showFeedback(selectedIndex === data.correct, data.desc);
+        }
+
+        function showFeedback(isCorrect, desc) {
+            const area = document.getElementById('feedback-area');
+            area.style.display = 'block';
+            area.className = 'feedback-section ' + (isCorrect ? 'correct' : 'wrong');
+            document.getElementById('feedback-title').innerText = isCorrect ? "🎉 回答正确！" : "❌ 回答错误";
+            document.getElementById('explanation-text').innerText = desc;
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function showEndScreen() {
+            document.getElementById('quiz-view').style.display = 'none';
+            const end = document.getElementById('end-screen');
+            end.style.display = 'block';
+            end.innerHTML = `<h1 style="color:var(--primary-color);">测试完成！</h1><div style="font-size:3rem; margin:20px;">⭐ 得分: ${score}</div><div style="color:#636e72; margin-bottom: 20px;">你已经掌握了 C++ 返回值的核心概念！</div><button class="next-btn" onclick="location.reload()" style="float:none;">重新挑战</button>`;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>
