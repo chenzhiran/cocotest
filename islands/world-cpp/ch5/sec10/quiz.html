@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 基础挑战：属性与流程控制</title>
+    <style>
+        /* --- 基础设置 (RPG Magic Book Theme) --- */
+        :root {
+            --bg-wood: #5d4037;        /* 木纹深色 */
+            --panel-bg: #3e2723;       /* 面板深褐 */
+            --paper-bg: #efebe9;       /* 羊皮纸 */
+            --hp-red: #e53935;         /* 生命红 */
+            --mana-blue: #1e88e5;      /* 魔法蓝 */
+            --gold-yellow: #fbc02d;    /* 金币黄 */
+            --time-purple: #8e24aa;    /* 时间紫 */
+            --text-main: #3e2723;
+            --text-light: #d7ccc8;
+            --correct-color: #43a047;
+            --wrong-color: #d32f2f;
+            
+            /* C++ 代码高亮 (Earth Theme) */
+            --code-bg: #263238;
+            --code-fg: #eceff1;
+            --tok-kw: #ff8a80;         /* 关键字 */
+            --tok-func: #82b1ff;       /* 函数 */
+            --tok-prop: #ffcc80;       /* 属性 */
+            --tok-num: #a5d6a7;        /* 数字 */
+            --tok-var: #80cbc4;        /* 变量 */
+            --tok-op: #b0bec5;         /* 运算符 */
+            --tok-cm: #546e7a;         /* 注释 */
+            --tok-str: #ce93d8;        /* 字符串 */
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', 'Consolas', sans-serif;
+            background-color: var(--bg-wood);
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 100px 100px;
+            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* 漂浮金币动画 */
+        .floating-coin {
+            position: absolute; font-size: 24px; opacity: 0.3;
+            animation: floatCoin 6s infinite ease-in-out; pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes floatCoin {
+            0% { transform: translateY(100vh) rotate(0deg); }
+            100% { transform: translateY(-10vh) rotate(360deg); }
+        }
+
+        /* --- 游戏容器 --- */
+        .game-container {
+            width: 95%; max-width: 900px; 
+            background: var(--panel-bg); border-radius: 15px;
+            border: 8px solid #bcaaa4;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 30px 60px rgba(0,0,0,0.7);
+            position: relative; z-index: 10;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 顶部状态栏 */
+        .status-bar {
+            height: 60px; background: #212121; display: flex; justify-content: space-between;
+            align-items: center; padding: 0 30px; border-bottom: 4px solid #bcaaa4;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+        }
+        .map-badge {
+            background: var(--gold-yellow); color: #3e2723;
+            padding: 5px 15px; border-radius: 5px; font-weight: bold; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); font-size: 15px;
+        }
+        .score-display {
+            color: white; font-family: monospace; font-size: 20px; font-weight: bold;
+        }
+        .score-display span { color: var(--gold-yellow); }
+
+        /* 进度条 */
+        .progress-bar { height: 8px; background: #5d4037; width: 100%; position: relative; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--hp-red), var(--gold-yellow)); width: 0%; transition: width 0.4s; }
+
+        /* --- 核心测试区域 (羊皮纸) --- */
+        .quiz-content {
+            padding: 40px 50px;
+            background: var(--paper-bg);
+            background-image: url('data:image/svg+xml;utf8,<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.1"/></svg>');
+            flex: 1;
+        }
+
+        .question-area h2 {
+            color: var(--text-main); font-size: 1.4rem; line-height: 1.6; margin-top: 0; margin-bottom: 20px;
+            font-family: 'Georgia', serif;
+        }
+
+        /* C++ 代码块优化 (Earth Theme) */
+        .code-box {
+            background: var(--code-bg); color: var(--code-fg); padding: 15px 20px; border-radius: 8px;
+            font-family: 'Consolas', 'Fira Code', monospace; font-size: 1.05rem; margin: 20px 0;
+            border-left: 5px solid var(--gold-yellow); box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+            white-space: pre-wrap; line-height: 1.5;
+            font-variant-ligatures: none; /* 关闭连字 */
+        }
+        .k { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .p { color: var(--tok-prop); font-weight: bold; } 
+        .n { color: var(--tok-num); } 
+        .v { color: var(--tok-var); } 
+        .o { color: var(--tok-op); } 
+        .c { color: var(--tok-cm); font-style: italic; }
+        .str { color: var(--tok-str); }
+
+        /* 选项按钮 */
+        .options-grid {
+            display: grid; grid-template-columns: 1fr; gap: 15px;
+        }
+        @media (min-width: 600px) { .options-grid { grid-template-columns: 1fr 1fr; } }
+
+        .option-btn {
+            background: #fff; border: 2px solid #bcaaa4; border-radius: 10px;
+            padding: 16px 20px; font-size: 1.05rem; color: var(--text-main);
+            cursor: pointer; transition: all 0.2s; text-align: left;
+            font-family: inherit; font-weight: 600; box-shadow: 0 4px 0 #d7ccc8;
+        }
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--gold-yellow); background: #fffde7;
+            transform: translateY(-2px); box-shadow: 0 6px 0 #d7ccc8;
+        }
+        .option-btn:active:not([disabled]) { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+        
+        .option-btn.correct {
+            background: #e8f5e9; border-color: var(--correct-color); color: #1b5e20; box-shadow: 0 4px 0 #a5d6a7;
+        }
+        .option-btn.wrong {
+            background: #ffebee; border-color: var(--wrong-color); color: #b71c1c; box-shadow: 0 4px 0 #ef9a9a;
+        }
+
+        /* 解析区域 */
+        .feedback-section {
+            display: none; text-align: left; background: rgba(0,0,0,0.05);
+            padding: 20px 25px; border-radius: 10px; margin-top: 25px;
+            border-left: 5px solid; 
+        }
+        .feedback-section.correct { border-color: var(--correct-color); background: #e8f5e9; }
+        .feedback-section.wrong { border-color: var(--wrong-color); background: #ffebee; }
+
+        .feedback-title { font-weight: bold; font-size: 1.2rem; margin-bottom: 8px; }
+        .correct .feedback-title { color: #2e7d32; }
+        .wrong .feedback-title { color: #c62828; }
+        .explanation-text { color: #4e342e; line-height: 1.6; }
+
+        /* 下一题按钮 */
+        .next-btn {
+            background: var(--gold-yellow); color: #3e2723; border: none;
+            padding: 12px 35px; border-radius: 30px; font-size: 1.1rem; font-weight: bold;
+            cursor: pointer; margin-top: 20px; float: right; transition: all 0.2s;
+            box-shadow: 0 4px 0 #f9a825;
+        }
+        .next-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .next-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        /* 结束画面 */
+        .end-screen { display: none; padding: 40px 0; text-align: center; }
+        .end-title { font-size: 2.5rem; color: #3e2723; margin-bottom: 10px; font-family: 'Georgia', serif; }
+        .end-score-box {
+            background: var(--gold-yellow); border: 4px solid #f9a825;
+            color: #3e2723; padding: 20px 40px; border-radius: 20px; display: inline-block;
+            margin: 30px 0; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .end-score { font-size: 4rem; font-weight: bold; line-height: 1; }
+    </style>
+</head>
+<body>
+
+    <script>
+        for(let i=0; i<12; i++) {
+            let s = document.createElement('div');
+            s.className = 'floating-coin';
+            s.innerText = '🪙';
+            s.style.left = Math.random() * 100 + 'vw';
+            s.style.top = Math.random() * 100 + 'vh';
+            s.style.animationDelay = Math.random() * 6 + 's';
+            document.body.appendChild(s);
+        }
+    </script>
+
+    <div class="game-container">
+        <div class="status-bar">
+            <div class="map-badge" id="level-indicator">关卡 01 / 10</div>
+            <div class="score-display">💰 <span id="score">0</span></div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-bar-fill"></div>
+        </div>
+
+        <div class="quiz-content" id="quiz-view">
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;">
+                    <button class="next-btn" onclick="nextQuestion()">下一题 ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="quiz-content end-screen" id="end-screen"></div>
+    </div>
+
+    <script>
+        // 知识点：定义函数、health、maxHealth、time、gold累加、break
+        const quizData = [
+            {
+                q: "想要把代码中重复的动作打包起来，起一个名字方便随时调用，应该使用什么结构？",
+                options: ["A. 循环 (While)", "B. 定义函数 (Function)", "C. 判断 (If)", "D. 变量 (Variable)"],
+                correct: 1,
+                desc: "将重复的动作打包成一个函数，可以让主程序的代码更整洁，也方便反复调用。"
+            },
+            {
+                q: "在 C++ 中，如果你定义的是一个只负责执行动作、不需要带回任何结果的函数，应该使用哪个关键字开头？",
+                code: "____ moveRight() {\n    hero.moveXY(hero.pos.x + 10, hero.pos.y);\n}",
+                options: ["A. int", "B. float", "C. void", "D. return"],
+                correct: 2,
+                desc: "void 意为“空/无”，表示这个函数执行完就结束，不会产生（返回）任何数值。"
+            },
+            {
+                q: "在角色属性中，hero.maxHealth 代表什么含义？",
+                options: ["A. 英雄当前的生命值", "B. 英雄的魔法值上限", "C. 敌人的生命值", "D. 英雄满血时的生命值上限"],
+                correct: 3,
+                desc: "health 是当前生命值，而 maxHealth 永远是你满血状态下的生命值上限。"
+            },
+            {
+                q: "如果想用代码计算出英雄的“半血”红线阈值（一半生命值），正确的写法是？",
+                code: "float limit = ______________;",
+                options: ["A. hero.maxHealth * 2", "B. hero.health / 2", "C. hero.maxHealth / 2", "D. hero.health - 50"],
+                correct: 2,
+                desc: "半血是基于“上限”的一半，所以用 maxHealth 除以 2 最准确。"
+            },
+            {
+                q: "魔法师秘籍提到：“time 像闹钟，分段做任务”。hero.time 属性记录的究竟是什么？",
+                options: ["A. 现实世界的时间", "B. 距离游戏结束倒计时", "C. 关卡开始后经过的秒数", "D. 英雄移动的速度"],
+                correct: 2,
+                desc: "hero.time 记录的是从你点击运行开始，当前关卡已经流逝的游戏时间（秒）。"
+            },
+            {
+                q: "观察以下利用时间分段控制英雄行动的代码。当游戏进行到第 20 秒时，英雄会做什么？",
+                code: "if (hero.time < 10) {\n    hero.attack(enemy);\n} else if (hero.time < 35) {\n    hero.moveXY(30, 40); // 收集资源\n} else {\n    hero.attack(\"Boss\");\n}",
+                options: ["A. 全力攻击普通敌人", "B. 移动收集资源", "C. 攻击 Boss", "D. 站在原地不动"],
+                correct: 1,
+                desc: "20 秒不满足小于 10 的条件，但满足小于 35 的条件，所以程序会执行 else if 里的收集资源逻辑。"
+            },
+            {
+                q: "获取地上某枚金币的具体价值（金币1点，银币2点，宝石更多），应该读取该物品的哪个属性？",
+                options: ["A. item.gold", "B. item.value", "C. item.health", "D. item.price"],
+                correct: 1,
+                desc: "每个硬币/宝石对象都有一个 .value 属性，代表它值多少钱。"
+            },
+            {
+                q: "如果你定义了一个变量 totalGold = 0;，想要在每次捡到金币时把价值累加到这个变量里，正确的代码是？",
+                code: "auto coin = hero.findNearestItem();\n// 累加金币价值\n____________________",
+                options: ["A. totalGold = coin.value;", "B. totalGold == coin.value;", "C. totalGold += coin.value;", "D. totalGold + coin.value;"],
+                correct: 2,
+                desc: "+= 运算符表示把右边的值（coin.value）加到左边的变量（totalGold）原有的基础上。"
+            },
+            {
+                q: "当你使用 while(true) 进行无限循环打工时，如果存款目标（25 金币）已经达成，想立刻结束并跳出循环，应该用什么关键字？",
+                code: "if (totalGold >= 25) {\n    _____; // 紧急出口\n}",
+                options: ["A. return", "B. stop", "C. void", "D. break"],
+                correct: 3,
+                desc: "break 就是循环的紧急出口！一旦执行 break，程序会立刻跳出当前的 while 循环向下执行。"
+            },
+            {
+                q: "关于本章核心属性与流程控制，以下哪句“大师秘籍”是【错误】的？",
+                options: ["A. 定义不需要返回值的函数用 void。", "B. health 是当前血量，一旦归零就失败了。", "C. time 属性可以用来精确控制在不同阶段做不同的事。", "D. 如果在一个循环里使用了 break，程序会直接报错崩溃。"],
+                correct: 3,
+                desc: "break 是合法且非常有用的控制语句，用于主动结束循环，绝对不会导致报错。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        function loadQuestion() {
+            answered = false;
+            document.getElementById('feedback-area').style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            document.getElementById('level-indicator').innerText = `关卡 0${currentQuestion + 1}`.slice(-6) + ` / ${quizData.length}`;
+            document.getElementById('progress-bar-fill').style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            document.getElementById('score').innerText = score;
+
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                let codeHtml = escapeHtml(data.code)
+                    .replace(/\b(int|float|void|auto|if|else|while|break|return|true|false)\b/g, '<span class="k">$1</span>')
+                    .replace(/\b(attack|moveXY|say|findNearestItem)\b/g, '<span class="f">$1</span>')
+                    .replace(/\b(hero|enemy|coin|item|totalGold|limit|x|y)\b/g, '<span class="v">$1</span>')
+                    .replace(/(\.health|\.maxHealth|\.time|\.value|\.pos|\.x|\.y)\b/g, '<span class="p">$1</span>')
+                    .replace(/\b(\d+)\b/g, '<span class="n">$1</span>')
+                    .replace(/(&quot;.*?&quot;)/g, '<span class="str">$1</span>')
+                    .replace(/(\/\/.*)/g, '<span class="c">$1</span>');
+                html += `<div class="code-box">${codeHtml}</div>`;
+            }
+            document.getElementById('question-container').innerHTML = html;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                document.getElementById('score').innerText = score;
+            } else {
+                btnElement.classList.add('wrong');
+                allBtns[data.correct].classList.add('correct');
+            }
+            showFeedback(selectedIndex === data.correct, data.desc);
+        }
+
+        function showFeedback(isCorrect, desc) {
+            const area = document.getElementById('feedback-area');
+            area.style.display = 'block';
+            area.className = 'feedback-section ' + (isCorrect ? 'correct' : 'wrong');
+            document.getElementById('feedback-title').innerText = isCorrect ? "🌟 回答正确！" : "⚔️ 回答错误";
+            document.getElementById('explanation-text').innerText = desc;
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function showEndScreen() {
+            document.getElementById('quiz-view').style.display = 'none';
+            document.getElementById('progress-bar-fill').style.width = `100%`;
+            
+            const end = document.getElementById('end-screen');
+            end.style.display = 'block';
+            
+            let message = score === quizData.length * 100 ? "大魔法师认证通过！属性与控制流已精通！" : "干得不错！可以回顾一下大师秘籍再挑战一次。";
+            
+            end.innerHTML = `
+                <div class="end-title">🏅 训练结束</div>
+                <div class="end-score-box">
+                    <div style="font-size:1.2rem; margin-bottom:10px;">获得总金币</div>
+                    <div class="end-score">🪙 ${score}</div>
+                </div>
+                <div style="color:#4e342e; font-size:1.2rem; margin-bottom: 30px;">${message}</div>
+                <button class="next-btn" onclick="location.reload()" style="float:none; background:#e53935; color:white; box-shadow: 0 4px 0 #b71c1c;">🔄 重新挑战</button>
+            `;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        // 启动测试
+        loadQuestion();
+    </script>
+</body>
+</html>
