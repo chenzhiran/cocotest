@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 魔法运算挑战赛</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 (延续 quiz.html 风格) --- */
+        :root {
+            --primary-color: #9b59b6; /* 主色调：魔法紫 */
+            --secondary-color: #8e44ad;
+            --bg-color: #f0e6d2;     /* 羊皮纸色背景 */
+            --card-bg: #FFFFFF;
+            --text-color: #2D3436;
+            --correct-color: #00b894;
+            --wrong-color: #d63031;
+            --accent-yellow: #f1c40f;
+            
+            --code-bg: #282c34;
+            --code-text: #abb2bf;
+            --code-kw: #c678dd; 
+            --code-fn: #61afef; 
+            --code-num: #d19a66; 
+            --code-str: #98c379; 
+            --code-cmt: #7f848e;
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#d7ccc8 10%, transparent 10%);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 750px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--primary-color);
+            overflow: hidden;
+        }
+
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #fff;
+            box-shadow: 0 4px 0 #d4ac0d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            transition: width 0.6s ease;
+        }
+
+        .question-area { text-align: left; margin-bottom: 30px; }
+        .question-area h2 { color: var(--text-color); font-size: 1.3rem; line-height: 1.6; }
+
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', monospace;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            border-left: 5px solid var(--primary-color);
+        }
+        .kw { color: var(--code-kw); }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 600px) { .options-grid { grid-template-columns: 1fr 1fr; } }
+
+        .option-btn {
+            background: white; border: 3px solid #ecf0f1; padding: 18px;
+            border-radius: 15px; font-size: 1rem; cursor: pointer;
+            transition: all 0.2s; font-weight: 600; text-align: left;
+            box-shadow: 0 4px 0 #bdc3c7;
+        }
+        .option-btn:hover:not([disabled]) { border-color: var(--primary-color); transform: translateY(-2px); }
+        .option-btn.correct { background: var(--correct-color); color: white; border-color: var(--correct-color); box-shadow: 0 4px 0 #00965e; }
+        .option-btn.wrong { background: var(--wrong-color); color: white; border-color: var(--wrong-color); box-shadow: 0 4px 0 #c0392b; }
+
+        .feedback-section {
+            display: none; text-align: left; background: #f9f9f9;
+            padding: 20px; border-radius: 15px; margin-top: 25px;
+            border-left: 6px solid; animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+
+        .next-btn {
+            background: var(--primary-color); color: white; border: none;
+            padding: 10px 30px; border-radius: 50px; cursor: pointer;
+            float: right; margin-top: 15px; font-weight: 600;
+        }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10) } to { opacity: 1; transform: translateY(0) } }
+        .confetti { position: absolute; width: 10px; height: 10px; z-index: 10; animation: fall 2s linear forwards; }
+        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+        .end-screen { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 10</span>
+                <div class="score-box">✨ <span id="score">0</span></div>
+            </div>
+            <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+            <div class="feedback-section" id="feedback-area">
+                <div id="feedback-title" style="font-weight:bold; margin-bottom:10px;"></div>
+                <div id="explanation-text" style="color:#666; font-size:0.95rem;"></div>
+                <button class="next-btn" onclick="nextQuestion()">继续挑战 ➔</button>
+            </div>
+        </div>
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                q: "在 C++ 魔法中，要把 \"Hello\" 和名字变量拼接，应该使用哪个符号？",
+                options: ["A. &", "B. +", "C. #", "D. ->"],
+                correct: 1,
+                desc: "就像拼积木一样，C++ 使用 '+' 号来连接两个字符串。"
+            },
+            {
+                q: "如果执行下面的代码，英雄会说什么？",
+                code: "auto potions = 5;\nhero.say(\"我有 \" + potions + \" 瓶药水\");",
+                options: ["A. 我有 potions 瓶药水", "B. 我有 5 瓶药水", "C. 报错，不能加数字", "D. 我有 5"],
+                correct: 1,
+                desc: "CodeCombat 的 C++ 环境会自动将数字转换成字符串并完成拼接。"
+            },
+            {
+                q: "请问 10 / 4 在魔法运算中的结果最接近哪一个？",
+                options: ["A. 2.5", "B. 2", "C. 104", "D. 0.4"],
+                correct: 0,
+                desc: "在处理除法时，如果使用 float 或 auto，可以得到带小数的结果 2.5。"
+            },
+            {
+                q: "如果你想让电脑帮你自动猜测变量的类型，应该使用哪个关键字？",
+                code: "____ result = hero.getSecret();",
+                options: ["A. int", "B. float", "C. auto", "D. secret"],
+                correct: 2,
+                desc: "auto 是一个万能魔法关键字，它会根据右边的值自动推断变量类型。"
+            },
+            {
+                q: "观察代码，ans 的最终结果是多少？",
+                code: "auto ans = 2 + 3 * 4;",
+                options: ["A. 20", "B. 14", "C. 9", "D. 24"],
+                correct: 1,
+                desc: "魔法规则是『先乘除，后加减』。先算 3*4=12，再加 2 等于 14。"
+            },
+            {
+                q: "如果想要先计算 10 - 2，再乘以 5，代码应该怎么写？",
+                options: ["A. 10 - 2 * 5", "B. (10 - 2) * 5", "C. 10 - (2 * 5)", "D. [10 - 2] * 5"],
+                correct: 1,
+                desc: "圆括号 () 的优先级最高，可以改变计算的顺序。"
+            },
+            {
+                q: "关于 int 和 float 两种盒子，描述正确的是：",
+                options: ["A. int 存小数，float 存整数", "B. 都只能存整数", "C. int 存整数，float 存小数", "D. float 是存魔法咒语的"],
+                correct: 2,
+                desc: "int 代表 Integer (整数)，float 代表 Floating-point (浮点数/小数)。"
+            },
+            {
+                q: "在『友和敌』关卡中，要把名字和口号拼接，哪种写法是正确的？",
+                options: ["A. say(\"Go! \", name)", "B. say(\"Go! \" + name)", "C. say(\"Go! \" . name)", "D. say(\"Go! \" & name)"],
+                correct: 1,
+                desc: "记住：字符串拼接在 C++ 中始终使用 '+' 号。"
+            },
+            {
+                q: "下面哪个符号在 C++ 中代表乘法？",
+                options: ["A. x", "B. ·", "C. *", "D. ^"],
+                correct: 2,
+                desc: "计算机中使用星号 '*' 来表示乘法运算。"
+            },
+            {
+                q: "在 C++ 魔法书的末尾，关于『分号』的提示是什么？",
+                options: ["A. 可加可不加", "B. 只有第一行需要加", "C. 每一行指令结束都必须加", "D. 只有 return 后面要加"],
+                correct: 2,
+                desc: "分号 ';' 是 C++ 指令的终点，漏掉它会导致魔法（程序）失效！"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const levelIndicator = document.getElementById('level-indicator');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const explanationText = document.getElementById('explanation-text');
+
+        function loadQuestion() {
+            answered = false;
+            feedbackArea.style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            levelIndicator.innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            progressBar.style.width = `${(currentQuestion / quizData.length) * 100}%`;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                let codeHtml = data.code.replace(/(".*?")/g, '<span class="str">$1</span>')
+                                        .replace(/(auto|int|float|return)/g, '<span class="kw">$1</span>')
+                                        .replace(/(\d+)/g, '<span class="num">$1</span>')
+                                        .replace(/(\/\/.*)/g, '<span class="cmt">$1</span>');
+                html += `<div class="code-block">${codeHtml}</div>`;
+            }
+            questionContainer.innerHTML = html;
+
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(idx, btn) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = optionsContainer.querySelectorAll('.option-btn');
+            allBtns.forEach(b => b.disabled = true);
+
+            if (idx === data.correct) {
+                btn.classList.add('correct');
+                score += 100;
+                scoreDisplay.innerText = score;
+                showFeedback(true, "🌟 魔法生效！", data.desc);
+            } else {
+                btn.classList.add('wrong');
+                allBtns[data.correct].classList.add('correct');
+                showFeedback(false, "🔮 魔法偏移...", data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            feedbackArea.className = 'feedback-section ' + (isCorrect ? 'correct' : 'wrong');
+            feedbackTitle.innerText = title;
+            explanationText.innerText = desc;
+            feedbackArea.style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            document.getElementById('quiz-view').style.display = 'none';
+            const end = document.getElementById('end-screen');
+            end.style.display = 'block';
+            progressBar.style.width = '100%';
+            end.innerHTML = `
+                <h1 style="color:var(--primary-color)">学院结业报告</h1>
+                <div style="font-size:3rem; margin:20px 0;">✨ ${score} ✨</div>
+                <p>${score === 1000 ? '完美！你已经掌握了全部魔法运算！' : '不错！多翻阅魔法手册，你会变得更强！'}</p>
+                <button class="next-btn" style="float:none" onclick="location.reload()">重新修炼</button>
+            `;
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>
