@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 基础挑战：循环控制 (Continue & Break)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 1. 基础设置 (控制台深色主题) --- */
+        :root {
+            --bg-dark: #192a56;        /* 深蓝夜空 */
+            --console-bg: #273c75;     /* 控制台蓝 */
+            --screen-bg: #f5f6fa;      /* 屏幕白 (此处不用，全暗色) */
+            --continue-color: #fbc531; /* 跳过黄 */
+            --break-color: #e84118;    /* 停止红 */
+            --ok-green: #4cd137;       /* 通过绿 */
+            --text-main: #dcdde1;      /* 浅色文字 */
+            --border-color: #40739e;
+            
+            /* C++ 代码高亮 (Night Owl Style) */
+            --code-bg: #2f3640;
+            --code-fg: #dcdde1;
+            --tok-kw: #e84118;         /* 关键字 break/continue/while/if */
+            --tok-func: #00a8ff;       /* 函数 */
+            --tok-str: #4cd137;        /* 字符串 */
+            --tok-var: #fbc531;        /* 变量 */
+            --tok-cm: #718093;         /* 注释 */
+            --tok-prop: #9c88ff;       /* 属性 .type */
+            --tok-num: #e1b12c;        /* 数字 */
+        }
+
+        body {
+            margin: 0; padding: 20px;
+            font-family: 'Segoe UI', 'Consolas', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            color: var(--text-main);
+        }
+
+        /* 背景跑道光效 */
+        .track-line {
+            position: fixed; width: 100%; height: 2px; background: rgba(255,255,255,0.05);
+            top: 50%; left: 0; transform: translateY(-50%); z-index: 0;
+        }
+        .racer {
+            position: fixed; width: 40px; height: 4px; background: var(--continue-color);
+            top: 50%; left: 0; transform: translateY(-50%); animation: race 4s infinite linear;
+            box-shadow: 0 0 10px var(--continue-color); z-index: 0;
+        }
+        @keyframes race {
+            0% { left: -100px; opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+
+        /* --- 2. 游戏容器 (控制台风格) --- */
+        .game-container {
+            width: 100%; max-width: 900px; 
+            background: var(--console-bg); border-radius: 20px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5), 0 0 0 10px #192a56, 0 30px 60px rgba(0,0,0,0.8);
+            position: relative; z-index: 10;
+            border: 4px solid var(--border-color);
+            overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+
+        /* 顶部 HUD */
+        .hud-bar {
+            height: 60px; background: #1e272e; display: flex; justify-content: space-between;
+            align-items: center; padding: 0 30px; color: var(--ok-green);
+            font-family: 'Courier New', monospace; font-size: 18px; font-weight: bold;
+            border-bottom: 4px solid var(--border-color); z-index: 20;
+        }
+        .map-tag { background: var(--break-color); color: white; padding: 4px 12px; border-radius: 5px; margin-right: 10px; }
+        .loop-status { display: flex; gap: 10px; align-items: center; }
+        .status-light {
+            width: 15px; height: 15px; border-radius: 50%; background: var(--ok-green);
+            box-shadow: 0 0 10px var(--ok-green); animation: blink 1s infinite;
+        }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        /* 进度条 */
+        .progress-container { width: 100%; height: 6px; background-color: #2f3640; }
+        .progress-bar {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, var(--continue-color), var(--ok-green));
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 10px var(--continue-color);
+        }
+
+        /* --- 3. 题目区域 --- */
+        .quiz-content { padding: 40px 50px; position: relative; flex: 1; }
+
+        .question-area h2 {
+            color: #f5f6fa; font-size: 1.35rem; line-height: 1.6; margin-top: 0; margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* C++ 代码高亮 */
+        .code-block {
+            background: var(--code-bg); color: var(--code-fg); padding: 18px 20px; border-radius: 8px;
+            font-family: 'Fira Code', 'Consolas', monospace; font-size: 1.05rem; margin: 20px 0;
+            border-left: 5px solid var(--continue-color); box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+            white-space: pre-wrap; line-height: 1.5; font-variant-ligatures: none;
+        }
+        .k { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .v { color: var(--tok-var); } 
+        .p { color: var(--tok-prop); font-weight: bold; } 
+        .n { color: var(--tok-num); } 
+        .s { color: var(--tok-str); }
+        .c { color: var(--tok-cm); font-style: italic; } 
+
+        /* 选项按钮 */
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 600px) { .options-grid { grid-template-columns: 1fr 1fr; } }
+
+        .option-btn {
+            background: #2f3640; border: 2px solid #718093;
+            padding: 16px 20px; border-radius: 10px; font-size: 1.05rem; color: var(--text-main);
+            cursor: pointer; transition: all 0.2s; text-align: left;
+            font-family: inherit; font-weight: 600; box-shadow: 0 5px 0 #1e272e;
+        }
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--continue-color); transform: translateY(-2px); box-shadow: 0 7px 0 #1e272e;
+        }
+        .option-btn:active:not([disabled]) { transform: translateY(3px); box-shadow: 0 2px 0 #1e272e; }
+        
+        .option-btn.correct {
+            background: rgba(76, 209, 55, 0.15); border-color: var(--ok-green); color: #fff;
+            box-shadow: 0 5px 0 #44bd32;
+        }
+        .option-btn.wrong {
+            background: rgba(232, 65, 24, 0.15); border-color: var(--break-color); color: #fff;
+            box-shadow: 0 5px 0 #c23616;
+        }
+
+        /* 解析区域 */
+        .feedback-section {
+            display: none; text-align: left; background: #1e272e;
+            padding: 20px; border-radius: 10px; margin-top: 25px;
+            border-left: 5px solid; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .feedback-section.correct { border-color: var(--ok-green); }
+        .feedback-section.wrong { border-color: var(--break-color); }
+
+        .feedback-title { font-weight: bold; font-size: 1.2rem; margin-bottom: 8px; }
+        .correct .feedback-title { color: var(--ok-green); }
+        .wrong .feedback-title { color: var(--break-color); }
+        .explanation-text { color: #a4b0be; line-height: 1.6; }
+
+        /* 下一题按钮 */
+        .next-btn {
+            background: var(--continue-color); color: #2f3640; border: none;
+            padding: 12px 35px; border-radius: 30px; font-size: 1.1rem; font-weight: bold;
+            cursor: pointer; margin-top: 20px; float: right; transition: all 0.2s;
+            box-shadow: 0 5px 0 #e1b12c;
+        }
+        .next-btn:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 7px 0 #e1b12c; }
+        .next-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #e1b12c; }
+
+        /* 结束画面 */
+        .end-screen { display: none; padding: 50px 0; text-align: center; }
+        .end-title { font-size: 2.8rem; color: var(--ok-green); margin-bottom: 10px; text-shadow: 0 0 15px rgba(76, 209, 55, 0.5); }
+        .end-score-box {
+            background: #1e272e; border: 4px solid var(--continue-color);
+            color: #f5f6fa; padding: 20px 40px; border-radius: 15px; display: inline-block;
+            margin: 30px 0; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .end-score { font-size: 3.5rem; font-weight: bold; line-height: 1; color: var(--continue-color); }
+    </style>
+</head>
+<body>
+
+    <div class="track-line"></div>
+    <div class="racer"></div>
+
+    <div class="game-container">
+        <div class="hud-bar">
+            <div><span class="map-tag">TEST</span><span id="level-indicator">01 / 10</span></div>
+            <div class="loop-status">
+                SCORE <span id="score" style="color:var(--continue-color); width: 40px; text-align: right;">0</span>
+                <div class="status-light"></div>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="quiz-content" id="quiz-view">
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <div style="overflow: hidden;"><button class="next-btn" onclick="nextQuestion()">下一题 ➔</button></div>
+            </div>
+        </div>
+
+        <div class="quiz-content end-screen" id="end-screen"></div>
+    </div>
+
+    <script>
+        // 知识点：continue 跳过本轮, break 结束循环
+        const quizData = [
+            {
+                q: "在循环结构中，continue 关键字的作用是什么？",
+                options: ["A. 彻底停止整个循环", "B. 暂停程序 1 秒钟", "C. 放弃当前这一轮剩余的代码，直接开始下一轮循环", "D. 报错并退出游戏"],
+                correct: 2,
+                desc: "continue 就像跳过按钮，遇到它时，当前这轮剩下的工作都不做了，直接从头开始下一轮循环。"
+            },
+            {
+                q: "在循环结构中，break 关键字的作用是什么？",
+                options: ["A. 彻底结束循环，像紧急出口一样跳出大括号", "B. 休息一下，恢复英雄血量", "C. 跳过这一轮，执行下一轮", "D. 把屏幕分成两半"],
+                correct: 0,
+                desc: "break 是循环的紧急出口。遇到 break，循环马上被彻底杀死，程序会直接去执行循环大括号外面的代码。"
+            },
+            {
+                q: "在“苹果分拣机”的例子中，如果发现了一个坏苹果（触发了 continue），包装动作 pack(apple) 还会执行吗？",
+                code: "if (apple.isBad) {\n    continue;\n}\npack(apple);",
+                options: ["A. 还会执行，包装坏苹果", "B. 会执行一半", "C. 不会执行，会直接去检查下一个苹果", "D. 会导致程序崩溃"],
+                correct: 2,
+                desc: "continue 执行后，它下面的所有代码（包括 pack）在这一轮都会被忽略，直接去拿下一个苹果。"
+            },
+            {
+                q: "在“炼金术传承”中，我们要避开毒药。下面这段代码使用了 continue，它的逻辑是？",
+                code: "if (item.type == \"poison\") {\n    continue;\n}\nhero.moveXY(item.pos.x, item.pos.y);",
+                options: ["A. 看到毒药就喝掉", "B. 看到毒药就跳过，不去执行下面的 moveXY 移动指令", "C. 看到毒药就停止整个循环", "D. 把毒药变成解药"],
+                correct: 1,
+                desc: "如果是毒药，执行 continue。这样程序就会跳过下面的移动指令，直接进入下一轮循环寻找新物品。"
+            },
+            {
+                q: "在“伪装大师”关卡中，如果你想实现：有敌人时不动（装作仙人掌），没敌人时再去捡宝石。应该用哪个关键字？",
+                code: "auto enemy = hero.findNearestEnemy();\nif (enemy) {\n    _________; // 有敌人，不要动！\n}\n// 去拿宝石的代码...",
+                options: ["A. break", "B. void", "C. return", "D. continue"],
+                correct: 3,
+                desc: "使用 continue，有敌人时直接跳过剩下的“拿宝石”代码进入下一轮。而不能用 break，否则会直接结束战斗循环不再寻找宝石。"
+            },
+            {
+                q: "观察下面的代码，当计数器 count 达到 21 时，会发生什么？",
+                code: "while (true) {\n    count += 1;\n    if (count > 20) {\n        break;\n    }\n}",
+                options: ["A. 循环彻底停止，不再执行", "B. 计数器重置为 0", "C. 循环跳过这一次，继续数", "D. 无限死循环"],
+                correct: 0,
+                desc: "条件 count > 20 成立，触发 break。break 是紧急出口，循环就此彻底终结。"
+            },
+            {
+                q: "如果你想要在战斗 30 秒后撤退，下面代码的空缺处应该填什么？",
+                code: "while (true) {\n    if (hero.time > 30) {\n        _________; // 时间到了，退出战斗循环！\n    }\n    // 攻击敌人的代码...\n}",
+                options: ["A. continue", "B. break", "C. stop", "D. if"],
+                correct: 1,
+                desc: "时间到了需要彻底离开战斗循环去执行撤退，所以必须使用 break。"
+            },
+            {
+                q: "在 C++ 语法中，break 和 continue 后面需要加小括号()吗？",
+                options: ["A. 需要，比如 break();", "B. 需要，因为它们是函数", "C. 不需要，它们是控制语句关键字，直接加分号即可", "D. 可以加也可以不加"],
+                correct: 2,
+                desc: "它们是语言内置的控制流关键字，不是函数，所以不能加小括号，直接写 break; 或 continue; 即可。"
+            },
+            {
+                q: "在一个 while(true) 循环里，可以同时使用 break 和 continue 吗？",
+                options: ["A. 不能，它们会互相冲突", "B. 能，可以根据不同的 if 条件，分别触发 break 或 continue", "C. 只能用在 for 循环里", "D. 只要写了其中一个，程序就一定会崩溃"],
+                correct: 1,
+                desc: "完全可以！比如遇到特定的怪用 continue 跳过，时间到了用 break 退出，各司其职非常常见。"
+            },
+            {
+                q: "根据控制大师口诀：“任务完成，立马就走” 描述的是哪一个关键字？",
+                options: ["A. continue", "B. auto", "C. break", "D. while"],
+                correct: 2,
+                desc: "口诀原文：“break 是出口，任务完成，立马就走！”代表了彻底结束循环的逻辑。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        function loadQuestion() {
+            answered = false;
+            document.getElementById('feedback-area').style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            document.getElementById('level-indicator').innerText = `0${currentQuestion + 1}`.slice(-2) + ` / ${quizData.length}`;
+            document.getElementById('progress-bar').style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            document.getElementById('score').innerText = score;
+
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                let codeHtml = escapeHtml(data.code)
+                    .replace(/\b(int|float|void|auto|if|else|while|break|continue|true|false)\b/g, '<span class="k">$1</span>')
+                    .replace(/\b(moveXY|findNearestEnemy|pack|attack)\b/g, '<span class="f">$1</span>')
+                    .replace(/\b(hero|enemy|apple|item|count|limit)\b/g, '<span class="v">$1</span>')
+                    .replace(/(\.type|\.pos|\.x|\.y|\.isBad|\.time)\b/g, '<span class="p">$1</span>')
+                    .replace(/\b(\d+)\b/g, '<span class="n">$1</span>')
+                    .replace(/(&quot;.*?&quot;)/g, '<span class="s">$1</span>')
+                    .replace(/(\/\/.*)/g, '<span class="c">$1</span>');
+                html += `<div class="code-block">${codeHtml}</div>`;
+            }
+            document.getElementById('question-container').innerHTML = html;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                document.getElementById('score').innerText = score;
+            } else {
+                btnElement.classList.add('wrong');
+                allBtns[data.correct].classList.add('correct');
+            }
+            showFeedback(selectedIndex === data.correct, data.desc);
+        }
+
+        function showFeedback(isCorrect, desc) {
+            const area = document.getElementById('feedback-area');
+            area.style.display = 'block';
+            area.className = 'feedback-section ' + (isCorrect ? 'correct' : 'wrong');
+            document.getElementById('feedback-title').innerText = isCorrect ? "SUCCESS: 逻辑正确" : "ERROR: 逻辑错误";
+            document.getElementById('explanation-text').innerText = desc;
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function showEndScreen() {
+            document.getElementById('quiz-view').style.display = 'none';
+            document.getElementById('progress-bar').style.width = `100%`;
+            
+            const end = document.getElementById('end-screen');
+            end.style.display = 'block';
+            
+            let message = score === quizData.length * 100 ? "控制大师认证通过！循环的节奏已尽在掌握。" : "已记录错误日志，调整状态再试一次吧！";
+            
+            end.innerHTML = `
+                <div class="end-title">EXECUTION COMPLETE</div>
+                <div class="end-score-box">
+                    <div style="font-size:1.2rem; margin-bottom:10px; color:#a4b0be;">FINAL SCORE</div>
+                    <div class="end-score">${score}</div>
+                </div>
+                <div style="color:var(--text-main); font-size:1.2rem; margin-bottom: 30px;">${message}</div>
+                <button class="next-btn" onclick="location.reload()" style="float:none;">REBOOT SYSTEM</button>
+            `;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        // 启动测试
+        loadQuestion();
+    </script>
+</body>
+</html>
