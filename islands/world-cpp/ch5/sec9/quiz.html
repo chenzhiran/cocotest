@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 基础挑战：方向与坐标</title>
+    <style>
+        /* --- 基础设置 (Space Theme) --- */
+        :root {
+            --bg-space: #0b0d17;       
+            --panel-bg: #15192b;       
+            --screen-bg: #0f121f;      
+            --neon-blue: #00d2d3;      
+            --neon-pink: #ff9ff3;      
+            --neon-yellow: #feca57;    
+            --text-main: #c8d6e5;      
+            --correct-color: #1dd1a1;
+            --wrong-color: #ff6b81;
+            
+            /* C++ 代码高亮 */
+            --code-bg: #1e272e;
+            --code-fg: #d2dae2;
+            --tok-kw: #ff6b81;         
+            --tok-func: #48dbfb;       
+            --tok-prop: #ff9f43;       
+            --tok-var: #feca57;        
+            --tok-num: #1dd1a1;        
+            --tok-cm: #8395a7;         
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', 'Consolas', sans-serif;
+            background-color: var(--bg-space);
+            background-image: 
+                radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px),
+                radial-gradient(rgba(255,255,255,0.3) 1px, transparent 1px);
+            background-size: 50px 50px;
+            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* 闪烁星星 */
+        .star {
+            position: absolute; background: white; border-radius: 50%;
+            animation: twinkle 2s infinite ease-in-out;
+            z-index: 0;
+        }
+        @keyframes twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+
+        /* --- 游戏容器 (仪表盘风格) --- */
+        .dashboard-container {
+            width: 95%; max-width: 900px; 
+            background: var(--panel-bg); border-radius: 20px;
+            box-shadow: 0 0 0 4px #2f3640, 0 0 20px var(--neon-blue), inset 0 0 50px rgba(0,0,0,0.5);
+            position: relative; z-index: 10;
+            border: 2px solid var(--neon-blue);
+            overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+
+        /* 顶部 HUD */
+        .hud-bar {
+            height: 50px; background: rgba(0,0,0,0.5); display: flex; justify-content: space-between;
+            align-items: center; padding: 0 30px; border-bottom: 1px solid var(--neon-blue);
+            font-family: 'Courier New', monospace;
+        }
+        .map-info { color: var(--neon-blue); font-weight: bold; font-size: 16px; text-shadow: 0 0 5px var(--neon-blue); }
+        .score-display { color: var(--neon-pink); font-weight: bold; font-size: 18px; text-shadow: 0 0 5px var(--neon-pink); }
+
+        /* 进度条 */
+        .progress-container {
+            width: 100%; height: 6px; background-color: #2f3640;
+        }
+        .progress-bar {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        /* --- 内容区域 --- */
+        .quiz-content {
+            padding: 30px 40px;
+            background: var(--screen-bg);
+            position: relative;
+            flex: 1;
+        }
+        /* 屏幕扫描线特效 */
+        .quiz-content::before {
+            content: " "; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 210, 211, 0.03) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 5;
+        }
+
+        .question-area h2 {
+            color: var(--neon-blue); font-size: 1.3rem; line-height: 1.6; margin-top: 0; margin-bottom: 20px;
+            text-shadow: 0 0 8px rgba(0, 210, 211, 0.4);
+        }
+
+        /* C++ 代码块优化 */
+        .code-block {
+            background: var(--code-bg); color: var(--code-fg); padding: 15px 20px; border-radius: 8px;
+            font-family: 'Consolas', 'Fira Code', monospace; font-size: 1.05rem; margin: 20px 0;
+            border-left: 4px solid var(--neon-pink); box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+            white-space: pre-wrap; line-height: 1.5;
+            font-variant-ligatures: none; /* 关闭连字 */
+            position: relative; z-index: 10;
+        }
+        .k { color: var(--tok-kw); font-weight: bold; } 
+        .f { color: var(--tok-func); } 
+        .v { color: var(--tok-var); } 
+        .p { color: var(--tok-prop); font-weight: bold; } 
+        .n { color: var(--tok-num); } 
+        .c { color: var(--tok-cm); font-style: italic; } 
+
+        /* 选项按钮 */
+        .options-grid {
+            display: grid; grid-template-columns: 1fr; gap: 15px; position: relative; z-index: 10;
+        }
+        @media (min-width: 600px) { .options-grid { grid-template-columns: 1fr 1fr; } }
+
+        .option-btn {
+            background: rgba(30, 39, 46, 0.8); border: 2px solid #576574;
+            padding: 16px 20px; border-radius: 10px; font-size: 1.05rem; color: var(--text-main);
+            cursor: pointer; transition: all 0.2s; text-align: left;
+            font-family: inherit; font-weight: 600;
+        }
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 210, 211, 0.4);
+            transform: translateY(-2px); background: rgba(0, 210, 211, 0.1);
+        }
+        .option-btn:active:not([disabled]) { transform: translateY(2px); box-shadow: none; }
+        
+        .option-btn.correct {
+            background: rgba(29, 209, 161, 0.15); border-color: var(--correct-color);
+            color: white; box-shadow: 0 0 15px rgba(29, 209, 161, 0.5);
+        }
+        .option-btn.wrong {
+            background: rgba(255, 107, 129, 0.15); border-color: var(--wrong-color);
+            color: white; box-shadow: 0 0 15px rgba(255, 107, 129, 0.5);
+        }
+
+        /* 解析区域 */
+        .feedback-section {
+            display: none; text-align: left; background: rgba(0,0,0,0.4);
+            padding: 20px; border-radius: 10px; margin-top: 25px;
+            border-left: 4px solid; position: relative; z-index: 10;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+
+        .feedback-title { font-weight: bold; font-size: 1.2rem; margin-bottom: 8px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+        .explanation-text { color: #a4b0be; line-height: 1.6; }
+
+        /* 下一题按钮 */
+        .next-btn {
+            background: transparent; color: var(--neon-blue); border: 2px solid var(--neon-blue);
+            padding: 10px 30px; border-radius: 30px; font-size: 1.1rem; font-weight: bold;
+            cursor: pointer; margin-top: 20px; float: right; transition: all 0.2s;
+            box-shadow: 0 0 10px rgba(0, 210, 211, 0.2);
+        }
+        .next-btn:hover {
+            background: var(--neon-blue); color: #000; box-shadow: 0 0 20px var(--neon-blue);
+        }
+
+        /* 结束画面 */
+        .end-screen { display: none; padding: 40px 0; text-align: center; position: relative; z-index: 10; }
+        .end-title { font-size: 2.5rem; color: var(--neon-blue); margin-bottom: 10px; text-shadow: 0 0 15px var(--neon-blue); }
+        .end-score-box {
+            background: rgba(255, 159, 243, 0.1); border: 2px solid var(--neon-pink);
+            color: white; padding: 20px 40px; border-radius: 20px; display: inline-block;
+            margin: 30px 0; box-shadow: 0 0 20px rgba(255, 159, 243, 0.3);
+        }
+        .end-score { font-size: 3.5rem; font-weight: bold; line-height: 1; color: var(--neon-pink); }
+    </style>
+</head>
+<body>
+
+    <script>
+        for(let i=0; i<40; i++) {
+            let s = document.createElement('div');
+            s.className = 'star';
+            s.style.left = Math.random() * 100 + 'vw';
+            s.style.top = Math.random() * 100 + 'vh';
+            s.style.width = Math.random() * 3 + 'px';
+            s.style.height = s.style.width;
+            s.style.animationDelay = Math.random() * 2 + 's';
+            document.body.appendChild(s);
+        }
+    </script>
+
+    <div class="dashboard-container">
+        <div class="hud-bar">
+            <div class="map-info">MISSION: <span id="level-indicator">01 / 10</span></div>
+            <div class="score-display">SCORE: <span id="score">0</span></div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="quiz-content" id="quiz-view">
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div class="explanation-text" id="explanation-text"></div>
+                <button class="next-btn" onclick="nextQuestion()">NEXT SYSTEM ➔</button>
+            </div>
+        </div>
+
+        <div class="quiz-content end-screen" id="end-screen"></div>
+    </div>
+
+    <script>
+        // 知识点题库：相对移动、对角线、方向判断、中点公式
+        const quizData = [
+            {
+                q: "在游戏地图（坐标系）中，X 坐标和 Y 坐标分别代表什么方向？",
+                options: ["A. X代表上下，Y代表左右", "B. X代表左右，Y代表上下", "C. X代表深度，Y代表时间", "D. 它们都是随机的"],
+                correct: 1,
+                desc: "导航员口诀第一句：X 是左右，Y 是上下！"
+            },
+            {
+                q: "如果你想要让英雄向右移动 10 米，代码应该怎么写？",
+                code: "float x = hero.pos.x;\nfloat y = hero.pos.y;\n// 在下方写代码",
+                options: ["A. x -= 10;", "B. y += 10;", "C. x += 10;", "D. y -= 10;"],
+                correct: 2,
+                desc: "在 X 坐标系中，数值越大越靠右。因此，向右走需要在当前的 X 坐标上加上 10。"
+            },
+            {
+                q: "如果想让英雄沿斜线向右上角移动，坐标需要发生什么变化？",
+                options: ["A. 只有 X 增加", "B. 只有 Y 增加", "C. X 和 Y 都要减少", "D. X 和 Y 都要增加"],
+                correct: 3,
+                desc: "向右意味着 X 要增加，向上意味着 Y 要增加。同时修改两者的值，就能走出对角斜线。"
+            },
+            {
+                q: "相对建造：如果你想在敌人的正左方 15 米处放置一个陷阱，横坐标（X）应该怎么算？",
+                code: "float buildX = __________;\nfloat buildY = enemy.pos.y;",
+                options: ["A. enemy.pos.x + 15", "B. enemy.pos.x - 15", "C. hero.pos.x - 15", "D. enemy.pos.y - 15"],
+                correct: 1,
+                desc: "敌人左边，说明位置基于敌人的坐标（enemy.pos.x），并且由于是向左，所以要用减法（- 15）。"
+            },
+            {
+                q: "当你使用代码 `if (enemy.pos.x > hero.pos.x)` 进行判断时，如果条件成立，说明敌人在英雄的哪一边？",
+                options: ["A. 左边", "B. 右边", "C. 上方", "D. 下方"],
+                correct: 1,
+                desc: "敌人的 X 坐标比英雄的 X 坐标大，在横轴上数值越大越靠右，说明敌人在右边。"
+            },
+            {
+                q: "如果条件 `enemy.pos.y < hero.pos.y` 成立，这意味着敌人的位置在哪里？",
+                options: ["A. 敌人在英雄的上方", "B. 敌人在英雄的下方", "C. 敌人在英雄的左侧", "D. 敌人在英雄的右侧"],
+                correct: 1,
+                desc: "Y 坐标代表上下。敌人的 Y 比英雄的 Y 小，数值越小越靠下，说明敌人在下方。"
+            },
+            {
+                q: "你要走到朋友和敌人的正中间（中点位置）。计算中点横坐标 (midX) 的正确公式是？",
+                options: ["A. (friend.pos.x - enemy.pos.x) * 2", "B. friend.pos.x + enemy.pos.x / 2", "C. (friend.pos.x + enemy.pos.x) / 2", "D. (friend.pos.x + enemy.pos.x) * 2"],
+                correct: 2,
+                desc: "数学的中点公式：把两点的坐标相加，然后将总和除以 2。注意一定要用括号包住加法！"
+            },
+            {
+                q: "以下代码用于垂直追踪敌人并建造围栏。空格处应填入什么？",
+                code: "if (enemy.pos.y > hero.pos.y) {\n    // 敌人在上方，我要往下建墙阻挡\n    hero.buildXY(\"fence\", x, ________);\n}",
+                options: ["A. y + 10", "B. y - 10", "C. x + 10", "D. x - 10"],
+                correct: 1,
+                desc: "既然敌人在上方，我要往“下”建墙阻拦，那么就在当前的 Y 坐标上做减法（y - 10）。"
+            },
+            {
+                q: "如何用代码正确获取当前英雄自身的横向坐标？",
+                options: ["A. hero.x", "B. hero.pos", "C. hero.x.pos", "D. hero.pos.x"],
+                correct: 3,
+                desc: "坐标信息储存在位置对象（pos）中，横向坐标是它的属性 x，连起来就是 hero.pos.x。"
+            },
+            {
+                q: "综合判断：如果 `enemy.pos.x < hero.pos.x` 且 `enemy.pos.y > hero.pos.y` 同时成立，敌人在屏幕的什么方位？",
+                options: ["A. 左上角", "B. 左下角", "C. 右上角", "D. 右下角"],
+                correct: 0,
+                desc: "X 较小意味着在左边，Y 较大意味着在上方。综合起来，敌人位于英雄的左上方！"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        function loadQuestion() {
+            answered = false;
+            document.getElementById('feedback-area').style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            // 更新 HUD 状态
+            document.getElementById('level-indicator').innerText = `0${currentQuestion + 1}`.slice(-2) + ` / ${quizData.length}`;
+            document.getElementById('progress-bar').style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+            document.getElementById('score').innerText = score;
+
+            // 渲染题目和代码块
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                // 使用星空主题的高亮正则替换
+                let codeHtml = escapeHtml(data.code)
+                    .replace(/\b(float|int|if|else|while|auto)\b/g, '<span class="k">$1</span>')
+                    .replace(/\b(moveXY|buildXY)\b/g, '<span class="f">$1</span>')
+                    .replace(/\b(hero|enemy|friend|buildX|buildY|x|y)\b/g, '<span class="v">$1</span>')
+                    .replace(/(\.pos|\.x|\.y)/g, '<span class="p">$1</span>')
+                    .replace(/\b(\d+)\b/g, '<span class="n">$1</span>')
+                    .replace(/(&quot;.*?&quot;)/g, '<span class="v" style="color:var(--neon-pink)">$1</span>')
+                    .replace(/(\/\/.*)/g, '<span class="c">$1</span>');
+                html += `<div class="code-block">${codeHtml}</div>`;
+            }
+            document.getElementById('question-container').innerHTML = html;
+
+            // 渲染选项
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.innerText = opt;
+                btn.classList.add('option-btn');
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => btn.setAttribute('disabled', 'true'));
+            
+            if (selectedIndex === data.correct) {
+                btnElement.classList.add('correct');
+                score += 100;
+                document.getElementById('score').innerText = score;
+            } else {
+                btnElement.classList.add('wrong');
+                allBtns[data.correct].classList.add('correct');
+            }
+            showFeedback(selectedIndex === data.correct, data.desc);
+        }
+
+        function showFeedback(isCorrect, desc) {
+            const area = document.getElementById('feedback-area');
+            area.style.display = 'block';
+            area.className = 'feedback-section ' + (isCorrect ? 'correct' : 'wrong');
+            document.getElementById('feedback-title').innerText = isCorrect ? "SYSTEM: CORRECT" : "SYSTEM: ERROR";
+            document.getElementById('explanation-text').innerText = desc;
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                loadQuestion();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function showEndScreen() {
+            document.getElementById('quiz-view').style.display = 'none';
+            document.getElementById('progress-bar').style.width = `100%`;
+            
+            const end = document.getElementById('end-screen');
+            end.style.display = 'block';
+            
+            let message = score === quizData.length * 100 ? "首席领航员认证通过！" : "导航日志已记录，继续努力！";
+            
+            end.innerHTML = `
+                <div class="end-title">MISSION COMPLETE</div>
+                <div class="end-score-box">
+                    <div style="font-size:1.2rem; color:var(--text-main); margin-bottom:10px;">FINAL SCORE</div>
+                    <div class="end-score">${score}</div>
+                </div>
+                <div style="color:var(--text-main); font-size:1.2rem; margin-bottom: 30px;">${message}</div>
+                <button class="next-btn" onclick="location.reload()" style="float:none;">RESTART MISSION</button>
+            `;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        // 启动测试
+        loadQuestion();
+    </script>
+</body>
+</html>
