@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ 坐标与属性挑战赛</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        /* --- 基础设置 (模仿 quiz.html 结构，配色参考 knowledge.html) --- */
+        :root {
+            --primary-color: #7d5fff; /* 主色调：虚空紫 */
+            --secondary-color: #ff0055; /* 霓虹红 */
+            --bg-color: #0f0f1a;     /* 深邃宇宙背景 */
+            --card-bg: #1e1e2e;     /* 容器背景 */
+            --text-color: #ecf0f1;   /* 浅色文字 */
+            --correct-color: #27c93f;/* 正确绿 */
+            --wrong-color: #ff5f56;  /* 错误红 */
+            --accent-yellow: #ffe600;/* 警示黄 */
+            
+            /* C++ 代码高亮 (Dracula 风格) */
+            --code-bg: #282a36;
+            --code-text: #f8f8f2;
+            --code-kw: #ff79c6;  /* 关键字 */
+            --code-fn: #8be9fd;  /* 函数 */
+            --code-num: #bd93f9; /* 数字 */
+            --code-str: #f1fa8c; /* 字符串 */
+            --code-cmt: #6272a4; /* 注释 */
+        }
+
+        body {
+            font-family: 'Poppins', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(white 1px, transparent 1px),
+                radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 700px;
+            border-radius: 25px;
+            box-shadow: 0 0 40px rgba(125, 95, 255, 0.2);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            border: 4px solid var(--primary-color);
+            overflow: hidden;
+        }
+
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+
+        .score-box {
+            background: var(--accent-yellow);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #000;
+            box-shadow: 0 4px 0 #c9b600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #333;
+            border-radius: 10px;
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .question-area { text-align: left; margin-bottom: 30px; }
+        .question-area h2 { font-size: 1.4rem; line-height: 1.6; margin-bottom: 15px; color: var(--text-color); }
+
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Fira Code', monospace;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            text-align: left;
+            font-size: 0.95rem;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .kw { color: var(--code-kw); font-weight: bold; }
+        .fn { color: var(--code-fn); }
+        .num { color: var(--code-num); }
+        .str { color: var(--code-str); }
+        .cmt { color: var(--code-cmt); font-style: italic; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 600px) { .options-grid { grid-template-columns: 1fr 1fr; } }
+
+        .option-btn {
+            background: #2d2d3d;
+            border: 3px solid #444;
+            padding: 18px 25px;
+            border-radius: 18px;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #fff;
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 5px 0 #111;
+        }
+        .option-btn:hover:not([disabled]) { border-color: var(--secondary-color); transform: translateY(-3px); }
+        .option-btn.correct { background: var(--correct-color); border-color: var(--correct-color); box-shadow: 0 5px 0 #1b8a2b; }
+        .option-btn.wrong { background: var(--wrong-color); border-color: var(--wrong-color); box-shadow: 0 5px 0 #b33939; }
+
+        .feedback-section {
+            display: none; text-align: left; background: #252535;
+            padding: 25px; border-radius: 18px; margin-top: 30px;
+            border-left: 6px solid; animation: slideUp 0.4s ease-out;
+        }
+        .feedback-section.correct { border-color: var(--correct-color); }
+        .feedback-section.wrong { border-color: var(--wrong-color); }
+        .feedback-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 10px; }
+        .correct .feedback-title { color: var(--correct-color); }
+        .wrong .feedback-title { color: var(--wrong-color); }
+
+        .next-btn {
+            background: var(--primary-color); color: white; border: none;
+            padding: 12px 35px; border-radius: 50px; cursor: pointer;
+            font-weight: 600; float: right; margin-top: 20px;
+        }
+
+        .end-screen { display: none; padding: 20px 0; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .confetti { position: absolute; width: 10px; height: 10px; animation: fall linear forwards; z-index: 10; }
+        @keyframes fall { to { transform: translateY(80vh) rotate(720deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-view">
+            <div class="header-stats">
+                <span id="level-indicator">Level 1 / 10</span>
+                <div class="score-box">🚀 <span id="score">0</span></div>
+            </div>
+            <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+            <div class="question-area" id="question-container"></div>
+            <div class="options-grid" id="options-container"></div>
+            <div class="feedback-section" id="feedback-area">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div id="explanation-text" style="line-height:1.7"></div>
+                <button class="next-btn" onclick="nextQuestion()">继续探索 ➔</button>
+            </div>
+        </div>
+        <div id="end-screen" class="end-screen"></div>
+    </div>
+
+    <script>
+        const quizData = [
+            {
+                q: "在 CodeCombat 的坐标系中，如果你向屏幕的右方走，哪个数值会变大？",
+                options: ["A. X 轴", "B. Y 轴", "C. Z 轴", "D. 没有任何变化"],
+                correct: 0,
+                desc: "X 轴代表水平方向，从左到右数值逐渐增加。"
+            },
+            {
+                q: "想要移动到坐标 (30, 40)，正确的 C++ 函数调用是？",
+                options: ["A. hero.move(30, 40);", "B. hero.moveXY(30, 40);", "C. hero.pos(30, 40);", "D. hero.goTo(30, 40);"],
+                correct: 1,
+                desc: "在 C++ 中，使用 moveXY 函数并传入两个参数（X 和 Y）来移动到精确位置。"
+            },
+            {
+                q: "如果想获取一个金币（item）的位置属性，应该访问哪个属性名？",
+                code: "auto item = hero.findNearestItem();\nauto place = item.____;",
+                options: ["A. location", "B. x", "C. pos", "D. point"],
+                correct: 2,
+                desc: "对象的位置信息存储在名为 'pos' 的属性中。"
+            },
+            {
+                q: "如何从位置对象（position）中提取出具体的横坐标（X）？",
+                code: "auto position = item.pos;\nfloat targetX = position.____;",
+                options: ["A. x", "B. X-axis", "C. getX()", "D. width"],
+                correct: 0,
+                desc: "通过 pos.x 可以直接访问到该位置的横坐标数值。"
+            },
+            {
+                q: "观察代码，英雄最终会移动到哪一个位置？",
+                code: "auto enemy = hero.findNearestEnemy();\n// 假设敌人在 (50, 60)\nfloat x = enemy.pos.x;\nfloat y = enemy.pos.y - 10;\nhero.moveXY(x, y);",
+                options: ["A. (50, 60)", "B. (60, 60)", "C. (50, 50)", "D. (40, 60)"],
+                correct: 2,
+                desc: "原坐标是 (50, 60)，代码中 y 减去了 10，所以结果是 (50, 50)。"
+            },
+            {
+                q: "在“风向校正”关卡中，要把炮火瞄准敌人的下方，应该怎么做？",
+                options: ["A. 在 X 轴上加 5", "B. 在 Y 轴上减去一个数值", "C. 在 Y 轴上加上一个数值", "D. 保持坐标不变"],
+                correct: 1,
+                desc: "Y 轴越往下数值越小，所以向下移需要减去一个数值。"
+            },
+            {
+                q: "如果要让英雄说出当前的坐标，代码中的拼接方式正确的是？",
+                options: ["A. hero.say(x + \",\" + y);", "B. hero.say(x, y);", "C. hero.say(\"x\" \"y\");", "D. hero.say(x & y);"],
+                correct: 0,
+                desc: "在 C++ 中，可以使用 '+' 号将变量和字符串拼接在一起，数字会自动转换。"
+            },
+            {
+                q: "下面哪行代码可以直接一步到位移动到金币的 Y 坐标？",
+                options: ["A. hero.moveXY(hero.pos.x, item.pos.y);", "B. hero.moveXY(item.y);", "C. hero.move(item.pos);", "D. hero.jump(item.y);"],
+                correct: 0,
+                desc: "通过 item.pos.y 这种“点号链”可以直接访问到深层的属性值。"
+            },
+            {
+                q: "在 C++ 中，通常使用什么类型的变量来存储带有小数的坐标值？",
+                options: ["A. int", "B. float", "C. string", "D. bool"],
+                correct: 1,
+                desc: "float (浮点数) 类型专门用于存储带小数点的数值。"
+            },
+            {
+                q: "如果你发现英雄的移动方向太靠右了，你需要对 X 轴做什么调整？",
+                options: ["A. 增加 X 的值", "B. 减少 X 的值", "C. 增加 Y 的值", "D. 减少 Y 的值"],
+                correct: 1,
+                desc: "太靠右了意味着 X 值偏大，所以需要减小 X 值来向左修正。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        function loadQuestion() {
+            answered = false;
+            document.getElementById('feedback-area').style.display = 'none';
+            const data = quizData[currentQuestion];
+            
+            document.getElementById('level-indicator').innerText = `Level ${currentQuestion + 1} / ${quizData.length}`;
+            document.getElementById('progress-bar').style.width = `${(currentQuestion / quizData.length) * 100}%`;
+            
+            let html = `<h2>${data.q}</h2>`;
+            if (data.code) {
+                let codeHtml = data.code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/(auto|int|float|return)/g, '<span class="kw">$1</span>')
+                    .replace(/(hero|item|enemy|position|targetX|x|y)/g, '<span class="str">$1</span>')
+                    .replace(/(\.\w+)/g, '<span class="fn">$1</span>')
+                    .replace(/(\d+)/g, '<span class="num">$1</span>')
+                    .replace(/(\/\/.*)/g, '<span class="cmt">$1</span>');
+                html += `<div class="code-block">${codeHtml}</div>`;
+            }
+            document.getElementById('question-container').innerHTML = html;
+
+            const opts = document.getElementById('options-container');
+            opts.innerHTML = '';
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(index, btn);
+                opts.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(idx, btn) {
+            if (answered) return;
+            answered = true;
+            const data = quizData[currentQuestion];
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(b => b.disabled = true);
+
+            if (idx === data.correct) {
+                btn.classList.add('correct');
+                score += 100;
+                document.getElementById('score').innerText = score;
+                createConfetti();
+                showFeedback(true, "✅ 坐标锁定！", data.desc);
+            } else {
+                btn.classList.add('wrong');
+                allBtns[data.correct].classList.add('correct');
+                showFeedback(false, "❌ 轨迹偏离！", data.desc);
+            }
+        }
+
+        function showFeedback(isCorrect, title, desc) {
+            const area = document.getElementById('feedback-area');
+            area.className = 'feedback-section ' + (isCorrect ? 'correct' : 'wrong');
+            document.getElementById('feedback-title').innerText = title;
+            document.getElementById('explanation-text').innerText = desc;
+            area.style.display = 'block';
+            area.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < quizData.length) loadQuestion();
+            else showEndScreen();
+        }
+
+        function showEndScreen() {
+            document.getElementById('quiz-view').style.display = 'none';
+            const end = document.getElementById('end-screen');
+            end.style.display = 'block';
+            const isPerfect = score === 1000;
+            end.innerHTML = `
+                <h1 style="color:var(--secondary-color)">${isPerfect ? '🛰️ 宇宙领航员' : '🚀 任务完成'}</h1>
+                <div style="font-size:3.5rem; font-weight:bold; margin:20px 0;">${score}</div>
+                <p style="color:#aaa">${isPerfect ? '你已经完美掌握了坐标与位置属性！' : '表现不错！再复习一下坐标运算，你就能精准打击！'}</p>
+                <button class="next-btn" style="float:none; margin-top:30px;" onclick="location.reload()">重新传送</button>
+            `;
+        }
+
+        function createConfetti() {
+            const colors = ['#7d5fff', '#ff0055', '#ffe600', '#27c93f'];
+            const container = document.querySelector('.game-container');
+            for (let i = 0; i < 30; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.backgroundColor = colors[Math.floor(Math.random()*4)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.top = '-10px';
+                c.style.animationDuration = (Math.random() * 1 + 1) + 's';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 2000);
+            }
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>
