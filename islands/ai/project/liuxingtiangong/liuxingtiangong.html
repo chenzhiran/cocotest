@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小学几何 3D 智能实验室</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <style>
+        :root {
+            /* 科幻深蓝紫配色 */
+            --bg-deep: #030510;
+            --bg-purple-mist: radial-gradient(circle at center, #0a1030 0%, #030510 100%);
+            --panel-bg: rgba(13, 20, 48, 0.8);
+            --border-color: rgba(64, 114, 255, 0.4);
+            --neon-blue: #00d2ff;
+            --neon-purple: #9d4edd;
+            --text-main: #ffffff;
+            --text-sub: #8b9bb4;
+            --text-highlight: #b6f0ff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; user-select: none; }
+        
+        body {
+            background-color: var(--bg-deep);
+            background-image: var(--bg-purple-mist);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- 顶部导航栏 --- */
+        .header {
+            height: 65px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(10, 17, 48, 0.9);
+            z-index: 10;
+            flex-shrink: 0;
+        }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 36px; height: 36px; background: radial-gradient(circle, var(--neon-blue), #2a75ff); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 12px var(--neon-blue); }
+        .logo-text h1 { font-size: 18px; letter-spacing: 1px; }
+        .logo-text span { font-size: 11px; color: var(--text-sub); }
+
+        .nav-tabs { display: flex; gap: 10px; }
+        .nav-tab {
+            padding: 10px 20px; color: var(--text-sub); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; transition: 0.3s; border-radius: 6px;
+        }
+        .nav-tab i { font-size: 16px; }
+        .nav-tab:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+        .nav-tab.active { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); position: relative; }
+        .nav-tab.active::after { content: ''; position: absolute; bottom: -10px; left: 0; width: 100%; height: 2px; background: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); }
+
+        /* --- 主体布局 (核心修复：三列弹性布局，绝不重叠) --- */
+        .main-container {
+            flex: 1;
+            display: flex;
+            padding: 15px;
+            gap: 15px;
+            overflow: hidden; /* 防止内容溢出产生滚动条 */
+        }
+
+        /* --- 侧边栏通用样式 --- */
+        .sidebar {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .panel-title { font-size: 14px; color: var(--neon-blue); font-weight: bold; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        .panel-title::before { content: '◈'; }
+
+        /* --- 左侧图形列表 (固定宽度) --- */
+        .sidebar-left {
+            width: 240px;
+            flex-shrink: 0;
+            gap: 8px;
+        }
+        .shape-list { display: flex; flex-direction: column; gap: 8px; }
+        .shape-item {
+            padding: 12px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--text-sub); display: flex; align-items: center; gap: 12px; transition: 0.2s; border: 1px solid transparent;
+        }
+        .shape-item:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+        .shape-item.active { background: linear-gradient(90deg, rgba(0, 210, 255, 0.2), transparent); border-left: 3px solid var(--neon-blue); color: var(--text-main); text-shadow: 0 0 5px var(--neon-blue); }
+
+        /* --- 中间 3D 画布区域 (自适应剩余空间) --- */
+        .center-area {
+            flex: 1;
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: radial-gradient(circle at center, rgba(0, 210, 255, 0.05) 0%, transparent 70%);
+        }
+        #canvas-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            cursor: grab;
+        }
+        #canvas-container:active { cursor: grabbing; }
+        
+        .axis-label { position: absolute; font-weight: bold; color: var(--neon-blue); pointer-events: none; z-index: 2; text-shadow: 0 0 5px #000; font-size: 14px; background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); }
+
+        /* --- 右侧信息面板 (固定宽度) --- */
+        .sidebar-right {
+            width: 400px;
+            flex-shrink: 0;
+            overflow-y: auto; /* 内容过多时可内部滚动 */
+        }
+        /* 美化右侧滚动条 */
+        .sidebar-right::-webkit-scrollbar { width: 6px; }
+        .sidebar-right::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+
+        .right-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
+        .info-section { margin-bottom: 20px; }
+        .info-section h3 { font-size: 16px; color: var(--neon-blue); margin-bottom: 8px; }
+        .info-section p { font-size: 14px; color: var(--text-sub); line-height: 1.6; }
+        
+        .formula-card { background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); padding: 15px; border-radius: 10px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .formula-item { margin-bottom: 15px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .formula-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .formula-label { font-size: 13px; color: var(--text-highlight); margin-bottom: 10px; display: block; font-weight: bold; }
+        .math-render { font-size: 1.3em; color: #fff; padding-left: 10px; border-left: 3px solid var(--neon-purple); overflow-x: auto;}
+
+        /* --- 底部工具 --- */
+        .bottom-toolbar {
+            position: absolute; 
+            bottom: 20px; 
+            left: 50%; /* 居中对齐到 center-area */
+            transform: translateX(-50%);
+            background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 50px;
+            padding: 10px 30px; display: flex; gap: 20px; align-items: center; z-index: 10;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+            width: max-content;
+        }
+        .tool-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--text-sub); cursor: pointer; transition: 0.2s; }
+        .tool-btn i { font-size: 18px; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: 0.2s; background: rgba(255,255,255,0.05); }
+        .tool-btn:hover i, .tool-btn.active i { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px var(--neon-blue); }
+        .tool-btn:hover { color: var(--text-main); }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-shapes"></i></div>
+            <div class="logo-text">
+                <h1>几何智能实验室</h1>
+                <span>小学数学 1-6 年级 2D/3D 辅助系统</span>
+            </div>
+        </div>
+        <div class="nav-tabs">
+            <div class="nav-tab active" data-mode="base"><i class="fas fa-cube"></i>基础几何</div>
+            <div class="nav-tab" data-mode="combo"><i class="fas fa-layer-group"></i>组合图形</div>
+            <div class="nav-tab" data-mode="unfold"><i class="fas fa-expand"></i>展开图</div>
+            <div class="nav-tab" data-mode="test"><i class="fas fa-edit"></i>自我测评</div>
+        </div>
+        <div style="color: var(--neon-purple); font-size: 13px; border: 1px solid var(--neon-purple); padding: 6px 12px; border-radius: 20px; background: rgba(157, 78, 221, 0.1);">
+            <i class="fas fa-mouse"></i> 提示：在中间按住鼠标左键拖拽可旋转图形，滚轮可缩放
+        </div>
+    </header>
+
+    <div class="main-container">
+        
+        <div class="sidebar sidebar-left">
+            <div class="panel-title">选择图形 (点击切换)</div>
+            <div class="shape-list" id="shape-list">
+                <div class="shape-item active" data-shape="cube"><i class="fas fa-dice-d6"></i> 正方体 (3D)</div>
+                <div class="shape-item" data-shape="cuboid"><i class="fas fa-box"></i> 长方体 (3D)</div>
+                <div class="shape-item" data-shape="cylinder"><i class="fas fa-database"></i> 圆柱体 (3D)</div>
+                <div class="shape-item" data-shape="sphere"><i class="fas fa-globe"></i> 球体 (3D)</div>
+                <div class="shape-item" style="margin-top: 10px;" data-shape="triangle"><i class="fas fa-caret-up"></i> 三角形 (2D)</div>
+                <div class="shape-item" data-shape="circle"><i class="fas fa-circle-notch"></i> 圆形 (2D)</div>
+            </div>
+        </div>
+
+        <div class="center-area">
+            <div id="canvas-container"></div>
+            
+            <div class="axis-label" style="top: 20%; left: 50%; transform: translateX(-50%);">↑ 高度 (h) / 顶点</div>
+
+            <div class="bottom-toolbar">
+                <div class="tool-btn active"><i class="fas fa-mouse-pointer"></i>选中</div>
+                <div class="tool-btn active" id="btn-autorotate"><i class="fas fa-sync"></i>自动旋转</div>
+                <div class="tool-btn"><i class="fas fa-ruler-combined"></i>测量尺寸</div>
+                <div style="width: 2px; height: 30px; background: var(--border-color);"></div>
+                <div class="tool-btn active" id="btn-grid"><i class="fas fa-border-all"></i>显示网格</div>
+                <div class="tool-btn" id="btn-reset"><i class="fas fa-undo"></i>重置视角</div>
+            </div>
+        </div>
+
+        <div class="sidebar sidebar-right" id="info-sidebar">
+            <div class="right-header">
+                <h2 style="font-size: 18px;"><i class="fas fa-graduation-cap"></i> 知识要点</h2>
+                <div id="grade-tag" style="font-size: 12px; color: var(--neon-blue); border: 1px solid var(--neon-blue); padding: 3px 10px; border-radius: 12px; background: rgba(0, 210, 255, 0.1);">五年级</div>
+            </div>
+
+            <div id="content-body">
+                </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // ==========================================
+        // 1. 小学几何数据字典 (包含 2D 和 3D)
+        // ==========================================
+        const geometryData = {
+            'cube': {
+                title: '什么是正方体？',
+                desc: '正方体是由 6 个完全相同的正方形围成的立体图形。它有 8 个顶点和 12 条长度相等的棱。',
+                grade: '五年级',
+                formulas: [
+                    { label: '底面积 (S底)', math: 'S_{底} = a \\times a = a^2' },
+                    { label: '表面积 (S表)', math: 'S_{表} = 6 \\times a^2' },
+                    { label: '体积 (V)', math: 'V = a \\times a \\times a = a^3' }
+                ]
+            },
+            'cuboid': {
+                title: '什么是长方体？',
+                desc: '长方体是由 6 个长方形（特殊情况下有两个相对的面是正方形）围成的立体图形。相对的面完全相同。',
+                grade: '五年级',
+                formulas: [
+                    { label: '表面积 (S表)', math: 'S_{表} = 2 \\times (ab + ah + bh)' },
+                    { label: '体积 (V)', math: 'V = a \\times b \\times h = abh' }
+                ]
+            },
+            'cylinder': {
+                title: '什么是圆柱体？',
+                desc: '圆柱体有两个平行的圆形底面和一个曲面侧面。侧面展开后是一个长方形或正方形。',
+                grade: '六年级',
+                formulas: [
+                    { label: '底面积 (S底)', math: 'S_{底} = \\pi r^2' },
+                    { label: '侧面积 (S侧)', math: 'S_{侧} = C \\times h = 2\\pi rh' },
+                    { label: '体积 (V)', math: 'V = S_{底} \\times h = \\pi r^2 h' }
+                ]
+            },
+            'sphere': {
+                title: '什么是球体？',
+                desc: '球体是一个连续的曲面图形。从球心到球面上任意一点的距离都相等，这个距离叫作半径。',
+                grade: '六年级',
+                formulas: [
+                    { label: '表面积 (S表)', math: 'S_{表} = 4\\pi r^2' },
+                    { label: '体积 (V)', math: 'V = \\frac{4}{3}\\pi r^3' }
+                ]
+            },
+            'triangle': {
+                title: '什么是三角形？',
+                desc: '三角形是由不在同一直线上的三条线段首尾顺次连接所组成的封闭二维图形。它是多边形的基础。',
+                grade: '四年级',
+                formulas: [
+                    { label: '周长 (C)', math: 'C = a + b + c' },
+                    { label: '面积 (S)', math: 'S = (a \\times h) \\div 2 = \\frac{1}{2}ah' }
+                ]
+            },
+            'circle': {
+                title: '什么是圆形？',
+                desc: '圆形是一个封闭的二维曲线图形。圆上所有的点到圆心的距离（半径）都相等。',
+                grade: '五年级',
+                formulas: [
+                    { label: '周长 (C)', math: 'C = \\pi \\times d = 2\\pi r' },
+                    { label: '面积 (S)', math: 'S = \\pi \\times r^2 = \\pi r^2' }
+                ]
+            }
+        };
+
+        // ==========================================
+        // 2. Three.js 3D 渲染引擎初始化
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        
+        // 相机设置 (长宽比根据容器实时计算)
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(25, 20, 35);
+
+        // 渲染器设置
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        // 轨道控制器 (支持鼠标拖拽旋转、滚轮缩放)
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; 
+        controls.dampingFactor = 0.05;
+        let autoRotateEnabled = true; 
+
+        // 场景灯光
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // 环境光
+        scene.add(ambientLight);
+        
+        const pointLight = new THREE.PointLight(0x00d2ff, 1.5, 100); // 蓝色点光源增强科技感
+        pointLight.position.set(20, 30, 20);
+        scene.add(pointLight);
+
+        const pointLight2 = new THREE.PointLight(0x9d4edd, 1, 100); // 紫色辅助光
+        pointLight2.position.set(-20, -10, -20);
+        scene.add(pointLight2);
+
+        // 空间辅助网格 (地基)
+        const gridHelper = new THREE.GridHelper(40, 20, 0x00d2ff, 0x002244);
+        gridHelper.position.y = -10;
+        scene.add(gridHelper);
+
+        // 全息发光材质 (双面渲染，确保 2D 图形旋转时不消失)
+        const hologramMaterial = new THREE.MeshPhongMaterial({
+            color: 0x00d2ff,
+            emissive: 0x001133,
+            specular: 0xffffff,
+            shininess: 100,
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide // 核心：开启双面渲染
+        });
+
+        // 几何体边缘线材质 (让小学生看清棱和边)
+        const edgeMaterial = new THREE.LineBasicMaterial({ 
+            color: 0xffffff, 
+            linewidth: 2 
+        });
+
+        let currentGroup = new THREE.Group();
+        scene.add(currentGroup);
+
+        // ==========================================
+        // 3. 图形生成与切换逻辑
+        // ==========================================
+        function createGeometryMesh(type) {
+            // 清除旧图形
+            while(currentGroup.children.length > 0){ 
+                currentGroup.remove(currentGroup.children); 
+            }
+
+            let geometry;
+            
+            // 根据类型生成对应的 Three.js 几何体
+            switch(type) {
+                case 'cube': 
+                    geometry = new THREE.BoxGeometry(12, 12, 12); 
+                    break;
+                case 'cuboid': 
+                    geometry = new THREE.BoxGeometry(18, 8, 12); 
+                    break;
+                case 'cylinder': 
+                    geometry = new THREE.CylinderGeometry(6, 6, 16, 32); 
+                    break;
+                case 'sphere': 
+                    geometry = new THREE.SphereGeometry(8, 32, 32); 
+                    break;
+                case 'triangle': 
+                    // 自定义 2D 三角形
+                    const triangleShape = new THREE.Shape();
+                    triangleShape.moveTo(0, 8);
+                    triangleShape.lineTo(-10, -8);
+                    triangleShape.lineTo(10, -8);
+                    triangleShape.lineTo(0, 8);
+                    geometry = new THREE.ShapeGeometry(triangleShape);
+                    break;
+                case 'circle': 
+                    // 2D 圆形
+                    geometry = new THREE.CircleGeometry(10, 64); 
+                    break;
+            }
+
+            // 1. 添加实体 Mesh
+            const mesh = new THREE.Mesh(geometry, hologramMaterial);
+            currentGroup.add(mesh);
+
+            // 2. 添加清晰的白色轮廓线 (EdgesGeometry)
+            const edges = new THREE.EdgesGeometry(geometry);
+            const line = new THREE.LineSegments(edges, edgeMaterial);
+            currentGroup.add(line);
+
+            // 重置旋转
+            currentGroup.rotation.set(0, 0, 0);
+        }
+
+        // ==========================================
+        // 4. UI 交互与信息更新
+        // ==========================================
+        function updateUIPanel(shapeKey) {
+            const data = geometryData[shapeKey];
+            document.getElementById('grade-tag').innerText = data.grade;
+            
+            // 拼接公式 HTML
+            let formulasHtml = data.formulas.map((f, index) => `
+                <div class="formula-item">
+                    <span class="formula-label">${f.label}:</span>
+                    <div class="math-render" id="math-${shapeKey}-${index}">${f.math}</div>
+                </div>
+            `).join('');
+
+            // 更新右侧面板内容
+            document.getElementById('content-body').innerHTML = `
+                <div class="info-section">
+                    <h3>${data.title}</h3>
+                    <p>${data.desc}</p>
+                </div>
+                <div class="info-section">
+                    <div class="formula-card">
+                        ${formulasHtml}
+                    </div>
+                </div>
+            `;
+
+            // 调用 KaTeX 渲染刚刚插入的数学公式 (使用 displayMode 保证公式居中放大显示)
+            document.querySelectorAll('.math-render').forEach(el => {
+                const texString = el.textContent;
+                el.innerHTML = '';
+                katex.render(texString, el, { throwOnError: false, displayMode: true });
+            });
+
+            // 更新 3D 画布图形
+            createGeometryMesh(shapeKey);
+        }
+
+        // 绑定左侧列表点击事件
+        document.querySelectorAll('.shape-item').forEach(item => {
+            item.addEventListener('click', function() {
+                // 切换激活状态样式
+                document.querySelectorAll('.shape-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 更新内容和图形
+                const shapeType = this.dataset.shape;
+                updateUIPanel(shapeType);
+            });
+        });
+
+        // 绑定底部工具栏按钮点击事件
+        document.getElementById('btn-autorotate').addEventListener('click', function() {
+            autoRotateEnabled = !autoRotateEnabled;
+            this.classList.toggle('active', autoRotateEnabled);
+        });
+
+        document.getElementById('btn-grid').addEventListener('click', function() {
+            gridHelper.visible = !gridHelper.visible;
+            this.classList.toggle('active', gridHelper.visible);
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', function() {
+            camera.position.set(25, 20, 35);
+            controls.target.set(0, 0, 0);
+            currentGroup.rotation.set(0, 0, 0);
+        });
+
+        // 默认初始化正方体
+        updateUIPanel('cube');
+
+        // ==========================================
+        // 5. 动画渲染循环及窗口自适应
+        // ==========================================
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // 缓慢自动旋转
+            if (autoRotateEnabled) {
+                currentGroup.rotation.y += 0.005;
+                currentGroup.rotation.x += 0.002;
+            }
+
+            // 更新轨道控制器 (响应鼠标拖拽)
+            controls.update(); 
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // 监听窗口大小变化，精确适配中间区域容器
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+    </script>
+</body>
+</html>
