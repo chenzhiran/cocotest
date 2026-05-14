@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 城市游戏</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #87CEEB; font-family: "Microsoft YaHei", sans-serif; }
+        
+        #ui-overlay {
+            position: absolute; top: 20px; left: 20px; color: white;
+            background: rgba(0, 0, 0, 0.6); padding: 15px; border-radius: 8px;
+            pointer-events: none; z-index: 10;
+        }
+
+        /* 游戏开始提示层 */
+        #blocker {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: white; z-index: 50;
+            cursor: pointer;
+        }
+        #instructions { text-align: center; font-size: 18px; line-height: 1.8; }
+        #instructions span { font-size: 24px; font-weight: bold; color: #00d1ff; }
+
+        /* 游戏结束/死亡画面 */
+        #game-over {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(139, 0, 0, 0.8); display: none; flex-direction: column;
+            justify-content: center; align-items: center; color: white; z-index: 200;
+        }
+        #game-over h1 { font-size: 60px; margin-bottom: 20px; }
+        #restart-btn {
+            padding: 15px 30px; font-size: 20px; cursor: pointer;
+            background: white; border: none; border-radius: 5px; color: #8b0000;
+        }
+
+        /* 加载等待画面 */
+        #loading-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #1a1a1a; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: white; z-index: 100;
+        }
+        .loader {
+            border: 4px solid #333; border-top: 4px solid #00d1ff;
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite; margin-bottom: 15px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <div id="status">资源加载中...</div>
+    </div>
+
+    <div id="blocker">
+        <div id="instructions">
+            <span>点击屏幕开始冒险</span><br/><br/>
+            <strong>移动:</strong> W, A, S, D<br/>
+            <strong>跳跃:</strong> 空格键<br/>
+            <strong>视角:</strong> 鼠标转动<br/>
+            警告：禁止掉下城市平台！
+        </div>
+    </div>
+
+    <div id="game-over">
+        <h1>坠落身亡</h1>
+        <p>你离开了安全区域...</p>
+        <button id="restart-btn" onclick="location.reload()">重新开始</button>
+    </div>
+
+    <div id="ui-overlay">
+        <h3 style="margin-top:0">3D 城市探险</h3>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+        import { Octree } from 'three/addons/math/Octree.js';
+        import { Capsule } from 'three/addons/math/Capsule.js';
+
+        // ==========================================
+        // 🛠️ 数值调整参数区 (可以直接修改以下数值)
+        // ==========================================
+        
+        const CITY_SCALE = 1.0;        // 🏙️ 场景缩放：设置为 1.0 (比旧版 0.1 增大10倍)
+        const MODEL_SCALE = 0.008;     // 🧍 人物缩放：保持原样
+
+        const MOVE_ACCEL = 35;         // 🏃 移动加速度：场景变大后，跑动需要更有力
+        const JUMP_FORCE = 12;         // 🚀 跳跃冲力
+        const GRAVITY = 35;            // 🍎 重力大小
+        
+        const DEAD_Y_LIMIT = -20;      // ☠️ 死亡高度：掉落到 Y=-20 以下则游戏结束
+        const PLAYER_START_Y = 25;     // 🚩 初始出生高度
+
+        const CAM_DISTANCE = 5.0;      // 🎥 相机离人的距离
+        const LOOK_SENSITIVITY = 0.002;// 🖱️ 鼠标转动灵敏度
+
+        // ==========================================
+
+        let scene, camera, renderer, clock, mixer, character;
+        let isGameOver = false;
+        let playerOnFloor = false;
+        let yaw = 0, pitch = 0; // 视角坐标
+        
+        const keyStates = {};
+        const playerVelocity = new THREE.Vector3();
+        const playerDirection = new THREE.Vector3();
+        
+        // 物理胶囊体：用于碰撞检测
+        const playerCollider = new Capsule( 
+            new THREE.Vector3( 0, 0.4, 0 ), 
+            new THREE.Vector3( 0, 1.2, 0 ), 
+            0.4 
+        );
+        const worldOctree = new Octree();
+
+        init();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            scene.fog = new THREE.Fog(0x87CEEB, 30, 1200);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true }); 
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true; 
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            clock = new THREE.Clock(); 
+
+            // 增强光照环境
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.8);
+            scene.add(hemiLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 2.8);
+            dirLight.position.set(200, 500, 200);
+            dirLight.castShadow = true;
+            dirLight.shadow.camera.top = 500;
+            dirLight.shadow.camera.bottom = -500;
+            dirLight.shadow.camera.left = -500;
+            dirLight.shadow.camera.right = 500;
+            dirLight.shadow.mapSize.set(2048, 2048);
+            scene.add(dirLight);
+
+            setupInputListeners();
+            loadGameAssets();
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // 处理鼠标锁定和视角
+        function setupInputListeners() {
+            document.addEventListener('keydown', (e) => { keyStates[e.code] = true; });
+            document.addEventListener('keyup', (e) => { keyStates[e.code] = false; });
+
+            const blocker = document.getElementById('blocker');
+            blocker.addEventListener('click', () => {
+                if(!isGameOver) document.body.requestPointerLock();
+            });
+
+            document.addEventListener('pointerlockchange', () => {
+                blocker.style.display = document.pointerLockElement === document.body ? 'none' : 'flex';
+            });
+
+            document.addEventListener('mousemove', (event) => {
+                if (document.pointerLockElement === document.body && !isGameOver) {
+                    yaw -= event.movementX * LOOK_SENSITIVITY;
+                    pitch -= event.movementY * LOOK_SENSITIVITY;
+                    pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, pitch));
+                }
+            });
+        }
+
+        async function loadGameAssets() {
+            // --- 关键：配置加载管理器修复贴图 404 ---
+            const manager = new THREE.LoadingManager();
+            const sourceTextureFiles = new Map([
+                ['banners.jpg', './source/Banners.png'],
+                ['banners.png', './source/Banners.png'],
+                ['graffiti.png', './source/Graffiti.png'],
+                ['road_signs.png', './source/Road_Signs.png'],
+                ['roads.png', './source/Roads.png'],
+                ['scrolling text.png', './source/scrolling text.png'],
+                ['textures1.png', './source/Textures1.png'],
+                ['tiles_2.png', './source/Tiles_2.png'],
+                ['tiles_2_normal.png', './source/Tiles_2_Normal.png'],
+                ['tiles_2_roughness.png', './source/Tiles_2_Roughness.png']
+            ]);
+            manager.setURLModifier((url) => {
+                const fileName = url.replace(/\\/g, '/').split('/').pop();
+                const fixedName = fileName
+                    .replace(/\.png\.\d+\.png$/i, '.png')
+                    .replace(/\.png\.\d+$/i, '.png')
+                    .toLowerCase();
+                if (sourceTextureFiles.has(fixedName)) return sourceTextureFiles.get(fixedName);
+                // 如果模型内部在找类似 Textures1.png.008.png 这种错误文件
+                if (url.includes('.png.')) {
+                    // 将其强制修正为真正的文件名 Textures1.png
+                    return './source/' + fileName.replace(/\.png\.\d+\.png$/i, '.png').replace(/\.png\.\d+$/i, '.png');
+                }
+                return url;
+            });
+
+            const fbxLoader = new FBXLoader(manager);
+            const textureLoader = new THREE.TextureLoader(manager);
+
+            try {
+                // 1. 加载 3D 城市
+                updateStatus("下载城市并修复贴图路径...");
+                fbxLoader.setResourcePath('./source/'); // 告诉加载器贴图在 source 文件夹
+                const cityFallbackMap = await textureLoader.loadAsync('./source/Textures1.png');
+                cityFallbackMap.colorSpace = THREE.SRGBColorSpace;
+                cityFallbackMap.flipY = false;
+                const cityFBX = await fbxLoader.loadAsync('./source/Cartoon_City_Free.fbx');
+                
+                cityFBX.scale.set(CITY_SCALE, CITY_SCALE, CITY_SCALE);
+                cityFBX.traverse(child => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        // 确保材质能显示（某些导出设置可能导致材质全黑，这里做兜底）
+                        if(child.material) {
+                            const materials = Array.isArray(child.material) ? child.material : [child.material];
+                            materials.forEach((material) => {
+                                material.side = THREE.DoubleSide;
+                                if (!material.map) material.map = cityFallbackMap;
+                                if (material.map) {
+                                    material.map.colorSpace = THREE.SRGBColorSpace;
+                                    material.map.flipY = false;
+                                }
+                                material.needsUpdate = true;
+                            });
+                        }
+                    }
+                });
+                
+                updateStatus("计算物理碰撞区域...");
+                worldOctree.fromGraphNode(cityFBX); 
+                scene.add(cityFBX);
+
+                // 2. 加载人物
+                updateStatus("初始化人物模型...");
+                character = await fbxLoader.loadAsync('./renwu/renwu_Meshy_AI_Meshy_Merged_Animations.fbx');
+                character.scale.set(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
+
+                // 应用人物专用贴图
+                const charMat = new THREE.MeshStandardMaterial({
+                    map: await textureLoader.loadAsync('./renwu/renwu_texture_0.png'),
+                    metalnessMap: await textureLoader.loadAsync('./renwu/renwu_texture_0_metallic.png'),
+                    normalMap: await textureLoader.loadAsync('./renwu/renwu_texture_0_normal.png'),
+                    roughnessMap: await textureLoader.loadAsync('./renwu/renwu_texture_0_roughness.png'),
+                    metalness: 1.0, roughness: 1.0
+                });
+                character.traverse(c => { if(c.isMesh) c.material = charMat; c.castShadow = true; });
+
+                // --- 恢复持续播放动画逻辑 ---
+                mixer = new THREE.AnimationMixer(character);
+                if (character.animations && character.animations.length > 0) {
+                    // 直接找出有效动画并无限循环播放
+                    for(let anim of character.animations) {
+                        if(anim.tracks.length > 0) {
+                            mixer.clipAction(anim).play();
+                            break; 
+                        }
+                    }
+                }
+
+                scene.add(character);
+                playerCollider.translate(new THREE.Vector3(0, PLAYER_START_Y, 0));
+                
+                document.getElementById('loading-screen').style.display = 'none';
+                animate();
+
+            } catch (err) {
+                console.error(err);
+                updateStatus("资源加载失败: " + err.message);
+            }
+        }
+
+        // 计算方向
+        function getMoveDirection(isForward) {
+            camera.getWorldDirection(playerDirection);
+            playerDirection.y = 0;
+            playerDirection.normalize();
+            return isForward ? playerDirection : playerDirection.clone().negate();
+        }
+
+        function getSideDirection(isRight) {
+            camera.getWorldDirection(playerDirection);
+            playerDirection.y = 0;
+            playerDirection.normalize();
+            playerDirection.cross(camera.up);
+            return isRight ? playerDirection : playerDirection.clone().negate();
+        }
+
+        // 运动物理逻辑
+        function updatePhysics(deltaTime) {
+            const accel = deltaTime * (playerOnFloor ? MOVE_ACCEL : MOVE_ACCEL * 0.3);
+
+            // WASD 移动推力
+            if (keyStates['KeyW']) playerVelocity.add(getMoveDirection(true).multiplyScalar(accel));
+            if (keyStates['KeyS']) playerVelocity.add(getMoveDirection(false).multiplyScalar(accel));
+            if (keyStates['KeyA']) playerVelocity.add(getSideDirection(false).multiplyScalar(accel));
+            if (keyStates['KeyD']) playerVelocity.add(getSideDirection(true).multiplyScalar(accel));
+
+            // 跳跃
+            if (playerOnFloor && keyStates['Space']) playerVelocity.y = JUMP_FORCE;
+
+            // 阻尼与重力
+            let damping = Math.exp(-4 * deltaTime) - 1;
+            if (!playerOnFloor) {
+                playerVelocity.y -= GRAVITY * deltaTime;
+                damping *= 0.1; 
+            }
+            playerVelocity.addScaledVector(playerVelocity, damping);
+
+            // 执行位移
+            const deltaPos = playerVelocity.clone().multiplyScalar(deltaTime);
+            playerCollider.translate(deltaPos);
+
+            // 八叉树碰撞判定
+            const result = worldOctree.capsuleIntersect(playerCollider);
+            playerOnFloor = false;
+            if (result) {
+                playerOnFloor = result.normal.y > 0;
+                if (!playerOnFloor) playerVelocity.addScaledVector(result.normal, -result.normal.dot(playerVelocity));
+                playerCollider.translate(result.normal.multiplyScalar(result.depth));
+            }
+
+            // 同步模型位置
+            if (character) {
+                character.position.copy(playerCollider.start);
+                character.position.y -= 0.4;
+                
+                // 平滑转向运动方向
+                const horizontalVel = new THREE.Vector2(playerVelocity.x, playerVelocity.z);
+                if (horizontalVel.length() > 0.1) {
+                    const targetAngle = Math.atan2(playerVelocity.x, playerVelocity.z);
+                    let diff = targetAngle - character.rotation.y;
+                    diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+                    character.rotation.y += diff * 10 * deltaTime;
+                }
+                // --- 持续更新动画时间轴 ---
+                if (mixer) mixer.update(deltaTime);
+            }
+
+            // 死亡判定：一旦跌落 Y 轴阈值
+            if (playerCollider.start.y < DEAD_Y_LIMIT && !isGameOver) {
+                isGameOver = true;
+                document.exitPointerLock();
+                document.getElementById('game-over').style.display = 'flex';
+            }
+
+            // 更新相机跟随
+            const offset = new THREE.Vector3(0, 0, CAM_DISTANCE).applyEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
+            camera.position.copy(playerCollider.end.clone().add(offset));
+            camera.lookAt(playerCollider.end);
+        }
+
+        function updateStatus(msg) { document.getElementById('status').innerText = msg; }
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            if(isGameOver) return;
+            requestAnimationFrame(animate);
+            const dt = Math.min(0.05, clock.getDelta());
+            
+            // 将物理步长拆细，增加碰撞稳定性
+            const subSteps = 5;
+            for (let i = 0; i < subSteps; i++) {
+                updatePhysics(dt / subSteps);
+            }
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
