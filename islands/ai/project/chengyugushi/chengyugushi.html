@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超好玩的成语故事 (PC版)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * { box-sizing: border-box; outline: none; user-select: none; }
+        
+        :root {
+            --font-game: 'ZCOOL KuaiLe', cursive, 'Microsoft YaHei', sans-serif;
+            --font-ui: 'Microsoft YaHei', sans-serif;
+            
+            --sky-blue: #dcf2fd;
+            --grass-green: #bce596;
+            --cloud-white: rgba(255, 255, 255, 0.95);
+            
+            --btn-pink: #ff9a9e;
+            --btn-pink-shadow: #e57373;
+            --btn-yellow: #ffecb3;
+            --btn-yellow-shadow: #ffca28;
+            --btn-green: #aed581;
+            --btn-green-shadow: #7cb342;
+            
+            --text-main: #5d4037;
+            --text-highlight: #ff7043;
+        }
+
+        body {
+            margin: 0; padding: 0; font-family: var(--font-ui);
+            background: linear-gradient(180deg, var(--sky-blue) 0%, #e8f5e9 40%, var(--grass-green) 100%);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; width: 100vw; overflow: hidden; position: relative;
+        }
+
+        .clouds {
+            position: absolute; top: 10%; left: 10%; width: 80px; height: 30px;
+            background: white; border-radius: 30px; opacity: 0.6;
+            box-shadow: 30px -15px 0 10px white, 60px 0 0 0 white;
+            animation: floatClouds 25s linear infinite alternate; z-index: 0;
+        }
+        .clouds2 { top: 40%; left: 70%; transform: scale(1.5); animation-duration: 35s; opacity: 0.4;}
+        @keyframes floatClouds { from { transform: translateX(0) scale(1); } to { transform: translateX(80px) scale(1.1); } }
+
+        /* ================= 1. 欢迎页 ================= */
+        #welcome-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('chengyugushi.png'); background-size: cover; 
+            background-position: center; background-repeat: no-repeat;
+            display: flex; flex-direction: column; justify-content: flex-end; 
+            align-items: center; 
+            /* 修改：将距离底部的距离从 120px 缩小到 40px，让按钮更靠下 */
+            padding-bottom: 40px; 
+            z-index: 200;
+            transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.6s;
+        }
+
+        .btn-start {
+            z-index: 202; font-family: var(--font-game); background: linear-gradient(180deg, #ffb6b9, var(--btn-pink));
+            color: white; font-size: 50px; padding: 20px 80px; border-radius: 60px; border: 6px solid white;
+            cursor: pointer; box-shadow: 0 12px 0 var(--btn-pink-shadow), 0 25px 30px rgba(0,0,0,0.3);
+            transition: all 0.1s; letter-spacing: 5px; animation: pulse 2s infinite;
+        }
+        .btn-start:active { 
+            transform: translateY(12px) scale(0.95); box-shadow: 0 0px 0 var(--btn-pink-shadow), 0 5px 10px rgba(0,0,0,0.3); animation: none;
+        }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .hide-up { transform: translateY(-100%) scale(0.9); opacity: 0; pointer-events: none; }
+
+        /* ================= 2. 主游戏容器 ================= */
+        .game-wrapper {
+            display: flex; flex-direction: column; width: 90vw; max-width: 1000px; 
+            /* 修改：放宽高度限制，增加适配性 */
+            height: 90vh; max-height: 850px; 
+            background: var(--cloud-white); border-radius: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.2), inset 0 0 0 6px white;
+            backdrop-filter: blur(15px); position: relative; z-index: 10; opacity: 0; pointer-events: none;
+            transition: opacity 0.5s ease-in 0.4s; overflow: hidden;
+        }
+        .game-wrapper.active { opacity: 1; pointer-events: auto; }
+
+        .top-bar {
+            padding: 15px 30px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.7); border-bottom: 3px dashed #d7ccc8;
+        }
+        .timer {
+            font-family: var(--font-game); background: white; color: var(--text-highlight);
+            padding: 8px 20px; border-radius: 20px; font-size: 24px; box-shadow: 0 4px 0 #ffe0b2; border: 2px solid #ffcc80;
+        }
+        .grade-tabs { display: flex; gap: 15px; }
+        .grade-tab {
+            font-family: var(--font-game); background: white; border: 2px solid var(--btn-yellow-shadow); color: #d8a000; padding: 8px 20px; 
+            border-radius: 25px; font-size: 20px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 0 var(--btn-yellow-shadow);
+        }
+        .grade-tab:hover { filter: brightness(0.95); }
+        .grade-tab.active { background: var(--btn-yellow-shadow); color: white; transform: translateY(4px); box-shadow: 0 0 0 var(--btn-yellow-shadow); }
+
+        .main-content { display: flex; flex-direction: row; flex: 1; height: calc(100% - 80px); }
+
+        .play-area {
+            flex: 6; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            /* 修改：减小内边距，并且允许上下内容溢出时可以滚动，防止截断 */
+            padding: 20px; border-right: 4px dashed #d7ccc8; background: rgba(255,255,255,0.3);
+            overflow-y: auto; 
+        }
+
+        /* 修改：减小标题和提示的占位高度 */
+        .level-title { font-family: var(--font-game); font-size: 40px; color: var(--text-main); margin: 0 0 5px 0; }
+        .tips-text {
+            font-size: 15px; color: #d84315; background: #fff3e0; padding: 8px 15px; border-radius: 20px;
+            margin-bottom: 10px; text-align: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); font-weight: bold; border: 2px dashed #ffb74d;
+        }
+
+        /* 修改：适当缩小成语格子的大小（从 55px 缩小到 48px），减少行间距 */
+        .crossword-board {
+            display: grid; grid-template-columns: repeat(8, 48px); grid-template-rows: repeat(8, 48px); gap: 6px; margin: 10px 0; 
+            background: rgba(255,255,255,0.6); padding: 12px; border-radius: 20px; box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+        }
+
+        .cell {
+            width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;
+            font-size: 26px; font-weight: bold; font-family: var(--font-ui); border-radius: 10px; box-sizing: border-box;
+        }
+        .no-box { background: transparent !important; border: none !important; box-shadow: none !important; }
+        .filled { background: var(--btn-green); color: white; box-shadow: 0 5px 0 var(--btn-green-shadow); animation: popIn 0.3s; }
+        .blank { background: white; border: 3px dashed var(--text-highlight); color: var(--text-highlight); cursor: pointer; transition: 0.2s; }
+        .blank:hover { background: #fff8e1; }
+        .blank.active { border: 3px solid var(--btn-pink); background: #ffebee; box-shadow: 0 0 15px rgba(255, 154, 158, 0.7); transform: scale(1.1); z-index: 2; }
+
+        .options-area { flex: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: rgba(240, 248, 255, 0.6); }
+        .options-title { font-family: var(--font-game); font-size: 28px; color: #0288d1; margin-bottom: 20px; }
+        .options-container { display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 15px; width: 100%; }
+        
+        .option-btn {
+            width: 65px; height: 65px; background: #4fc3f7; color: white; border-radius: 12px;
+            font-size: 32px; font-weight: bold; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; border: 3px solid white; box-shadow: 0 6px 0 #0288d1; transition: 0.1s;
+        }
+        .option-btn:hover { background: #29b6f6; transform: translateY(-2px); box-shadow: 0 8px 0 #0288d1; }
+        .option-btn:active { transform: translateY(6px); box-shadow: 0 0 0 #0288d1; border: 3px solid transparent;}
+        .option-btn.hidden { visibility: hidden; pointer-events: none; }
+
+        @keyframes popIn { 0% { transform: scale(0.5); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(5px); }
+        .modal-box { background: white; padding: 40px 50px; border-radius: 40px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 8px solid var(--btn-yellow); animation: modalIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); width: 85%; max-width: 450px; }
+        @keyframes modalIn { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        .modal-title { font-family: var(--font-game); font-size: 45px; color: var(--text-highlight); margin-bottom: 15px; }
+        .modal-desc { font-size: 22px; color: var(--text-main); margin-bottom: 30px; font-weight: bold;}
+        .win-stars { font-size: 55px; margin-bottom: 15px; }
+        
+        .modal-btn { font-family: var(--font-game); background: var(--btn-green); color: white; border: none; padding: 15px 50px; font-size: 30px; border-radius: 40px; cursor: pointer; box-shadow: 0 8px 0 var(--btn-green-shadow); transition: 0.1s; letter-spacing: 2px; }
+        .modal-btn:hover { filter: brightness(1.05); }
+        .modal-btn:active { transform: translateY(8px); box-shadow: 0 0 0 var(--btn-green-shadow); }
+        
+        .error-modal .modal-box { border-color: var(--btn-pink); }
+        .error-modal .modal-btn { background: var(--btn-pink); box-shadow: 0 8px 0 var(--btn-pink-shadow); }
+    </style>
+</head>
+<body>
+
+<audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
+
+<div class="clouds"></div>
+<div class="clouds clouds2"></div>
+
+<div id="welcome-screen">
+    <button class="btn-start" onclick="startGame()">开始游戏</button>
+</div>
+
+<div class="game-wrapper" id="game-page">
+    <div class="top-bar">
+        <div class="timer">⏰ <span id="time-display">00:00</span></div>
+        <div class="grade-tabs">
+            <button class="grade-tab active" data-grade="4" onclick="changeGrade('4')">四年级</button>
+            <button class="grade-tab" data-grade="5" onclick="changeGrade('5')">五年级</button>
+            <button class="grade-tab" data-grade="6" onclick="changeGrade('6')">六年级</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="play-area">
+            <h1 class="level-title" id="level-display">第 1 关</h1>
+            <div class="tips-text">💡 玩法说明：本关共 3 个成语，先点击下方空格，再从右侧选字填空！</div>
+            <div class="crossword-board" id="board"></div>
+        </div>
+        <div class="options-area">
+            <div class="options-title">鼠标点击选择文字 👇</div>
+            <div class="options-container" id="options"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="win-modal">
+        <div class="modal-box">
+            <div class="win-stars">⭐⭐⭐</div>
+            <div class="modal-title">太棒啦！</div>
+            <div class="modal-desc">成功填出3个成语，继续挑战吧！</div>
+            <button class="modal-btn" onclick="nextLevel()">下一关</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay error-modal" id="error-modal">
+        <div class="modal-box">
+            <div class="modal-title">哎呀，不对</div>
+            <div class="modal-desc">点错啦！点击格子里的字把它拿下来，<br>再试一次哦~</div>
+            <button class="modal-btn" onclick="closeError()">继续努力</button>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="finish-modal">
+        <div class="modal-box">
+            <div class="win-stars">🏆🏆🏆</div>
+            <div class="modal-title">成语王者</div>
+            <div class="modal-desc">恭喜你！完成了本年级的全部挑战！</div>
+            <button class="modal-btn" onclick="location.reload()">重新开始</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playTone(freq, type, dur, vol) {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + dur);
+    }
+    function playClick() { playTone(600, 'sine', 0.1, 0.1); }
+    function playDrop() { playTone(400, 'sine', 0.1, 0.1); }
+    function playWin() {
+        playTone(400, 'sine', 0.15, 0.1); setTimeout(() => playTone(500, 'sine', 0.15, 0.1), 100);
+        setTimeout(() => playTone(600, 'sine', 0.15, 0.1), 200); setTimeout(() => playTone(800, 'sine', 0.3, 0.1), 300);
+    }
+    function playWrong() { playTone(300, 'sawtooth', 0.2, 0.05); setTimeout(() => playTone(250, 'sawtooth', 0.3, 0.05), 150); }
+
+const levelData = {
+    "4": [
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'守'} , {r:2, c:3, char:'株', isBlank:true}, {r:2, c:4, char:'待'} , {r:2, c:5, char:'兔'} ,
+        {r:3, c:5, char:'死', isBlank:true}, {r:4, c:5, char:'狐'} , {r:5, c:5, char:'悲'} ,
+        {r:5, c:6, char:'天', isBlank:true}, {r:5, c:7, char:'悯'} , {r:5, c:8, char:'人', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'亡'} , {r:2, c:3, char:'羊', isBlank:true}, {r:2, c:4, char:'补'} , {r:2, c:5, char:'牢'} ,
+        {r:3, c:5, char:'不', isBlank:true}, {r:4, c:5, char:'可'} , {r:5, c:5, char:'破'} ,
+        {r:5, c:6, char:'门', isBlank:true}, {r:5, c:7, char:'而'} , {r:5, c:8, char:'入', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'画'} , {r:2, c:3, char:'蛇', isBlank:true}, {r:2, c:4, char:'添'} , {r:2, c:5, char:'足'} ,
+        {r:3, c:5, char:'智', isBlank:true}, {r:4, c:5, char:'多'} , {r:5, c:5, char:'谋'} ,
+        {r:5, c:6, char:'财', isBlank:true}, {r:5, c:7, char:'害'} , {r:5, c:8, char:'命', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'刻'} , {r:2, c:3, char:'舟', isBlank:true}, {r:2, c:4, char:'求'} , {r:2, c:5, char:'剑'} ,
+        {r:3, c:5, char:'拔', isBlank:true}, {r:4, c:5, char:'弩'} , {r:5, c:5, char:'张'} ,
+        {r:5, c:6, char:'口', isBlank:true}, {r:5, c:7, char:'结'} , {r:5, c:8, char:'舌', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'拔'} , {r:2, c:3, char:'苗', isBlank:true}, {r:2, c:4, char:'助'} , {r:2, c:5, char:'长'} ,
+        {r:3, c:5, char:'驱', isBlank:true}, {r:4, c:5, char:'直'} , {r:5, c:5, char:'入'} ,
+        {r:5, c:6, char:'木', isBlank:true}, {r:5, c:7, char:'三'} , {r:5, c:8, char:'分', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'狐'} , {r:2, c:3, char:'假', isBlank:true}, {r:2, c:4, char:'虎'} , {r:2, c:5, char:'威'} ,
+        {r:3, c:5, char:'风', isBlank:true}, {r:4, c:5, char:'凛'} , {r:5, c:5, char:'凛'} ,
+        {r:5, c:6, char:'然', isBlank:true}, {r:5, c:7, char:'正'} , {r:5, c:8, char:'气', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'盲'} , {r:2, c:3, char:'人', isBlank:true}, {r:2, c:4, char:'瞎'} , {r:2, c:5, char:'马'} ,
+        {r:3, c:5, char:'到', isBlank:true}, {r:4, c:5, char:'成'} , {r:5, c:5, char:'功'} ,
+        {r:5, c:6, char:'成', isBlank:true}, {r:5, c:7, char:'名'} , {r:5, c:8, char:'就', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'买'} , {r:2, c:3, char:'椟', isBlank:true}, {r:2, c:4, char:'还'} , {r:2, c:5, char:'珠'} ,
+        {r:3, c:5, char:'联', isBlank:true}, {r:4, c:5, char:'璧'} , {r:5, c:5, char:'合'} ,
+        {r:5, c:6, char:'情', isBlank:true}, {r:5, c:7, char:'合'} , {r:5, c:8, char:'理', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'滥'} , {r:2, c:3, char:'竽', isBlank:true}, {r:2, c:4, char:'充'} , {r:2, c:5, char:'数'} ,
+        {r:3, c:5, char:'不', isBlank:true}, {r:4, c:5, char:'胜'} , {r:5, c:5, char:'数'} ,
+        {r:5, c:6, char:'一', isBlank:true}, {r:5, c:7, char:'数'} , {r:5, c:8, char:'二', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'惊'} , {r:2, c:3, char:'弓', isBlank:true}, {r:2, c:4, char:'之'} , {r:2, c:5, char:'鸟'} ,
+        {r:3, c:5, char:'语', isBlank:true}, {r:4, c:5, char:'花'} , {r:5, c:5, char:'香'} ,
+        {r:5, c:6, char:'气', isBlank:true}, {r:5, c:7, char:'扑'} , {r:5, c:8, char:'鼻', isBlank:true}
+    ] }
+    ],
+    "5": [
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'破'} , {r:2, c:3, char:'釜', isBlank:true}, {r:2, c:4, char:'沉'} , {r:2, c:5, char:'舟'} ,
+        {r:3, c:5, char:'车', isBlank:true}, {r:4, c:5, char:'劳'} , {r:5, c:5, char:'顿'} ,
+        {r:5, c:6, char:'开', isBlank:true}, {r:5, c:7, char:'茅'} , {r:5, c:8, char:'塞', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'愚'} , {r:2, c:3, char:'公', isBlank:true}, {r:2, c:4, char:'移'} , {r:2, c:5, char:'山'} ,
+        {r:3, c:5, char:'清', isBlank:true}, {r:4, c:5, char:'水'} , {r:5, c:5, char:'秀'} ,
+        {r:5, c:6, char:'外', isBlank:true}, {r:5, c:7, char:'慧'} , {r:5, c:8, char:'中', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'负'} , {r:2, c:3, char:'荆', isBlank:true}, {r:2, c:4, char:'请'} , {r:2, c:5, char:'罪'} ,
+        {r:3, c:5, char:'魁', isBlank:true}, {r:4, c:5, char:'祸'} , {r:5, c:5, char:'首'} ,
+        {r:5, c:6, char:'屈', isBlank:true}, {r:5, c:7, char:'一'} , {r:5, c:8, char:'指', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'兵'} , {r:2, c:3, char:'荒', isBlank:true}, {r:2, c:4, char:'马'} , {r:2, c:5, char:'乱'} ,
+        {r:3, c:5, char:'七', isBlank:true}, {r:4, c:5, char:'八'} , {r:5, c:5, char:'糟'} ,
+        {r:5, c:6, char:'糠', isBlank:true}, {r:5, c:7, char:'之'} , {r:5, c:8, char:'妻', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'三'} , {r:2, c:3, char:'顾', isBlank:true}, {r:2, c:4, char:'茅'} , {r:2, c:5, char:'庐'} ,
+        {r:3, c:5, char:'山', isBlank:true}, {r:4, c:5, char:'真'} , {r:5, c:5, char:'面'} ,
+        {r:5, c:6, char:'红', isBlank:true}, {r:5, c:7, char:'耳'} , {r:5, c:8, char:'赤', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'草'} , {r:2, c:3, char:'船', isBlank:true}, {r:2, c:4, char:'借'} , {r:2, c:5, char:'箭'} ,
+        {r:3, c:5, char:'在', isBlank:true}, {r:4, c:5, char:'弦'} , {r:5, c:5, char:'上'} ,
+        {r:5, c:6, char:'下', isBlank:true}, {r:5, c:7, char:'其'} , {r:5, c:8, char:'手', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'望'} , {r:2, c:3, char:'梅', isBlank:true}, {r:2, c:4, char:'止'} , {r:2, c:5, char:'渴'} ,
+        {r:3, c:5, char:'而', isBlank:true}, {r:4, c:5, char:'穿'} , {r:5, c:5, char:'井'} ,
+        {r:5, c:6, char:'底', isBlank:true}, {r:5, c:7, char:'之'} , {r:5, c:8, char:'蛙', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'卧'} , {r:2, c:3, char:'薪', isBlank:true}, {r:2, c:4, char:'尝'} , {r:2, c:5, char:'胆'} ,
+        {r:3, c:5, char:'大', isBlank:true}, {r:4, c:5, char:'包'} , {r:5, c:5, char:'天'} ,
+        {r:5, c:6, char:'长', isBlank:true}, {r:5, c:7, char:'地'} , {r:5, c:8, char:'久', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'完'} , {r:2, c:3, char:'好', isBlank:true}, {r:2, c:4, char:'无'} , {r:2, c:5, char:'损'} ,
+        {r:3, c:5, char:'人', isBlank:true}, {r:4, c:5, char:'利'} , {r:5, c:5, char:'己'} ,
+        {r:5, c:6, char:'所', isBlank:true}, {r:5, c:7, char:'不'} , {r:5, c:8, char:'欲', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'精'} , {r:2, c:3, char:'卫', isBlank:true}, {r:2, c:4, char:'填'} , {r:2, c:5, char:'海'} ,
+        {r:3, c:5, char:'阔', isBlank:true}, {r:4, c:5, char:'天'} , {r:5, c:5, char:'空'} ,
+        {r:5, c:6, char:'前', isBlank:true}, {r:5, c:7, char:'绝'} , {r:5, c:8, char:'后', isBlank:true}
+    ] }
+    ],
+    "6": [
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'悬'} , {r:2, c:3, char:'梁', isBlank:true}, {r:2, c:4, char:'刺'} , {r:2, c:5, char:'股'} ,
+        {r:3, c:5, char:'掌', isBlank:true}, {r:4, c:5, char:'之'} , {r:5, c:5, char:'上'} ,
+        {r:5, c:6, char:'天', isBlank:true}, {r:5, c:7, char:'入'} , {r:5, c:8, char:'地', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'凿'} , {r:2, c:3, char:'壁', isBlank:true}, {r:2, c:4, char:'偷'} , {r:2, c:5, char:'光'} ,
+        {r:3, c:5, char:'芒', isBlank:true}, {r:4, c:5, char:'万'} , {r:5, c:5, char:'丈'} ,
+        {r:5, c:6, char:'二', isBlank:true}, {r:5, c:7, char:'和'} , {r:5, c:8, char:'尚', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'闻'} , {r:2, c:3, char:'鸡', isBlank:true}, {r:2, c:4, char:'起'} , {r:2, c:5, char:'舞'} ,
+        {r:3, c:5, char:'文', isBlank:true}, {r:4, c:5, char:'弄'} , {r:5, c:5, char:'墨'} ,
+        {r:5, c:6, char:'守', isBlank:true}, {r:5, c:7, char:'成'} , {r:5, c:8, char:'规', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'指'} , {r:2, c:3, char:'鹿', isBlank:true}, {r:2, c:4, char:'为'} , {r:2, c:5, char:'马'} ,
+        {r:3, c:5, char:'首', isBlank:true}, {r:4, c:5, char:'是'} , {r:5, c:5, char:'瞻'} ,
+        {r:5, c:6, char:'前', isBlank:true}, {r:5, c:7, char:'顾'} , {r:5, c:8, char:'后', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'毛'} , {r:2, c:3, char:'遂', isBlank:true}, {r:2, c:4, char:'自'} , {r:2, c:5, char:'荐'} ,
+        {r:3, c:5, char:'贤', isBlank:true}, {r:4, c:5, char:'举'} , {r:5, c:5, char:'能'} ,
+        {r:5, c:6, char:'者', isBlank:true}, {r:5, c:7, char:'多'} , {r:5, c:8, char:'劳', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'唇'} , {r:2, c:3, char:'亡', isBlank:true}, {r:2, c:4, char:'齿'} , {r:2, c:5, char:'寒'} ,
+        {r:3, c:5, char:'冬', isBlank:true}, {r:4, c:5, char:'腊'} , {r:5, c:5, char:'月'} ,
+        {r:5, c:6, char:'黑', isBlank:true}, {r:5, c:7, char:'风'} , {r:5, c:8, char:'高', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'螳'} , {r:2, c:3, char:'臂', isBlank:true}, {r:2, c:4, char:'当'} , {r:2, c:5, char:'车'} ,
+        {r:3, c:5, char:'水', isBlank:true}, {r:4, c:5, char:'马'} , {r:5, c:5, char:'龙'} ,
+        {r:5, c:6, char:'飞', isBlank:true}, {r:5, c:7, char:'凤'} , {r:5, c:8, char:'舞', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'缘'} , {r:2, c:3, char:'木', isBlank:true}, {r:2, c:4, char:'求'} , {r:2, c:5, char:'鱼'} ,
+        {r:3, c:5, char:'跃', isBlank:true}, {r:4, c:5, char:'龙'} , {r:5, c:5, char:'门'} ,
+        {r:5, c:6, char:'庭', isBlank:true}, {r:5, c:7, char:'若'} , {r:5, c:8, char:'市', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'邯'} , {r:2, c:3, char:'郸', isBlank:true}, {r:2, c:4, char:'学'} , {r:2, c:5, char:'步'} ,
+        {r:3, c:5, char:'步', isBlank:true}, {r:4, c:5, char:'为'} , {r:5, c:5, char:'营'} ,
+        {r:5, c:6, char:'私', isBlank:true}, {r:5, c:7, char:'舞'} , {r:5, c:8, char:'弊', isBlank:true}
+    ] },
+        { idiomCount: 3, words: [
+        {r:2, c:2, char:'釜'} , {r:2, c:3, char:'底', isBlank:true}, {r:2, c:4, char:'抽'} , {r:2, c:5, char:'薪'} ,
+        {r:3, c:5, char:'火', isBlank:true}, {r:4, c:5, char:'相'} , {r:5, c:5, char:'传'} ,
+        {r:5, c:6, char:'宗', isBlank:true}, {r:5, c:7, char:'接'} , {r:5, c:8, char:'代', isBlank:true}
+    ] }
+    ]
+};
+
+    let currentGrade = "4"; let currentLevelIndex = 0;
+    let activeBlankCell = null; let filledCount = 0;
+    let totalBlanks = 0; let seconds = 0; let timerInterval = null;
+
+    function startGame() {
+        playClick();
+        const bgm = document.getElementById('bgm');
+        bgm.volume = 0.3; bgm.play().catch(e => console.log("等待手动交互BGM"));
+
+        const welcome = document.getElementById('welcome-screen');
+        const game = document.getElementById('game-page');
+        
+        welcome.classList.add('hide-up');
+        setTimeout(() => { game.classList.add('active'); initLevel(); }, 600);
+    }
+
+    function changeGrade(grade) {
+        playClick(); currentGrade = grade; currentLevelIndex = 0;
+        document.querySelectorAll('.grade-tab').forEach(tab => {
+            if(tab.dataset.grade === grade) tab.classList.add('active');
+            else tab.classList.remove('active');
+        });
+        initLevel();
+    }
+
+    function initLevel() {
+        const lvData = levelData[currentGrade][currentLevelIndex];
+        const board = document.getElementById('board');
+        const optionsArea = document.getElementById('options');
+        
+        board.innerHTML = ''; optionsArea.innerHTML = '';
+        activeBlankCell = null; filledCount = 0; totalBlanks = 0;
+        
+        document.getElementById('level-display').innerText = `第 ${currentLevelIndex + 1} 关`;
+
+        let gridMap = new Array(9).fill(null).map(() => new Array(9).fill(null));
+        let blankChars = [];
+
+        lvData.words.forEach(item => {
+            gridMap[item.r][item.c] = { ...item };
+            if(item.isBlank) {
+                totalBlanks++;
+                blankChars.push(item.char);
+            }
+        });
+
+        blankChars.sort(() => Math.random() - 0.5);
+
+        for(let r=1; r<=8; r++) {
+            for(let c=1; c<=8; c++) {
+                const cellData = gridMap[r][c];
+                const div = document.createElement('div');
+                div.className = 'cell';
+                
+                if(!cellData) {
+                    div.classList.add('no-box');
+                } else if(cellData.isBlank) {
+                    div.classList.add('blank');
+                    div.dataset.answer = cellData.char;
+                    div.onclick = () => handleBlankClick(div);
+                } else {
+                    div.classList.add('filled');
+                    div.innerText = cellData.char;
+                }
+                board.appendChild(div);
+            }
+        }
+
+        blankChars.forEach((char, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn'; btn.innerText = char;
+            btn.dataset.optId = index; btn.onclick = () => handleOptionClick(btn);
+            optionsArea.appendChild(btn);
+        });
+
+        const firstBlank = document.querySelector('.blank');
+        if(firstBlank) handleBlankClick(firstBlank);
+        
+        if(!timerInterval) {
+            timerInterval = setInterval(() => {
+                seconds++;
+                let m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                let s = (seconds % 60).toString().padStart(2, '0');
+                document.getElementById('time-display').innerText = `${m}:${s}`;
+            }, 1000);
+        }
+    }
+
+    function handleBlankClick(cell) {
+        playClick();
+        if(cell.innerText !== '') {
+            const optId = cell.dataset.sourceOptId;
+            const btn = document.querySelector(`.option-btn[data-opt-id='${optId}']`);
+            if(btn) btn.classList.remove('hidden');
+            cell.innerText = ''; delete cell.dataset.sourceOptId; filledCount--;
+        }
+        if(activeBlankCell) activeBlankCell.classList.remove('active');
+        activeBlankCell = cell; activeBlankCell.classList.add('active');
+    }
+
+    function handleOptionClick(btn) {
+        playDrop();
+        if(!activeBlankCell || activeBlankCell.innerText !== '') {
+            const emptyBlanks = Array.from(document.querySelectorAll('.blank')).filter(el => el.innerText === '');
+            if(emptyBlanks.length > 0) handleBlankClick(emptyBlanks); else return;
+        }
+
+        activeBlankCell.innerText = btn.innerText;
+        activeBlankCell.dataset.sourceOptId = btn.dataset.optId;
+        
+        activeBlankCell.style.animation = 'none';
+        void activeBlankCell.offsetWidth;
+        activeBlankCell.style.animation = 'popIn 0.3s';
+        
+        btn.classList.add('hidden');
+        activeBlankCell.classList.remove('active');
+        activeBlankCell = null; filledCount++;
+
+        if(filledCount === totalBlanks) {
+            setTimeout(checkAnswer, 300);
+        } else {
+            const nextEmpty = Array.from(document.querySelectorAll('.blank')).find(el => el.innerText === '');
+            if(nextEmpty) handleBlankClick(nextEmpty);
+        }
+    }
+
+    function checkAnswer() {
+        const blanks = document.querySelectorAll('.blank');
+        let isAllCorrect = true;
+        blanks.forEach(cell => { if(cell.innerText !== cell.dataset.answer) isAllCorrect = false; });
+
+        if(isAllCorrect) {
+            playWin();
+            if(currentLevelIndex === levelData[currentGrade].length - 1) {
+                document.getElementById('finish-modal').style.display = 'flex'; clearInterval(timerInterval);
+            } else {
+                document.getElementById('win-modal').style.display = 'flex';
+            }
+        } else {
+            playWrong(); document.getElementById('error-modal').style.display = 'flex';
+        }
+    }
+
+    function nextLevel() {
+        playClick(); document.getElementById('win-modal').style.display = 'none';
+        currentLevelIndex++; initLevel();
+    }
+
+    function closeError() {
+        playClick(); document.getElementById('error-modal').style.display = 'none';
+    }
+</script>
+</body>
+</html>
