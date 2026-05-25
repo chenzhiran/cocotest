@@ -3,39 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D 城市游戏</title>
+    <title>超自由城市 - 体力与动画系统</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #87CEEB; font-family: "Microsoft YaHei", sans-serif; }
         
         #ui-overlay {
             position: absolute; top: 20px; left: 20px; color: white;
-            background: rgba(0, 0, 0, 0.6); padding: 15px; border-radius: 8px;
+            background: rgba(0, 0, 0, 0.65); padding: 15px; border-radius: 8px;
             pointer-events: none; z-index: 10;
+            backdrop-filter: blur(4px);
+            min-width: 220px;
+        }
+        #ui-overlay h3 { margin: 0 0 8px 0; font-size: 18px; letter-spacing: 1px; }
+        
+        .health-container {
+            margin-top: 8px;
+            background: rgba(30,30,30,0.8);
+            border-radius: 12px;
+            padding: 4px 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .health-label {
+            font-size: 12px;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .health-bar-bg {
+            width: 100%;
+            height: 12px;
+            background-color: #4a0000;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .health-bar-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #e34234, #ff6b4a);
+            border-radius: 6px;
+            transition: width 0.15s ease-out;
+        }
+        .health-text {
+            font-size: 11px;
+            text-align: right;
+            margin-top: 3px;
+            opacity: 0.9;
+        }
+        .stamina-container {
+            margin-top: 8px;
+            background: rgba(30,30,30,0.8);
+            border-radius: 12px;
+            padding: 4px 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .stamina-label {
+            font-size: 12px;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .stamina-bar-bg {
+            width: 100%;
+            height: 12px;
+            background-color: #2c4a2c;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .stamina-bar-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #4cd964, #8bff6e);
+            border-radius: 6px;
+            transition: width 0.15s ease-out;
+        }
+        .stamina-text {
+            font-size: 11px;
+            text-align: right;
+            margin-top: 3px;
+        }
+        .anim-status {
+            margin-top: 10px;
+            font-size: 12px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 16px;
+            padding: 5px 8px;
+            text-align: center;
+            border-left: 3px solid #ffaa44;
+        }
+        .anim-status span {
+            color: #ffaa44;
+            font-weight: bold;
         }
 
-        /* 游戏开始提示层 */
         #blocker {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.5); display: flex; flex-direction: column;
             justify-content: center; align-items: center; color: white; z-index: 50;
             cursor: pointer;
         }
-        #instructions { text-align: center; font-size: 18px; line-height: 1.8; }
+        #instructions { text-align: center; font-size: 18px; line-height: 1.8; background: rgba(0,0,0,0.6); padding: 20px; border-radius: 20px; max-width: 90%; }
         #instructions span { font-size: 24px; font-weight: bold; color: #00d1ff; }
+        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; text-align: left; }
+        .controls-grid kbd { background: #222; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #ffaa44; }
 
-        /* 游戏结束/死亡画面 */
         #game-over {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(139, 0, 0, 0.8); display: none; flex-direction: column;
+            background: rgba(139, 0, 0, 0.85); display: none; flex-direction: column;
             justify-content: center; align-items: center; color: white; z-index: 200;
         }
-        #game-over h1 { font-size: 60px; margin-bottom: 20px; }
+        #game-over h1 { font-size: 60px; margin-bottom: 20px; text-shadow: 4px 4px 0px #3a0000; }
+        #game-over p { font-size: 22px; margin-bottom: 25px; background: rgba(0,0,0,0.6); padding: 8px 20px; border-radius: 40px; }
         #restart-btn {
             padding: 15px 30px; font-size: 20px; cursor: pointer;
             background: white; border: none; border-radius: 5px; color: #8b0000;
+            font-weight: bold; transition: 0.2s;
         }
+        #restart-btn:hover { transform: scale(1.05); background: #ffe0e0; }
 
-        /* 加载等待画面 */
         #loading-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #1a1a1a; display: flex; flex-direction: column;
@@ -58,22 +143,52 @@
 
     <div id="blocker">
         <div id="instructions">
-            <span>点击屏幕开始冒险</span><br/><br/>
-            <strong>移动:</strong> W, A, S, D<br/>
-            <strong>跳跃:</strong> 空格键<br/>
-            <strong>视角:</strong> 鼠标转动<br/>
-            警告：禁止掉下城市平台！
+            <span>🏙️ 超自由城市</span><br/><br/>
+            <div class="controls-grid">
+                <div><kbd>W/A/S/D</kbd> 移动</div>
+                <div><kbd>🖱️ 鼠标</kbd> 视角</div>
+                <div><kbd>空格</kbd> 跳跃 <span style="color:#8aff8a;">(-50体力)</span></div>
+                <div><kbd>左 Shift</kbd> 跑步 <span style="color:#ffaa44;">(速度↑ 体力消耗↑)</span></div>
+                <div><kbd>鼠标左键</kbd> 或 <kbd>P</kbd> 攻击动画</div>
+                <div><span style="color:#ffaa44;">🎬 动画自动切换</span> 根据动作</div>
+            </div>
+            <div style="margin-top: 12px; font-size: 14px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 10px;">
+                ⚠️ 高度超过6米会摔伤！ &nbsp;|&nbsp; 🏃 体力低于200减速 &nbsp;|&nbsp; 体力耗尽无法移动
+            </div>
         </div>
     </div>
 
     <div id="game-over">
         <h1>坠落身亡</h1>
-        <p>你离开了安全区域...</p>
+        <p id="death-message">你没能承受冲击...</p>
         <button id="restart-btn" onclick="location.reload()">重新开始</button>
     </div>
 
     <div id="ui-overlay">
-        <h3 style="margin-top:0">3D 城市探险</h3>
+        <h3>🏙️ 超自由城市</h3>
+        <div class="health-container">
+            <div class="health-label">
+                <span>❤️ 生命值</span>
+                <span id="health-value">100</span>
+            </div>
+            <div class="health-bar-bg">
+                <div class="health-bar-fill" id="health-fill" style="width: 100%;"></div>
+            </div>
+            <div class="health-text">跌落伤害 >6米 每米5伤害</div>
+        </div>
+        <div class="stamina-container">
+            <div class="stamina-label">
+                <span>⚡ 体力值</span>
+                <span id="stamina-value">1000</span>
+            </div>
+            <div class="stamina-bar-bg">
+                <div class="stamina-bar-fill" id="stamina-fill" style="width: 100%;"></div>
+            </div>
+            <div class="stamina-text">移动消耗 | 静止恢复 | 低于200减速 | 跳跃-50</div>
+        </div>
+        <div class="anim-status">
+            🎭 当前动作: <span id="current-anim-label">待机</span>
+        </div>
     </div>
 
     <script type="importmap">
@@ -92,34 +207,70 @@
         import { Capsule } from 'three/addons/math/Capsule.js';
 
         // ==========================================
-        // 🛠️ 数值调整参数区 (可以直接修改以下数值)
+        // 数值调整区
         // ==========================================
         
-        const CITY_SCALE = 1.0;        // 🏙️ 场景缩放：设置为 1.0 (比旧版 0.1 增大10倍)
-        const MODEL_SCALE = 0.008;     // 🧍 人物缩放：保持原样
-
-        const MOVE_ACCEL = 35;         // 🏃 移动加速度：场景变大后，跑动需要更有力
-        const JUMP_FORCE = 12;         // 🚀 跳跃冲力
-        const GRAVITY = 35;            // 🍎 重力大小
+        const CITY_SCALE = 1.0;        
+        const MODEL_SCALE = 0.008;     
+        const JUMP_FORCE = 12;         
+        const GRAVITY = 35;            
+        const DEAD_Y_LIMIT = -20;      
+        const PLAYER_START_Y = 25;     
+        const CAM_DISTANCE = 5.0;      
+        const LOOK_SENSITIVITY = 0.002;
+        const MIN_PITCH = -0.95;
+        const MAX_PITCH = -0.15;
         
-        const DEAD_Y_LIMIT = -20;      // ☠️ 死亡高度：掉落到 Y=-20 以下则游戏结束
-        const PLAYER_START_Y = 25;     // 🚩 初始出生高度
+        // 血量 & 摔伤系统
+        const MAX_HEALTH = 100;         
+        const FALL_DAMAGE_THRESHOLD = 6.0;
+        const DAMAGE_PER_METER = 5;     
 
-        const CAM_DISTANCE = 5.0;      // 🎥 相机离人的距离
-        const LOOK_SENSITIVITY = 0.002;// 🖱️ 鼠标转动灵敏度
-
+        // 体力系统
+        const MAX_STAMINA = 1000;        
+        const STAMINA_DRAIN_RATE_WALK = 16;   // 走路消耗
+        const STAMINA_DRAIN_RATE_RUN = 32;    // 跑步消耗
+        const STAMINA_RECOVER_RATE = 22;      
+        const STAMINA_SLOW_THRESHOLD = 200;   
+        const JUMP_STAMINA_COST = 50;    
+        
+        // 移动速度系数
+        const BASE_MOVE_ACCEL = 18;       // 基础加速度
+        const RUN_SPEED_MULTIPLIER = 1.6; // 跑步速度倍数
+        
+        // ========== 动画索引映射 (根据实际模型调整) ==========
+        const ANIM_ATTACK_IDX = 0;   // 攻击动画 (原数字1)
+        const ANIM_WALK_IDX = 2;     // 走路动画 (原数字3)
+        const ANIM_RUN_IDX = 3;      // 跑步动画 (原数字4)
+        const ANIM_IDLE_IDX = 4;     // 待机动画 (原数字5)
+        
         // ==========================================
 
         let scene, camera, renderer, clock, mixer, character;
         let isGameOver = false;
         let playerOnFloor = false;
-        let yaw = 0, pitch = 0; // 视角坐标
+        let yaw = 0, pitch = -0.45;
+        
+        // 血量 & 体力
+        let currentHealth = MAX_HEALTH;
+        let fallMaxY = PLAYER_START_Y;
+        let isAirborneActive = false;
+        let currentStamina = MAX_STAMINA;
+        
+        // 动画系统变量
+        let animActions = {};
+        let currentAnimState = 'idle';
+        let isAttacking = false;
+        let attackTimer = null;
+        let currentAction = null;
+        
+        // 跑步标志
+        let isRunning = false;
         
         const keyStates = {};
         const playerVelocity = new THREE.Vector3();
         const playerDirection = new THREE.Vector3();
         
-        // 物理胶囊体：用于碰撞检测
         const playerCollider = new Capsule( 
             new THREE.Vector3( 0, 0.4, 0 ), 
             new THREE.Vector3( 0, 1.2, 0 ), 
@@ -127,9 +278,26 @@
         );
         const worldOctree = new Octree();
 
+        // UI元素
+        let healthFillElement, healthValueElement;
+        let staminaFillElement, staminaValueElement;
+        let deathMessageElement;
+        let animLabelSpan;
+
         init();
 
         function init() {
+            setupGameText();
+            
+            healthFillElement = document.getElementById('health-fill');
+            healthValueElement = document.getElementById('health-value');
+            staminaFillElement = document.getElementById('stamina-fill');
+            staminaValueElement = document.getElementById('stamina-value');
+            deathMessageElement = document.getElementById('death-message');
+            animLabelSpan = document.getElementById('current-anim-label');
+            updateHealthUI();
+            updateStaminaUI();
+
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87CEEB);
             scene.fog = new THREE.Fog(0x87CEEB, 30, 1200);
@@ -145,7 +313,6 @@
 
             clock = new THREE.Clock(); 
 
-            // 增强光照环境
             const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.8);
             scene.add(hemiLight);
 
@@ -165,10 +332,16 @@
             window.addEventListener('resize', onWindowResize);
         }
 
-        // 处理鼠标锁定和视角
         function setupInputListeners() {
-            document.addEventListener('keydown', (e) => { keyStates[e.code] = true; });
-            document.addEventListener('keyup', (e) => { keyStates[e.code] = false; });
+            document.addEventListener('keydown', (e) => {
+                keyStates[e.code] = true;
+                // 跑步键: 左Shift
+                if (e.code === 'ShiftLeft') isRunning = true;
+            });
+            document.addEventListener('keyup', (e) => {
+                keyStates[e.code] = false;
+                if (e.code === 'ShiftLeft') isRunning = false;
+            });
 
             const blocker = document.getElementById('blocker');
             blocker.addEventListener('click', () => {
@@ -183,13 +356,177 @@
                 if (document.pointerLockElement === document.body && !isGameOver) {
                     yaw -= event.movementX * LOOK_SENSITIVITY;
                     pitch -= event.movementY * LOOK_SENSITIVITY;
-                    pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, pitch));
+                    pitch = Math.max(MIN_PITCH, Math.min(MAX_PITCH, pitch));
+                }
+            });
+
+            document.addEventListener('mousedown', (event) => {
+                if (event.button === 0 && document.pointerLockElement === document.body && !isGameOver) {
+                    triggerAttack();
                 }
             });
         }
 
+        // 触发攻击动画 (无伤害)
+        function triggerAttack() {
+            if (isGameOver) return;
+            if (isAttacking) return; // 防止攻击动画叠加
+            
+            // 播放攻击动画
+            if (animActions.attack) {
+                const previousState = currentAnimState;
+                isAttacking = true;
+                switchToAnimation('attack', false);
+                const attackClip = animActions.attack.getClip();
+                const duration = attackClip.duration;
+                if (attackTimer) clearTimeout(attackTimer);
+                attackTimer = setTimeout(() => {
+                    isAttacking = false;
+                    attackTimer = null;
+                    updateAnimationByMovement();
+                }, duration * 1000);
+            }
+        }
+        
+        // 根据移动输入和跑步键决定动画状态 (idle/walk/run)
+        function updateAnimationByMovement() {
+            if (isAttacking) return;
+            
+            const moving = keyStates['KeyW'] || keyStates['KeyS'] || keyStates['KeyA'] || keyStates['KeyD'];
+            if (!moving || !playerOnFloor) {
+                if (currentAnimState !== 'idle') {
+                    currentAnimState = 'idle';
+                    switchToAnimation('idle');
+                }
+            } else {
+                let shouldRun = isRunning && currentStamina > 0 && playerOnFloor;
+                if (shouldRun && currentStamina >= 5) {
+                    if (currentAnimState !== 'run') {
+                        currentAnimState = 'run';
+                        switchToAnimation('run');
+                    }
+                } else {
+                    if (currentAnimState !== 'walk') {
+                        currentAnimState = 'walk';
+                        switchToAnimation('walk');
+                    }
+                }
+            }
+        }
+        
+        // 切换动画核心 (带淡入淡出)
+        function switchToAnimation(animType, force = true) {
+            if (!mixer) return;
+            let newAction = null;
+            if (animType === 'idle') newAction = animActions.idle;
+            else if (animType === 'walk') newAction = animActions.walk;
+            else if (animType === 'run') newAction = animActions.run;
+            else if (animType === 'attack') newAction = animActions.attack;
+            else return;
+            
+            if (!newAction) return;
+            if (currentAction === newAction && !force) return;
+            
+            if (currentAction) {
+                currentAction.fadeOut(0.15);
+            }
+            newAction.reset().fadeIn(0.15).play();
+            currentAction = newAction;
+            
+            let label = '待机';
+            if (animType === 'walk') label = '🚶 走路';
+            else if (animType === 'run') label = '🏃 跑步';
+            else if (animType === 'attack') label = '⚔️ 攻击';
+            if (animLabelSpan) animLabelSpan.innerText = label;
+        }
+        
+        // UI更新函数
+        function updateHealthUI() {
+            if (healthFillElement) {
+                const percent = (currentHealth / MAX_HEALTH) * 100;
+                healthFillElement.style.width = `${Math.max(0, percent)}%`;
+                if (percent < 30) {
+                    healthFillElement.style.background = "linear-gradient(90deg, #ff3a2f, #ff6f5e)";
+                } else {
+                    healthFillElement.style.background = "linear-gradient(90deg, #e34234, #ff6b4a)";
+                }
+            }
+            if (healthValueElement) healthValueElement.innerText = Math.max(0, Math.floor(currentHealth));
+        }
+        
+        function updateStaminaUI() {
+            if (staminaFillElement) {
+                const percent = (currentStamina / MAX_STAMINA) * 100;
+                staminaFillElement.style.width = `${Math.max(0, percent)}%`;
+            }
+            if (staminaValueElement) staminaValueElement.innerText = Math.max(0, Math.floor(currentStamina));
+        }
+        
+        function applyDamage(amount) {
+            if (isGameOver) return;
+            const actualDamage = Math.min(amount, MAX_HEALTH);
+            currentHealth = Math.max(0, currentHealth - actualDamage);
+            updateHealthUI();
+            
+            if (actualDamage > 0 && document.body) {
+                const flash = document.createElement('div');
+                flash.style.position = 'fixed';
+                flash.style.top = 0;
+                flash.style.left = 0;
+                flash.style.width = '100%';
+                flash.style.height = '100%';
+                flash.style.backgroundColor = 'rgba(180, 40, 40, 0.35)';
+                flash.style.pointerEvents = 'none';
+                flash.style.zIndex = 999;
+                document.body.appendChild(flash);
+                setTimeout(() => { if(flash.parentNode) flash.remove(); }, 150);
+            }
+            
+            if (currentHealth <= 0 && !isGameOver) {
+                isGameOver = true;
+                if (document.pointerLockElement === document.body) document.exitPointerLock();
+                const gameOverDiv = document.getElementById('game-over');
+                if (deathMessageElement) deathMessageElement.innerText = "你因伤势过重而倒下...";
+                gameOverDiv.style.display = 'flex';
+            }
+        }
+        
+        function modifyStamina(delta) {
+            if (isGameOver) return;
+            currentStamina = Math.min(MAX_STAMINA, Math.max(0, currentStamina + delta));
+            updateStaminaUI();
+        }
+        
+        function resetFallTracking() {
+            isAirborneActive = false;
+            fallMaxY = playerCollider.start.y;
+        }
+        
+        function processFallDamage(landingY) {
+            if (!isAirborneActive) return;
+            const fallDistance = fallMaxY - landingY;
+            if (fallDistance > FALL_DAMAGE_THRESHOLD) {
+                let damage = (fallDistance - FALL_DAMAGE_THRESHOLD) * DAMAGE_PER_METER;
+                damage = Math.min(damage, MAX_HEALTH);
+                damage = Math.floor(damage);
+                if (damage > 0) applyDamage(damage);
+            }
+            resetFallTracking();
+        }
+
+        function isMovingInput() {
+            return keyStates['KeyW'] || keyStates['KeyS'] || keyStates['KeyA'] || keyStates['KeyD'];
+        }
+
+        function getStaminaSpeedFactor() {
+            if (currentStamina <= 0) return 0;
+            if (currentStamina < STAMINA_SLOW_THRESHOLD) {
+                return Math.max(0.2, currentStamina / STAMINA_SLOW_THRESHOLD);
+            }
+            return 1.0;
+        }
+
         async function loadGameAssets() {
-            // --- 关键：配置加载管理器修复贴图 404 ---
             const manager = new THREE.LoadingManager();
             const sourceTextureFiles = new Map([
                 ['banners.jpg', './source/Banners.png'],
@@ -210,9 +547,7 @@
                     .replace(/\.png\.\d+$/i, '.png')
                     .toLowerCase();
                 if (sourceTextureFiles.has(fixedName)) return sourceTextureFiles.get(fixedName);
-                // 如果模型内部在找类似 Textures1.png.008.png 这种错误文件
                 if (url.includes('.png.')) {
-                    // 将其强制修正为真正的文件名 Textures1.png
                     return './source/' + fileName.replace(/\.png\.\d+\.png$/i, '.png').replace(/\.png\.\d+$/i, '.png');
                 }
                 return url;
@@ -222,9 +557,8 @@
             const textureLoader = new THREE.TextureLoader(manager);
 
             try {
-                // 1. 加载 3D 城市
                 updateStatus("下载城市并修复贴图路径...");
-                fbxLoader.setResourcePath('./source/'); // 告诉加载器贴图在 source 文件夹
+                fbxLoader.setResourcePath('./source/');
                 const cityFallbackMap = await textureLoader.loadAsync('./source/Textures1.png');
                 cityFallbackMap.colorSpace = THREE.SRGBColorSpace;
                 cityFallbackMap.flipY = false;
@@ -235,7 +569,6 @@
                     if (child.isMesh) {
                         child.castShadow = true;
                         child.receiveShadow = true;
-                        // 确保材质能显示（某些导出设置可能导致材质全黑，这里做兜底）
                         if(child.material) {
                             const materials = Array.isArray(child.material) ? child.material : [child.material];
                             materials.forEach((material) => {
@@ -255,12 +588,10 @@
                 worldOctree.fromGraphNode(cityFBX); 
                 scene.add(cityFBX);
 
-                // 2. 加载人物
-                updateStatus("初始化人物模型...");
+                updateStatus("初始化人物模型及动画...");
                 character = await fbxLoader.loadAsync('./renwu/renwu_Meshy_AI_Meshy_Merged_Animations.fbx');
                 character.scale.set(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
 
-                // 应用人物专用贴图
                 const charMat = new THREE.MeshStandardMaterial({
                     map: await textureLoader.loadAsync('./renwu/renwu_texture_0.png'),
                     metalnessMap: await textureLoader.loadAsync('./renwu/renwu_texture_0_metallic.png'),
@@ -270,21 +601,38 @@
                 });
                 character.traverse(c => { if(c.isMesh) c.material = charMat; c.castShadow = true; });
 
-                // --- 恢复持续播放动画逻辑 ---
                 mixer = new THREE.AnimationMixer(character);
+                
+                // 初始化动画Action
                 if (character.animations && character.animations.length > 0) {
-                    // 直接找出有效动画并无限循环播放
-                    for(let anim of character.animations) {
-                        if(anim.tracks.length > 0) {
-                            mixer.clipAction(anim).play();
-                            break; 
-                        }
+                    console.log("可用动画数量:", character.animations.length);
+                    character.animations.forEach((clip, idx) => {
+                        console.log(`动画[${idx}] 名称: ${clip.name || '未命名'}, 时长: ${clip.duration}`);
+                    });
+                    if (character.animations.length > ANIM_ATTACK_IDX) animActions.attack = mixer.clipAction(character.animations[ANIM_ATTACK_IDX]);
+                    if (character.animations.length > ANIM_WALK_IDX) animActions.walk = mixer.clipAction(character.animations[ANIM_WALK_IDX]);
+                    if (character.animations.length > ANIM_RUN_IDX) animActions.run = mixer.clipAction(character.animations[ANIM_RUN_IDX]);
+                    if (character.animations.length > ANIM_IDLE_IDX) animActions.idle = mixer.clipAction(character.animations[ANIM_IDLE_IDX]);
+                    
+                    if (!animActions.idle && character.animations.length > 0) animActions.idle = mixer.clipAction(character.animations[0]);
+                    if (!animActions.walk && character.animations.length > 1) animActions.walk = mixer.clipAction(character.animations[1]);
+                    if (!animActions.run && character.animations.length > 2) animActions.run = mixer.clipAction(character.animations[2]);
+                    if (!animActions.attack && character.animations.length > 3) animActions.attack = mixer.clipAction(character.animations[3]);
+                    
+                    if (animActions.idle) {
+                        currentAction = animActions.idle;
+                        currentAction.play();
+                        currentAnimState = 'idle';
+                        if (animLabelSpan) animLabelSpan.innerText = '待机';
                     }
+                } else {
+                    console.warn("模型无动画");
                 }
 
                 scene.add(character);
                 playerCollider.translate(new THREE.Vector3(0, PLAYER_START_Y, 0));
-                
+                resetFallTracking();
+
                 document.getElementById('loading-screen').style.display = 'none';
                 animate();
 
@@ -294,14 +642,17 @@
             }
         }
 
-        // 计算方向
+        function setupGameText() {
+            document.title = "超自由城市";
+            document.getElementById('status').innerText = "资源加载中...";
+        }
+        
         function getMoveDirection(isForward) {
             camera.getWorldDirection(playerDirection);
             playerDirection.y = 0;
             playerDirection.normalize();
             return isForward ? playerDirection : playerDirection.clone().negate();
         }
-
         function getSideDirection(isRight) {
             camera.getWorldDirection(playerDirection);
             playerDirection.y = 0;
@@ -310,32 +661,55 @@
             return isRight ? playerDirection : playerDirection.clone().negate();
         }
 
-        // 运动物理逻辑
         function updatePhysics(deltaTime) {
-            const accel = deltaTime * (playerOnFloor ? MOVE_ACCEL : MOVE_ACCEL * 0.3);
-
-            // WASD 移动推力
-            if (keyStates['KeyW']) playerVelocity.add(getMoveDirection(true).multiplyScalar(accel));
-            if (keyStates['KeyS']) playerVelocity.add(getMoveDirection(false).multiplyScalar(accel));
-            if (keyStates['KeyA']) playerVelocity.add(getSideDirection(false).multiplyScalar(accel));
-            if (keyStates['KeyD']) playerVelocity.add(getSideDirection(true).multiplyScalar(accel));
-
-            // 跳跃
-            if (playerOnFloor && keyStates['Space']) playerVelocity.y = JUMP_FORCE;
-
-            // 阻尼与重力
+            const wasOnGround = playerOnFloor;
+            
+            // 体力消耗与恢复 (地面)
+            if (playerOnFloor && !isGameOver) {
+                let drain = 0;
+                if (isMovingInput() && currentStamina > 0) {
+                    const isRunActive = isRunning && currentStamina > 0 && playerOnFloor;
+                    drain = (isRunActive ? STAMINA_DRAIN_RATE_RUN : STAMINA_DRAIN_RATE_WALK) * deltaTime;
+                    modifyStamina(-drain);
+                } else if (!isMovingInput() && currentStamina < MAX_STAMINA) {
+                    modifyStamina(STAMINA_RECOVER_RATE * deltaTime);
+                }
+            }
+            
+            let speedMultiplier = 1.0;
+            const canRun = isRunning && currentStamina > 0 && playerOnFloor && isMovingInput();
+            if (canRun) speedMultiplier = RUN_SPEED_MULTIPLIER;
+            
+            const staminaFactor = getStaminaSpeedFactor();
+            let effectiveAccel = BASE_MOVE_ACCEL * staminaFactor * speedMultiplier;
+            if (currentStamina <= 0) effectiveAccel = 0;
+            
+            const accel = deltaTime * (playerOnFloor ? effectiveAccel : effectiveAccel * 0.3);
+            
+            if (effectiveAccel > 0) {
+                if (keyStates['KeyW']) playerVelocity.add(getMoveDirection(true).multiplyScalar(accel));
+                if (keyStates['KeyS']) playerVelocity.add(getMoveDirection(false).multiplyScalar(accel));
+                if (keyStates['KeyA']) playerVelocity.add(getSideDirection(false).multiplyScalar(accel));
+                if (keyStates['KeyD']) playerVelocity.add(getSideDirection(true).multiplyScalar(accel));
+            }
+            
+            let canJump = playerOnFloor && keyStates['Space'] && !isGameOver && currentStamina >= JUMP_STAMINA_COST;
+            if (canJump) {
+                playerVelocity.y = JUMP_FORCE;
+                modifyStamina(-JUMP_STAMINA_COST);
+                keyStates['Space'] = false;
+            }
+            
             let damping = Math.exp(-4 * deltaTime) - 1;
             if (!playerOnFloor) {
                 playerVelocity.y -= GRAVITY * deltaTime;
-                damping *= 0.1; 
+                damping *= 0.1;
             }
             playerVelocity.addScaledVector(playerVelocity, damping);
-
-            // 执行位移
+            
             const deltaPos = playerVelocity.clone().multiplyScalar(deltaTime);
             playerCollider.translate(deltaPos);
-
-            // 八叉树碰撞判定
+            
             const result = worldOctree.capsuleIntersect(playerCollider);
             playerOnFloor = false;
             if (result) {
@@ -343,54 +717,60 @@
                 if (!playerOnFloor) playerVelocity.addScaledVector(result.normal, -result.normal.dot(playerVelocity));
                 playerCollider.translate(result.normal.multiplyScalar(result.depth));
             }
-
-            // 同步模型位置
+            
+            // 摔伤检测
+            if (!wasOnGround && playerOnFloor) processFallDamage(playerCollider.start.y);
+            if (wasOnGround && !playerOnFloor) {
+                isAirborneActive = true;
+                fallMaxY = playerCollider.start.y;
+            }
+            if (!playerOnFloor && isAirborneActive) fallMaxY = Math.max(fallMaxY, playerCollider.start.y);
+            if (playerOnFloor && isAirborneActive) resetFallTracking();
+            
+            if (!isAttacking) updateAnimationByMovement();
+            
             if (character) {
                 character.position.copy(playerCollider.start);
                 character.position.y -= 0.4;
-                
-                // 平滑转向运动方向
                 const horizontalVel = new THREE.Vector2(playerVelocity.x, playerVelocity.z);
-                if (horizontalVel.length() > 0.1) {
+                if (horizontalVel.length() > 0.1 && effectiveAccel > 0) {
                     const targetAngle = Math.atan2(playerVelocity.x, playerVelocity.z);
                     let diff = targetAngle - character.rotation.y;
                     diff = Math.atan2(Math.sin(diff), Math.cos(diff));
                     character.rotation.y += diff * 10 * deltaTime;
                 }
-                // --- 持续更新动画时间轴 ---
                 if (mixer) mixer.update(deltaTime);
             }
-
-            // 死亡判定：一旦跌落 Y 轴阈值
+            
             if (playerCollider.start.y < DEAD_Y_LIMIT && !isGameOver) {
                 isGameOver = true;
-                document.exitPointerLock();
+                if (document.pointerLockElement === document.body) document.exitPointerLock();
+                if (deathMessageElement) deathMessageElement.innerText = "你坠入了无尽深渊...";
                 document.getElementById('game-over').style.display = 'flex';
             }
-
-            // 更新相机跟随
+            
             const offset = new THREE.Vector3(0, 0, CAM_DISTANCE).applyEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
             camera.position.copy(playerCollider.end.clone().add(offset));
             camera.lookAt(playerCollider.end);
         }
-
-        function updateStatus(msg) { document.getElementById('status').innerText = msg; }
+        
+        function updateStatus(msg) { 
+            const statusDiv = document.getElementById('status');
+            if (statusDiv) statusDiv.innerText = msg; 
+        }
+        
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
-
+        
         function animate() {
             if(isGameOver) return;
             requestAnimationFrame(animate);
             const dt = Math.min(0.05, clock.getDelta());
-            
-            // 将物理步长拆细，增加碰撞稳定性
             const subSteps = 5;
-            for (let i = 0; i < subSteps; i++) {
-                updatePhysics(dt / subSteps);
-            }
+            for (let i = 0; i < subSteps; i++) updatePhysics(dt / subSteps);
             renderer.render(scene, camera);
         }
     </script>
