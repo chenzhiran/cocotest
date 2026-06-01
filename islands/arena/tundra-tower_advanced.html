@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>苔原塔 · 强化篇：常用 API 大全 | 扣哒世界 编程知识</title>
+    <style>
+        /* ===== 基础重置与变量 ===== */
+        :root {
+            --primary: #FF6B35;
+            --primary-light: #FF8F5E;
+            --primary-lighter: #FFF0E8;
+            --primary-dark: #E55A2B;
+            --dark: #1a1a2e;
+            --dark-code: #1e1e2e;
+            --dark-code-border: #313244;
+            --text: #2d2d2d;
+            --text-light: #555;
+            --text-lighter: #888;
+            --bg: #ffffff;
+            --bg-alt: #fafafa;
+            --bg-card: #ffffff;
+            --border: #e8e8e8;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --error: #f44336;
+            --info: #2196F3;
+            --code-keyword: #c678dd;
+            --code-string: #98c379;
+            --code-comment: #5c6370;
+            --code-function: #61afef;
+            --code-number: #d19a66;
+            --code-text: #abb2bf;
+            --code-punctuation: #abb2bf;
+            --code-object: #e5c07b;
+            --sidebar-width: 260px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            color: var(--text);
+            background: var(--bg);
+            font-size: 16px;
+        }
+
+        /* ===== 左侧导航栏 ===== */
+        .sidebar-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: #1a1a2e;
+            overflow-y: auto;
+            padding: 20px 0;
+            z-index: 1000;
+            border-right: 3px solid var(--primary);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-nav::-webkit-scrollbar { width: 4px; }
+        .sidebar-nav::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+        .sidebar-nav::-webkit-scrollbar-track { background: #2a2a4e; }
+
+        .sidebar-nav .nav-title {
+            color: var(--primary);
+            font-size: 0.95em;
+            font-weight: 700;
+            padding: 8px 18px;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-nav a {
+            display: block;
+            color: #ccc;
+            text-decoration: none;
+            padding: 6px 18px;
+            font-size: 0.82em;
+            line-height: 1.5;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-nav a:hover {
+            color: #fff;
+            background: rgba(255, 107, 53, 0.1);
+            border-left-color: var(--primary);
+        }
+
+        .sidebar-nav a.nav-section {
+            color: var(--primary-light);
+            font-weight: 600;
+            font-size: 0.88em;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #2a2a4e;
+        }
+
+        .sidebar-nav a.nav-section:first-of-type {
+            border-top: none;
+            margin-top: 0;
+        }
+
+        .sidebar-nav a.nav-sub {
+            padding-left: 30px;
+            color: #aaa;
+            font-size: 0.78em;
+        }
+
+        .sidebar-nav a.nav-sub:hover { color: #fff; }
+
+        .nav-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1100;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 1.2em;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .page-wrapper { margin-left: var(--sidebar-width); }
+
+        /* ===== 头部横幅 ===== */
+        .hero-banner {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .hero-banner h1 { font-size: 2.5em; margin-bottom: 10px; position: relative; z-index: 1; }
+        .hero-banner .subtitle { font-size: 1.2em; opacity: 0.9; position: relative; z-index: 1; }
+        .hero-banner .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== 主容器 ===== */
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+
+        /* ===== 章节标题 ===== */
+        .section-header {
+            background: var(--primary-lighter);
+            border-left: 5px solid var(--primary);
+            padding: 20px 25px;
+            margin: 50px 0 30px;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .section-header h2 { color: var(--primary-dark); font-size: 1.8em; margin-bottom: 5px; }
+        .section-header .en-title { color: var(--text-light); font-size: 0.95em; font-style: italic; }
+
+        h3 {
+            color: var(--primary);
+            font-size: 1.4em;
+            margin: 40px 0 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-lighter);
+        }
+
+        h4 {
+            color: var(--text);
+            font-size: 1.1em;
+            margin: 28px 0 10px;
+            padding-left: 12px;
+            border-left: 3px solid var(--primary-light);
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        }
+
+        p { margin: 12px 0; text-align: justify; }
+
+        .keyword {
+            background: var(--primary-lighter);
+            color: var(--primary-dark);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        code {
+            background: #f0f0f0;
+            color: #d63384;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+            font-size: 0.88em;
+            white-space: nowrap;
+        }
+
+        /* ===== 双语言代码块 ===== */
+        .code-tabs {
+            margin: 16px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--dark-code-border);
+        }
+
+        .code-tabs .tab-buttons {
+            display: flex;
+            background: #16161e;
+        }
+
+        .code-tabs .tab-btn {
+            flex: 0 0 auto;
+            background: transparent;
+            color: #888;
+            border: none;
+            padding: 10px 22px;
+            font-size: 0.82em;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .code-tabs .tab-btn:hover { color: #ccc; }
+
+        .code-tabs .tab-btn.active {
+            color: var(--primary-light);
+            border-bottom-color: var(--primary);
+            background: var(--dark-code);
+        }
+
+        .code-tabs .tab-panel { display: none; }
+        .code-tabs .tab-panel.active { display: block; }
+
+        .code-block {
+            background: var(--dark-code);
+            padding: 18px 24px;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+            font-size: 0.88em;
+            line-height: 1.7;
+            color: var(--code-text);
+        }
+
+        .code-block .kw { color: var(--code-keyword); }
+        .code-block .str { color: var(--code-string); }
+        .code-block .cmt { color: var(--code-comment); font-style: italic; }
+        .code-block .fn { color: var(--code-function); }
+        .code-block .num { color: var(--code-number); }
+        .code-block .obj { color: var(--code-object); }
+        .code-block .punc { color: var(--code-punctuation); }
+        .code-block .type { color: #56b6c2; }
+
+        .api-desc {
+            background: var(--bg-alt);
+            border-left: 3px solid var(--primary-light);
+            padding: 10px 16px;
+            margin: 8px 0 4px;
+            font-size: 0.93em;
+            color: var(--text-light);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .ret {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            font-size: 0.78em;
+            font-weight: 600;
+            padding: 1px 8px;
+            border-radius: 10px;
+            margin-left: 4px;
+        }
+
+        .tip-box {
+            background: #fff8e1;
+            border-left: 4px solid var(--warning);
+            padding: 14px 18px;
+            margin: 16px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95em;
+        }
+
+        .tip-box .tip-label { font-weight: 700; color: #f57f17; margin-right: 6px; }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--info);
+            padding: 14px 18px;
+            margin: 16px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95em;
+        }
+
+        .info-box .info-label { font-weight: 700; color: #1565c0; margin-right: 6px; }
+
+        .warn-box {
+            background: #fdecea;
+            border-left: 4px solid var(--error);
+            padding: 14px 18px;
+            margin: 16px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.95em;
+        }
+
+        .warn-box .warn-label { font-weight: 700; color: #c62828; margin-right: 6px; }
+
+        .styled-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        .styled-table thead { background: var(--primary); color: white; }
+        .styled-table th { padding: 12px 16px; text-align: left; font-weight: 600; }
+        .styled-table td { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+        .styled-table tbody tr:nth-child(even) { background: var(--bg-alt); }
+        .styled-table tbody tr:hover { background: var(--primary-lighter); }
+
+        .summary-card {
+            background: linear-gradient(135deg, var(--primary-lighter) 0%, #fff 100%);
+            border: 2px solid var(--primary-light);
+            border-radius: 14px;
+            padding: 30px;
+            margin: 40px 0;
+        }
+
+        .summary-card h3 { color: var(--primary-dark); border: none; margin-top: 0; }
+
+        ul.clean, ol.clean { margin: 10px 0 10px 24px; list-style: none; }
+
+        @media (max-width: 1024px) {
+            .sidebar-nav { transform: translateX(-100%); }
+            .sidebar-nav.active { transform: translateX(0); }
+            .nav-toggle { display: block; }
+            .page-wrapper { margin-left: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .hero-banner h1 { font-size: 1.8em; }
+            .container { padding: 20px 15px; }
+            .section-header h2 { font-size: 1.4em; }
+            .code-block { padding: 14px 16px; }
+            .styled-table { font-size: 0.9em; }
+        }
+    </style>
+</head>
+<body>
+
+<button class="nav-toggle" onclick="document.querySelector('.sidebar-nav').classList.toggle('active')">☰</button>
+
+<!-- ===== 左侧导航栏 ===== -->
+<nav class="sidebar-nav">
+    <div class="nav-title">苔原塔 · 强化篇</div>
+
+    <a href="#section-0" class="nav-section">0. 阅读说明</a>
+
+    <a href="#section-1" class="nav-section">1. Hero 类 API</a>
+    <a href="#sec-1-1" class="nav-sub">1.1 基地属性</a>
+    <a href="#sec-1-2" class="nav-sub">1.2 资源与类型</a>
+    <a href="#sec-1-3" class="nav-sub">1.3 建造方法</a>
+    <a href="#sec-1-4" class="nav-sub">1.4 特殊技能</a>
+    <a href="#sec-1-5" class="nav-sub">1.5 查询塔与英雄</a>
+    <a href="#sec-1-6" class="nav-sub">1.6 参数查询</a>
+    <a href="#sec-1-7" class="nav-sub">1.7 波次信息</a>
+    <a href="#sec-1-8" class="nav-sub">1.8 目标策略</a>
+    <a href="#sec-1-9" class="nav-sub">1.9 异常与守卫</a>
+    <a href="#sec-1-10" class="nav-sub">1.10 寻敌与工具</a>
+
+    <a href="#section-2" class="nav-section">2. Tower 类 API</a>
+    <a href="#section-3" class="nav-section">3. Guard 类 API</a>
+    <a href="#section-4" class="nav-section">4. Vector 类 API</a>
+
+    <a href="#section-summary" class="nav-section">📋 API 速查表</a>
+</nav>
+
+<!-- ===== 页面主体 ===== -->
+<div class="page-wrapper">
+
+<div class="hero-banner">
+    <h1>苔原塔 · 强化篇 🛠️</h1>
+    <div class="subtitle">常用 API 大全 —— Hero · Tower · Guard · Vector</div>
+    <div class="badge">每个方法都配 Python 与 C++ 双语言示例</div>
+</div>
+
+<div class="container">
+
+<!-- ==================== 0 ==================== -->
+<div class="section-header" id="section-0">
+    <h2>0. 阅读说明</h2>
+    <div class="en-title">How to Read This Reference</div>
+</div>
+
+<p>这是<strong>苔原塔竞技场</strong>的进阶强化篇。如果说前一篇讲的是"玩法规则"，那么本篇就是你的<strong>编程工具箱</strong>——把竞技场里能用到的所有方法和属性按类整理出来，方便你随时查阅。</p>
+
+<p>本篇按四大类组织：<span class="keyword">Hero 类</span>（你的英雄，掌控全局）、<span class="keyword">Tower 类</span>（防御塔对象）、<span class="keyword">Guard 类</span>（古代守卫对象）、<span class="keyword">Vector 类</span>（向量数学工具）。每一个 API 都同时给出 <strong>Python</strong> 和 <strong>C++</strong> 两种语言的示例代码，点击代码块上方的标签即可切换。</p>
+
+<div class="info-box">
+    <span class="info-label">坐标提示：</span>所有涉及 <code>x</code> 坐标的属性和方法，当你以<strong>蓝队</strong>身份对战时都会被系统<strong>自动镜像</strong>。你只需按红队视角编写一套代码即可，无需为蓝队做任何特殊处理。
+</div>
+
+<!-- ==================== 1. Hero 类 ==================== -->
+<div class="section-header" id="section-1">
+    <h2>1. Hero 类 API</h2>
+    <div class="en-title">The Hero Class —— Command the Whole Battle</div>
+</div>
+
+<!-- ===== 1.1 基地属性 ===== -->
+<h3 id="sec-1-1">1.1 基地属性（Base Properties）</h3>
+
+<h4>hero.x / hero.y</h4>
+<div class="api-desc">你的基地中心的横坐标 <code>x</code> 与纵坐标 <code>y</code>。蓝队时坐标自动镜像。</div>
+
+<h4>hero.time</h4>
+<div class="api-desc">从战斗开始到现在经过的实际时间，单位为秒。<span class="ret">number</span></div>
+
+<h4>hero.health / hero.maxHealth</h4>
+<div class="api-desc">基地当前生命值 / 基地最大生命值。<span class="ret">number</span></div>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 读取基地坐标与状态</span>
+baseX <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span>x
+baseY <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span>y
+elapsed <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span>time
+
+<span class="cmt"># 基地血量低于一半时，做出反应</span>
+<span class="kw">if</span> <span class="obj">hero</span><span class="punc">.</span>health <span class="punc">&lt;</span> <span class="obj">hero</span><span class="punc">.</span>maxHealth <span class="punc">/</span> <span class="num">2</span><span class="punc">:</span>
+    <span class="kw">if</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">isReady</span><span class="punc">(</span><span class="str">"burst"</span><span class="punc">):</span>
+        <span class="obj">hero</span><span class="punc">.</span><span class="fn">special</span><span class="punc">(</span><span class="str">"burst"</span><span class="punc">,</span> <span class="obj">hero</span><span class="punc">.</span>x <span class="punc">+</span> <span class="num">10</span><span class="punc">,</span> <span class="obj">hero</span><span class="punc">.</span>y<span class="punc">)</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 读取基地坐标与状态</span>
+<span class="type">auto</span> baseX <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span>x<span class="punc">;</span>
+<span class="type">auto</span> baseY <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span>y<span class="punc">;</span>
+<span class="type">auto</span> elapsed <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span>time<span class="punc">;</span>
+
+<span class="cmt">// 基地血量低于一半时，做出反应</span>
+<span class="kw">if</span> <span class="punc">(</span><span class="obj">hero</span><span class="punc">.</span>health <span class="punc">&lt;</span> <span class="obj">hero</span><span class="punc">.</span>maxHealth <span class="punc">/</span> <span class="num">2</span><span class="punc">)</span> <span class="punc">{</span>
+    <span class="kw">if</span> <span class="punc">(</span><span class="obj">hero</span><span class="punc">.</span><span class="fn">isReady</span><span class="punc">(</span><span class="str">"burst"</span><span class="punc">))</span> <span class="punc">{</span>
+        <span class="obj">hero</span><span class="punc">.</span><span class="fn">special</span><span class="punc">(</span><span class="str">"burst"</span><span class="punc">,</span> <span class="obj">hero</span><span class="punc">.</span>x <span class="punc">+</span> <span class="num">10</span><span class="punc">,</span> <span class="obj">hero</span><span class="punc">.</span>y<span class="punc">);</span>
+    <span class="punc">}</span>
+<span class="punc">}</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 1.2 资源与类型 ===== -->
+<h3 id="sec-1-2">1.2 资源与类型（Resources &amp; Types）</h3>
+
+<h4>hero.mana</h4>
+<div class="api-desc">英雄当前的法力值（上限 100）。<span class="ret">number</span></div>
+
+<h4>hero.towerTypes / hero.monsterTypes</h4>
+<div class="api-desc"><code>towerTypes</code> 返回可召唤的塔类型列表；<code>monsterTypes</code> 返回怪物波次中会遇到的怪物类型列表。<span class="ret">list</span></div>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 攒够 25 法力才建塔</span>
+<span class="kw">if</span> <span class="obj">hero</span><span class="punc">.</span>mana <span class="punc">&gt;=</span> <span class="num">25</span><span class="punc">:</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"archer"</span><span class="punc">,</span> <span class="str">"A"</span><span class="punc">)</span>
+
+<span class="cmt"># 读取所有可用塔类型和怪物类型</span>
+towers <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span>towerTypes
+monsters <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span>monsterTypes</pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 攒够 25 法力才建塔</span>
+<span class="kw">if</span> <span class="punc">(</span><span class="obj">hero</span><span class="punc">.</span>mana <span class="punc">&gt;=</span> <span class="num">25</span><span class="punc">)</span> <span class="punc">{</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"archer"</span><span class="punc">,</span> <span class="str">"A"</span><span class="punc">);</span>
+<span class="punc">}</span>
+
+<span class="cmt">// 读取所有可用塔类型和怪物类型</span>
+<span class="type">auto</span> towers <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span>towerTypes<span class="punc">;</span>
+<span class="type">auto</span> monsters <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span>monsterTypes<span class="punc">;</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 1.3 建造方法 ===== -->
+<h3 id="sec-1-3">1.3 建造方法（Building Methods）</h3>
+
+<h4>hero.build(towerType, place)</h4>
+<div class="api-desc">在预定义点位（字母 <code>"A"</code> 到 <code>"I"</code>）建造一座塔。只能建在<strong>本队颜色</strong>或<strong>紫色（公共）</strong>格子上。建造消耗法力——若法力不足，代码会被<strong>阻塞</strong>直到攒够为止。若格子被对手的塔占据则无法建造；若被你自己的塔占据，则<strong>升级</strong>该塔到下一级，并在类型不符时切换为 <code>towerType</code> 类型。</div>
+
+<h4>hero.build(towerType, x, y)</h4>
+<div class="api-desc">在包含坐标点 <code>{x, y}</code> 的格子<strong>中心</strong>建造一座塔，规则同上。<span class="ret">返回 tower 对象</span></div>
+
+<div class="info-box">
+    <span class="info-label">可用塔类型：</span>可通过界面上的 <strong>"HINTS"（提示）按钮</strong>或 <code>hero.availableTowerTypes</code> 属性查阅所有可用塔类型。
+</div>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 方式一：用点位名建造</span>
+<span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"archer"</span><span class="punc">,</span> <span class="str">"A"</span><span class="punc">)</span>
+
+<span class="cmt"># 方式二：用坐标建造，并接收返回的塔对象</span>
+tower <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"mage"</span><span class="punc">,</span> <span class="num">15</span><span class="punc">,</span> <span class="num">40</span><span class="punc">)</span>
+level <span class="punc">=</span> tower<span class="punc">.</span>level
+
+<span class="cmt"># 在同一点位再建一次 = 升级</span>
+<span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"archer"</span><span class="punc">,</span> <span class="str">"A"</span><span class="punc">)</span>   <span class="cmt"># 升级 A 点的弓箭塔</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 方式一：用点位名建造</span>
+<span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"archer"</span><span class="punc">,</span> <span class="str">"A"</span><span class="punc">);</span>
+
+<span class="cmt">// 方式二：用坐标建造，并接收返回的塔对象</span>
+<span class="type">auto</span> tower <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"mage"</span><span class="punc">,</span> <span class="num">15</span><span class="punc">,</span> <span class="num">40</span><span class="punc">);</span>
+<span class="type">auto</span> level <span class="punc">=</span> tower<span class="punc">.</span>level<span class="punc">;</span>
+
+<span class="cmt">// 在同一点位再建一次 = 升级</span>
+<span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"archer"</span><span class="punc">,</span> <span class="str">"A"</span><span class="punc">);</span>   <span class="cmt">// 升级 A 点的弓箭塔</span></pre>
+        </div>
+    </div>
+</div>
+
+<h4>hero.canBuildAt(x, y)</h4>
+<div class="api-desc">检查包含坐标点 <code>{x, y}</code> 的格子是否可以建造（可升级也返回 true）。<span class="ret">boolean</span></div>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 先确认能建，再建，避免法力被阻塞浪费</span>
+<span class="kw">if</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">canBuildAt</span><span class="punc">(</span><span class="num">30</span><span class="punc">,</span> <span class="num">50</span><span class="punc">):</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"cannon"</span><span class="punc">,</span> <span class="num">30</span><span class="punc">,</span> <span class="num">50</span><span class="punc">)</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 先确认能建，再建，避免法力被阻塞浪费</span>
+<span class="kw">if</span> <span class="punc">(</span><span class="obj">hero</span><span class="punc">.</span><span class="fn">canBuildAt</span><span class="punc">(</span><span class="num">30</span><span class="punc">,</span> <span class="num">50</span><span class="punc">))</span> <span class="punc">{</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"cannon"</span><span class="punc">,</span> <span class="num">30</span><span class="punc">,</span> <span class="num">50</span><span class="punc">);</span>
+<span class="punc">}</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 1.4 特殊技能 ===== -->
+<h3 id="sec-1-4">1.4 特殊技能（Special Abilities）</h3>
+
+<h4>hero.special(specialType, x, y)</h4>
+<div class="api-desc">向坐标点 <code>{x, y}</code> 释放一个引力异常。特殊技能<strong>不消耗法力</strong>，但需要时间冷却。可用的 <code>specialType</code> 有：<code>"pull"</code>（引力井，吸聚怪物）、<code>"push"</code>（推开怪物）、<code>"burst"</code>（短促强力的推）、<code>"teleport"</code>（把怪物传送到对手基地方向）。</div>
+
+<h4>hero.isReady(specialType)</h4>
+<div class="api-desc">检查某个特殊技能是否已冷却完毕、可以使用。<span class="ret">boolean</span></div>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 拉力就绪时，把怪物吸聚到加农炮射程内</span>
+<span class="kw">if</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">isReady</span><span class="punc">(</span><span class="str">"pull"</span><span class="punc">):</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">special</span><span class="punc">(</span><span class="str">"pull"</span><span class="punc">,</span> <span class="num">40</span><span class="punc">,</span> <span class="num">40</span><span class="punc">)</span>
+
+<span class="cmt"># 怪物逼近基地，用爆发救场</span>
+<span class="kw">if</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">isReady</span><span class="punc">(</span><span class="str">"burst"</span><span class="punc">):</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">special</span><span class="punc">(</span><span class="str">"burst"</span><span class="punc">,</span> <span class="obj">hero</span><span class="punc">.</span>x <span class="punc">+</span> <span class="num">10</span><span class="punc">,</span> <span class="obj">hero</span><span class="punc">.</span>y<span class="punc">)</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 拉力就绪时，把怪物吸聚到加农炮射程内</span>
+<span class="kw">if</span> <span class="punc">(</span><span class="obj">hero</span><span class="punc">.</span><span class="fn">isReady</span><span class="punc">(</span><span class="str">"pull"</span><span class="punc">))</span> <span class="punc">{</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">special</span><span class="punc">(</span><span class="str">"pull"</span><span class="punc">,</span> <span class="num">40</span><span class="punc">,</span> <span class="num">40</span><span class="punc">);</span>
+<span class="punc">}</span>
+
+<span class="cmt">// 怪物逼近基地，用爆发救场</span>
+<span class="kw">if</span> <span class="punc">(</span><span class="obj">hero</span><span class="punc">.</span><span class="fn">isReady</span><span class="punc">(</span><span class="str">"burst"</span><span class="punc">))</span> <span class="punc">{</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">special</span><span class="punc">(</span><span class="str">"burst"</span><span class="punc">,</span> <span class="obj">hero</span><span class="punc">.</span>x <span class="punc">+</span> <span class="num">10</span><span class="punc">,</span> <span class="obj">hero</span><span class="punc">.</span>y<span class="punc">);</span>
+<span class="punc">}</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 1.5 查询塔与英雄 ===== -->
+<h3 id="sec-1-5">1.5 查询塔与对手（Find Towers &amp; Enemy）</h3>
+
+<h4>hero.findTowers() / hero.findMyTowers() / hero.findEnemyTowers()</h4>
+<div class="api-desc">分别返回：地图上的所有塔 / 我方所有塔 / 敌方所有塔。<span class="ret">list of tower</span></div>
+
+<h4>hero.getEnemyHero()</h4>
+<div class="api-desc">返回对手英雄（对方水晶/基地）的引用。<span class="ret">hero 对象</span></div>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 遍历我方所有塔，统计类型与等级</span>
+myTowers <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">findMyTowers</span><span class="punc">()</span>
+<span class="kw">for</span> t <span class="kw">in</span> myTowers<span class="punc">:</span>
+    type <span class="punc">=</span> t<span class="punc">.</span>type
+    level <span class="punc">=</span> t<span class="punc">.</span>level
+
+<span class="cmt"># 比较双方基地血量</span>
+enemy <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">getEnemyHero</span><span class="punc">()</span>
+<span class="kw">if</span> <span class="obj">hero</span><span class="punc">.</span>health <span class="punc">&gt;</span> enemy<span class="punc">.</span>health<span class="punc">:</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"archer"</span><span class="punc">,</span> <span class="str">"A"</span><span class="punc">)</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 遍历我方所有塔，统计类型与等级</span>
+<span class="type">auto</span> myTowers <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">findMyTowers</span><span class="punc">();</span>
+<span class="kw">for</span> <span class="punc">(</span><span class="type">auto</span><span class="punc">&amp;</span> t <span class="punc">:</span> myTowers<span class="punc">)</span> <span class="punc">{</span>
+    <span class="type">auto</span> type <span class="punc">=</span> t<span class="punc">.</span>type<span class="punc">;</span>
+    <span class="type">auto</span> level <span class="punc">=</span> t<span class="punc">.</span>level<span class="punc">;</span>
+<span class="punc">}</span>
+
+<span class="cmt">// 比较双方基地血量</span>
+<span class="type">auto</span> enemy <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">getEnemyHero</span><span class="punc">();</span>
+<span class="kw">if</span> <span class="punc">(</span><span class="obj">hero</span><span class="punc">.</span>health <span class="punc">&gt;</span> enemy<span class="punc">.</span>health<span class="punc">)</span> <span class="punc">{</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"archer"</span><span class="punc">,</span> <span class="str">"A"</span><span class="punc">);</span>
+<span class="punc">}</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 1.6 参数查询 ===== -->
+<h3 id="sec-1-6">1.6 参数查询（Parameter Queries）</h3>
+
+<h4>hero.getTowerParameters(towerType, level=1)</h4>
+<div class="api-desc">返回指定塔类型在某等级下的参数对象，字段包括：<code>type</code>、<code>level</code>、<code>attackDamage</code>、<code>attackRange</code>、<code>attackCooldown</code>、<code>cost</code>。</div>
+
+<h4>hero.getMonsterParameters(monsterType)</h4>
+<div class="api-desc">返回指定怪物类型的参数对象，字段包括：<code>type</code>、<code>attackDamage</code>、<code>attackRange</code>、<code>maxSpeed</code>、<code>mana</code>、<code>flying</code>（是否飞行）。</div>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 查询 3 级法师塔的参数</span>
+params <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">getTowerParameters</span><span class="punc">(</span><span class="str">"mage"</span><span class="punc">,</span> <span class="num">3</span><span class="punc">)</span>
+range <span class="punc">=</span> params<span class="punc">.</span>attackRange
+
+<span class="cmt"># 判断怪物是否会飞，决定是否需要法师塔</span>
+mp <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">getMonsterParameters</span><span class="punc">(</span><span class="str">"rider"</span><span class="punc">)</span>
+<span class="kw">if</span> mp<span class="punc">.</span>flying<span class="punc">:</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"mage"</span><span class="punc">,</span> <span class="str">"B"</span><span class="punc">)</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 查询 3 级法师塔的参数</span>
+<span class="type">auto</span> params <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">getTowerParameters</span><span class="punc">(</span><span class="str">"mage"</span><span class="punc">,</span> <span class="num">3</span><span class="punc">);</span>
+<span class="type">auto</span> range <span class="punc">=</span> params<span class="punc">.</span>attackRange<span class="punc">;</span>
+
+<span class="cmt">// 判断怪物是否会飞，决定是否需要法师塔</span>
+<span class="type">auto</span> mp <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">getMonsterParameters</span><span class="punc">(</span><span class="str">"rider"</span><span class="punc">);</span>
+<span class="kw">if</span> <span class="punc">(</span>mp<span class="punc">.</span>flying<span class="punc">)</span> <span class="punc">{</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"mage"</span><span class="punc">,</span> <span class="str">"B"</span><span class="punc">);</span>
+<span class="punc">}</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 1.7 波次信息 ===== -->
+<h3 id="sec-1-7">1.7 波次信息（Wave Information）</h3>
+
+<h4>hero.getWaves()</h4>
+<div class="api-desc">返回一个"数组的数组"，每个子数组代表一波怪物，列出该波包含的怪物类型。</div>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># getWaves() 返回结构示例：</span>
+<span class="cmt"># [</span>
+<span class="cmt">#   ['munchkin'],                       # 第1波只有 munchkin</span>
+<span class="cmt">#   ['munchkin', 'ogre'],               # 一个 munchkin 再一个 ogre，循环</span>
+<span class="cmt">#   ['ogre', 'thrower', 'munchkin'],    # 三种怪物按此顺序</span>
+<span class="cmt"># ]</span>
+waves <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">getWaves</span><span class="punc">()</span>
+total <span class="punc">=</span> <span class="fn">len</span><span class="punc">(</span>waves<span class="punc">)</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// getWaves() 返回结构示例：</span>
+<span class="cmt">// [</span>
+<span class="cmt">//   ["munchkin"],                       // 第1波只有 munchkin</span>
+<span class="cmt">//   ["munchkin", "ogre"],               // 一个 munchkin 再一个 ogre，循环</span>
+<span class="cmt">//   ["ogre", "thrower", "munchkin"],    // 三种怪物按此顺序</span>
+<span class="cmt">// ]</span>
+<span class="type">auto</span> waves <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">getWaves</span><span class="punc">();</span>
+<span class="type">auto</span> total <span class="punc">=</span> waves<span class="punc">.</span><span class="fn">size</span><span class="punc">();</span></pre>
+        </div>
+    </div>
+</div>
+
+<h4>hero.getWave(waveNumber) / hero.getWaveNumber()</h4>
+<div class="api-desc"><code>getWave(n)</code> 返回第 <code>n</code> 波的怪物类型数组（第一波编号为 <code>0</code>）；<code>getWaveNumber()</code> 返回当前波次编号（整数，首波为 0）。</div>
+
+<h4>hero.getCurrentWave() / hero.getNextWave()</h4>
+<div class="api-desc">分别返回当前波 / 下一波的怪物类型数组。提前看下一波，调整防御部署。</div>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 提前侦察下一波，若有飞行怪就补法师塔</span>
+nextWave <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">getNextWave</span><span class="punc">()</span>
+<span class="kw">if</span> <span class="str">"bird"</span> <span class="kw">in</span> nextWave <span class="kw">or</span> <span class="str">"rider"</span> <span class="kw">in</span> nextWave<span class="punc">:</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"mage"</span><span class="punc">,</span> <span class="str">"B"</span><span class="punc">)</span>
+
+current <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">getWaveNumber</span><span class="punc">()</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 提前侦察下一波，若有飞行怪就补法师塔</span>
+<span class="type">auto</span> nextWave <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">getNextWave</span><span class="punc">();</span>
+<span class="kw">if</span> <span class="punc">(</span>nextWave<span class="punc">.</span><span class="fn">contains</span><span class="punc">(</span><span class="str">"bird"</span><span class="punc">)</span> <span class="punc">||</span> nextWave<span class="punc">.</span><span class="fn">contains</span><span class="punc">(</span><span class="str">"rider"</span><span class="punc">))</span> <span class="punc">{</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"mage"</span><span class="punc">,</span> <span class="str">"B"</span><span class="punc">);</span>
+<span class="punc">}</span>
+
+<span class="type">auto</span> current <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">getWaveNumber</span><span class="punc">();</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 1.8 目标策略 ===== -->
+<h3 id="sec-1-8">1.8 目标策略（Targeting）</h3>
+
+<h4>hero.setTargeting(tower, targetingType)</h4>
+<div class="api-desc">设置某座塔选择下一个攻击目标的方式。<code>targetingType</code> 可为：<code>'close'</code>（默认，最近的怪）、<code>'left'</code>（按 X 坐标离基地最近）、<code>'right'</code>（按 X 坐标离基地最远）、<code>'weak'</code>（血量最低）、<code>'strong'</code>（血量最高）。</div>
+
+<table class="styled-table">
+    <thead><tr><th>策略</th><th>含义</th><th>适用场景</th></tr></thead>
+    <tbody>
+        <tr><td><code>'close'</code></td><td>最近的怪物（默认）</td><td>通用，保护塔自身周边</td></tr>
+        <tr><td><code>'left'</code></td><td>按 X 离基地最近</td><td>优先打最逼近基地的怪</td></tr>
+        <tr><td><code>'right'</code></td><td>按 X 离基地最远</td><td>提前点掉刚进场的怪</td></tr>
+        <tr><td><code>'weak'</code></td><td>血量最低</td><td>快速收割、刷法力</td></tr>
+        <tr><td><code>'strong'</code></td><td>血量最高</td><td>集火精英厚血怪</td></tr>
+    </tbody>
+</table>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 让 A 点的塔优先攻击最逼近基地的怪</span>
+tower <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"archer"</span><span class="punc">,</span> <span class="str">"A"</span><span class="punc">)</span>
+<span class="obj">hero</span><span class="punc">.</span><span class="fn">setTargeting</span><span class="punc">(</span>tower<span class="punc">,</span> <span class="str">"left"</span><span class="punc">)</span>
+
+<span class="cmt"># 让所有加农炮集火血量最高的精英怪</span>
+<span class="kw">for</span> t <span class="kw">in</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">findMyTowers</span><span class="punc">():</span>
+    <span class="kw">if</span> t<span class="punc">.</span>type <span class="punc">==</span> <span class="str">"cannon"</span><span class="punc">:</span>
+        <span class="obj">hero</span><span class="punc">.</span><span class="fn">setTargeting</span><span class="punc">(</span>t<span class="punc">,</span> <span class="str">"strong"</span><span class="punc">)</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 让 A 点的塔优先攻击最逼近基地的怪</span>
+<span class="type">auto</span> tower <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span><span class="str">"archer"</span><span class="punc">,</span> <span class="str">"A"</span><span class="punc">);</span>
+<span class="obj">hero</span><span class="punc">.</span><span class="fn">setTargeting</span><span class="punc">(</span>tower<span class="punc">,</span> <span class="str">"left"</span><span class="punc">);</span>
+
+<span class="cmt">// 让所有加农炮集火血量最高的精英怪</span>
+<span class="kw">for</span> <span class="punc">(</span><span class="type">auto</span><span class="punc">&amp;</span> t <span class="punc">:</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">findMyTowers</span><span class="punc">())</span> <span class="punc">{</span>
+    <span class="kw">if</span> <span class="punc">(</span>t<span class="punc">.</span>type <span class="punc">==</span> <span class="str">"cannon"</span><span class="punc">)</span> <span class="punc">{</span>
+        <span class="obj">hero</span><span class="punc">.</span><span class="fn">setTargeting</span><span class="punc">(</span>t<span class="punc">,</span> <span class="str">"strong"</span><span class="punc">);</span>
+    <span class="punc">}</span>
+<span class="punc">}</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 1.9 异常与守卫 ===== -->
+<h3 id="sec-1-9">1.9 异常与守卫（Anomalies &amp; Guards）</h3>
+
+<h4>hero.findActiveAnomalies()</h4>
+<div class="api-desc">返回当前活跃的引力异常对象数组。每个异常包含字段：<code>force</code>（强度，正数=拉、负数=推）、<code>x</code>、<code>y</code>、<code>endX</code>/<code>endY</code>（传送出口坐标）、<code>name</code>（产生它的技能名）、<code>duration</code>（剩余持续时间）。</div>
+
+<h4>hero.wait(t)</h4>
+<div class="api-desc">等待 <code>t</code> 秒，什么也不做。</div>
+
+<h4>hero.on("spawn-guard", fn)</h4>
+<div class="api-desc">注册一个回调函数，当新守卫生成时被调用，守卫将执行该函数。</div>
+
+<h4>hero.findMyGuards() / hero.findEnemyGuards()</h4>
+<div class="api-desc">分别返回我方守卫数组 / 对手守卫数组。<span class="ret">list of guard</span></div>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 守卫生成回调：自动攻击最近怪物</span>
+<span class="kw">def</span> <span class="fn">guardAct</span><span class="punc">(</span>data<span class="punc">):</span>
+    guard <span class="punc">=</span> data<span class="punc">.</span>guard
+    <span class="kw">while</span> <span class="kw">True</span><span class="punc">:</span>
+        monster <span class="punc">=</span> guard<span class="punc">.</span><span class="fn">findNearestMonster</span><span class="punc">()</span>
+        <span class="kw">if</span> monster<span class="punc">:</span>
+            guard<span class="punc">.</span><span class="fn">attack</span><span class="punc">(</span>monster<span class="punc">)</span>
+
+<span class="obj">hero</span><span class="punc">.</span><span class="fn">on</span><span class="punc">(</span><span class="str">"spawn-guard"</span><span class="punc">,</span> guardAct<span class="punc">)</span>
+
+<span class="cmt"># 查看活跃异常并等待</span>
+anomalies <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">findActiveAnomalies</span><span class="punc">()</span>
+<span class="kw">if</span> <span class="fn">len</span><span class="punc">(</span>anomalies<span class="punc">)</span> <span class="punc">==</span> <span class="num">0</span><span class="punc">:</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">wait</span><span class="punc">(</span><span class="num">1</span><span class="punc">)</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 守卫生成回调：自动攻击最近怪物</span>
+<span class="kw">void</span> <span class="fn">guardAct</span><span class="punc">(</span><span class="type">auto</span> data<span class="punc">)</span> <span class="punc">{</span>
+    <span class="type">auto</span> guard <span class="punc">=</span> data<span class="punc">.</span>guard<span class="punc">;</span>
+    <span class="kw">while</span> <span class="punc">(</span><span class="kw">true</span><span class="punc">)</span> <span class="punc">{</span>
+        <span class="type">auto</span> monster <span class="punc">=</span> guard<span class="punc">.</span><span class="fn">findNearestMonster</span><span class="punc">();</span>
+        <span class="kw">if</span> <span class="punc">(</span>monster<span class="punc">)</span> <span class="punc">{</span>
+            guard<span class="punc">.</span><span class="fn">attack</span><span class="punc">(</span>monster<span class="punc">);</span>
+        <span class="punc">}</span>
+    <span class="punc">}</span>
+<span class="punc">}</span>
+
+<span class="obj">hero</span><span class="punc">.</span><span class="fn">on</span><span class="punc">(</span><span class="str">"spawn-guard"</span><span class="punc">,</span> guardAct<span class="punc">);</span>
+
+<span class="cmt">// 查看活跃异常并等待</span>
+<span class="type">auto</span> anomalies <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">findActiveAnomalies</span><span class="punc">();</span>
+<span class="kw">if</span> <span class="punc">(</span>anomalies<span class="punc">.</span><span class="fn">size</span><span class="punc">()</span> <span class="punc">==</span> <span class="num">0</span><span class="punc">)</span> <span class="punc">{</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">wait</span><span class="punc">(</span><span class="num">1</span><span class="punc">);</span>
+<span class="punc">}</span></pre>
+        </div>
+    </div>
+</div>
+
+<div class="warn-box">
+    <span class="warn-label">提醒：</span>不要在 <code>spawn-guard</code> 的回调函数里调用会阻塞的英雄方法（如 <code>hero.build</code>、<code>hero.special</code>），否则会卡住主线程。回调里只使用守卫自己的方法。
+</div>
+
+<!-- ===== 1.10 寻敌与工具 ===== -->
+<h3 id="sec-1-10">1.10 寻敌与工具（Targeting Helpers）</h3>
+
+<h4>hero.distanceTo(target)</h4>
+<div class="api-desc">返回从英雄到目标的距离。<span class="ret">number</span></div>
+
+<h4>hero.findMonsters()</h4>
+<div class="api-desc">返回地图上所有存活怪物的数组。<span class="ret">list of monster</span></div>
+
+<h4>hero.findNearest(targets)</h4>
+<div class="api-desc">从 <code>targets</code> 数组中返回离英雄最近的目标；数组为空时返回 <code>null</code>。</div>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 找到最近的怪物，并对它所在位置释放拉力</span>
+monsters <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">findMonsters</span><span class="punc">()</span>
+nearest <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">findNearest</span><span class="punc">(</span>monsters<span class="punc">)</span>
+<span class="kw">if</span> nearest <span class="kw">and</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">isReady</span><span class="punc">(</span><span class="str">"pull"</span><span class="punc">):</span>
+    d <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">distanceTo</span><span class="punc">(</span>nearest<span class="punc">)</span>
+    <span class="kw">if</span> d <span class="punc">&lt;</span> <span class="num">40</span><span class="punc">:</span>
+        <span class="obj">hero</span><span class="punc">.</span><span class="fn">special</span><span class="punc">(</span><span class="str">"pull"</span><span class="punc">,</span> nearest<span class="punc">.</span>x<span class="punc">,</span> nearest<span class="punc">.</span>y<span class="punc">)</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 找到最近的怪物，并对它所在位置释放拉力</span>
+<span class="type">auto</span> monsters <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">findMonsters</span><span class="punc">();</span>
+<span class="type">auto</span> nearest <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">findNearest</span><span class="punc">(</span>monsters<span class="punc">);</span>
+<span class="kw">if</span> <span class="punc">(</span>nearest <span class="punc">&amp;&amp;</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">isReady</span><span class="punc">(</span><span class="str">"pull"</span><span class="punc">))</span> <span class="punc">{</span>
+    <span class="type">auto</span> d <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">distanceTo</span><span class="punc">(</span>nearest<span class="punc">);</span>
+    <span class="kw">if</span> <span class="punc">(</span>d <span class="punc">&lt;</span> <span class="num">40</span><span class="punc">)</span> <span class="punc">{</span>
+        <span class="obj">hero</span><span class="punc">.</span><span class="fn">special</span><span class="punc">(</span><span class="str">"pull"</span><span class="punc">,</span> nearest<span class="punc">.</span>x<span class="punc">,</span> nearest<span class="punc">.</span>y<span class="punc">);</span>
+    <span class="punc">}</span>
+<span class="punc">}</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 2. Tower 类 ==================== -->
+<div class="section-header" id="section-2">
+    <h2>2. Tower 类 API</h2>
+    <div class="en-title">The Tower Class —— Inspect Your Towers</div>
+</div>
+
+<p>由 <code>hero.build(...)</code> 或 <code>hero.findMyTowers()</code> 等方法得到的<strong>塔对象</strong>拥有以下只读属性：</p>
+
+<table class="styled-table">
+    <thead><tr><th>属性</th><th>说明</th></tr></thead>
+    <tbody>
+        <tr><td><code>tower.x</code> / <code>tower.y</code></td><td>塔中心的横 / 纵坐标（蓝队时自动镜像）</td></tr>
+        <tr><td><code>tower.attackDamage</code></td><td>塔每次攻击的伤害</td></tr>
+        <tr><td><code>tower.attackCooldown</code></td><td>塔两次攻击之间的间隔时间</td></tr>
+        <tr><td><code>tower.attackRange</code></td><td>塔攻击的最大射程</td></tr>
+        <tr><td><code>tower.level</code></td><td>塔的等级</td></tr>
+        <tr><td><code>tower.type</code></td><td>塔的类型字符串</td></tr>
+    </tbody>
+</table>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 找出等级最低的塔，优先升级它</span>
+towers <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">findMyTowers</span><span class="punc">()</span>
+<span class="kw">if</span> <span class="fn">len</span><span class="punc">(</span>towers<span class="punc">)</span> <span class="punc">&gt;</span> <span class="num">0</span><span class="punc">:</span>
+    weakest <span class="punc">=</span> towers<span class="punc">[</span><span class="num">0</span><span class="punc">]</span>
+    <span class="kw">for</span> t <span class="kw">in</span> towers<span class="punc">:</span>
+        <span class="kw">if</span> t<span class="punc">.</span>level <span class="punc">&lt;</span> weakest<span class="punc">.</span>level<span class="punc">:</span>
+            weakest <span class="punc">=</span> t
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span>weakest<span class="punc">.</span>type<span class="punc">,</span> weakest<span class="punc">.</span>x<span class="punc">,</span> weakest<span class="punc">.</span>y<span class="punc">)</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 找出等级最低的塔，优先升级它</span>
+<span class="type">auto</span> towers <span class="punc">=</span> <span class="obj">hero</span><span class="punc">.</span><span class="fn">findMyTowers</span><span class="punc">();</span>
+<span class="kw">if</span> <span class="punc">(</span>towers<span class="punc">.</span><span class="fn">size</span><span class="punc">()</span> <span class="punc">&gt;</span> <span class="num">0</span><span class="punc">)</span> <span class="punc">{</span>
+    <span class="type">auto</span> weakest <span class="punc">=</span> towers<span class="punc">[</span><span class="num">0</span><span class="punc">];</span>
+    <span class="kw">for</span> <span class="punc">(</span><span class="type">auto</span><span class="punc">&amp;</span> t <span class="punc">:</span> towers<span class="punc">)</span> <span class="punc">{</span>
+        <span class="kw">if</span> <span class="punc">(</span>t<span class="punc">.</span>level <span class="punc">&lt;</span> weakest<span class="punc">.</span>level<span class="punc">)</span> <span class="punc">{</span>
+            weakest <span class="punc">=</span> t<span class="punc">;</span>
+        <span class="punc">}</span>
+    <span class="punc">}</span>
+    <span class="obj">hero</span><span class="punc">.</span><span class="fn">build</span><span class="punc">(</span>weakest<span class="punc">.</span>type<span class="punc">,</span> weakest<span class="punc">.</span>x<span class="punc">,</span> weakest<span class="punc">.</span>y<span class="punc">);</span>
+<span class="punc">}</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 3. Guard 类 ==================== -->
+<div class="section-header" id="section-3">
+    <h2>3. Guard 类 API</h2>
+    <div class="en-title">The Guard Class —— Command Your Guardians</div>
+</div>
+
+<p>在 <code>spawn-guard</code> 回调函数中拿到的 <code>guard</code> 对象拥有以下方法。它们用来移动、攻击、释放守卫专属技能。</p>
+
+<h4>guard.moveTo(x, y)</h4>
+<div class="api-desc">命令守卫前往坐标 <code>{x, y}</code>。该方法<strong>阻塞</strong>守卫代码，直到守卫到达目标点后才执行下一条命令。</div>
+
+<h4>guard.moveToward(x, y)</h4>
+<div class="api-desc">命令守卫朝坐标 <code>{x, y}</code> 移动。该方法<strong>不阻塞</strong>，可被后续命令打断。</div>
+
+<h4>guard.attack(target)</h4>
+<div class="api-desc">命令守卫攻击指定目标。</div>
+
+<h4>guard.special(abilityName)</h4>
+<div class="api-desc">命令守卫释放特殊技能。<code>abilityName</code> 可为：<code>"roar"</code>（让周围怪物都来攻击守卫）、<code>"hide"</code>（隐匿，丢失所有怪物仇恨）、<code>"haste"</code>（短时间提升守卫速度）。</div>
+
+<h4>guard.isReady(abilityName)</h4>
+<div class="api-desc">检查守卫的某个特殊技能是否就绪（<code>"roar"</code> / <code>"hide"</code> / <code>"haste"</code>）。<span class="ret">boolean</span></div>
+
+<h4>guard.findNearestMonster()</h4>
+<div class="api-desc">返回离该守卫最近的怪物。</div>
+
+<h4>guard.distanceTo(target) / guard.findMonsters() / guard.findNearest(targets)</h4>
+<div class="api-desc">分别为：返回到目标的距离 / 返回所有存活怪物数组 / 返回数组中离守卫最近的目标（空则返回 null）。</div>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="kw">def</span> <span class="fn">guardAct</span><span class="punc">(</span>data<span class="punc">):</span>
+    guard <span class="punc">=</span> data<span class="punc">.</span>guard
+    <span class="kw">while</span> <span class="kw">True</span><span class="punc">:</span>
+        monster <span class="punc">=</span> guard<span class="punc">.</span><span class="fn">findNearestMonster</span><span class="punc">()</span>
+        <span class="kw">if</span> monster<span class="punc">:</span>
+            <span class="cmt"># 离得远先靠近，靠近后用咆哮聚怪再攻击</span>
+            <span class="kw">if</span> guard<span class="punc">.</span><span class="fn">distanceTo</span><span class="punc">(</span>monster<span class="punc">)</span> <span class="punc">&gt;</span> <span class="num">5</span><span class="punc">:</span>
+                guard<span class="punc">.</span><span class="fn">moveToward</span><span class="punc">(</span>monster<span class="punc">.</span>x<span class="punc">,</span> monster<span class="punc">.</span>y<span class="punc">)</span>
+            <span class="kw">else</span><span class="punc">:</span>
+                <span class="kw">if</span> guard<span class="punc">.</span><span class="fn">isReady</span><span class="punc">(</span><span class="str">"roar"</span><span class="punc">):</span>
+                    guard<span class="punc">.</span><span class="fn">special</span><span class="punc">(</span><span class="str">"roar"</span><span class="punc">)</span>
+                guard<span class="punc">.</span><span class="fn">attack</span><span class="punc">(</span>monster<span class="punc">)</span>
+
+<span class="obj">hero</span><span class="punc">.</span><span class="fn">on</span><span class="punc">(</span><span class="str">"spawn-guard"</span><span class="punc">,</span> guardAct<span class="punc">)</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="kw">void</span> <span class="fn">guardAct</span><span class="punc">(</span><span class="type">auto</span> data<span class="punc">)</span> <span class="punc">{</span>
+    <span class="type">auto</span> guard <span class="punc">=</span> data<span class="punc">.</span>guard<span class="punc">;</span>
+    <span class="kw">while</span> <span class="punc">(</span><span class="kw">true</span><span class="punc">)</span> <span class="punc">{</span>
+        <span class="type">auto</span> monster <span class="punc">=</span> guard<span class="punc">.</span><span class="fn">findNearestMonster</span><span class="punc">();</span>
+        <span class="kw">if</span> <span class="punc">(</span>monster<span class="punc">)</span> <span class="punc">{</span>
+            <span class="cmt">// 离得远先靠近，靠近后用咆哮聚怪再攻击</span>
+            <span class="kw">if</span> <span class="punc">(</span>guard<span class="punc">.</span><span class="fn">distanceTo</span><span class="punc">(</span>monster<span class="punc">)</span> <span class="punc">&gt;</span> <span class="num">5</span><span class="punc">)</span> <span class="punc">{</span>
+                guard<span class="punc">.</span><span class="fn">moveToward</span><span class="punc">(</span>monster<span class="punc">.</span>x<span class="punc">,</span> monster<span class="punc">.</span>y<span class="punc">);</span>
+            <span class="punc">}</span> <span class="kw">else</span> <span class="punc">{</span>
+                <span class="kw">if</span> <span class="punc">(</span>guard<span class="punc">.</span><span class="fn">isReady</span><span class="punc">(</span><span class="str">"roar"</span><span class="punc">))</span> <span class="punc">{</span>
+                    guard<span class="punc">.</span><span class="fn">special</span><span class="punc">(</span><span class="str">"roar"</span><span class="punc">);</span>
+                <span class="punc">}</span>
+                guard<span class="punc">.</span><span class="fn">attack</span><span class="punc">(</span>monster<span class="punc">);</span>
+            <span class="punc">}</span>
+        <span class="punc">}</span>
+    <span class="punc">}</span>
+<span class="punc">}</span>
+
+<span class="obj">hero</span><span class="punc">.</span><span class="fn">on</span><span class="punc">(</span><span class="str">"spawn-guard"</span><span class="punc">,</span> guardAct<span class="punc">);</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 4. Vector 类 ==================== -->
+<div class="section-header" id="section-4">
+    <h2>4. Vector 类 API</h2>
+    <div class="en-title">The Vector Class —— Math Utilities</div>
+</div>
+
+<p><span class="keyword">Vector（向量）</span>类为单位提供了访问坐标与进行向量运算的能力。它在计算方向、距离、目标位置时非常有用。</p>
+
+<h3>4.1 向量属性与实例方法（Properties &amp; Instance Methods）</h3>
+
+<table class="styled-table">
+    <thead><tr><th>成员</th><th>说明</th></tr></thead>
+    <tbody>
+        <tr><td><code>Vector.x / .y / .z</code></td><td>向量的 x / y / z 坐标（通常以米为单位）</td></tr>
+        <tr><td><code>Vector.magnitude()</code></td><td>返回向量的长度（模）</td></tr>
+        <tr><td><code>Vector.heading()</code></td><td>返回向量的朝向角度（弧度）。指向右为 0，指向上为 <code>π/2</code></td></tr>
+        <tr><td><code>Vector.distance(other)</code></td><td>返回到另一个向量的距离</td></tr>
+        <tr><td><code>Vector.dot(other)</code></td><td>返回点积：<code>this.x*other.x + this.y*other.y</code></td></tr>
+        <tr><td><code>Vector.equals(other)</code></td><td>返回此向量是否等于给定向量</td></tr>
+        <tr><td><code>Vector.copy()</code></td><td>返回此向量的一个副本</td></tr>
+    </tbody>
+</table>
+
+<h3>4.2 向量类方法（Class Methods）</h3>
+
+<table class="styled-table">
+    <thead><tr><th>类方法</th><th>说明</th></tr></thead>
+    <tbody>
+        <tr><td><code>Vector.add(a, b)</code></td><td>两个向量相加，返回新向量</td></tr>
+        <tr><td><code>Vector.subtract(a, b)</code></td><td>一个向量减去另一个，返回新向量</td></tr>
+        <tr><td><code>Vector.multiply(n)</code></td><td>向量乘以标量，返回新向量</td></tr>
+        <tr><td><code>Vector.divide(n)</code></td><td>向量除以标量，返回新向量</td></tr>
+        <tr><td><code>Vector.limit(max)</code></td><td>把向量限制到给定长度（更短则不变），返回新向量</td></tr>
+        <tr><td><code>Vector.normalize()</code></td><td>把向量归一化为长度 1（长度为 0 时除外），返回新向量</td></tr>
+        <tr><td><code>Vector.rotate(vector, angle)</code></td><td>把向量绕原点旋转给定角度，返回新向量</td></tr>
+    </tbody>
+</table>
+
+<div class="code-tabs">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(this,'py')">Python</button>
+        <button class="tab-btn" onclick="switchTab(this,'cpp')">C++</button>
+    </div>
+    <div class="tab-panel active" data-lang="py">
+        <div class="code-block">
+<pre><span class="cmt"># 计算从基地指向某怪物的方向向量</span>
+base <span class="punc">=</span> Vector<span class="punc">(</span><span class="obj">hero</span><span class="punc">.</span>x<span class="punc">,</span> <span class="obj">hero</span><span class="punc">.</span>y<span class="punc">)</span>
+target <span class="punc">=</span> Vector<span class="punc">(</span>monster<span class="punc">.</span>x<span class="punc">,</span> monster<span class="punc">.</span>y<span class="punc">)</span>
+
+<span class="cmt"># 方向 = 目标 - 基地，再归一化</span>
+direction <span class="punc">=</span> Vector<span class="punc">.</span><span class="fn">subtract</span><span class="punc">(</span>target<span class="punc">,</span> base<span class="punc">)</span>
+unit <span class="punc">=</span> direction<span class="punc">.</span><span class="fn">normalize</span><span class="punc">()</span>
+
+dist <span class="punc">=</span> base<span class="punc">.</span><span class="fn">distance</span><span class="punc">(</span>target<span class="punc">)</span>
+angle <span class="punc">=</span> direction<span class="punc">.</span><span class="fn">heading</span><span class="punc">()</span>
+
+<span class="cmt"># 在基地前方 15 米处释放推力</span>
+spot <span class="punc">=</span> Vector<span class="punc">.</span><span class="fn">add</span><span class="punc">(</span>base<span class="punc">,</span> Vector<span class="punc">.</span><span class="fn">multiply</span><span class="punc">(</span>unit<span class="punc">,</span> <span class="num">15</span><span class="punc">))</span>
+<span class="obj">hero</span><span class="punc">.</span><span class="fn">special</span><span class="punc">(</span><span class="str">"push"</span><span class="punc">,</span> spot<span class="punc">.</span>x<span class="punc">,</span> spot<span class="punc">.</span>y<span class="punc">)</span></pre>
+        </div>
+    </div>
+    <div class="tab-panel" data-lang="cpp">
+        <div class="code-block">
+<pre><span class="cmt">// 计算从基地指向某怪物的方向向量</span>
+<span class="type">Vector</span> base<span class="punc">(</span><span class="obj">hero</span><span class="punc">.</span>x<span class="punc">,</span> <span class="obj">hero</span><span class="punc">.</span>y<span class="punc">);</span>
+<span class="type">Vector</span> target<span class="punc">(</span>monster<span class="punc">.</span>x<span class="punc">,</span> monster<span class="punc">.</span>y<span class="punc">);</span>
+
+<span class="cmt">// 方向 = 目标 - 基地，再归一化</span>
+<span class="type">auto</span> direction <span class="punc">=</span> <span class="type">Vector</span><span class="punc">::</span><span class="fn">subtract</span><span class="punc">(</span>target<span class="punc">,</span> base<span class="punc">);</span>
+<span class="type">auto</span> unit <span class="punc">=</span> direction<span class="punc">.</span><span class="fn">normalize</span><span class="punc">();</span>
+
+<span class="type">auto</span> dist <span class="punc">=</span> base<span class="punc">.</span><span class="fn">distance</span><span class="punc">(</span>target<span class="punc">);</span>
+<span class="type">auto</span> angle <span class="punc">=</span> direction<span class="punc">.</span><span class="fn">heading</span><span class="punc">();</span>
+
+<span class="cmt">// 在基地前方 15 米处释放推力</span>
+<span class="type">auto</span> spot <span class="punc">=</span> <span class="type">Vector</span><span class="punc">::</span><span class="fn">add</span><span class="punc">(</span>base<span class="punc">,</span> <span class="type">Vector</span><span class="punc">::</span><span class="fn">multiply</span><span class="punc">(</span>unit<span class="punc">,</span> <span class="num">15</span><span class="punc">));</span>
+<span class="obj">hero</span><span class="punc">.</span><span class="fn">special</span><span class="punc">(</span><span class="str">"push"</span><span class="punc">,</span> spot<span class="punc">.</span>x<span class="punc">,</span> spot<span class="punc">.</span>y<span class="punc">);</span></pre>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 速查表 ==================== -->
+<div class="summary-card" id="section-summary">
+    <h3>API 速查表 ✨</h3>
+
+    <table class="styled-table">
+        <thead><tr><th>类别</th><th>常用成员</th></tr></thead>
+        <tbody>
+            <tr><td>Hero · 属性</td><td><code>x</code> <code>y</code> <code>time</code> <code>health</code> <code>maxHealth</code> <code>mana</code> <code>towerTypes</code> <code>monsterTypes</code></td></tr>
+            <tr><td>Hero · 建造</td><td><code>build(type, place)</code> <code>build(type, x, y)</code> <code>canBuildAt(x, y)</code></td></tr>
+            <tr><td>Hero · 技能</td><td><code>special(type, x, y)</code> <code>isReady(type)</code></td></tr>
+            <tr><td>Hero · 查询</td><td><code>findTowers()</code> <code>findMyTowers()</code> <code>findEnemyTowers()</code> <code>getEnemyHero()</code></td></tr>
+            <tr><td>Hero · 参数</td><td><code>getTowerParameters(type, level)</code> <code>getMonsterParameters(type)</code></td></tr>
+            <tr><td>Hero · 波次</td><td><code>getWaves()</code> <code>getWave(n)</code> <code>getWaveNumber()</code> <code>getCurrentWave()</code> <code>getNextWave()</code></td></tr>
+            <tr><td>Hero · 策略</td><td><code>setTargeting(tower, type)</code></td></tr>
+            <tr><td>Hero · 异常/守卫</td><td><code>findActiveAnomalies()</code> <code>wait(t)</code> <code>on("spawn-guard", fn)</code> <code>findMyGuards()</code> <code>findEnemyGuards()</code></td></tr>
+            <tr><td>Hero · 寻敌</td><td><code>distanceTo(t)</code> <code>findMonsters()</code> <code>findNearest(targets)</code></td></tr>
+            <tr><td>Tower</td><td><code>x</code> <code>y</code> <code>attackDamage</code> <code>attackCooldown</code> <code>attackRange</code> <code>level</code> <code>type</code></td></tr>
+            <tr><td>Guard</td><td><code>moveTo(x,y)</code> <code>moveToward(x,y)</code> <code>attack(t)</code> <code>special(name)</code> <code>isReady(name)</code> <code>findNearestMonster()</code> <code>distanceTo(t)</code> <code>findMonsters()</code> <code>findNearest(targets)</code></td></tr>
+            <tr><td>Vector · 实例</td><td><code>x</code> <code>y</code> <code>z</code> <code>magnitude()</code> <code>heading()</code> <code>distance(o)</code> <code>dot(o)</code> <code>equals(o)</code> <code>copy()</code></td></tr>
+            <tr><td>Vector · 类方法</td><td><code>add</code> <code>subtract</code> <code>multiply</code> <code>divide</code> <code>limit</code> <code>normalize</code> <code>rotate</code></td></tr>
+        </tbody>
+    </table>
+
+    <p style="text-align: center; margin-top: 20px; font-size: 1.1em;">
+        掌握这些 API，你就握住了苔原塔的全部操控权 ⚔️❄️<br>
+        把它们组合起来，写出属于你自己的制胜策略吧！🏰
+    </p>
+</div>
+
+</div><!-- end container -->
+
+<div style="background: var(--dark); color: #aaa; text-align: center; padding: 30px 20px; font-size: 0.85em;">
+    <p>CodeCombat 编程知识 · 多人竞技场：苔原塔（Tundra Tower）· 强化篇 API 大全</p>
+    <p style="margin-top:8px; color:#666;">扣哒世界（CodeCombat）教研团队</p>
+</div>
+
+</div><!-- end page-wrapper -->
+
+<script>
+// 代码语言切换：点击一个标签，切换其所在 code-tabs 内的面板
+function switchTab(btn, lang) {
+    const tabs = btn.closest('.code-tabs');
+    tabs.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    tabs.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    tabs.querySelector('.tab-panel[data-lang="' + lang + '"]').classList.add('active');
+}
+
+// 侧边栏移动端点击后自动收起
+document.querySelectorAll('.sidebar-nav a').forEach(link => {
+    link.addEventListener('click', () => {
+        if (window.innerWidth <= 1024) {
+            document.querySelector('.sidebar-nav').classList.remove('active');
+        }
+    });
+});
+</script>
+
+</body>
+</html>
