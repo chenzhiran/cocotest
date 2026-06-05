@@ -3,536 +3,320 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>第八章：搜索 - 编程探险</title>
+    <title>C++ 魔法课堂：第八章 分治与二分算法 - 目录</title>
     <style>
-        /* 全局设置 */
+        /* 全局字体与配色 - 星空紫与精确青主题（代表逻辑切割与精准定位） */
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Noto+Sans+SC:wght@400;700&display=swap');
+
         body {
-            font-family: 'Comic Sans MS', 'Microsoft YaHei', 'Nunito', sans-serif;
-            background-color: #E0F7FA; /* 清新蓝背景 */
-            background-image: radial-gradient(#B2EBF2 15%, transparent 16%), radial-gradient(#B2EBF2 15%, transparent 16%);
+            font-family: 'Fredoka', 'Noto Sans SC', sans-serif;
+            background-color: #F3E5F5; /* 浅紫背景 */
+            background-image: radial-gradient(#E1BEE7 15%, transparent 16%), radial-gradient(#E1BEE7 15%, transparent 16%);
             background-size: 60px 60px;
             background-position: 0 0, 30px 30px;
             margin: 0;
             padding: 20px;
-            color: #37474F;
+            color: #4A148C; /* 深紫色文字 */
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1050px;
             margin: 0 auto;
-            background-color: #FFFFFF;
-            border-radius: 20px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            box-shadow: 0 10px 0px #7B1FA2; /* 深紫阴影 */
             padding: 40px;
-            border: 4px solid #4DD0E1;
+            border: 4px solid #AB47BC; /* 主边框紫色 */
         }
 
-        /* 标题样式 */
         h1 {
-            color: #0097A7;
+            color: #4A148C;
             text-align: center;
-            font-size: 2.5em;
+            font-size: 2.8em;
             margin-bottom: 10px;
-            text-shadow: 2px 2px #E0F2F1;
-        }
-
-        h2 {
-            color: #FF7043;
-            background-color: #FFF3E0;
-            padding: 10px 20px;
-            border-radius: 50px;
-            display: inline-block;
-            margin-top: 40px;
-            border-left: 8px solid #FF5722;
-        }
-
-        h3 {
-            color: #00838F;
-            border-bottom: 2px dashed #80DEEA;
-            padding-bottom: 5px;
-            margin-top: 30px;
-        }
-
-        p {
-            line-height: 1.8;
-            font-size: 1.1em;
-        }
-
-        /* 重点文字 */
-        .highlight {
-            background-color: #FFF176;
-            padding: 2px 5px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        /* 代码块样式 */
-        pre {
-            background-color: #263238; /* 深色背景 */
-            color: #ECEFF1;
-            padding: 20px;
-            border-radius: 15px;
-            overflow-x: auto;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 15px;
-            line-height: 1.5;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-            border: 2px solid #546E7A;
-        }
-
-        /* 语法高亮类 */
-        .cpp-kw { color: #C792EA; font-weight: bold; } /* 关键字 */
-        .cpp-type { color: #FFCB6B; font-weight: bold; } /* 类型 */
-        .cpp-func { color: #82B1FF; } /* 函数名 */
-        .cpp-num { color: #F78C6C; } /* 数字 */
-        .cpp-str { color: #C3E88D; } /* 字符串 */
-        .cpp-com { color: #546E7A; font-style: italic; } /* 注释 */
-        .cpp-lib { color: #89DDFF; } /* 库文件 */
-
-        /* 题目卡片 */
-        .problem-card {
-            background-color: #F1F8E9;
-            border: 2px solid #AED581;
-            border-radius: 15px;
-            padding: 20px;
-            margin-top: 30px;
-            position: relative;
+            text-shadow: 2px 2px #FFF;
         }
         
-        .problem-title {
-            background-color: #7CB342;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 10px;
+        .subtitle {
+            text-align: center;
+            color: #6A1B9A;
+            font-size: 1.2em;
+            margin-bottom: 20px;
             font-weight: bold;
-            display: inline-block;
-            margin-bottom: 10px;
         }
 
-        /* 插图容器 */
-        .img-box {
+        .tip-box {
+            background-color: #E0F7FA; /* 浅青色提示框 */
+            border: 2px solid #00BCD4;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+            text-align: center;
+            font-size: 1.1em;
+            color: #00838F; /* 深青文字 */
+        }
+        .tip-box::before {
+            content: "🎯"; /* 靶心代表精确二分 */
+            position: absolute;
+            top: -18px;
+            left: 20px;
+            font-size: 28px;
+            background: #E0F7FA;
+            padding: 0 5px;
+            border-radius: 5px;
+        }
+
+        .img-container {
             text-align: center;
             margin: 20px 0;
         }
-        
-        /* 列表样式 */
-        ul {
-            list-style-type: none;
-            padding-left: 0;
-        }
-        ul li::before {
-            content: "🧭 ";
-            color: #FF7043;
+        svg {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(3px 3px 2px rgba(0,0,0,0.1));
         }
 
-        /* 底部 */
+        .directory-title {
+            color: #FFF; 
+            background-color: #9C27B0;
+            padding: 10px 25px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-top: 20px;
+            border: 3px solid #7B1FA2;
+            box-shadow: 4px 4px 0 #7B1FA2;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        /* 强制每行3个卡片，6个卡片刚好两行 */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .menu-card {
+            background: white;
+            border: 3px solid #CE93D8; /* 柔和的边框紫 */
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 5px 5px 0px #E1BEE7;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+        }
+        .menu-card:hover {
+            transform: scale(1.02);
+            border-color: #00BCD4; /* hover变青色 */
+            box-shadow: 5px 5px 0px #B2EBF2;
+        }
+
+        .menu-card-title {
+            color: #6A1B9A;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-bottom: 2px dashed #E1BEE7;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* 不同的章节图标 */
+        .icon-1::before { content: "✂️ "; }
+        .icon-2::before { content: "🔍 "; }
+        .icon-3::before { content: "🔄 "; }
+        .icon-4::before { content: "🎯 "; }
+        .icon-5::before { content: "📏 "; }
+        .icon-6::before { content: "🚀 "; }
+
+        .sub-menu-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+            color: #4A148C;
+            font-size: 0.9em;
+            flex-grow: 1; 
+        }
+        .sub-menu-list li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .sub-menu-list li::before {
+            content: "✨"; /* 星星代表小结 */
+            position: absolute;
+            left: 0;
+            font-size: 0.8em;
+            top: 2px;
+        }
+
+        .menu-link-main {
+            display: block;
+            background-color: #F3E5F5;
+            color: #6A1B9A;
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 12px;
+            border: 2px solid #AB47BC;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-align: center;
+            margin-top: auto;
+        }
+        .menu-link-main:hover {
+            background-color: #9C27B0;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            border-color: #7B1FA2;
+        }
+
         .footer {
             text-align: center;
             margin-top: 50px;
-            color: #78909C;
-            font-size: 0.9em;
+            padding: 20px;
+            background-color: #00BCD4; /* 亮青色结尾 */
+            color: #FFF;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 4px 0px #0097A7;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+        }
+
+        /* 响应式适配：屏幕较小时改为1列或2列 */
+        @media (max-width: 900px) {
+            .menu-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .menu-grid { grid-template-columns: 1fr; }
+            .container { padding: 20px; }
+            h1 { font-size: 2.2em; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>第八章：搜索 (Search)</h1>
-    <p style="text-align: center; font-size: 1.2em; color: #555;">🗺️ 欢迎来到编程探险世界！</p>
 
-    <!-- 趣味开场 -->
-    <h2>1. 趣味开场：在迷宫里找宝藏</h2>
-    
-    <div class="img-box">
-        <!-- SVG插图：迷宫探险 -->
-        <svg width="400" height="200" viewBox="0 0 400 200">
-            <!-- 背景 -->
-            <rect x="0" y="0" width="400" height="200" rx="15" fill="#37474F" />
-            <!-- 迷宫墙壁 -->
-            <path d="M50,50 L150,50 L150,150 M250,50 L250,150 L350,150" stroke="#90A4AE" stroke-width="8" fill="none" stroke-linecap="round"/>
-            <!-- 宝藏 -->
-            <g transform="translate(320, 80)">
-                <path d="M0,0 L20,0 L25,15 L-5,15 Z" fill="#FFD700" />
-                <path d="M-5,15 L25,15 L20,30 L0,30 Z" fill="#FFA000" />
-                <circle cx="10" cy="10" r="2" fill="white" opacity="0.5"/>
-            </g>
-            <!-- 探险家1：铁头娃 -->
-            <g transform="translate(60, 100)">
-                <circle cx="0" cy="0" r="15" fill="#FF7043" />
-                <text x="0" y="5" text-anchor="middle" fill="white" font-size="10">DFS</text>
-                <path d="M15,0 L40,0" stroke="#FF7043" stroke-width="3" stroke-dasharray="4"/>
-                <text x="0" y="30" text-anchor="middle" fill="#FFCCBC" font-size="10">铁头娃</text>
-            </g>
-            <!-- 探险家2：雷达哥 -->
-            <g transform="translate(200, 100)">
-                <circle cx="0" cy="0" r="15" fill="#42A5F5" />
-                <text x="0" y="5" text-anchor="middle" fill="white" font-size="10">BFS</text>
-                <circle cx="0" cy="0" r="25" stroke="#42A5F5" stroke-width="1" fill="none" opacity="0.6"/>
-                <circle cx="0" cy="0" r="35" stroke="#42A5F5" stroke-width="1" fill="none" opacity="0.3"/>
-                <text x="0" y="30" text-anchor="middle" fill="#BBDEFB" font-size="10">雷达哥</text>
-            </g>
-        </svg>
-    </div>
+    <h1>第八章：分治与二分算法</h1>
+    <p class="subtitle">🎯 降维打击的艺术：化繁为简，在折半的跳跃中锁定真相！</p>
 
-    <p>同学们，想象一下，你现在身处一个巨大的地下迷宫，手里拿着一张藏宝图，但地图上只标了入口和宝藏的位置，中间的路全是黑的。你要怎么找到宝藏呢？</p>
-    <p>有两种截然不同的探险风格：</p>
-    <p>🔴 <strong>第一种探险家叫“铁头娃” (DFS)</strong>：他选定一条路，就一直闷头走到黑。如果撞墙了，或者发现是死胡同，他才退回来，换个岔路口继续闷头走。他不怕累，不撞南墙不回头！</p>
-    <p>🔵 <strong>第二种探险家叫“雷达哥” (BFS)</strong>：他很谨慎，站在原地，先把周围一步能到的地方都看一遍，再从这些地方出发，看两步能到的地方……就像水波一圈圈荡漾开去。他走得慢，但他能保证，只要找到了宝藏，那一定走的是最近的路！</p>
+    <div class="img-container">
+        <svg width="450" height="220" viewBox="0 0 450 220">
+            <rect x="25" y="30" width="400" height="40" rx="10" fill="#E1BEE7" stroke="#9C27B0" stroke-width="3"/>
+            <text x="225" y="55" text-anchor="middle" fill="#4A148C" font-weight="bold" font-size="14">搜索空间：</text>
+            
+            <path d="M 225 70 L 225 90" stroke="#00BCD4" stroke-width="4" stroke-dasharray="4,4" fill="none" marker-end="url(#arrow)"/>
+            
+            <rect x="25" y="100" width="190" height="40" rx="10" fill="#F5F5F5" stroke="#BDBDBD" stroke-width="3" stroke-dasharray="5,5"/>
+            <text x="120" y="125" text-anchor="middle" fill="#9E9E9E" font-weight="bold" font-size="12">丢弃</text>
+            <path d="M 100 110 L 140 130 M 140 110 L 100 130" stroke="#9E9E9E" stroke-width="3"/>
 
-    <!-- 深度优先搜索 -->
-    <h2>2. 核心知识点讲解</h2>
+            <rect x="235" y="100" width="190" height="40" rx="10" fill="#E1BEE7" stroke="#9C27B0" stroke-width="3"/>
+            <text x="330" y="125" text-anchor="middle" fill="#4A148C" font-weight="bold" font-size="14">锁定</text>
 
-    <h3>🔍 知识点一：深度优先搜索 (DFS) —— 不撞南墙不回头</h3>
-    
-    <p><strong>简单定义：</strong> 一条路走到黑。从起点开始，选一条路一直往下走，直到无路可走或者找到目标，然后再退回来（这叫<strong>回溯</strong>），换另一条路走。</p>
-    <p><strong>关键点：</strong> <span class="highlight">递归</span>（自己调用自己）和 <span class="highlight">回溯</span>（恢复现场，像没来过一样）。</p>
+            <path d="M 330 140 L 330 160" stroke="#00BCD4" stroke-width="4" stroke-dasharray="4,4" fill="none" marker-end="url(#arrow)"/>
 
-    <div class="img-box">
-        <!-- SVG插图：DFS路径 -->
-        <svg width="300" height="150" viewBox="0 0 300 150">
-            <path d="M20,75 L80,75 L80,20" stroke="#FF7043" stroke-width="4" fill="none" marker-end="url(#arrow)" stroke-dasharray="5"/>
-            <path d="M80,75 L140,75 L140,130" stroke="#FFCCBC" stroke-width="4" fill="none" />
-            <circle cx="20" cy="75" r="5" fill="#37474F"/>
-            <text x="20" y="95" text-anchor="middle" font-size="12">起点</text>
-            <text x="80" y="15" text-anchor="middle" font-size="12" fill="#D84315">1.走到死胡同</text>
-            <text x="140" y="145" text-anchor="middle" font-size="12" fill="#D84315">2.回溯换条路</text>
+            <rect x="235" y="170" width="85" height="40" rx="10" fill="#F5F5F5" stroke="#BDBDBD" stroke-width="3" stroke-dasharray="5,5"/>
+            <rect x="340" y="170" width="85" height="40" rx="10" fill="#B2EBF2" stroke="#00BCD4" stroke-width="4"/>
+            <text x="382" y="195" text-anchor="middle" fill="#00838F" font-weight="bold" font-size="14">Target 🎯</text>
+
             <defs>
-                <marker id="arrow" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto" markerUnits="strokeWidth">
-                    <path d="M0,0 L0,6 L9,3 z" fill="#FF7043" />
+                <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#00BCD4" />
                 </marker>
             </defs>
         </svg>
     </div>
 
-    <h4>📜 极简代码（DFS 框架）：</h4>
-<pre>
-<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
-<span class="cpp-kw">using</span> <span class="cpp-kw">namespace</span> std;
-
-<span class="cpp-type">int</span> ans = <span class="cpp-num">0</span>; <span class="cpp-com">// 记录方案数</span>
-<span class="cpp-type">bool</span> visited[<span class="cpp-num">10</span>][<span class="cpp-num">10</span>]; <span class="cpp-com">// 记录走过的格子</span>
-<span class="cpp-type">int</span> dx[] = {<span class="cpp-num">0</span>, <span class="cpp-num">0</span>, <span class="cpp-num">1</span>, <span class="cpp-num">-1</span>};
-<span class="cpp-type">int</span> dy[] = {<span class="cpp-num">1</span>, <span class="cpp-num">-1</span>, <span class="cpp-num">0</span>, <span class="cpp-num">0</span>};
-
-<span class="cpp-kw">void</span> <span class="cpp-func">dfs</span>(<span class="cpp-type">int</span> x, <span class="cpp-type">int</span> y) {
-    <span class="cpp-com">// 1. 边界条件：到了终点或者没路了</span>
-    <span class="cpp-kw">if</span> (<span class="cpp-com">/* 到了终点 */</span>) {
-        ans++; <span class="cpp-com">// 找到一种方案</span>
-        <span class="cpp-kw">return</span>;
-    }
-
-    <span class="cpp-com">// 2. 尝试所有可能的方向（上下左右）</span>
-    <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-num">0</span>; i < <span class="cpp-num">4</span>; i++) {
-        <span class="cpp-type">int</span> nx = x + dx[i];
-        <span class="cpp-type">int</span> ny = y + dy[i];
-
-        <span class="cpp-com">// 如果下一步能走且没走过</span>
-        <span class="cpp-kw">if</span> (<span class="cpp-com">/*check(nx, ny)*/</span> && !visited[nx][ny]) {
-            visited[nx][ny] = <span class="cpp-kw">true</span>;  <span class="cpp-com">// 标记：我来过这里</span>
-            <span class="cpp-func">dfs</span>(nx, ny);             <span class="cpp-com">// 递归：继续往下走</span>
-            visited[nx][ny] = <span class="cpp-kw">false</span>; <span class="cpp-com">// 回溯：撤销标记，假装没来过！</span>
-        }
-    }
-}
-</pre>
-
-    <h3>📡 知识点二：广度优先搜索 (BFS) —— 地毯式搜索</h3>
-
-    <p><strong>简单定义：</strong> 层层推进。从起点开始，先访问所有离起点最近的点（第1层），再访问离起点稍远一点的点（第2层），直到找到目标。它常用于<strong>找最短路径</strong>。</p>
-    <p><strong>关键点：</strong> <span class="highlight">队列</span>（Queue，先进先出）和状态记录（避免重复走）。</p>
-
-    <div class="img-box">
-        <!-- SVG插图：BFS波纹 -->
-        <svg width="300" height="150" viewBox="0 0 300 150">
-            <circle cx="150" cy="75" r="5" fill="#37474F"/>
-            <circle cx="150" cy="75" r="25" stroke="#42A5F5" stroke-width="2" fill="none"/>
-            <circle cx="150" cy="75" r="45" stroke="#42A5F5" stroke-width="2" fill="none"/>
-            <circle cx="150" cy="75" r="65" stroke="#42A5F5" stroke-width="2" fill="none"/>
-            <text x="150" y="79" text-anchor="middle" font-size="10" fill="white">Start</text>
-            <text x="150" y="45" text-anchor="middle" font-size="10" fill="#1E88E5">第1层</text>
-            <text x="150" y="25" text-anchor="middle" font-size="10" fill="#1976D2">第2层</text>
-        </svg>
+    <div class="tip-box">
+        <strong>核心奥义：分而治之，折半而飞！</strong><br>
+        面对庞大得无法一眼看穿的问题时，不要退缩！“分治法”教我们将大问题分解为小问题各个击破；而“二分算法”则是其中最锐利的刀刃——每次探测都能直接斩断一半的可能！从 $O(N)$ 到 $O(\log N)$ 的跨越，是算法世界里最迷人的奇迹。
     </div>
 
-    <h4>📜 极简代码（BFS 找最短路）：</h4>
-<pre>
-<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
-<span class="cpp-kw">using</span> <span class="cpp-kw">namespace</span> std;
+    <div style="text-align: center;">
+        <div class="directory-title">👇 降维打击导航 👇</div>
+    </div>
 
-<span class="cpp-kw">struct</span> <span class="cpp-type">Point</span> { <span class="cpp-type">int</span> x, y, step; }; <span class="cpp-com">// 记录坐标和走了几步</span>
-queue&lt;Point&gt; q; <span class="cpp-com">// 队列：BFS的核心工具</span>
-<span class="cpp-type">bool</span> visited[<span class="cpp-num">100</span>][<span class="cpp-num">100</span>]; 
-
-<span class="cpp-type">int</span> <span class="cpp-func">bfs</span>(<span class="cpp-type">int</span> startX, <span class="cpp-type">int</span> startY) {
-    q.push({startX, startY, <span class="cpp-num">0</span>}); <span class="cpp-com">// 起点入队</span>
-    visited[startX][startY] = <span class="cpp-kw">true</span>;
-
-    <span class="cpp-kw">while</span> (!q.empty()) { <span class="cpp-com">// 只要队列不空，就继续找</span>
-        Point cur = q.front(); <span class="cpp-com">// 取出队头</span>
-        q.pop();               <span class="cpp-com">// 扔掉队头</span>
-
-        <span class="cpp-kw">if</span> (<span class="cpp-com">/*到了终点*/</span>) <span class="cpp-kw">return</span> cur.step; <span class="cpp-com">// 找到了！返回步数</span>
-
-        <span class="cpp-com">// 尝试上下左右四个方向</span>
-        <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-num">0</span>; i < <span class="cpp-num">4</span>; i++) {
-            <span class="cpp-type">int</span> nx = cur.x + dx[i];
-            <span class="cpp-type">int</span> ny = cur.y + dy[i];
-
-            <span class="cpp-kw">if</span> (<span class="cpp-com">/*能走*/</span> && !visited[nx][ny]) {
-                visited[nx][ny] = <span class="cpp-kw">true</span>; <span class="cpp-com">// 标记已访问</span>
-                q.push({nx, ny, cur.step + <span class="cpp-num">1</span>}); <span class="cpp-com">// 新位置入队，步数+1</span>
-            }
-        }
-    }
-    <span class="cpp-kw">return</span> <span class="cpp-num">-1</span>; <span class="cpp-com">// 没找到</span>
-}
-</pre>
-
-    <!-- 题目练习 -->
-    <h2>3. 课堂练习题（挑战开始！）</h2>
-
-    <!-- 题目1 -->
-    <div class="problem-card">
-        <div class="problem-title">练习题 1：走出迷宫（DFS 基础）</div>
-        <p><strong>题目描述：</strong> 有一个 N*M 的迷宫，'.' 表示路，'#' 表示墙。给定起点 (sx, sy) 和终点 (ex, ey)。请问能不能从起点走到终点？如果能，输出 "Yes"，否则输出 "No"。</p>
-        <p><strong>思路提示：</strong> 典型的“连通性”问题。派“铁头娃” (DFS) 去探路。只要周围有路且没走过，就走过去。</p>
-<pre>
-<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
-<span class="cpp-kw">using</span> <span class="cpp-kw">namespace</span> std;
-
-<span class="cpp-type">int</span> n, m, sx, sy, ex, ey;
-<span class="cpp-type">char</span> grid[<span class="cpp-num">105</span>][<span class="cpp-num">105</span>];
-<span class="cpp-type">bool</span> visited[<span class="cpp-num">105</span>][<span class="cpp-num">105</span>];
-<span class="cpp-type">int</span> dx[] = {<span class="cpp-num">0</span>, <span class="cpp-num">0</span>, <span class="cpp-num">1</span>, <span class="cpp-num">-1</span>};
-<span class="cpp-type">int</span> dy[] = {<span class="cpp-num">1</span>, <span class="cpp-num">-1</span>, <span class="cpp-num">0</span>, <span class="cpp-num">0</span>};
-<span class="cpp-type">bool</span> found = <span class="cpp-kw">false</span>;
-
-<span class="cpp-kw">void</span> <span class="cpp-func">dfs</span>(<span class="cpp-type">int</span> x, <span class="cpp-type">int</span> y) {
-    <span class="cpp-kw">if</span> (x == ex && y == ey) { <span class="cpp-com">// 到达终点</span>
-        found = <span class="cpp-kw">true</span>;
-        <span class="cpp-kw">return</span>;
-    }
-    
-    visited[x][y] = <span class="cpp-kw">true</span>; <span class="cpp-com">// 标记当前点走过了</span>
-    
-    <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-num">0</span>; i < <span class="cpp-num">4</span>; i++) {
-        <span class="cpp-type">int</span> nx = x + dx[i];
-        <span class="cpp-type">int</span> ny = y + dy[i];
+    <div class="menu-grid">
         
-        <span class="cpp-com">// 检查边界，是否是墙，是否走过，是否已经找到终点</span>
-        <span class="cpp-kw">if</span> (nx >= <span class="cpp-num">1</span> && nx <= n && ny >= <span class="cpp-num">1</span> && ny <= m && 
-            grid[nx][ny] == <span class="cpp-str">'.'</span> && !visited[nx][ny] && !found) {
-            <span class="cpp-func">dfs</span>(nx, ny);
-        }
-    }
-}
+        <div class="menu-card">
+            <div class="menu-card-title icon-1">8.1 分治思想</div>
+            <ul class="sub-menu-list">
+                <li>8.1.1 分治法的基本步骤：分解、解决、合并</li>
+                <li>8.1.2 分治与二分的关系：缩小问题规模的不同策略</li>
+                <li>8.1.3 时间复杂度分析：递归树与主定理初步</li>
+            </ul>
+            <a href="8-1.html" class="menu-link-main">进入 8.1 学习 🚀</a>
+        </div>
 
-<span class="cpp-type">int</span> <span class="cpp-func">main</span>() {
-    cin >> n >> m;
-    <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-num">1</span>; i <= n; i++)
-        <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> j = <span class="cpp-num">1</span>; j <= m; j++)
-            cin >> grid[i][j];
-    cin >> sx >> sy >> ex >> ey;
-    
-    <span class="cpp-func">dfs</span>(sx, sy);
-    
-    <span class="cpp-kw">if</span> (found) cout << <span class="cpp-str">"Yes"</span> << endl;
-    <span class="cpp-kw">else</span> cout << <span class="cpp-str">"No"</span> << endl;
-    <span class="cpp-kw">return</span> <span class="cpp-num">0</span>;
-}
-</pre>
+        <div class="menu-card">
+            <div class="menu-card-title icon-2">8.2 二分查找（递归/非递归）</div>
+            <ul class="sub-menu-list">
+                <li>8.2.1 有序序列中的二分查找原理</li>
+                <li>8.2.2 递归实现的写法与调用</li>
+                <li>8.2.3 非递归实现（循环写法）与边界控制</li>
+                <li>8.2.4 循环不变式与常见死循环陷阱</li>
+            </ul>
+            <a href="8-2.html" class="menu-link-main">进入 8.2 学习 🚀</a>
+        </div>
+
+        <div class="menu-card">
+            <div class="menu-card-title icon-3">8.3 二分查找的常见变种</div>
+            <ul class="sub-menu-list">
+                <li>8.3.1 查找第一个等于目标值的位置（lower_bound）</li>
+                <li>8.3.2 查找最后一个等于目标值的位置</li>
+                <li>8.3.3 查找第一个大于目标值的位置（upper_bound）</li>
+                <li>8.3.4 特殊场景：峰值查找、旋转数组二分搜索</li>
+                <li>8.3.5 二分策略的设计思路与通用模板</li>
+            </ul>
+            <a href="8-3.html" class="menu-link-main">进入 8.3 学习 🚀</a>
+        </div>
+
+        <div class="menu-card">
+            <div class="menu-card-title icon-4">8.4 二分答案</div>
+            <ul class="sub-menu-list">
+                <li>8.4.1 从最优解问题到判定问题的转化</li>
+                <li>8.4.2 答案单调性的判断与二分范围的确定</li>
+                <li>8.4.3 整数二分的两种经典写法（最小/最大可行解）</li>
+                <li>8.4.4 典型应用：最大化最小值、最小化最大值</li>
+            </ul>
+            <a href="8-4.html" class="menu-link-main">进入 8.4 学习 🚀</a>
+        </div>
+
+        <div class="menu-card">
+            <div class="menu-card-title icon-5">8.5 实数二分</div>
+            <ul class="sub-menu-list">
+                <li>8.5.1 实数域二分搜索的框架</li>
+                <li>8.5.2 精度控制与终止条件（固定次数 / eps 判断）</li>
+                <li>8.5.3 求方程近似根、最大化平均值等问题实例</li>
+            </ul>
+            <a href="8-5.html" class="menu-link-main">进入 8.5 学习 🚀</a>
+        </div>
+
+        <div class="menu-card">
+            <div class="menu-card-title icon-6">8.6 倍增法初步</div>
+            <ul class="sub-menu-list">
+                <li>8.6.1 倍增思想核心：按 2^k 步长逐步试探</li>
+                <li>8.6.2 倍增求区间未知的上界（当无法直接二分时）</li>
+                <li>8.6.3 经典实例：快速幂算法</li>
+                <li>8.6.4 一维倍增与树上倍增简介（LCA 思想）</li>
+            </ul>
+            <a href="8-6.html" class="menu-link-main">进入 8.6 学习 🚀</a>
+        </div>
+
     </div>
-
-    <!-- 题目2 -->
-    <div class="problem-card">
-        <div class="problem-title">练习题 2：马的遍历（BFS 最短路）</div>
-        <p><strong>题目描述：</strong> 在一个 N*M 的棋盘上，计算马（走日字）从起点到棋盘上任意一个点最少要走几步。如果到不了，输出 -1。</p>
-        <p><strong>思路提示：</strong> 求“最少步数”，马上想到“雷达哥” (BFS)！使用队列，一开始把所有点距离设为-1。</p>
-<pre>
-<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
-<span class="cpp-kw">using</span> <span class="cpp-kw">namespace</span> std;
-
-<span class="cpp-kw">struct</span> <span class="cpp-type">Point</span> { <span class="cpp-type">int</span> x, y; };
-<span class="cpp-type">int</span> n, m, sx, sy;
-<span class="cpp-type">int</span> dist[<span class="cpp-num">405</span>][<span class="cpp-num">405</span>]; <span class="cpp-com">// 记录步数，兼职visited (-1表示未访问)</span>
-<span class="cpp-type">int</span> dx[] = {<span class="cpp-num">1</span>, <span class="cpp-num">1</span>, <span class="cpp-num">2</span>, <span class="cpp-num">2</span>, <span class="cpp-num">-1</span>, <span class="cpp-num">-1</span>, <span class="cpp-num">-2</span>, <span class="cpp-num">-2</span>};
-<span class="cpp-type">int</span> dy[] = {<span class="cpp-num">2</span>, <span class="cpp-num">-2</span>, <span class="cpp-num">1</span>, <span class="cpp-num">-1</span>, <span class="cpp-num">2</span>, <span class="cpp-num">-2</span>, <span class="cpp-num">1</span>, <span class="cpp-num">-1</span>};
-
-<span class="cpp-type">int</span> <span class="cpp-func">main</span>() {
-    cin >> n >> m >> sx >> sy;
-    
-    <span class="cpp-com">// 初始化所有距离为 -1</span>
-    <span class="cpp-func">memset</span>(dist, <span class="cpp-num">-1</span>, <span class="cpp-kw">sizeof</span>(dist));
-    
-    queue&lt;Point&gt; q;
-    q.push({sx, sy});
-    dist[sx][sy] = <span class="cpp-num">0</span>; <span class="cpp-com">// 起点步数为0</span>
-    
-    <span class="cpp-kw">while</span> (!q.empty()) {
-        Point cur = q.front();
-        q.pop();
-        
-        <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-num">0</span>; i < <span class="cpp-num">8</span>; i++) {
-            <span class="cpp-type">int</span> nx = cur.x + dx[i];
-            <span class="cpp-type">int</span> ny = cur.y + dy[i];
-            
-            <span class="cpp-com">// 如果在界内且没来过</span>
-            <span class="cpp-kw">if</span> (nx >= <span class="cpp-num">1</span> && nx <= n && ny >= <span class="cpp-num">1</span> && ny <= m && dist[nx][ny] == <span class="cpp-num">-1</span>) {
-                dist[nx][ny] = dist[cur.x][cur.y] + <span class="cpp-num">1</span>; <span class="cpp-com">// 步数+1</span>
-                q.push({nx, ny});
-            }
-        }
-    }
-    
-    <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-num">1</span>; i <= n; i++) {
-        <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> j = <span class="cpp-num">1</span>; j <= m; j++) {
-            <span class="cpp-func">printf</span>(<span class="cpp-str">"%-5d"</span>, dist[i][j]); <span class="cpp-com">// 左对齐输出</span>
-        }
-        cout << endl;
-    }
-    <span class="cpp-kw">return</span> <span class="cpp-num">0</span>;
-}
-</pre>
-    </div>
-
-    <!-- 题目3 -->
-    <div class="problem-card">
-        <div class="problem-title">练习题 3：选数（DFS + 回溯）</div>
-        <p><strong>题目描述：</strong> 给定 n 个整数，从中选出 k 个数，使得它们的和是素数。请问有多少种选法？</p>
-        <p><strong>思路提示：</strong> 这是一个组合问题，用 DFS 来决定每个数“选”还是“不选”。注意边界：选够了k个就判断素数。</p>
-<pre>
-<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
-<span class="cpp-kw">using</span> <span class="cpp-kw">namespace</span> std;
-
-<span class="cpp-type">int</span> n, k, ans = <span class="cpp-num">0</span>;
-<span class="cpp-type">int</span> a[<span class="cpp-num">25</span>];
-
-<span class="cpp-type">bool</span> <span class="cpp-func">isPrime</span>(<span class="cpp-type">int</span> x) {
-    <span class="cpp-kw">if</span> (x < <span class="cpp-num">2</span>) <span class="cpp-kw">return</span> <span class="cpp-kw">false</span>;
-    <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-num">2</span>; i * i <= x; i++)
-        <span class="cpp-kw">if</span> (x % i == <span class="cpp-num">0</span>) <span class="cpp-kw">return</span> <span class="cpp-kw">false</span>;
-    <span class="cpp-kw">return</span> <span class="cpp-kw">true</span>;
-}
-
-<span class="cpp-com">// step: 考虑到第几个数, cnt: 已选个数, sum: 当前和</span>
-<span class="cpp-kw">void</span> <span class="cpp-func">dfs</span>(<span class="cpp-type">int</span> step, <span class="cpp-type">int</span> cnt, <span class="cpp-type">int</span> sum) {
-    <span class="cpp-kw">if</span> (cnt == k) { <span class="cpp-com">// 选够了k个数</span>
-        <span class="cpp-kw">if</span> (<span class="cpp-func">isPrime</span>(sum)) ans++;
-        <span class="cpp-kw">return</span>;
-    }
-    <span class="cpp-kw">if</span> (step > n) <span class="cpp-kw">return</span>; <span class="cpp-com">// 数选完了还没够k个</span>
-    
-    <span class="cpp-com">// 策略1：选当前这个数</span>
-    <span class="cpp-func">dfs</span>(step + <span class="cpp-num">1</span>, cnt + <span class="cpp-num">1</span>, sum + a[step]);
-    
-    <span class="cpp-com">// 策略2：不选当前这个数</span>
-    <span class="cpp-func">dfs</span>(step + <span class="cpp-num">1</span>, cnt, sum);
-}
-
-<span class="cpp-type">int</span> <span class="cpp-func">main</span>() {
-    cin >> n >> k;
-    <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-num">1</span>; i <= n; i++) cin >> a[i];
-    <span class="cpp-func">dfs</span>(<span class="cpp-num">1</span>, <span class="cpp-num">0</span>, <span class="cpp-num">0</span>);
-    cout << ans << endl;
-    <span class="cpp-kw">return</span> <span class="cpp-num">0</span>;
-}
-</pre>
-    </div>
-
-    <!-- 题目4 -->
-    <div class="problem-card">
-        <div class="problem-title">练习题 4：流星雨（BFS + 时间限制）</div>
-        <p><strong>题目描述：</strong> 流星会砸在坐标上并烧焦周围。Bessie 要在流星砸到之前跑到安全的地方（永远不会被砸的地方）。求最少时间。</p>
-        <p><strong>思路提示：</strong> 这是一个动态地图的 BFS。
-        1. 预处理一张“死亡地图”，记录每个格子最早被炸的时间。
-        2. BFS 走的时候，如果你到达某格子的时间 >= 该格子的死亡时间，那就不能走过去。</p>
-<pre>
-<span class="cpp-lib">#include &lt;bits/stdc++.h&gt;</span>
-<span class="cpp-kw">using</span> <span class="cpp-kw">namespace</span> std;
-
-<span class="cpp-kw">struct</span> <span class="cpp-type">Point</span> { <span class="cpp-type">int</span> x, y, time; };
-<span class="cpp-type">int</span> death_time[<span class="cpp-num">305</span>][<span class="cpp-num">305</span>]; <span class="cpp-com">// 记录最早死亡时间</span>
-<span class="cpp-type">int</span> visited[<span class="cpp-num">305</span>][<span class="cpp-num">305</span>];    <span class="cpp-com">// 记录是否到达过</span>
-<span class="cpp-type">int</span> dx[] = {<span class="cpp-num">0</span>, <span class="cpp-num">0</span>, <span class="cpp-num">1</span>, <span class="cpp-num">-1</span>};
-<span class="cpp-type">int</span> dy[] = {<span class="cpp-num">1</span>, <span class="cpp-num">-1</span>, <span class="cpp-num">0</span>, <span class="cpp-num">0</span>};
-
-<span class="cpp-type">int</span> <span class="cpp-func">main</span>() {
-    <span class="cpp-type">int</span> m;
-    cin >> m;
-    
-    <span class="cpp-com">// 初始化死亡时间为无穷大</span>
-    <span class="cpp-func">memset</span>(death_time, <span class="cpp-num">0x3f</span>, <span class="cpp-kw">sizeof</span>(death_time));
-    
-    <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-num">0</span>; i < m; i++) {
-        <span class="cpp-type">int</span> x, y, t;
-        cin >> x >> y >> t;
-        <span class="cpp-com">// 更新砸中点和周围点的死亡时间</span>
-        death_time[x][y] = <span class="cpp-func">min</span>(death_time[x][y], t);
-        <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> k = <span class="cpp-num">0</span>; k < <span class="cpp-num">4</span>; k++) {
-            <span class="cpp-type">int</span> nx = x + dx[k], ny = y + dy[k];
-            <span class="cpp-kw">if</span> (nx >= <span class="cpp-num">0</span> && ny >= <span class="cpp-num">0</span>) 
-                death_time[nx][ny] = <span class="cpp-func">min</span>(death_time[nx][ny], t);
-        }
-    }
-    
-    queue&lt;Point&gt; q;
-    q.push({<span class="cpp-num">0</span>, <span class="cpp-num">0</span>, <span class="cpp-num">0</span>});
-    visited[<span class="cpp-num">0</span>][<span class="cpp-num">0</span>] = <span class="cpp-num">1</span>;
-    
-    <span class="cpp-kw">while</span> (!q.empty()) {
-        Point cur = q.front();
-        q.pop();
-        
-        <span class="cpp-com">// 如果当前点的死亡时间很大，说明到了安全区！</span>
-        <span class="cpp-kw">if</span> (death_time[cur.x][cur.y] > <span class="cpp-num">10000</span>) { 
-            cout << cur.time << endl;
-            <span class="cpp-kw">return</span> <span class="cpp-num">0</span>;
-        }
-        
-        <span class="cpp-kw">for</span> (<span class="cpp-type">int</span> i = <span class="cpp-num">0</span>; i < <span class="cpp-num">4</span>; i++) {
-            <span class="cpp-type">int</span> nx = cur.x + dx[i];
-            <span class="cpp-type">int</span> ny = cur.y + dy[i];
-            <span class="cpp-type">int</span> next_time = cur.time + <span class="cpp-num">1</span>;
-            
-            <span class="cpp-kw">if</span> (nx >= <span class="cpp-num">0</span> && ny >= <span class="cpp-num">0</span> && nx <= <span class="cpp-num">302</span> && ny <= <span class="cpp-num">302</span> && !visited[nx][ny]) {
-                <span class="cpp-com">// 关键判断：到达时间必须小于死亡时间</span>
-                <span class="cpp-kw">if</span> (next_time < death_time[nx][ny]) {
-                    visited[nx][ny] = <span class="cpp-num">1</span>;
-                    q.push({nx, ny, next_time});
-                }
-            }
-        }
-    }
-    
-    cout << <span class="cpp-num">-1</span> << endl;
-    <span class="cpp-kw">return</span> <span class="cpp-num">0</span>;
-}
-</pre>
-    </div>
-
-    <!-- 总结 -->
-    <h2>4. 课堂小结与提问</h2>
-    <p>同学们，今天我们掌握了在代码世界里“探路”的两种绝世武功！</p>
-    <ul>
-        <li>🔴 <strong>DFS (深度优先)：</strong> 执着、递归、回溯。适合找“所有方案”、“能不能到达”。</li>
-        <li>🔵 <strong>BFS (广度优先)：</strong> 稳重、队列、层层推进。适合找“最少步数”、“最短路径”。</li>
-    </ul>
-
-    <div style="background-color: #FFF3E0; padding: 15px; border-radius: 10px; border-left: 5px solid #FFB74D;">
-        <p><strong>⚠️ 最容易掉的坑：</strong></p>
-        <ul>
-            <li><strong>死循环：</strong> 迷宫题一定要标记 <code>visited</code>，不然会在两个格子里跳一辈子。</li>
-            <li><strong>越界：</strong> 数组开大点，判断坐标 <code>x >= 0</code> 等边界条件不能少。</li>
-        </ul>
-    </div>
-
-    <p><strong>🤔 课后思考题：</strong></p>
-    <p>1. 在“马的遍历”里，如果我不仅想知道最少几步，还想知道具体是怎么走的（输出路径），该怎么办？</p>
-    <p>2. 如果在 DFS 里，我不回溯（不把 visited 改回 false），会有什么后果？什么题目可以不回溯？</p>
 
     <div class="footer">
-        今天的课就到这里，快去 OJ 上用你的“搜索”魔法征服迷宫吧！加油！🌟
+        每一次果断的劈砍，都让我们离真相更近一半！点击上方按钮，开始你的二分之旅！🎯
     </div>
+
 </div>
 
 </body>
