@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔法课堂：分治分水岭与不相交极角连线阵</title>
+    <style>
+        /* 全局可爱魔法风格设置 - 幻紫星空与迷雾林原主题 */
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: #f6f5fb; /* 优雅清爽的淡薰衣草紫背景 */
+            color: #111122; /* 极深夜蓝色字，保障最佳阅读清晰度 */
+            margin: 0;
+            padding: 20px;
+            line-height: 1.8;
+            letter-spacing: 1px;
+        }
+
+        /* 顶部语言切换按钮 */
+        .lang-switch {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .lang-btn {
+            background-color: #ffffff;
+            border: 3px solid #512da8; /* 皇家深紫 */
+            border-radius: 20px;
+            padding: 10px 30px;
+            font-size: 1.2em;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.12);
+            color: #111122;
+        }
+        .lang-btn.active.cpp-btn {
+            border-color: #311b92;
+            background-color: #512da8; /* 璀璨星空紫 */
+            color: white;
+            text-shadow: 0 0 2px rgba(0,0,0,0.4);
+        }
+        .lang-btn.active.py-btn {
+            border-color: #c2185b;
+            background-color: #ec407a; /* 霓虹魔法粉 */
+            color: white;
+            text-shadow: 0 0 2px rgba(0,0,0,0.4);
+        }
+
+        /* A4纸张打印优化容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(81, 45, 168, 0.12);
+            border: 5px solid #512da8; /* 幻紫重彩外框 */
+        }
+
+        /* 标题样式 */
+        h1 {
+            color: #311b92; 
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 900;
+            text-shadow: 1px 1px 0px #e1bee7;
+        }
+        
+        /* 魔法传送门做题按钮 */
+        .action-btn {
+            display: inline-block;
+            background-color: #ec407a; /* 霓虹粉 */
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 5px 0 #b91c56, 0 8px 15px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+            margin: 20px 0;
+            border: 2px solid #fce4ec;
+        }
+        .action-btn:hover {
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 #b91c56, 0 5px 10px rgba(0,0,0,0.15);
+        }
+        .action-btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+
+        h2 {
+            color: #311b92; 
+            border-bottom: 3px dashed #ec407a;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            font-weight: bold;
+        }
+
+        h3 {
+            color: #ba2d65; 
+            margin-top: 25px;
+            font-weight: bold;
+        }
+
+        /* 模块化卡片 */
+        .card {
+            background-color: #fafbfc;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 8px solid #512da8;
+            color: #111122; 
+        }
+
+        .card.problem { border-color: #3f51b5; background-color: #e8eaf6; }
+        .card.logic { border-color: #e91e63; background-color: #fce4ec; }
+        .card.knowledge { border-color: #9c27b0; background-color: #f3e5f5; }
+        .card.code-box { border-color: #37474f; background-color: #eceff1; }
+        .card.summary { border-color: #5d4037; background-color: #efebe9; }
+
+        /* 代码块样式 */
+        pre {
+            background-color: #120d1e; /* 极深宇宙夜空紫黑 */
+            color: #e0f2f1;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: Consolas, monospace;
+            overflow-x: auto;
+            font-size: 1.1em;
+            line-height: 1.5;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        
+        /* 代码中的高亮颜色 */
+        .comment { color: #b0bec5; font-style: italic; }
+        .keyword { color: #ff4081; font-weight: bold; }
+        .type { color: #26c6da; }
+        .string { color: #ffd54f; }
+        .number { color: #ffb74d; }
+
+        /* 行内代码及变量强调 */
+        .code-inline {
+            background-color: #e1bee7;
+            color: #4a148c; 
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-family: Consolas, monospace;
+            font-weight: bold;
+        }
+
+        /* 核心定理公式卡片 */
+        .formula {
+            background-color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            color: #311b92; 
+            border: 2px dashed #ec407a;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+            font-family: Consolas, monospace;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* 纯网页可视化的几何分水岭图 */
+        .geometry-panel {
+            background: #ffffff;
+            border: 2px solid #e1bee7;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        .panel-desc {
+            font-size: 0.95em;
+            color: #4a148c;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .split-line-box {
+            border: 2px dashed #ec407a;
+            padding: 15px;
+            background-color: #fdfafc;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        /* 底部版权 */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #7e57c2; 
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        @media print {
+            body { background-color: white; }
+            .container { box-shadow: none; border: none; width: 100%; padding: 0; }
+            .lang-switch, .action-btn { display: none; }
+            .card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="lang-switch">
+    <button class="lang-btn cpp-btn active" onclick="switchLang('cpp')">🖥️ C++ 魔法</button>
+    <button class="lang-btn py-btn" onclick="switchLang('python')">🐍 Python 魔法</button>
+</div>
+
+<div class="container">
+    <h1>📜 巨人与鬼：完美规避能量交叉的分治射线阵 🌌</h1>
+    
+    <div style="text-align: center; font-size: 1.2em; color: #512da8; font-weight: bold;">
+        🧙‍♂️ 欢迎来到自然学家的几何生态大厅，年轻的平衡调度官！<br>
+        在比尔教授的微观地图里，散落着 <strong>n</strong> 个饥饿的巨人与 <strong>n</strong> 个生活在苹果树上的鬼。<br>
+        巨人需要发射直线质子流与鬼相连来获取食物，但如果两条质子流在半空中发生交叉，<br>
+        暴躁的巨人们就会陷入迷路并爆发毁天灭地的冲突！<br>
+        这是一个极具数学美感的“二维平面几何不相交匹配”经典难题。<br>
+        让我们挥舞分治法杖，在凌乱的坐标平面上画出绝对不相交的完美防线吧！
+    </div>
+
+    <div style="text-align: center;">
+        <a href="https://oj.koudashijie.com/collection/33/type/course/problem/64" target="_blank" class="action-btn">
+            🚀 点击这里，开启时空传送门（前往做题）！
+        </a>
+    </div>
+
+    <div class="card problem">
+        <h2>📜 任务清单 (题目描述)</h2>
+        <p>平面直角坐标系中给定了 <strong>n</strong> 个巨人的坐标以及 <strong>n</strong> 个鬼的坐标。</p>
+        <p>你的任务是将每一个巨人与唯一的一只鬼进行一对一连接，使得所有的连线（线段）<b>在平面上互不相交</b>。</p>
+        <p>题目保证满足条件的无交叉连接方案总是存在。</p>
+        
+        <p><strong>星域输入与输出法则：</strong></p>
+        <ul>
+            <li>输入包含多组独立的数据集，直到文件末尾（EOF）结束。</li>
+            <li>每组数据的第一行是一个正整数 <strong>n</strong>，表示巨人的数量（同时也是鬼的数量）。</li>
+            <li>接下来的 <strong>n</strong> 行，每行包含两个整数 <strong>x, y</strong>，代表第 i 个巨人的平面坐标。</li>
+            <li>再接下来的 <strong>n</strong> 行，每行包含两个整数 <strong>x, y</strong>，代表第 i 个鬼的平面坐标。</li>
+            <li><strong>绝对安全保证：</strong> 平面上所有的巨人和鬼的位置是唯一的，并且<b>没有任何三点共线</b>。</li>
+            <li>对于每组数据集，输出 <strong>n</strong> 行。第 i 行的数字表示<b>第 i 个巨人所连接的鬼的编号</b>（编号从 1 到 n）。</li>
+            <li>相邻的两个测试数据集输出之间，用一个空行隔开。</li>
+        </ul>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+            <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #3f51b5;">
+                <strong style="color: #303f9f;">📥 魔法输入阵：</strong><br>
+                <span style="color: #555; font-size: 0.9em;">(5个巨人与5个鬼的案例)</span><br>
+                <pre style="background-color: #e8eaf6; color: #111122; padding: 10px; margin: 5px 0; box-shadow: none;">5
+-42 58
+44 86
+7 28
+99 34
+-13 -59
+-47 -44
+86 74
+68 -75
+-68 60
+99 -60</pre>
+            </div>
+            <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #e91e63;">
+                <strong style="color: #ba2d65;">📤 奇迹输出阵：</strong><br>
+                <span style="color: #555; font-size: 0.9em;">(对应的1到5号巨人的匹配结果)</span><br>
+                <pre style="background-color: #fce4ec; color: #111122; padding: 10px; margin: 5px 0; box-shadow: none;">4
+2
+3
+5
+1</pre>
+            </div>
+        </div>
+        
+        <p style="font-weight: bold; margin-top: 15px;">坐标与规模约束：</p>
+        <ul>
+            <li>1 ≤ n ≤ 100 (规模精简，允许对数或平方级递推)</li>
+            <li>-10,000 ≤ x, y ≤ 10,000</li>
+        </ul>
+    </div>
+
+    <div class="card logic">
+        <h2>🧠 魔法道具箱 (核心图解：基准点锚定与极角扫瞄分水岭)</h2>
+        <p>如果在平面上任意乱连，纠缠的线段会让我们寸步难行。但如果我们借助<b>分治递归（Divide and Conquer）</b>的思想，就可以把庞大的点集切开：</p>
+        
+        <div class="geometry-panel">
+            <div class="panel-desc">🌟 极角切分法术原理模拟 🌟</div>
+            <div style="text-align: center;"><small style="color: #555;">(空心圆 = 巨人，实心圆 = 鬼)</small></div>
+            
+            <div class="split-line-box">
+                <strong>第一步（找基准）：</strong> 找出当前区域里 Y 坐标最小（最靠下方）的点，将其作为<b>锚定基准点 Pivot</b>。<br>
+                <strong>第二步（极角排队）：</strong> 让剩下的所有点，相对于这个基准点计算极角，并<b>按照极角从小到大（或大到小）排序</b>。此时，所有点就像一把扇子一样围绕着基准点整齐排开。<br>
+                <strong>第三步（颜色平衡切分）：</strong> 从极角最小的射线开始往另一侧扫描，用计数器统计碰到的巨人和鬼的数量（遇到同色加1，异色减1）。<br>
+                <strong>第四步（一分为二）：</strong> 一旦在中途某个点，计数器<b>刚好归零</b>，且这个点和基准点的<b>颜色截然不同</b>！<br>
+                这就意味着：基准点与当前点连成的一条直线，<b>完美地把剩余的所有点划分成了左、右两个独立的区域</b>，并且每个区域内巨人的数量依然刚好等于鬼的数量！
+            </div>
+        </div>
+
+        <p>因为左边区域和右边区域被基准点与当前点的连线彻底隔开，我们直接把左边和右边分别丢进<b>递归函数</b>里去继续切分，两边的连线绝对不可能跨过防线发生交叉！这就是几何分治的极致魅力。</p>
+    </div>
+
+    <div class="cpp-only">
+        <div class="card knowledge">
+            <h2>📘 C++ 魔法秘籍 (知识点)</h2>
+            <ul>
+                <li><strong>多属性结构体 pnt：</strong> 分别存储坐标 <span class="code-inline">x, y</span>，用 <span class="code-inline">col</span> 标记颜色阵营（0代表巨人，1代表鬼），用 <span class="code-inline">idx</span> 牢记原本的 1-Based 初始编号，防止排序后迷失身份。</li>
+                <li><strong>坐标相对平移：</strong> 找到基准点后，通过重载减号运算符 <span class="code-inline">cor[i] = cor[i] - cor[l]</span> 将其转换为以基准点为原点的相对坐标，方便极角运算。</li>
+                <li><strong>数学库极角排序 atan2：</strong> 利用内置数学工具 <span class="code-inline">atan2(x, y)</span> 计算出高精度的斜率极角值，配合标准快排对子区间 <span class="code-inline">sort(cor + l + 1, cor + r, cmp)</span> 实施扇形排队。</li>
+            </ul>
+        </div>
+
+        <div class="card code-box">
+            <h2>💻 C++ 终极法术 (极角扫描分治版)</h2>
+<pre>
+<span class="keyword">#include</span> &lt;iostream&gt;
+<span class="keyword">#include</span> &lt;vector&gt;
+<span class="keyword">#include</span> &lt;cmath&gt;
+<span class="keyword">#include</span> &lt;algorithm&gt;
+<span class="keyword">#include</span> &lt;cstring&gt;
+<span class="keyword">#include</span> &lt;cstdio&gt;
+
+<span class="keyword">#define</span> rep(i,a,b) <span class="keyword">for</span>(<span class="type">int</span> i=a;i&lt;=b;++i)
+<span class="keyword">using namespace std;</span>
+
+<span class="keyword">const int</span> maxn = <span class="number">114</span>;
+<span class="type">int</span> n;
+
+<span class="comment">// 🔮 点结构体：整合空间物理坐标与属性</span>
+<span class="keyword">struct</span> pnt {
+    <span class="type">int</span> x, y, col, idx; <span class="comment">// col==0: 巨人; col==1: 鬼; idx表示原始下标</span>
+    <span class="type">bool</span> <span class="keyword">operator</span> &lt;(<span class="keyword">const</span> pnt &amp;a)<span class="keyword">const</span> {
+        <span class="keyword">return</span> y &lt; a.y; <span class="comment">// 用于快速筛选最下方的基准锚点</span>
+    }
+};
+
+<span class="comment">// 📐 重载减号：实现坐标系的平移转化</span>
+pnt <span class="keyword">operator</span> -(<span class="keyword">const</span> pnt &amp;a, <span class="keyword">const</span> pnt &amp;b) {
+    <span class="keyword">return</span> pnt{a.x - b.x, a.y - b.y, a.col, a.idx};
+}
+
+<span class="comment">// 📥 读取函数：注入阵营颜色与天然索引</span>
+<span class="type">void</span> rd(pnt &amp;a, <span class="type">int</span> col, <span class="type">int</span> idx) {
+    scanf(<span class="string">"%d%d"</span>, &amp;a.x, &amp;a.y);
+    a.col = col, a.idx = idx;
+}
+
+<span class="comment">// ⚖️ 极角比较函数：按 atan2 计算的极角从大到小降序排列</span>
+<span class="type">bool</span> cmp(<span class="keyword">const</span> pnt &amp;a, <span class="keyword">const</span> pnt &amp;b) {
+    <span class="keyword">return</span> atan2(a.x, a.y) &gt;= atan2(b.x, b.y);
+}
+
+pnt cor[maxn &lt;&lt; <span class="number">1</span>]; <span class="comment">// 存储大阵中所有的巨人和鬼（2 * n 个点）</span>
+<span class="type">int</span> ans[maxn];      <span class="comment">// 🏆 存储最终每个巨人匹配到的鬼的编号</span>
+
+<span class="comment">// 🧙‍♂️ 核心几何分治破阵函数（左闭右开区间）</span>
+<span class="type">void</span> solve(<span class="type">int</span> l, <span class="type">int</span> r) {
+    <span class="keyword">if</span> (l &gt;= r) <span class="keyword">return</span>;
+    
+    <span class="comment">// ⏱️ 步骤一：通过 Y 轴排序，让当前区间的首元素 cor[l] 变成最下方的基准锚点</span>
+    sort(cor + l, cor + r);
+    
+    <span class="comment">// ⏱️ 步骤二：坐标平移，将剩余点全部转换为相对于基准点 cor[l] 的相对坐标</span>
+    rep(i, l + <span class="number">1</span>, r - <span class="number">1</span>) {
+        cor[i] = cor[i] - cor[l];
+    }
+    
+    <span class="comment">// ⏱️ 步骤三：除了基准点之外，其余点按照极角大小降序排序成扇形</span>
+    sort(cor + l + <span class="number">1</span>, cor + r, cmp);
+    
+    <span class="type">int</span> cnt = <span class="number">0</span>; <span class="comment">// 颜色平衡平衡计数器</span>
+    
+    <span class="comment">// 🔍 步骤四：线性扇形扫描，寻找完美的不交叉分水岭连线</span>
+    rep(i, l + <span class="number">1</span>, r - <span class="number">1</span>) {
+        <span class="comment">// 如果当前前缀区域内颜色正好保持平衡，且当前点与基准点异色（可以连线）</span>
+        <span class="keyword">if</span> (cnt == <span class="number">0</span> &amp;&amp; (cor[l].col ^ cor[i].col)) {
+            <span class="comment">// 建立主从契约：将鬼的编号（idx）赋给对应巨人的输出位置</span>
+            cor[l].col ? ans[cor[i].idx] = cor[l].idx : ans[cor[l].idx] = cor[i].idx;
+            
+            <span class="comment">// 🚀 顺着这条连线将大阵一分为二，左右两个子防线各自展开独立递归</span>
+            solve(l + <span class="number">1</span>, i);
+            solve(i + <span class="number">1</span>, r);
+            <span class="keyword">return</span>; <span class="comment">// 本层使命完成，安全撤退</span>
+        }
+        <span class="comment">// 累加当前的阵营平衡度（巨人让计数加1，鬼让计数减1）</span>
+        cnt += (cor[i].col ? -<span class="number">1</span> : <span class="number">1</span>);
+    }
+}
+
+<span class="type">int</span> main() {
+    <span class="comment">// 🔄 循环吞入多组测试数据，直到文件末尾结束</span>
+    <span class="keyword">while</span> (scanf(<span class="string">"%d"</span>, &amp;n) == <span class="number">1</span>) {
+        <span class="comment">// 顺序读取：前 n 个是巨人(col=0)，后 n 个是鬼(col=1)</span>
+        rep(i, <span class="number">1</span>, (n &lt;&lt; <span class="number">1</span>)) {
+            rd(cor[i], ((i - <span class="number">1</span>) / n) ? <span class="number">1</span> : <span class="number">0</span>, (i - <span class="number">1</span>) % n + <span class="number">1</span>);
+        }
+        
+        <span class="comment">// 开启几何大分裂，1到2n+1进行闭开区间递归</span>
+        solve(<span class="number">1</span>, (n &lt;&lt; <span class="number">1</span>) | <span class="number">1</span>);
+        
+        <span class="comment">// 📤 施放结果，整齐输出每个巨人的护卫鬼编号</span>
+        rep(i, <span class="number">1</span>, n) {
+            printf(<span class="string">"%d\n"</span>, ans[i]);
+        }
+        puts(<span class="string">""</span>); <span class="comment">// 每个数据集之间打印空行隔开</span>
+    }
+    <span class="keyword">return</span> <span class="number">0</span>;
+}
+</pre>
+        </div>
+    </div>
+
+    <div class="py-only" style="display: none;">
+        <div class="card knowledge">
+            <h2>🐍 Python 魔法秘籍 (知识点)</h2>
+            <ul>
+                <li><strong>sys.stdin.read 跨测试组大吞噬：</strong> 题目包含多组由空行隔开的数据集。在 Python 中，通过 <span class="code-inline">sys

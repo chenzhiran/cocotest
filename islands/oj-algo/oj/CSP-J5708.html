@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔法课堂：流沙秘码与单调栈的删数预言</title>
+    <style>
+        /* 全局可爱魔法风格设置 - 烈阳沙漠与神秘石门主题 */
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: #fdf6e3; /* 温暖舒适的沙漠浅金砂底色 */
+            color: #2c1d11; /* 极深极浓的咖啡褐，保障最清晰的阅读视效 */
+            margin: 0;
+            padding: 20px;
+            line-height: 1.8;
+            letter-spacing: 1px;
+        }
+
+        /* 顶部语言切换按钮 */
+        .lang-switch {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .lang-btn {
+            background-color: #ffffff;
+            border: 3px solid #d35400; /* 烈阳深橙 */
+            border-radius: 20px;
+            padding: 10px 30px;
+            font-size: 1.2em;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.12);
+            color: #2c1d11;
+        }
+        .lang-btn.active.cpp-btn {
+            border-color: #a04000;
+            background-color: #e67e22; /* 炽热熔岩 */
+            color: white;
+            text-shadow: 0 0 2px rgba(0,0,0,0.4);
+        }
+        .lang-btn.active.py-btn {
+            border-color: #117a65;
+            background-color: #16a085; /* 沙漠绿洲青 */
+            color: white;
+            text-shadow: 0 0 2px rgba(0,0,0,0.4);
+        }
+
+        /* A4纸张打印优化容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(211, 84, 0, 0.15);
+            border: 5px solid #d35400; /* 烈阳深橙外框 */
+        }
+
+        /* 标题样式 */
+        h1 {
+            color: #922b21; /* 古老石门暗红色 */
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 900;
+            text-shadow: 1px 1px 0px #f9e79f;
+        }
+        
+        /* 魔法传送门做题按钮 */
+        .action-btn {
+            display: inline-block;
+            background-color: #16a085; /* 绿洲青 */
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 5px 0 #0e6251, 0 8px 15px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+            margin: 20px 0;
+            border: 2px solid #e8f8f5;
+        }
+        .action-btn:hover {
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 #0e6251, 0 5px 10px rgba(0,0,0,0.15);
+        }
+        .action-btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+
+        h2 {
+            color: #922b21; 
+            border-bottom: 3px dashed #f4d03f;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            font-weight: bold;
+        }
+
+        h3 {
+            color: #ba4a00; 
+            margin-top: 25px;
+            font-weight: bold;
+        }
+
+        /* 模块化卡片 */
+        .card {
+            background-color: #fafbfc;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 8px solid #d35400;
+            color: #2c1d11; 
+        }
+
+        .card.problem { border-color: #f39c12; background-color: #fef5e7; }
+        .card.logic { border-color: #16a085; background-color: #e8f8f5; }
+        .card.knowledge { border-color: #2e4053; background-color: #f2f4f4; }
+        .card.code-box { border-color: #34495e; background-color: #f8f9f9; }
+        .card.summary { border-color: #cb4335; background-color: #fdedec; }
+
+        /* 代码块样式 */
+        pre {
+            background-color: #1c140e; /* 极深沙尘黑 */
+            color: #f9e79f;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: Consolas, monospace;
+            overflow-x: auto;
+            font-size: 1.1em;
+            line-height: 1.5;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        
+        /* 代码中的高亮颜色 */
+        .comment { color: #a2d9ce; font-style: italic; }
+        .keyword { color: #f1948a; font-weight: bold; }
+        .type { color: #85c1e9; }
+        .string { color: #fff59d; }
+        .number { color: #f8c471; }
+
+        /* 行内代码及变量强调 */
+        .code-inline {
+            background-color: #f9e79f;
+            color: #78281f; 
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-family: Consolas, monospace;
+            font-weight: bold;
+        }
+
+        /* 核心公式卡片 */
+        .formula {
+            background-color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            color: #922b21; 
+            border: 2px dashed #d35400;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+            font-family: Consolas, monospace;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* 纯网页可视化的模拟面板 */
+        .stack-panel {
+            background: #ffffff;
+            border: 2px solid #f9e79f;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        .stack-step {
+            margin-bottom: 15px;
+            padding-left: 15px;
+            border-left: 4px solid #16a085;
+        }
+        .stack-step:last-child {
+            margin-bottom: 0;
+        }
+        .stone-list {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .stone {
+            background-color: #fae5d3;
+            border: 2px solid #e67e22;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            color: #78281f;
+        }
+        .stone.pop {
+            background-color: #fadbd8;
+            border-color: #e74c3c;
+            color: #922b21;
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        .stone.current {
+            background-color: #d4efdf;
+            border-color: #27ae60;
+            color: #145a32;
+        }
+
+        /* 底部版权 */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #7f8c8d; 
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        @media print {
+            body { background-color: white; }
+            .container { box-shadow: none; border: none; width: 100%; padding: 0; }
+            .lang-switch, .action-btn { display: none; }
+            .card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="lang-switch">
+    <button class="lang-btn cpp-btn active" onclick="switchLang('cpp')">🖥️ C++ 魔法</button>
+    <button class="lang-btn py-btn" onclick="switchLang('python')">🐍 Python 魔法</button>
+</div>
+
+<div class="container">
+    <h1>📜 流沙秘码：解开古老石门的删数咒 🌌</h1>
+    
+    <div style="text-align: center; font-size: 1.2em; color: #ba4a00; font-weight: bold;">
+        🧙‍♂️ 欢迎来到金色沙漠的宝库之前，勇敢的破译大天师！<br>
+        眼前这扇古老石门上刻着一长串神秘的数字线索 <strong>n</strong>。<br>
+        为了顺利开启宝藏，你需要施展删数咒，从这串字符里恰好拿走 <strong>k</strong> 块数字石板。<br>
+        剩下石板的相对左右顺序不能乱。如何精确拆除，才能使重组后的新数字达到<strong>全局最小</strong>？<br>
+        这是一场高深莫测的“单调栈（Monotonic Stack）”贪心较量，让我们即刻开坛破阵！
+    </div>
+
+    <div style="text-align: center;">
+        <a href="https://oj.koudashijie.com/collection/33/type/course/problem/57" target="_blank" class="action-btn">
+            🚀 点击这里，开启沙漠传送门（前往做题）！
+        </a>
+    </div>
+
+    <div class="card problem">
+        <h2>📜 任务清单 (题目描述)</h2>
+        <p>给出一个高精度正整数 <strong>n</strong>，你需要从中删去恰好 <strong>k</strong> 个数字。</p>
+        <p>要求剩下的数字保持原来的左右相对顺序不变，使得重新组合出来的非负整数尽可能地小。</p>
+        
+        <p><strong>通关特别警示规则：</strong></p>
+        <ul>
+            <li>只能进行删除操作，不能更改数字的大小，也不能打乱没有被删除的石板的左右位置。</li>
+            <li>删除数字后得到的新数字前面可能会出现多余的 <strong>0</strong>（前导零）。</li>
+            <li><strong>重要约束：</strong> 最终输出答案时，<strong>绝对不能输出前导零</strong>！例如 0012 应该精简输出为 12。</li>
+            <li>如果把所有非零石板删除后，最后剩下的全都是 0，那么请输出一个孤零零的 <strong>0</strong>。</li>
+        </ul>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+            <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #f39c12;">
+                <strong style="color: #b9770e;">📥 魔法输入阵：</strong><br>
+                <span style="color: #555; font-size: 0.9em;">(长数字字符串与需删数 k)</span><br>
+                <pre style="background-color: #fef5e7; color: #111111; padding: 10px; margin: 5px 0; box-shadow: none;">1432
+2</pre>
+            </div>
+            <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #16a085;">
+                <strong style="color: #117a65;">📤 奇迹输出阵：</strong><br>
+                <span style="color: #555; font-size: 0.9em;">(删除2个元素后的最小结果)</span><br>
+                <pre style="background-color: #e8f8f5; color: #111111; padding: 10px; margin: 5px 0; box-shadow: none;">12</pre>
+            </div>
+        </div>
+        
+        <p style="font-weight: bold; margin-top: 15px;">更多神秘线索示例：</p>
+        <ul>
+            <li>线索二：输入 <strong>175438</strong> 且 <strong>k = 4</strong>，删除 7, 5, 4, 8 后，留下的最优结果为：<strong>13</strong></li>
+            <li>线索三：输入 <strong>100200</strong> 且 <strong>k = 3</strong>，删除 1, 2, 0 后，由于前导零被剥离，最终结果为：<strong>0</strong></li>
+        </ul>
+        
+        <p style="font-weight: bold; margin-top: 15px;">数据范围约束：</p>
+        <ul>
+            <li>1 ≤ k &lt; 数字 n 的长度 ≤ 250</li>
+            <li>正整数 n 非常庞大，必须作为字符串读取和处理，切不可直接存入标准整型。</li>
+        </ul>
+    </div>
+
+    <div class="card logic">
+        <h2>🧠 魔法道具箱 (核心图解：喜新厌旧的递增序维护)</h2>
+        <p>要想让剩下的数字整体最小，核心的贪心大智慧是：<b>让高位（左边）的数字尽量小！</b></p>
+        <p>也就是说，当我们从左往右遍历数字时，如果发现<b>紧挨着的左边石板比当前的右边石板大</b>，那左边的高位石板就是让数值变大的“罪魁祸首”，必须果断把它扣掉！</p>
+        <p>这种一边遍历一边把较大的左邻居赶走的数据结构模型，就叫做<b>单调栈</b>。</p>
+
+        <div class="visual-panel" style="background: #ffffff; padding: 20px; border-radius: 15px; border: 2px dashed #16a085; margin: 20px 0;">
+            <div style="color: #117a65; font-size: 1.1em; text-align: center; font-weight: bold; margin-bottom: 15px;">
+                🪨 以 1432 为例，删除 k = 2 个数字的单调栈推演 🪨
+            </div>
+            
+            <div class="stack-panel">
+                <div class="stack-step">
+                    <strong>第 1 步：</strong> 遇到 1，此时栈为空，直接放入。
+                    <div class="stone-list">
+                        <div class="stone">1</div>
+                    </div>
+                </div>
+                <div class="stack-step">
+                    <strong>第 2 步：</strong> 遇到 4，由于 4 比栈顶的 1 大，符合递增心愿，直接压入。
+                    <div class="stone-list">
+                        <div class="stone">1</div>
+                        <div class="stone">4</div>
+                    </div>
+                </div>
+                <div class="stack-step">
+                    <strong>第 3 步：</strong> 遇到 3。哎呀！栈顶的 4 居然比 3 大！趁着删除次数 <strong>k &gt; 0</strong>，立刻将 4 弹射爆破！<strong>(k 变为 1)</strong>。之后 3 顺利搬入。
+                    <div class="stone-list">
+                        <div class="stone">1</div>
+                        <div class="stone pop">4 (被删)</div>
+                        <div class="stone current">3</div>
+                    </div>
+                </div>
+                <div class="stack-step">
+                    <strong>第 4 步：</strong> 遇到 2。历史总是惊人的相似！栈顶的 3 又比 2 大了！再次将 3 弹射爆破！<strong>(k 变为 0)</strong>。2 顺利加入。
+                    <div class="stone-list">
+                        <div class="stone">1</div>
+                        <div class="stone pop">3 (被删)</div>
+                        <div class="stone current">2</div>
+                    </div>
+                </div>
+            </div>
+            <p style="font-size: 0.95em; color: #555; margin-top: 10px; margin-bottom: 0;">* 完美收官：遍历结束，k 刚好用完，栈内残存的组合为 "12"，即为完全不需要操心前导零的最优解！</p>
+        </div>
+
+        <h3>✨ 单调栈删数四步法</h3>
+        <ol style="line-height: 2;">
+            <li>🔸 miniatures <b>单调大扫描：</b> 从左往右依次审阅大数 n 的每一位数字字符。</li>
+            <li>🔸 <b>逆向狂轰炸：</b> 只要当前栈不为空、且<b>栈顶的数字大于当前正准备入栈的数字</b>、并且手里<b>还有剩余的删除次数 k</b>，说明触发了优化契机。立刻弹出栈顶元素，同时让 k 自减 1。重复此检查直到条件不满足，再把当前数字压入栈。</li>
+            <li>🔸 <b>尾部切削法：</b> 如果整个大数都扫描完了，手里的删除次数 k 仍然大于 0（比如输入 123456 且 k=2，一路上都是递增的，没有触发任何弹栈），这说明<b>末尾的数字最大</b>，直接强制将栈末尾的 k 个元素削去。</li>
+            <li>🔸 <b>精整前导零：</b> 将栈中残留的字符拼接成串。寻找第一个不是 '0' 的字符位置。将其后面的部分切片输出。若全都是 '0'，则只需大方打印一个 '0'。</li>
+        </ol>
+        <div class="formula">
+            核心思想：高位大数如流沙，留小除大靠当下。若逢逆序即弹栈，前导清零开密码。
+        </div>
+    </div>
+
+    <div class="cpp-only">
+        <div class="card knowledge">
+            <h2>📘 C++ 魔法秘籍 (知识点)</h2>
+            <ul>
+                <li><strong>字符串模拟栈：</strong> C++ 中的 <span class="code-inline">std::string</span> 具备绝佳的栈特异性。我们可以直接使用 <span class="code-inline">st.back()</span> 查看末尾，用 <span class="code-inline">st.pop_back()</span> 弹出末尾，用 <span class="code-inline">st.push_back()</span> 压入，免去了额外开辟存储的烦恼。</li>
+                <li><strong>尾部动态裁剪 resize：</strong> 如果扫描结束仍有没用完的删除额度，利用 <span class="code-inline">st.resize(st.size() - k)</span> 可以瞬间切掉字符串尾部不需要的较大高危字符。</li>
+                <li><strong>前导零精确定位 finder：</strong> 利用内置的强大的字符串检索工具 <span class="code-inline">st.find_first_not_of('0')</span>，能一网打尽所有前导零。如果找不到非零位置（返回 string::npos），则说明整个序列全是由零伪装的，直接输出 0。</li>
+            </ul>
+        </div>
+
+        <div class="card code-box">
+            <h2>💻 C++ 终极法术 (经典单调栈版)</h2>
+<pre>
+<span class="keyword">#include</span> &lt;iostream&gt;
+<span class="keyword">#include</span> &lt;string&gt;
+<span class="keyword">using namespace std;</span>
+
+<span class="type">int</span> main() {
+    <span class="comment">// ⚡ 提速法阵：解除输入输出流解绑，大数据下不卡常</span>
+    ios::sync_with_stdio(<span class="keyword">false</span>);
+    cin.tie(<span class="keyword">nullptr</span>);
+
+    <span class="type">string</span> n;
+    <span class="type">int</span> k;
+    cin &gt;&gt; n &gt;&gt; k;
+
+    <span class="type">string</span> st; <span class="comment">// 🔮 用标准的 string 动态容器来完美模拟“数字石板栈”</span>
+    
+    <span class="comment">// 🔍 从左往右单向扫描每一个石板字符</span>
+    <span class="keyword">for</span> (<span class="type">char</span> c : n) {
+        <span class="comment">// 💥 贪心风暴：当栈非空、栈顶数字大于当前字符、且依然拥有删除额度时</span>
+        <span class="keyword">while</span> (!st.empty() && st.back() &gt; c && k &gt; <span class="number">0</span>) {
+            st.pop_back(); <span class="comment">// 弹出并丢弃当前不合格的高位大数</span>
+            --k;           <span class="comment">// 消耗一次删数咒机会</span>
+        }
+        st.push_back(c);   <span class="comment">// 顺理成章将当前较小的潜力新星压入栈顶</span>
+    }
+
+    <span class="comment">// ✂️ 尾部收拾残局：如果数字本身是单调递增的导致 k 没用完，直接削去末尾最大的 k 位</span>
+    <span class="keyword">if</span> (k &gt; <span class="number">0</span>) {
+        st.resize(st.size() - k);
+    }
+
+    <span class="comment">// 🧼 破除前导零幻象：寻找第一个不是 '0' 的神圣文字位置</span>
+    size_t pos = st.find_first_not_of(<span class="string">'0'</span>);
+    
+    <span class="keyword">if</span> (pos == string::npos) {
+        <span class="comment">// 如果漫山遍野全都是 '0'，按照古老训诫，只输出一个单独的 0</span>
+        cout &lt;&lt; <span class="number">0</span> &lt;&lt; <span class="string">"\n"</span>;
+    } <span class="keyword">else</span> {
+        <span class="comment">// 🏆 从第一个非零勇士的位置切片，输出核心真实的黄金秘码</span>
+        cout &lt;&lt; st.substr(pos) &lt;&lt; <span class="string">"\n"</span>;
+    }
+
+    <span class="keyword">return</span> <span class="number">0</span>;
+}
+</pre>
+        </div>
+    </div>
+
+    <div class="py-only" style="display: none;">
+        <div class="card knowledge">
+            <h2>🐍 Python 魔法秘籍 (知识点)</h2>
+            <ul>
+                <li><strong>标准列表做栈：</strong> Python 的标准列表 <span class="code-inline">stack = []</span> 天然就是最顶级的栈。使用 <span class="code-inline">stack[-1]</span> 可以在 O(1) 时间内查看栈顶，用 <span class="code-inline">stack.pop()</span> 可以完美弹出。</li>
+                <li><strong>切片大杀器：</strong> 针对还没删够的情况，利用 Python 极其霸道的负数切片技术 <span class="code-inline">stack = stack[:-k]</span>，一行代码就能利落地斩断尾部的冗余数字。</li>
+                <li><strong>一键洗零法 lstrip：</strong> 拼接好字符串后，利用特有的 <span class="code-inline">lstrip('0')</span> 可以直接从左边洗刷掉所有的前导零字符。随后配合三目运算符表达式判断空串，代码极其简练优美。</li>
+            </ul>
+        </div>
+
+        <div class="card code-box">
+            <h2>💻 Python 终极法术 (极简单调栈版)</h2>
+<pre>
+<span class="keyword">import</span> sys
+
+<span class="keyword">def</span> <span class="type">main</span>():
+    # 📥 极速读入大数线索，并顺手洗掉可能存在的边缘空格
+    n = sys.stdin.readline().strip()
+    k = int(sys.stdin.readline().strip())
+
+    stack = [] <span class="comment"># 🔮 建立空列表，用来扮演吞噬大数的单调结构</span>
+    
+    # 🔍 顺序审阅高精度数字字符串里的每一个字符
+    <span class="keyword">for</span> ch <span class="keyword">in</span> n:
+        # 💥 贪心反冲：只要栈里有货、栈顶比当前字符大、且还有多余的删数天命
+        <span class="keyword">while</span> stack <span class="keyword">and</span> stack[-<span class="number">1</span>] &gt; ch <span class="keyword">and</span> k &gt; <span class="number">0</span>:
+            stack.pop()  <span class="comment"># 毫不留情地驱逐当前的高位大石板</span>
+            k -= <span class="number">1</span>       <span class="comment"># 扣减掉珍贵的删除次数</span>
+        stack.append(ch) <span class="comment"># 把当前字符迎入栈中安放</span>
+
+    # ✂️ 如果遇到一路单调递增的石板导致 k 仍有剩余，利用切片技术果断截断尾部
+    <span class="keyword">if</span> k &gt; <span class="number">0</span>:
+        stack = stack[:-k]
+
+    # 🧼 一剑拂尘：通过 join 成型后，使用 lstrip 方法狂扫一切属于左侧的前导零
+    result = <span class="string">''</span>.join(stack).lstrip(<span class="string">'0'</span>)
+    
+    # 🏆 最终大检阅：如果洗完之后空无一物，说明答案就是 0；否则打印真实风采
+    print(result <span class="keyword">if</span> result <span class="keyword">else</span> <span class="string">'0'</span>)
+
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    main()
+</pre>
+        </div>
+    </div>
+
+    <div class="card summary">
+        <h2>💡 技巧和重点详细总结 (石门破译者的反思日记)</h2>
+        <ul>
+            <li><strong>🌟 为什么局部贪心能推导出全局最优？：</strong> 很多初学者做这道题容易陷入狂暴的“排列组合搜索”深渊。然而，数字的大小比对有一条铁律：<b>高位（左侧）数字的大小具有绝对的压倒性特权！</b> 比如 1xxx 永远比 2xxx 小，哪怕后面再大也无法逆天改命。因此，我们在每一个局部步骤里，都千方百计地让高位（左边）的数字尽可能变小，这种“局部死磕高位”的贪心原则，最终通过单调栈的连环弹射，奇迹般地缔造出了全局最小数的终极形态。</li>
+            <li><strong>🌟 绝妙的时间复杂度表现：</strong> 虽然代码里包含了一个 while 循环嵌套在 for 循环的内部，但这绝对不是平方级 O(n^2) 的慢速算法！仔细观察可以发现：大数 n 中的每一个数字字符，在其一生的旅途中，<b>最多只会被压入栈一次，也最多只会被弹出栈一次</b>。这意味着两个循环指针在整个法术执行期间都是单向不回头的。因此，整体算法的时间复杂度被完美定格在惊人的线性 <b>O(n)</b>！哪怕字符长度达到 250 位甚至 250,000 位，程序也能在 1 毫秒内瞬间秒杀破阵，威力无敌！</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        扣哒世界教研团队
+    </div>
+</div>
+
+<script>
+    // 简易实用的多语言无缝切换控制法术
+    function switchLang(lang) {
+        const cppElements = document.querySelectorAll('.cpp-only');
+        const pyElements = document.querySelectorAll('.py-only');
+        const cppBtn = document.querySelector('.cpp-btn');
+        const pyBtn = document.querySelector('.py-btn');
+
+        if (lang === 'cpp') {
+            cppElements.forEach(el => el.style.display = 'block');
+            pyElements.forEach(el => el.style.display = 'none');
+            cppBtn.classList.add('active');
+            pyBtn.classList.remove('active');
+        } else {
+            cppElements.forEach(el => el.style.display = 'none');
+            pyElements.forEach(el => el.style.display = 'block');
+            pyBtn.classList.add('active');
+            cppBtn.classList.remove('active');
+        }
+    }
+</script>
+
+</body>
+</html>

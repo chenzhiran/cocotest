@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔法课堂：滑动窗口与博览馆看画艺术</title>
+    <style>
+        /* 全局可爱魔法风格设置 - 向日葵金黄与璀璨深海蓝主题 */
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: #fffdf2; /* 温暖明亮的向日葵浅日光底色 */
+            color: #1a2530; /* 极深墨青色，保障最优秀的文字对比度 */
+            margin: 0;
+            padding: 20px;
+            line-height: 1.8;
+            letter-spacing: 1px;
+        }
+
+        /* 顶部语言切换按钮 */
+        .lang-switch {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .lang-btn {
+            background-color: #ffffff;
+            border: 3px solid #fbc02d; /* 向日葵金黄 */
+            border-radius: 20px;
+            padding: 10px 30px;
+            font-size: 1.2em;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            color: #1a2530;
+        }
+        .lang-btn.active.cpp-btn {
+            border-color: #0d47a1;
+            background-color: #1565c0; /* 经典皇家蓝 */
+            color: white;
+            text-shadow: 0 0 2px rgba(0,0,0,0.4);
+        }
+        .lang-btn.active.py-btn {
+            border-color: #f57f17;
+            background-color: #fbc02d; /* 璀璨金黄 */
+            color: #1a2530;
+            text-shadow: 0 0 2px rgba(255,255,255,0.4);
+        }
+
+        /* A4纸张打印优化容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(251, 192, 45, 0.15);
+            border: 5px solid #fbc02d; /* 金黄色重彩外框 */
+        }
+
+        /* 标题样式 */
+        h1 {
+            color: #0d47a1; /* 深邃海蓝色 */
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 900;
+            text-shadow: 1px 1px 0px #fff9c4;
+        }
+        
+        /* 魔法传送门做题按钮 */
+        .action-btn {
+            display: inline-block;
+            background-color: #1565c0; /* 皇家蓝 */
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 5px 0 #0d47a1, 0 8px 15px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+            margin: 20px 0;
+            border: 2px solid #e3f2fd;
+        }
+        .action-btn:hover {
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 #0d47a1, 0 5px 10px rgba(0,0,0,0.15);
+        }
+        .action-btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+
+        h2 {
+            color: #0d47a1; 
+            border-bottom: 3px dashed #fbc02d;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            font-weight: bold;
+        }
+
+        h3 {
+            color: #e65100; 
+            margin-top: 25px;
+            font-weight: bold;
+        }
+
+        /* 模块化内容卡片 */
+        .card {
+            background-color: #fafbfc;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 8px solid #fbc02d;
+            color: #1a2530; 
+        }
+
+        .card.problem { border-color: #0288d1; background-color: #e1f5fe; }
+        .card.logic { border-color: #fbc02d; background-color: #fffde7; }
+        .card.knowledge { border-color: #009688; background-color: #e0f2f1; }
+        .card.code-box { border-color: #37474f; background-color: #eceff1; }
+        .card.summary { border-color: #e53935; background-color: #ffebee; }
+
+        /* 代码块样式 */
+        pre {
+            background-color: #0c131a; /* 极深极夜蓝底框 */
+            color: #eceff1;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: Consolas, monospace;
+            overflow-x: auto;
+            font-size: 1.1em;
+            line-height: 1.5;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        
+        /* 代码高亮颜色 */
+        .comment { color: #81c784; font-style: italic; }
+        .keyword { color: #ff4081; font-weight: bold; }
+        .type { color: #4fc3f7; }
+        .string { color: #fff59d; }
+        .number { color: #ffb74d; }
+
+        /* 行内高亮 */
+        .code-inline {
+            background-color: #fff9c4;
+            color: #0d47a1; 
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-family: Consolas, monospace;
+            font-weight: bold;
+        }
+
+        /* 核心定理公式卡片 */
+        .formula {
+            background-color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            color: #0d47a1; 
+            border: 2px dashed #fbc02d;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+            font-family: Consolas, monospace;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* 可视化滑动窗口面板 */
+        .window-panel {
+            background: #ffffff;
+            border: 2px solid #bbdefb;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        .gallery-strip {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        .painting-box {
+            min-width: 45px;
+            height: 45px;
+            background-color: #e0f2f1;
+            border: 2px solid #004d40;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .painting-box.in-window {
+            background-color: #fff9c4;
+            border-color: #f57f17;
+            color: #e65100;
+        }
+        .pointer-tag {
+            color: #c62828;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        /* 底部版权 */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #546e7a; 
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        @media print {
+            body { background-color: white; }
+            .container { box-shadow: none; border: none; width: 100%; padding: 0; }
+            .lang-switch, .action-btn { display: none; }
+            .card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="lang-switch">
+    <button class="lang-btn cpp-btn active" onclick="switchLang('cpp')">🖥️ C++ 魔法</button>
+    <button class="lang-btn py-btn" onclick="switchLang('python')">🐍 Python 魔法</button>
+</div>
+
+<div class="container">
+    <h1>📜 博览馆看画：用极简的滑动窗口饱览全境 🌌</h1>
+    
+    <div style="text-align: center; font-size: 1.2em; color: #0d47a1; font-weight: bold;">
+        🧙‍♂️ 欢迎来到宏伟的国家艺术博览馆，年轻的精算调度官！<br>
+        展厅里长长的一排画作，是由世界上最出名的 <strong>m</strong> 位画家所绘制的经典真迹。<br>
+        每一张画作都需要花费 1 元的观赏门票。为了不让荷包大失血，<br>
+        我们需要找出一个<strong>长度最短的连续区间</strong>，确保里面把所有 <strong>m</strong> 位画家的作品一网打尽！<br>
+        下面，让我们挥舞“滑动窗口（双指针）”的博弈法杖，用最低的门票开销看遍世界大作吧！
+    </div>
+
+    <div style="text-align: center;">
+        <a href="https://oj.koudashijie.com/collection/33/type/course/problem/63" target="_blank" class="action-btn">
+            🚀 点击这里，开启展厅传送门（前往做题）！
+        </a>
+    </div>
+
+    <div class="card problem">
+        <h2>📜 任务清单 (题目描述)</h2>
+        <p>给定一个包含 <strong>n</strong> 幅画的数组，每幅画由一个特定画家绘制，画家的编号是 <strong>1</strong> 到 <strong>m</strong>。</p>
+        <p>你的任务是找到一个连续的画作欣赏区间 <strong>[a, b]</strong>，使得该区间能够完美达成以下三大契律：</p>
+        <ul>
+            <li><strong>全员收纳：</strong> 区间内必须包含全部 <strong>m</strong> 位画家的作品，至少各有一幅。</li>
+            <li><strong>开销最短：</strong> 区间的长度 <strong>b - a + 1</strong> 必须达到全局最小（最省钱）。</li>
+            <li><strong>起点优先：</strong> 如果存在多个最短长度相同的区间，必须选择起点 <strong>a</strong> 最小（最靠左）的那一组。</li>
+        </ul>
+        
+        <p><strong>大殿输入与输出规则：</strong></p>
+        <ul>
+            <li>第一行：包含两个整数 <strong>n</strong>（画作总数）和 <strong>m</strong>（画家的数量），用空格隔开。</li>
+            <li>第二行：包含 <strong>n</strong> 个整数，表示从左到右每幅画对应的画家编号。</li>
+            <li>输出仅一行两个整数，分别表示满足最优条件区间的起点和终点位置（<strong>位置坐标从 1 开始计数</strong>）。</li>
+        </ul>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+            <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #0288d1;">
+                <strong style="color: #0d47a1;">📥 魔法输入阵：</strong><br>
+                <span style="color: #555; font-size: 0.9em;">(12幅画，共5位画家)</span><br>
+                <pre style="background-color: #e1f5fe; color: #111111; padding: 10px; margin: 5px 0; box-shadow: none;">12 5
+2 5 3 1 3 2 4 1 1 5 4 3</pre>
+            </div>
+            <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #fbc02d;">
+                <strong style="color: #e65100;">📤 奇迹输出阵：</strong><br>
+                <span style="color: #555; font-size: 0.9em;">(从第2到第7幅画，长度为6)</span><br>
+                <pre style="background-color: #fffde7; color: #111111; padding: 10px; margin: 5px 0; box-shadow: none;">2 7</pre>
+            </div>
+        </div>
+        
+        <p style="font-weight: bold; margin-top: 15px;">数据规模提示：</p>
+        <ul>
+            <li>1 &lt; n &lt; 1,000,000 (画作多达百万级，传统的平方级双重循环必定爆时无解！)</li>
+            <li>1 &lt; a_i ≤ m &lt; 2000 (画家总数适中)</li>
+        </ul>
+    </div>
+
+    <div class="card logic">
+        <h2>🧠 魔法道具箱 (核心图解：像毛毛虫一样爬行的滑动窗口)</h2>
+        <p>面对百万级的数据大阵，要想达到极速的线性时间，最完美的法宝就是<b>滑动窗口（Sliding Window / 双指针）</b>。我们可以把这个区间想象成一只在画作长轴上挪动的“毛毛虫”：</p>
+
+        <div class="window-panel">
+            <div style="color: #0d47a1; font-weight: bold; text-align: center; margin-bottom: 5px;">🎨 模拟画作长轴（黄色区域代表当前窗口内部）</div>
+            <div class="gallery-strip">
+                <div class="painting-box">2<br><span class="pointer-tag">L</span></div>
+                <div class="painting-box in-window">5</div>
+                <div class="painting-box in-window">3</div>
+                <div class="painting-box in-window">1</div>
+                <div class="painting-box in-window">3</div>
+                <div class="painting-box in-window">2</div>
+                <div class="painting-box in-window">4<br><span class="pointer-tag">R</span></div>
+                <div class="painting-box">1</div>
+                <div class="painting-box">5</div>
+            </div>
+            <p style="font-size: 0.9em; color: #555; margin-top: 10px; margin-bottom: 0;">* 贪心策略：右指针 <strong>R</strong> 负责开拓疆土，遇到新画家就将种类数加 1。当窗口内的画家种类数刚好集齐了 <strong>m</strong> 种时，我们就果断让左指针 <strong>L</strong> 往右收缩，以此来“挤掉”左侧多余的画作，直到种类数面临减少。在整个贪心收缩的过程中，顺手捕捉下来的最短跨度就是我们要的最终解！</p>
+        </div>
+
+        <h3>✨ 滑动窗口四步破咒法</h3>
+        <ol style="line-height: 2;">
+            <li>🔸 <b>右端大开拓：</b> 右指针 <span class="code-inline">R</span> 一路向右探索，每当新加入一幅画，就在计数数组里给该画家的作品数加 1。如果是第一次见到该画家，则种类计数器加 1。</li>
+            <li>🔸 <b>齐聚刹车判定：</b> 一旦发现种类计数器正好等于 <strong>m</strong>，说明此时窗口里已经凑齐了所有画家的作品，当前的 <strong>[L, R]</strong> 区间是一个合法解。</li>
+            <li>🔸 <b>左端疯狂压榨：</b> 在满足全员收纳的前提下，我们尝试让左指针 <span class="code-inline">L</span> 往右移动。如果左端点的那幅画在窗口内部还有其他重复的备份（即 <span class="code-inline">count > 1</span>），那这幅画就是冗余的，直接剔除它并让 <span class="code-inline">L</span> 前进。重复此操作，直到左端点的那幅画只剩独苗。</li>
+            <li>🔸 <b>刷新备忘录：</b> 此时的窗口是当前右端点下的“最极致精简区间”。我们将它的长度 <strong>R - L + 1</strong> 与全局最短跨度进行比对，若更短则刷新纪录。之后继续推动右端点。</li>
+        </ol>
+        <div class="formula">
+            核心思想：右指针不回头地开疆拓土，左指针随时就地疯狂收缩，确保每一步都是极致高效的线性盘点！
+        </div>
+    </div>
+
+    <div class="cpp-only">
+        <div class="card knowledge">
+            <h2>📘 C++ 魔法秘籍 (知识点)</h2>
+            <ul>
+                <li><strong>极速 scanf 读入：</strong> 面对百万量级的数据规模，使用标准的 <span class="code-inline">cin</span> 会导致输入流耗时过长。换用传统的 <span class="code-inline">scanf</span> 可以在几毫秒内瞬间完成巨量数据的加载。</li>
+                <li><strong>频次打标数组：</strong> 开辟一个大小为 <span class="code-inline">MAXM</span> 的整型计数数组，利用 $O(1)$ 的开销实时追踪和控制当前窗口中每位画家的作品备份数量。</li>
+                <li><strong>1-Based 坐标映射：</strong> 算法内部采用计算机习惯的 0 到 N-1 进行运算，在最终输出结果时，大方地在左右端点下标上各加上 1，完美契合题目要求。</li>
+            </ul>
+        </div>
+
+        <div class="card code-box">
+            <h2>💻 C++ 终极法术 (双指针精简维护版)</h2>
+<pre>
+<span class="keyword">#include</span> &lt;cstdio&gt;
+<span class="keyword">#include</span> &lt;algorithm&gt;
+<span class="keyword">using namespace std;</span>
+
+<span class="keyword">const int</span> MAXN = <span class="number">1000005</span>;  <span class="comment">// 百万级最大画作数量空间</span>
+<span class="keyword">const int</span> MAXM = <span class="number">2005</span>;     <span class="comment">// 最大画家数量空间</span>
+
+<span class="type">int</span> m[MAXM] = {<span class="number">0</span>};         <span class="comment">// 画家计数数组：记录当前窗口内每位画家的作品件数</span>
+<span class="type">int</span> num = <span class="number">0</span>;               <span class="comment">// 计数器：记录当前窗口内的画家种类数</span>
+<span class="type">int</span> n[MAXN];               <span class="comment">// 画作长轴数组：存储每幅画对应的画家编号</span>
+
+<span class="type">int</span> main() {
+    <span class="type">int</span> N, M;              <span class="comment">// N: 画作数量, M: 画家数量</span>
+    <span class="keyword">if</span> (scanf(<span class="string">"%d%d"</span>, &amp;N, &amp;M) == EOF) <span class="keyword">return</span> <span class="number">0</span>;
+    
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; N; ++i) {
+        scanf(<span class="string">"%d"</span>, &amp;n[i]);
+    }
+    
+    <span class="type">int</span> L = <span class="number">0</span>, R = -<span class="number">1</span>;      <span class="comment">// 滑动窗口的左右端点指针</span>
+    <span class="type">int</span> ansL = <span class="number">0</span>, ansR = N; <span class="comment">// 🏆 记录全局最优区间的左右端点</span>
+    <span class="type">int</span> i = <span class="number">0</span>;              <span class="comment">// 遍历右端点的移动索引</span>
+    
+    <span class="comment">// 🔄 第一阶段：持续右移右端点，直到窗口内第一次集齐所有 M 位画家的作品</span>
+    <span class="keyword">while</span> (i &lt; N &amp;&amp; num != M) {
+        <span class="keyword">if</span> (m[n[i]] == <span class="number">0</span>) {
+            num++;          <span class="comment">// 🌟 发现新画家，种类数加 1</span>
+        }
+        m[n[i]]++;          <span class="comment">// 该画家的作品备份数加 1</span>
+        R++;
+        i++;
+    }
+    
+    <span class="comment">// 📉 第二阶段：尝试就地收缩左端点，挤掉左侧那些有重复备份的多余画作</span>
+    <span class="keyword">while</span> (m[n[L]] &gt; <span class="number">1</span>) {
+        m[n[L]]--;          <span class="comment">// 减少左端点画家的计数值</span>
+        L++;                <span class="comment">// 左指针右移收缩</span>
+    }
+    
+    <span class="comment">// 备忘录记录下这第一组达标的合法区间位置</span>
+    ansL = L;
+    ansR = R;
+    
+    <span class="comment">// 🔄 第三阶段：遍历剩余画作，继续维护和寻找更短的黄金区间</span>
+    <span class="keyword">while</span> (i &lt; N) {
+        m[n[i]]++;          <span class="comment">// 推动右端点接纳新画作并增加计数</span>
+        R++;
+        i++;
+        
+        <span class="comment">// 每次右端点走一步，左端点就疯狂跟进收缩到极致</span>
+        <span class="keyword">while</span> (m[n[L]] &gt; <span class="number">1</span>) {
+            m[n[L]]--;
+            L++;
+        }
+        
+        <span class="comment">// 💡 贪心比对：如果当前挤压出来的区间跨度严格短于之前的记录</span>
+        <span class="keyword">if</span> (ansR - ansL &gt; R - L) {
+            ansR = R;       <span class="comment">// 刷新最优纪录的右端点</span>
+            ansL = L;       <span class="comment">// 刷新最优纪录的左端点</span>
+        }
+    }
+    
+    <span class="comment">// 🏆 输出最终结果，注意题目要求从 1 开始计数，所以输出加 1</span>
+    printf(<span class="string">"%d %d\n"</span>, ansL + <span class="number">1</span>, ansR + 1);
+    
+    <span class="keyword">return</span> <span class="number">0</span>;
+}
+</pre>
+        </div>
+    </div>
+
+    <div class="py-only" style="display: none;">
+        <div class="card knowledge">
+            <h2>🐍 Python 魔法秘籍 (知识点)</h2>
+            <ul>
+                <li><strong>sys.stdin.read 爆发快读：</strong> 面对百万巨量的数据行，切忌用连续的普通 input()。运用 <span class="code-inline">sys.stdin.read().split()</span> 将全部数据一次性抓进切片大数组，处理速度直接飙升百倍！</li>
+                <li><strong>高效哈希频次控制：</strong> 虽然可以用字典，但由于本题画家的编号范围确定在 2000 以内，直接利用固定的基础列表 <span class="code-inline"> * (m + 1)</span> 充当计数池，其底层的连续内存读取效率远远高于哈希表。</li>
+                <li><strong>单层优雅大循环：</strong> 用一个极简的 for 循环让右指针不断步进，内部配合 while 随时收缩左边界，逻辑条理清晰，执行非常丝滑。</li>
+            </ul>
+        </div>
+
+        <div class="card code-box">
+            <h2>💻 Python 终极法术 (全自动迭代快读版)</h2>
+<pre>
+<span class="keyword">import</span> sys
+
+<span class="keyword">def</span> <span class="type">main</span>():
+    # 📥 爆发快读法：一口气抓取战场内所有的输入数字片段并进行分块
+    input_data = sys.stdin.read().split()
+    <span class="keyword">if not</span> input_data:
+        <span class="keyword">return</span>
+        
+    n = int(input_data[<span class="number">0</span>])  # 画作总数
+    m = int(input_data[<span class="number">1</span>])  # 画家总数
+    
+    # 📐 将接下来的所有画家编号整齐打包成整型列表
+    paintings = [int(x) <span class="keyword">for</span> x <span class="keyword">in</span> input_data[<span class="number">2</span>:n+<span class="number">2</span>]]
+    
+    painter_counts = [<span class="number">0</span>] * (m + <span class="number">1</span>)  # 🔮 频次计数列表，记录窗口内每位画家的作品数
+    distinct_painters = <span class="number">0</span>          # 计数器：记录窗口内已集齐的画家种类数
+    
+    l = <span class="number">0</span>
+    ans_l, ans_r = <span class="number">0</span>, n            # 🏆 记录全局最优区间的左右坐标边界
+    min_len = n + <span class="number">1</span>                # 初始化最短跨度为无穷大
+    
+    # 🔍 让右指针 r 扮演开拓先锋，一路向右推移
+    <span class="keyword">for</span> r <span class="keyword">in</span> range(n):
+        p = paintings[r]
+        <span class="keyword">if</span> painter_counts[p] == <span class="number">0</span>:
+            distinct_painters += <span class="number">1</span>  # 🌟 发现新面孔，种类数加 1
+        painter_counts[p] += <span class="number">1</span>      # 该画家的作品数叠加
+        
+        # 💥 贪心连环大收缩：只要当前窗口内已经完美集齐了 M 位画家的全部作品
+        <span class="keyword">while</span> distinct_painters == m:
+            # 💡 判定当前窗口的长度是否刷新了最短记录
+            <span class="keyword">if</span> r - l + <span class="number">1</span> &lt; min_len:
+                min_len = r - l + <span class="number">1</span>
+                ans_l, ans_r = l, r # 迅速在备忘录上盖章留下最佳根据地
+                
+            # 尝试驱逐最左端的画作，让窗口左边界右移收缩
+            left_p = paintings[l]
+            painter_counts[left_p] -= <span class="number">1</span>
+            <span class="keyword">if</span> painter_counts[left_p] == <span class="number">0</span>:
+                distinct_painters -= <span class="number">1</span> # 🛑 独苗被赶跑了，种类数下降，打断收缩循环
+            l += <span class="number">1</span>
+            
+    # 🏆 荣耀输出最优解。因为位置要求从 1 开始，所以切片下标统一加 1
+    print(f<span class="string">"{ans_l + 1} {ans_r + 1}"</span>)
+
+<span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:
+    main()
+</pre>
+        </div>
+    </div>
+
+    <div class="card summary">
+        <h2>💡 技巧和重点详细总结 (精算调度官的破局心得)</h2>
+        <ul>
+            <li><strong>🌟 为什么滑动窗口能完美保障“起点最小”？：</strong> 题目有一条细节限制：“如果存在多个最短区间解，选择起点最小的那组”。在我们的滑动窗口推进逻辑中，我们是从左到右自然推进的。当遇到后面出现相同长度的合法区间时，我们的更新条件是 <b>r - l + 1 &lt; min_len</b>（严格小于）。由于是严格小于才刷新，这就意味着后面那些“同样短但起点靠右”的并列区间根本没有机会篡位，从而天然、完美地锁定了最靠左、起点最小的先发优胜者！</li>
+            <li><strong>🌟 双重循环嵌套为什么没有超时？（复杂度分析）：</strong> 很多初学者看到 for 循环内部嵌套了一个 while 循环，就会倒吸一口凉气，下意识地觉得这是平方级 $O(n^2)$ 的慢速算法。<b>完全不用担心！</b> 让我们用“均摊分析法”来看看双指针的奇妙路线：在整个大循环运行期间，右指针 <span class="code-inline">r</span> 从 0 走到了 n-1，一共前进了 n 步；而左指针 <span class="code-inline">l</span> 同样也是傲然向前，<b>绝不回头</b>，在整个程序里最多也仅仅移动了 n 步。也就是说，两幅画被扫描和处理的总次数是稳稳的 $2n$ 次！因此，整个算法的时间复杂度是无敌且优雅的纯线性 <b>$O(n)$</b>！</li>
+            <li><strong>🌟 零门槛拿下满分：</strong> 百万规模的数据在 $O(n)$ 的降维打击面前形同虚设。程序在几毫秒到几十毫秒内即可瞬间全通通关，毫无卡常压力，稳拿满分！</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        扣哒世界教研团队
+    </div>
+</div>
+
+<script>
+    // 简单实用的多语言内容无缝切换控制法术
+    function switchLang(lang) {
+        const cppElements = document.querySelectorAll('.cpp-only');
+        const pyElements = document.querySelectorAll('.py-only');
+        const cppBtn = document.querySelector('.cpp-btn');
+        const pyBtn = document.querySelector('.py-btn');
+
+        if (lang === 'cpp') {
+            cppElements.forEach(el => el.style.display = 'block');
+            pyElements.forEach(el => el.style.display = 'none');
+            cppBtn.classList.add('active');
+            pyBtn.classList.remove('active');
+        } else {
+            cppElements.forEach(el => el.style.display = 'none');
+            pyElements.forEach(el => el.style.display = 'block');
+            pyBtn.classList.add('active');
+            cppBtn.classList.remove('active');
+        }
+    }
+</script>
+
+</body>
+</html>

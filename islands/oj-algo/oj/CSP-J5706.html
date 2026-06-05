@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔法课堂：奶牛防晒霜的贪心分配术</title>
+    <style>
+        /* 全局可爱魔法风格设置 - 炎炎夏日与冰爽海滩主题 */
+        body {
+            font-family: "Comic Sans MS", "YouYuan", "幼圆", "Microsoft YaHei", sans-serif;
+            background-color: #f0fafd; /* 清凉舒爽的浅海蓝背景 */
+            color: #1a252c; /* 极深墨青色，保护视力且极致清晰 */
+            margin: 0;
+            padding: 20px;
+            line-height: 1.8;
+            letter-spacing: 1px;
+        }
+
+        /* 顶部语言切换按钮 */
+        .lang-switch {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .lang-btn {
+            background-color: #ffffff;
+            border: 3px solid #0288d1; /* 海滩湛蓝 */
+            border-radius: 20px;
+            padding: 10px 30px;
+            font-size: 1.2em;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            color: #1a252c;
+        }
+        .lang-btn.active.cpp-btn {
+            border-color: #01579b;
+            background-color: #0288d1; /* 碧海蓝 */
+            color: white;
+            text-shadow: 0 0 2px rgba(0,0,0,0.4);
+        }
+        .lang-btn.active.py-btn {
+            border-color: #e65100;
+            background-color: #ff9800; /* 烈阳橙 */
+            color: white;
+            text-shadow: 0 0 2px rgba(0,0,0,0.4);
+        }
+
+        /* A4纸张打印优化容器 */
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(2, 136, 209, 0.15);
+            border: 5px solid #0288d1; /* 湛蓝海滩边框 */
+        }
+
+        /* 标题样式 */
+        h1 {
+            color: #01579b;
+            text-align: center;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 0px #b3e5fc;
+            margin-bottom: 20px;
+            font-weight: 900;
+        }
+        
+        /* 魔法传送门做题按钮 */
+        .action-btn {
+            display: inline-block;
+            background-color: #ff7043; /* 椰阳光芒橙 */
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 5px 0 #d84315, 0 8px 15px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+            margin: 20px 0;
+            border: 2px solid #fff;
+        }
+        .action-btn:hover {
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 #d84315, 0 5px 10px rgba(0,0,0,0.15);
+        }
+        .action-btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+
+        h2 {
+            color: #01579b;
+            border-bottom: 3px dashed #00bcd4;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            font-weight: bold;
+        }
+
+        h3 {
+            color: #ff9800;
+            margin-top: 25px;
+            font-weight: bold;
+        }
+
+        /* 模块化内容卡片 */
+        .card {
+            background-color: #fdfbf7;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 8px solid #0288d1;
+            color: #1a252c;
+        }
+
+        .card.problem { border-color: #00bcd4; background-color: #e0f7fa; }
+        .card.logic { border-color: #ff9800; background-color: #fff3e0; }
+        .card.knowledge { border-color: #009688; background-color: #e0f2f1; }
+        .card.code-box { border-color: #37474f; background-color: #eceff1; }
+        .card.summary { border-color: #e53935; background-color: #ffebee; }
+
+        /* 代码块样式 */
+        pre {
+            background-color: #0f171e; /* 极深密林夜色底框 */
+            color: #eceff1;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: Consolas, monospace;
+            overflow-x: auto;
+            font-size: 1.1em;
+            line-height: 1.5;
+            box-shadow: inset 0 0 12px rgba(0,0,0,0.5);
+        }
+        
+        /* 代码高亮设置 */
+        .comment { color: #80cbc4; font-style: italic; }
+        .keyword { color: #ff4081; font-weight: bold; }
+        .type { color: #29b6f6; }
+        .string { color: #ffd54f; }
+        .number { color: #ffb74d; }
+
+        /* 行内高亮标记 */
+        .code-inline {
+            background-color: #b3e5fc;
+            color: #01579b;
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-family: Consolas, monospace;
+            font-weight: bold;
+        }
+
+        /* 贪心决策核心策略卡片 */
+        .formula {
+            background-color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            color: #01579b;
+            border: 2px dashed #0288d1;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+            font-family: Consolas, monospace;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        /* 纯网页可视化的模拟面板 */
+        .visual-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #b3e5fc;
+        }
+        .visual-row {
+            display: flex;
+            align-items: center;
+        }
+        .visual-label {
+            width: 180px;
+            font-weight: bold;
+            color: #37474f;
+        }
+        .bar-wrapper {
+            flex-grow: 1;
+            position: relative;
+            background: #eaeded;
+            height: 35px;
+            border-radius: 6px;
+        }
+        .range-bar {
+            position: absolute;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85em;
+            border-radius: 6px;
+            background-color: #b0bec5;
+        }
+        .range-bar.matched {
+            background-color: #0288d1;
+            box-shadow: 0 2px 5px rgba(2,136,209,0.3);
+        }
+        .sun-tag {
+            position: absolute;
+            top: -8px;
+            background-color: #ff9800;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: bold;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        /* 底部版权声明 */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #90a4ae;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        @media print {
+            body { background-color: white; }
+            .container { box-shadow: none; border: none; width: 100%; padding: 0; }
+            .lang-switch, .action-btn { display: none; }
+            .card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="lang-switch">
+    <button class="lang-btn cpp-btn active" onclick="switchLang('cpp')">🖥️ C++ 魔法</button>
+    <button class="lang-btn py-btn" onclick="switchLang('python')">🐍 Python 魔法</button>
+</div>
+
+<div class="container">
+    <h1>📜 奶牛防晒霜：炎炎夏日里的清凉排班术 🌊</h1>
+    
+    <div style="text-align: center; font-size: 1.2em; color: #0288d1; font-weight: bold;">
+        🧙‍♂️ 欢迎来到夏日海滩农场，聪明的资源精算师！<br>
+        今天农场的太阳格外毒辣，阳光强度太高让奶牛们直呼吃不消！<br>
+        每头奶牛都有自己能忍受的阳光强度范围 <strong>[minSPF, maxSPF]</strong>。<br>
+        幸运的是，农场主准备了各种固定防护值的防晒霜，但每种防晒霜的数量非常有限！<br>
+        如何运筹帷幄，让最多数量的奶牛开心地享受到最适合的阳光？让我们用贪心大法来破局吧！
+    </div>
+
+    <div style="text-align: center;">
+        <a href="https://oj.koudashijie.com/collection/33/type/course/problem/55" target="_blank" class="action-btn">
+            🚀 点击这里，开启时空传送门（前往做题）！
+        </a>
+    </div>
+
+    <div class="card problem">
+        <h2>📜 任务清单 (题目描述)</h2>
+        <p>给定 <strong>C</strong> 头奶牛，每头奶牛有一个可以忍受的最小和最大阳光强度范围 <strong>[minSPF_i, maxSPF_i]</strong>。</p>
+        <p>有 <strong>L</strong> 种防晒霜，每种防晒霜有一个固定的阳光强度调节值 <strong>SPF_j</strong> 以及可使用次数 <strong>cover_j</strong>。</p>
+        <p>请你计算在这些条件下，最多可以让多少头奶牛成功涂上合适的防晒霜并享受阳光。</p>
+        
+        <p><strong>大殿调度法则：</strong></p>
+        <ul>
+            <li>第一行包含两个整数：<strong>C</strong>（奶牛数量）和 <strong>L</strong>（防晒霜种类数量），用空格隔开。</li>
+            <li>接下来的 <strong>C</strong> 行，每行包含两个整数 <strong>minSPF_i</strong> 和 <strong>maxSPF_i</strong>。</li>
+            <li>接下来的 <strong>L</strong> 行，每行包含两个整数 <strong>SPF_j</strong> 和 <strong>cover_j</strong>。</li>
+            <li>输出一个整数，表示最多可以享受晒太阳的奶牛数量。</li>
+        </ul>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+            <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #00bcd4;">
+                <strong style="color: #00838f;">📥 魔法输入阵：</strong><br>
+                <span style="color: #555; font-size: 0.9em;">(3头牛与2种防晒霜)</span><br>
+                <pre style="background-color: #e0f7fa; color: #111111; padding: 10px; margin: 5px 0; box-shadow: none;">3 2
+3 10
+2 5
+1 5
+6 2
+4 1</pre>
+            </div>
+            <div style="flex: 1; background: white; padding: 15px; border-radius: 10px; border: 2px solid #ff9800;">
+                <strong style="color: #e65100;">📤 奇迹输出阵：</strong><br>
+                <span style="color: #555; font-size: 0.9em;">(成功匹配的最大牛数)</span><br>
+                <pre style="background-color: #fff3e0; color: #111111; padding: 10px; margin: 5px 0; box-shadow: none;">2</pre>
+            </div>
+        </div>
+        
+        <p style="font-weight: bold; margin-top: 15px;">数据规模提示：</p>
+        <ul>
+            <li>1 ≤ C ≤ 2500，1 ≤ L ≤ 2500</li>
+            <li>1 ≤ minSPF_i, maxSPF_i, SPF_j ≤ 1000</li>
+            <li>1 ≤ cover_j ≤ 1000</li>
+        </ul>
+    </div>
+
+    <div class="card logic">
+        <h2>🧠 魔法道具箱 (核心图解：先满足最挑剔、最快被晒伤的牛)</h2>
+        <p>这是一道非常精妙的<b>二分图最大匹配/区间贪心问题</b>。要让总数最多，策略是：<b>谁的忍受上限（maxSPF）低，谁就更容易被晒伤，我们就先紧着谁来挑！</b></p>
+        <p>在为某一头奶牛选防晒霜时，我们要从符合条件的防晒霜里，<b>优先挑SPF值最小的那个</b>。把高密度的防晒霜留给后面上限更高的奶牛，这就是最优策略。</p>
+
+        <div class="visual-panel" style="background: #ffffff; padding: 20px; border-radius: 15px; border: 2px dashed #ff9800; margin: 20px 0;">
+            <div style="color: #e65100; font-size: 1.1em; text-align: center; font-weight: bold; margin-bottom: 15px;">
+                🏖️ 样例贪心决策推演图（按 maxSPF 升序审阅奶牛） 🏖️
+            </div>
+            
+            <div class="visual-container">
+                <div class="visual-row">
+                    <div class="visual-label">1. 奶牛 (上限5)</div>
+                    <div class="bar-wrapper">
+                        <div class="range-bar matched" style="left: 20%; width: 30%;">挑满足条件的最小SPF</div>
+                        <div class="sun-tag" style="left: 40%;">🧴 霜 SPF 4</div>
+                    </div>
+                </div>
+                <div class="visual-row">
+                    <div class="visual-label">2. 奶牛 (上限5)</div>
+                    <div class="bar-wrapper">
+                        <div class="range-bar matched" style="left: 10%; width: 40%;">SPF 4用完了，挑次小的</div>
+                        <div class="sun-tag" style="left: 60%;">🧴 霜 SPF 6</div>
+                    </div>
+                </div>
+                <div class="visual-row">
+                    <div class="visual-label">3. 奶牛 (上限10)</div>
+                    <div class="bar-wrapper">
+                        <div class="range-bar" style="left: 30%; width: 70%; background-color: #cfd8dc; color: #78909c;">防晒霜耗尽，只能遗憾晒伤</div>
+                    </div>
+                </div>
+            </div>
+            <p style="font-size: 0.95em; color: #555; margin: 0;">* 方案复盘：先把奶牛按照最大阳光需求量升序排序，同时把防晒霜按照固定的SPF值从小到大排序。第一步处理奶牛，由于 SPF 4 在其范围内且还有数量，直接分配，成功！第二步处理奶牛，由于 SPF 4 数量减为0，继续往后看，发现 SPF 6 在其范围内，分配成功！至此，2头牛匹配成功，完美拿下解密！</p>
+        </div>
+
+        <h3>✨ 贪心选霜三步破咒法</h3>
+        <ol style="line-height: 2;">
+            <li>🔸 <b>双路大排序：</b> 
+                将所有奶牛按照<b>右端点（最大阳光强度）从小到大</b>进行升序排列；
+                同时，将所有防晒霜按照<b>固定的 SPF 防护值从小到大</b>升序排列。
+            </li>
+            <li>🔸 <b>逐牛排查法：</b> 
+                从前到后遍历已经排好序的奶牛。对于每一头牛，都从头（也就是从 SPF 值最小的防晒霜）向后开始扫描。
+            </li>
+            <li>🔸 <b>首配即最优：</b> 
+                一旦发现某种防晒霜的 SPF 值满足当前奶牛的需求（即满足 <strong>SPF &gt;= minSPF</strong> 并且 <strong>SPF &lt;= maxSPF</strong>），且该种防晒霜的库存数量大于 0，说明找到了最完美的解！
+                立刻让该防晒霜的库存减 1，计数器加 1，并直接打断内层循环，开心去服务下一头牛！
+            </li>
+        </ol>
+        <div class="formula">
+            核心思想：把宝贵的高防晒系数留给后面的耐热大牛，给当前的防晒脆弱牛匹配刚刚好能用的最低配
+        </div>
+    </div>
+
+    <div class="cpp-only">
+        <div class="card knowledge">
+            <h2>📘 C++ 魔法秘籍 (知识点)</h2>
+            <ul>
+                <li><strong>双结构体精细解耦：</strong> 分别建立 <span class="code-inline">cow</span> 和 <span class="code-inline">sunscreen</span> 结构体，使得各自的属性清晰独立。</li>
+                <li><strong>标准快排组合拳：</strong> 编写 <span class="code-inline">com</span> 与 <span class="code-inline">comp</span> 两个自定义排序规则，完美驾驭算法中截然不同的两个排序维度。</li>
+                <li><strong>循环提阶刹车：</strong> 内部判定一旦达成，通过 <span class="code-inline">break;</span> 强行切断内部循环，不仅逻辑完全符合贪心准则，同时也阻断了多余的扫描开销。</li>
+            </ul>
+        </div>
+
+        <div class="card code-box">
+            <h2>💻 C++ 终极法术 (区间右端点排序版)</h2>
+<pre>
+<span class="keyword">#include</span> &lt;cstdio&gt;
+<span class="keyword">#include</span> &lt;algorithm&gt;
+<span class="keyword">using namespace std;</span>
+
+<span class="type">int</span> ans; <span class="comment">// 🏆 记录最终可以开心地享受到晒太阳的奶牛数量</span>
+
+<span class="comment">// 🔮 定义奶牛结构体，存储每头奶牛的阳光强度忍受范围</span>
+<span class="keyword">struct</span> cow {
+    <span class="type">int</span> l; <span class="comment">// 最小阳光需求</span>
+    <span class="type">int</span> r; <span class="comment">// 最大阳光需求</span>
+} ox;
+
+<span class="comment">// 🧴 定义防晒霜结构体，存储每种防晒霜的防护值和剩余库存数量</span>
+<span class="keyword">struct</span> sunscreen {
+    <span class="type">int</span> n; <span class="comment">// 防晒霜的固定阳光强度</span>
+    <span class="type">int</span> s; <span class="comment">// 该防晒霜可用的剩余次数</span>
+} bb;
+
+<span class="comment">// ⚖️ 奶牛比较函数：按照最大阳光强度的右端点升序排列（从小到大）</span>
+<span class="type">bool</span> com(<span class="keyword">struct</span> cow x, <span class="keyword">struct</span> cow y) {
+    <span class="keyword">return</span> x.r &lt; y.r;
+}
+
+<span class="comment">// ⚖️ 防晒霜比较函数：按照防晒强度值升序排列（从小到大）</span>
+<span class="type">bool</span> comp(<span class="keyword">struct</span> sunscreen a, <span class="keyword">struct</span> sunscreen b) {
+    <span class="keyword">return</span> a.n &lt; b.n;
+}
+
+<span class="type">int</span> main() {
+    <span class="type">int</span> n, m; <span class="comment">// n表示奶牛总数，m表示防晒霜的种类数</span>
+    <span class="keyword">if</span> (scanf(<span class="string">"%d %d"</span>, &amp;n, &amp;m) == EOF) <span class="keyword">return</span> <span class="number">0</span>;
+
+    <span class="comment">// 输入每头奶牛的阳光强度区间需求</span>
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">1</span>; i &lt;= n; i++) {
+        scanf(<span class="string">"%d %d"</span>, &amp;ox[i].l, &amp;ox[i].r);
+    }
+
+    <span class="comment">// 输入每种防晒霜的固定效能与数量</span>
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">1</span>; i &lt;= m; i++) {
+        scanf(<span class="string">"%d %d"</span>, &amp;bb[i].n, &amp;bb[i].s);
+    }
+
+    <span class="comment">// ⏱️ 施展贪心排序大法：奶牛看上限右端点，防晒霜看系数值</span>
+    sort(ox + <span class="number">1</span>, ox + <span class="number">1</span> + n, com);
+    sort(bb + <span class="number">1</span>, bb + m + 1, comp);
+
+    <span class="comment">// 🔍 遍历每一头奶牛，贪心地为它们搜索并分配合适的清凉霜</span>
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">1</span>; i &lt;= n; i++) {
+        <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">1</span>; j &lt;= m; j++) {
+            <span class="comment">// 💡 贪心核心：如果当前防晒霜强度适合牛的需求，且库存尚在</span>
+            <span class="keyword">if</span> (bb[j].n &gt;= ox[i].l &amp;&amp; bb[j].n &lt;= ox[i].r &amp;&amp; bb[j].s &gt; <span class="number">0</span>) {
+                bb[j].s--; <span class="comment">// 库存减少一瓶</span>
+                ans++;     <span class="comment">// 保护成功的数量加 1</span>
+                <span class="keyword">break</span>;     <span class="comment">// ✨ 贪心达成，直接退回外层去处理下一头更紧迫的牛</span>
+            }
+        }
+    }
+
+    <span class="comment">// 🏆 输出最终在最完美调配下成功享受阳光的奶牛数量</span>
+    printf(<span class="string">"%d\n"</span>, ans);
+
+    <span class="keyword">return</span> <span class="number">0</span>;
+}
+</pre>
+        </div>
+    </div>
+
+    <div class="py-only" style="display: none;">
+        <div class="card knowledge">
+            <h2>🐍 Python 魔法秘籍 (知识点)</h2>
+            <ul>
+                <li><strong>sys.stdin.read 极速吸入：</strong> 面对庞大的多行输入输入流，用自带的循环 <span class="code-inline">input()</span> 会非常耗时。利用一次性切片把所有魔法字符读进内存，效率直接拉满！</li>
+                <li><strong>字典结构的高效排序：</strong> Python 拥有最优雅的字典列表排序天赋。利用高级语法 <span class="code-inline">cows.sort(key=lambda x: x['r'])</span>，一句话就能实现按照任意指定键值的升序排列。</li>
+                <li><strong>极简对象遍历：</strong> 采用简洁的迭代风格，直接利用对字典对象的字段读写来代替生硬的下标数字，大大增强了代码的阅读流畅度。</li>
+            </ul>
+        </div>
+
+        <div class="card code-box">
+            <h2>💻 Python 终极法术 (多维字典排序版)</h2>
+<pre>
+<span class="keyword">import</span> sys
+
+<span class="keyword">def</span> <span class="type">main</span>():
+    # 📥 极速快读法：一口气抓取战场内所有的输入片段并进行分块
+    input_data = sys.stdin.read().split()
+    <span class="keyword">if not</span> input_data:
+        <span class="keyword">return</span>
+        
+    c = int(input_data[<span class="number">0</span>])  # 奶牛总数
+    l = int(input_data[<span class="number">1</span>])  # 防晒霜种类数
+    
+    idx = <span class="number">2</span>
+    cows = []
+    <span class="keyword">for</span> _ <span class="keyword">in</span> range(c):
+        min_spf = int(input_data[idx])
+        max_spf = int(input_data[idx+<span class="number">1</span>])
+        cows.append({<span class="string">'l'</span>: min_spf, <span class="string">'r'</span>: max_spf})
+        idx += <span class="number">2</span>
+        
+    sunscreens = []
+    <span class="keyword">for</span> _ <span class="keyword">in</span> range(l):
+        spf = int(input_data[idx])
+        cover = int(input_data[idx+<span class="number">1</span>])
+        sunscreens.append({<span class="string">'n'</span>: spf, <span class="string">'s'</span>: cover})
+        idx += <span class="number">2</span>
+        
+    # ⏱️ 贪心排序核心：奶牛按上限(r)升序，防晒霜按SPF效能(n)升序
+    cows.sort(key=<span class="keyword">lambda</span> x: x[<span class="string">'r'</span>])
+    sunscreens.sort(key=<span class="keyword">lambda</span> x: x[<span class="string">'n'</span>])
+    
+    ans = <span class="number">0</span>
+    
+    # 🔍 依次排查每一头对温度敏感的奶牛
+    <span class="keyword">for</span> cow <span class="keyword">in</span> cows:
+        # 从效能最小的防晒霜开始，贪心地往后试探
+        <span class="keyword">for</span> src <span class="keyword">in</span> sunscreens:
+            # 💡 匹配条件：防晒霜效能满足区间，且当前种类的库存充沛
+            <span class="keyword">if</span> src[<span class="string">'n'</span>] &gt;= cow[<span class="string">'l'</span>] <span class="keyword">and</span> src[<span class="string">'n'</span>] &lt;= cow[<span class="string">'r'</span>] <span class="keyword">and</span> src[<span class="string">'s'</span>] &gt; <span class="number">0</span>:
+                src[<span class="string">'s'</span>] -= <span class="number">1</span>  # 消耗一瓶防晒霜
+                ans += <span class="number">1</span>       # 成功营救一头牛
+                <span class="keyword">break</span>          # ✨ 贪心成功，直接刹车，开始为下一头牛寻宝
+                
+    # 🏆 输出最终成果
+    print(ans)
+
+<span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:
+    main()
+</pre>
+        </div>
+    </div>
+
+    <div class="card summary">
+        <h2>💡 技巧和重点详细总结 (海滩精算师的复盘笔记)</h2>
+        <ul>
+            <li><strong>🌟 核心逻辑的精巧证明：</strong> 为什么我们要按 <b>maxSPF（右端点）</b> 升序排序？因为右端点越小的奶牛，它面临的“可选项边界”就越窄，属于极其脆弱、极容易因防晒霜系数过高而被剥夺享受太阳权利的群体。如果我们先满足它，并且<b>贪心地选择当前满足要求的最小值</b>，就能为后面右端点更大、更耐热的奶牛腾出那些高防晒强度的防晒霜。这种“将局势掌控在最危险边缘”的做法就是贪心的灵魂。</li>
+            <li><strong>🌟 另一种异曲同工的解法：</strong> 很多大牛在做这道题时，也会采取按 <b>minSPF（左端点）从大到小降序排列</b> 的策略。在那种情况下，每次就必须贪心地挑选满足条件的 <b>最大 maxSPF 防晒霜</b> 来进行匹配。这两种贪心方向在组合数学上是完美对偶的，都能稳拿满分！</li>
+            <li><strong>🌟 复杂度表现与安全通关：</strong> 排序的耗时是 O(C log C + L log L)，由于两层嵌套循环的最大总开销仅仅为 O(C * L)。由于题目给出的顶格规模 C, L ≤ 2500，计算总量大概在 6,000,000 次以内，在 C++ 和 Python 中都能在几十毫秒内瞬间出结果，极其丝滑！</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        扣哒世界教研团队
+    </div>
+</div>
+
+<script>
+    // 简易实用的前端多语言切换控制器
+    function switchLang(lang) {
+        const cppElements = document.querySelectorAll('.cpp-only');
+        const pyElements = document.querySelectorAll('.py-only');
+        const cppBtn = document.querySelector('.cpp-btn');
+        const pyBtn = document.querySelector('.py-btn');
+
+        if (lang === 'cpp') {
+            cppElements.forEach(el => el.style.display = 'block');
+            pyElements.forEach(el => el.style.display = 'none');
+            cppBtn.classList.add('active');
+            pyBtn.classList.remove('active');
+        } else {
+            cppElements.forEach(el => el.style.display = 'none');
+            cppElements.forEach(el => el.style.display = 'none');
+            pyElements.forEach(el => el.style.display = 'block');
+            pyBtn.classList.add('active');
+            cppBtn.classList.remove('active');
+        }
+    }
+</script>
+
+</body>
+</html>
